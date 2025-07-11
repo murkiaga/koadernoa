@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Moduloa Gorde</title>
+</head>
+<body>
+<h1 th:text="${moduloa.id != null} ? 'Editatu Moduloa' : 'Modulo Berria Sortu'">Moduloa</h1>
+
+
+<form th:action="@{/kudeatzaile/moduloak/gorde}" th:object="${moduloa}" method="post">
+    <input type="hidden" th:field="*{id}" />
+
+    <label>Izena:</label>
+    <input type="text" th:field="*{izena}" required/><br/>
+
+    <label>Kodea:</label>
+    <input type="text" th:field="*{kodea}" required/><br/>
+
+    <label>Taldea:</label>
+    <select th:field="*{taldea}" required>
+        <option value="">-- Aukeratu taldea --</option>
+        <option th:each="t : ${taldeak}"
+                th:value="${t.id}"
+                th:text="${t.izena}"
+                th:selected="${t.id == moduloa.taldea?.id}">
+        </option>
+    </select><br/>
+
+    <button type="submit">Gorde</button>
+</form>
+
+<a th:href="@{/kudeatzaile/moduloak}">Itzuli moduluen zerrendara</a>
+</body>
+</html>

@@ -1,0 +1,48 @@
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# IntelliJ / Eclipse
+.idea/
+*.iml
+*.ipr
+*.iws
+*.classpath
+*.project
+.settings/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+# Java / Spring Boot
+target/
+*.class
+*.log
+
+# Sistema fitxategiak
+.DS_Store
+Thumbs.db
+
+# Application secrets
+src/main/resources/application.properties

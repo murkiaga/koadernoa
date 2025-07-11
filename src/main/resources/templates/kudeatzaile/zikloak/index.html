@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Zikloak Kudeatu</title>
+    <meta charset="UTF-8">
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1em;
+        }
+
+        th, td {
+            padding: 0.75em;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f3f3f3;
+        }
+
+        .btn {
+            padding: 0.4em 1em;
+            text-decoration: none;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+        }
+
+        .btn-edit {
+            background-color: #4CAF50;
+        }
+
+        .btn-delete {
+            background-color: #f44336;
+        }
+
+        .btn-add {
+            background-color: #2196F3;
+            margin-bottom: 1em;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Zikloen kudeaketa</h1>
+
+    <a th:href="@{/kudeatzaile/zikloak/sortu}" class="btn btn-add">➕ Ziklo berria sortu</a>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Izena</th>
+                <th>Maila</th>
+                <th>Familia</th>
+                <th>Aukerak</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="ziklo : ${zikloak}">
+                <td th:text="${ziklo.id}">1</td>
+                <td>
+				  <a th:href="@{/kudeatzaile/zikloak/{id}(id=${ziklo.id})}"
+				     th:text="${ziklo.izena}">DAW</a>
+				</td>
+                <td th:text="${ziklo.maila}">GOIMAILA</td>
+                <td th:text="${ziklo.familia}">INFORMATIKA</td>
+                <td>
+                    <a th:href="@{/kudeatzaile/zikloak/editatu/{id}(id=${ziklo.id})}" class="btn btn-edit">Editatu</a>
+                    <a th:href="@{/kudeatzaile/zikloak/ezabatu/{id}(id=${ziklo.id})}" class="btn btn-delete">Ezabatu</a>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a th:href="@{/kudeatzaile/zikloak/sortu}" class="btn btn-add">➕ Ziklo berria sortu</a>
+
+</body>
+</html>

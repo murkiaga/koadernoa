@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:text="'Zikloaren fitxa - ' + ${zikloa.izena}">Zikloaren fitxa</title>
+</head>
+<body>
+<h1 th:text="${zikloa.izena} + ' (' + ${zikloa.maila} + ', ' + ${zikloa.familia} + ')'">Ziklo izena</h1>
+
+<h2>Taldeak</h2>
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Izena</th>
+            <th>Aukerak</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr th:each="taldea : ${taldeak}">
+            <td th:text="${taldea.id}">1</td>
+            <td th:text="${taldea.izena}">1SMA</td>
+            <td>
+                <a th:href="@{/kudeatzaile/taldeak/editatu/{id}(id=${taldea.id})}">Editatu</a>
+                <a th:href="@{/kudeatzaile/taldeak/ezabatu/{id}(id=${taldea.id})}">Ezabatu</a>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<a th:href="@{/kudeatzaile/taldeak/sortu}">Talde berria sortu</a><br/>
+<a th:href="@{/kudeatzaile/zikloak}">Itzuli zikloen zerrendara</a>
+</body>
+</html>

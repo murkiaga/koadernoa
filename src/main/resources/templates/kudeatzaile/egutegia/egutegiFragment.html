@@ -1,0 +1,24 @@
+<!-- templates/kudeatzaile/egutegia/egutegiFragment.html -->
+<div th:fragment="egutegi(ikasturtea)">
+    <h3 th:text="${ikasturtea.izena} + ' (' + ikasturtea.maila + '. maila)'">2024-2025</h3>
+    <p th:text="'Hasiera: ' + ${ikasturtea.hasieraData} + ' | Bukaera: ' + ${ikasturtea.bukaeraData}"></p>
+
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Deskribapena</th>
+                <th>Mota</th>
+                <th>Ordezkatua</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="egun : ${ikasturtea.egunBereziak}">
+                <td th:text="${egun.data}">2024-09-09</td>
+                <td th:text="${egun.deskribapena}">Eskola Hasiera</td>
+                <td th:text="${egun.mota}">LEKTIBOA</td>
+                <td th:text="${egun.ordezkatua}">Astelehena</td>
+            </tr>
+        </tbody>
+    </table>
+</div>

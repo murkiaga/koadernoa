@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Kudeatzailea - Dashboard</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1>Kudeatzailearen Dashboard-a</h1>
+
+    <section>
+        <h2>Kudeaketa Atalak</h2>
+        <ul>
+            <li><a th:href="@{/kudeatzaile/zikloak}">Zikloak kudeatu</a></li>
+            <li><a th:href="@{/kudeatzaile/taldeak}">Taldeak kudeatu</a></li>
+            <li><a th:href="@{/kudeatzaile/moduloak}">Moduluak kudeatu</a></li>
+            <li><a th:href="@{/kudeatzaile/irakasleak}">Irakasleak kudeatu</a></li>
+            <li><a th:href="@{/kudeatzaile/egutegia}">Egutegia kudeatu</a></li>
+            <li><a th:href="@{/kudeatzaile/konfigurazioa}">Konfigurazioa</a></li>
+        </ul>
+    </section>
+
+    <section>
+        <h2>Koadernoak</h2>
+        <a th:href="@{/kudeatzaile/koadernoak}">Koadernoak kontsultatu</a>
+    </section>
+</body>
+</html>

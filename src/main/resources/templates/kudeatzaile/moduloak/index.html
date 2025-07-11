@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Moduluen Zerrenda</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+
+<h1>Moduluen Zerrenda</h1>
+
+<form th:action="@{/kudeatzaile/moduloak}" method="get">
+    <label>Taldea:</label>
+    <select name="taldeaId" onchange="this.form.submit()">
+        <option value="">GUZTIAK</option>
+        <option th:each="t : ${taldeak}"
+                th:value="${t.id}"
+                th:text="${t.izena}"
+                th:selected="${t.id == taldeaId}">
+        </option>
+    </select>
+</form>
+
+
+<a th:href="@{/kudeatzaile/moduloak/sortu(taldeaId=${param.taldeaId})}">Sortu Modulo Berria</a>
+
+<table border="1">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Kodea</th>
+            <th>Izena</th>
+            <th>Taldea</th>
+            <th>Aukerak</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr th:each="moduloa : ${moduluak}">
+            <td th:text="${moduloa.id}">1</td>
+            <td th:text="${moduloa.kodea}">ADAT</td>
+            <td th:text="${moduloa.izena}">Datuen Atzipena</td>
+            <td th:text="${moduloa.taldea.izena}">2AM3</td>
+            <td>
+                <a th:href="@{/kudeatzaile/moduloak/editatu/{id}(id=${moduloa.id})}">Editatu</a>
+                <a th:href="@{/kudeatzaile/moduloak/ezabatu/{id}(id=${moduloa.id})}">Ezabatu</a>
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<a th:href="@{/kudeatzaile}">Itzuli Hasierara</a>
+
+</body>
+</html>

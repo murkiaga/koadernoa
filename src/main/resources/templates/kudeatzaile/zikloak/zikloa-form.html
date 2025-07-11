@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Zikloa gorde</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1 th:text="${zikloa.id} != null ? 'Zikloa editatu' : 'Ziklo berria sortu'"></h1>
+
+    <form th:action="@{/kudeatzaile/zikloak/gorde}" th:object="${zikloa}" method="post">
+        <!-- ID ezkutuan, bakarrik editatzeko -->
+        <input type="hidden" th:if="${zikloa.id != null}" th:field="*{id}" />
+
+        <label for="izena">Izena:</label>
+        <input type="text" id="izena" th:field="*{izena}" required />
+        <br/><br/>
+
+        <label for="maila">Maila:</label>
+        <select id="maila" th:field="*{maila}">
+            <option th:each="m : ${mailak}" th:value="${m}" th:text="${m}"></option>
+        </select>
+        <br/><br/>
+
+        <label for="familia">Familia:</label>
+        <select id="familia" th:field="*{familia}">
+            <option th:each="f : ${familiak}" th:value="${f}" th:text="${f}"></option>
+        </select>
+        <br/><br/>
+
+        <button type="submit">Gorde</button>
+        <a th:href="@{/kudeatzaile/zikloak}">Atzera</a>
+    </form>
+</body>
+</html>
+

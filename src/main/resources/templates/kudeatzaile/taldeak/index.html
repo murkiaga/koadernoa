@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Taldeak kudeatu</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1>Taldeak</h1>
+
+    <a th:href="@{/kudeatzaile/taldeak/sortu}">➕ Sortu talde berria</a>
+
+    <table border="1" cellpadding="8" cellspacing="0">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Izena</th>
+                <th>Zikloa</th>
+                <th>Ekintzak</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="taldea : ${taldeak}">
+                <td th:text="${taldea.id}">1</td>
+                <td>
+                    <a th:href="@{/kudeatzaile/moduloak(taldeaId=${taldea.id})}"
+                       th:text="${taldea.izena}">1SMA</a>
+                </td>
+                <td th:text="${taldea.zikloa.izena}">Informatika</td>
+                <td>
+                    <a th:href="@{/kudeatzaile/taldeak/editatu/{id}(id=${taldea.id})}">✏️ Editatu</a>
+                    |
+                    <a th:href="@{/kudeatzaile/taldeak/ezabatu/{id}(id=${taldea.id})}"
+                       onclick="return confirm('Ziur zaude ezabatu nahi duzula?');">🗑️ Ezabatu</a>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <br>
+    <a th:href="@{/kudeatzaile/taldeak/sortu}">➕ Sortu talde berria</a>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+    <meta charset="UTF-8">
+    <title>Egutegia</title>
+    <style>
+        .lektibo1   { background-color: #b3d9ff; }  /* urdin argia */
+        .lektibo2   { background-color: #ffd699; }  /* laranja argia */
+        .lektibo3   { background-color: #b2f2bb; }  /* berde argia */
+        .jaieguna   { color: red; font-weight: bold; }
+        .ezlektiboa { background-color: black; color: white; }
+        .ordezkatua { background-color: yellow; }
+        .blank      { background-color: #f0f0f0; }
+        table       { border-collapse: collapse; margin-bottom: 2rem; }
+        th, td      { border: 1px solid #ccc; padding: 4px; text-align: center; width: 30px; height: 30px; }
+    </style>
+</head>
+<body>
+
+<h2 th:text="${ikasturtea.izena}">Ikasturtea</h2>
+
+<div th:each="entry : ${hilabeteka}">
+    <h3 th:text="${entry.key}">Hilabetea</h3>
+    <table>
+	    <thead>
+	        <tr>
+	            <th>Ig</th><th>Al</th><th>Ar</th><th>Az</th><th>Og</th><th>Or</th><th>Lr</th>
+	        </tr>
+	    </thead>
+	    <tbody>
+	        <tr th:each="astea : ${entry.value}">
+	            <td th:each="egun : ${astea}"
+				    th:class="${egun == null} ? 'blank' : ''"
+				    th:data-eguna="${egun}" 
+				    th:classappend="${egun != null} ? ${klaseMap[egun.toString()]} : ''"
+				    th:text="${egun != null ? egun.dayOfMonth : ''}"
+				    onclick="egunaKlikatuta(this, event)">
+				</td>
+	        </tr>
+	    </tbody>
+	</table>
+</div>
+
+
+
+<!-- Popup formularioa -->
+<div id="egunAldaketaForm" style="display:none; position:absolute; background:#fff; border:1px solid #ccc; padding:1rem; z-index:1000;">
+    <p id="egunDataText"></p>
+    <form id="egunForm" method="post" th:action="@{/kudeatzaile/egutegia/aldatu}">
+        <input type="hidden" name="data" id="egunDataInput" />
+        <select name="mota">
+            <option th:each="m : ${T(com.koadernoa.app.egutegia.entitateak.EgunMota).values()}"
+                    th:value="${m}" 
+                    th:text="${m}">
+            </option>
+        </select>
+        <button type="submit">Eguneratu</button>
+    </form>
+</div>
+
+<script>
+    function egunaKlikatuta(td, event) {
+	    event.stopPropagation();
+	
+	    const data = td.getAttribute("data-eguna");
+	    const popup = document.getElementById("egunAldaketaForm");
+	
+	    document.getElementById("egunDataText").innerText = "Eguna: " + data;
+	    document.getElementById("egunDataInput").value = data;
+	
+	    popup.style.left = event.pageX + "px";
+	    popup.style.top = event.pageY + "px";
+	    popup.style.display = "block";
+	}
+	// ✅ Popup barruan klik egitean ezkutatu ez dadin
+    document.getElementById("egunAldaketaForm").addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+
+    // ❌ Popup kanpoan klik egitean itxi
+    window.addEventListener('click', function(e) {
+        const popup = document.getElementById("egunAldaketaForm");
+        if (popup.style.display === "block" && !popup.contains(e.target)) {
+            popup.style.display = 'none';
+        }
+    });
+</script>
+
+
+</body>
+</html>
