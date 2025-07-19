@@ -19,6 +19,18 @@
 
 <h2 th:text="${ikasturtea.izena}">Ikasturtea</h2>
 
+<form method="get" th:action="@{/kudeatzaile/egutegia}">
+    <label>Ikasturtea aukeratu:</label>
+    <select name="ikasturteaId" onchange="this.form.submit()">
+        <option th:each="i : ${ikasturteGuztiak}"
+                th:value="${i.id}"
+                th:selected="${i.id} == ${ikasturtea.id}"
+                th:text="${i.izena} + ' - ' + ${i.maila} + (i.aktiboa ? ' (aktiboa)' : '')">
+        </option>
+    </select>
+</form>
+
+
 <div th:each="entry : ${hilabeteka}">
     <h3 th:text="${entry.key}">Hilabetea</h3>
     <table>
@@ -34,7 +46,8 @@
 				    th:data-eguna="${egun}" 
 				    th:classappend="${egun != null} ? ${klaseMap[egun.toString()]} : ''"
 				    th:text="${egun != null ? egun.dayOfMonth : ''}"
-				    onclick="egunaKlikatuta(this, event)">
+				    onclick="egunaKlikatuta(this, event)"
+				    th:title="${egun != null} ? ${deskribapenaMap[egun.toString()]} : ''">
 				</td>
 	        </tr>
 	    </tbody>
@@ -48,12 +61,21 @@
     <p id="egunDataText"></p>
     <form id="egunForm" method="post" th:action="@{/kudeatzaile/egutegia/aldatu}">
         <input type="hidden" name="data" id="egunDataInput" />
+        <input type="hidden" name="ikasturteaId" th:value="${ikasturtea.id}" />
         <select name="mota">
             <option th:each="m : ${T(com.koadernoa.app.egutegia.entitateak.EgunMota).values()}"
                     th:value="${m}" 
                     th:text="${m}">
             </option>
         </select>
+        <select name="ordezkatua" style="display:none">
+		    <option value="">-- Hautatu ordezkatzen duen eguna --</option>
+		    <option value="ASTELEHENA">Astelehena</option>
+		    <option value="ASTEARTEA">Asteartea</option>
+		    <option value="ASTEAZKENA">Asteazkena</option>
+		    <option value="OSTEGUNA">Osteguna</option>
+		    <option value="OSTIRALA">Ostirala</option>
+		</select>
         <button type="submit">Eguneratu</button>
     </form>
 </div>
@@ -64,6 +86,18 @@
 	
 	    const data = td.getAttribute("data-eguna");
 	    const popup = document.getElementById("egunAldaketaForm");
+	    
+	    const motaSelect = document.querySelector('select[name="mota"]');
+		const ordezkatuaSelect = document.querySelector('select[name="ordezkatua"]');
+		
+		motaSelect.addEventListener("change", () => {
+		    if (motaSelect.value === 'ORDEZKATUA') {
+		        ordezkatuaSelect.style.display = 'inline-block';
+		    } else {
+		        ordezkatuaSelect.style.display = 'none';
+		    }
+		});
+	    
 	
 	    document.getElementById("egunDataText").innerText = "Eguna: " + data;
 	    document.getElementById("egunDataInput").value = data;

@@ -25,7 +25,8 @@ public class EgunBerezi {
     @Enumerated(EnumType.STRING)
     private EgunMota mota; // LEKTIBOA, EZ_LEKTIBOA, JAIEGUNA, ORDEZKATUA
 
-    private String ordezkatua; // "astelehena" (asteazkena ≈ astelehena)
+    @Enumerated(EnumType.STRING)
+    private Astegunak ordezkatua; // ASTELEHENA-...-OSTIRALA
 
     @ManyToOne
     private Ikasturtea ikasturtea;

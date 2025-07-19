@@ -14,6 +14,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import com.koadernoa.app.egutegia.entitateak.Ikasturtea;
+import com.koadernoa.app.egutegia.entitateak.Astegunak;
 import com.koadernoa.app.egutegia.entitateak.EgunBerezi;
 import com.koadernoa.app.egutegia.entitateak.EgunMota;
 import com.koadernoa.app.egutegia.service.IkasturteaService;
@@ -29,30 +30,51 @@ public class EgutegiaController {
     }
     
     @GetMapping({"","/"})
-    public String erakutsiEgutegiaNagusia(Model model) {
-        Ikasturtea ikasturtea = ikasturteaService.getAktiboakByMaila(1).stream().findFirst().orElse(null);
+    public String erakutsiEgutegiaNagusia(@RequestParam(name = "ikasturteaId", required = false) Long ikasturteaId, Model model) {
+    	List<Ikasturtea> ikasturteGuztiak = ikasturteaService.getAktiboak(); // edo getAll()
+        Ikasturtea ikasturtea;
+
+        if (ikasturteaId != null) {
+            ikasturtea = ikasturteaService.getById(ikasturteaId);
+        } else {
+            // Lehenetsia: 1. mailakoa
+            ikasturtea = ikasturteaService.getAktiboakByMaila(1).stream().findFirst().orElse(null);
+        }
+
         if (ikasturtea == null) {
             return "kudeatzaile/egutegia/hutsik";
         }
 
         Map<String, List<List<LocalDate>>> hilabeteka = ikasturteaService.prestatuHilabetekoEgutegiak(ikasturtea);
         Map<String, String> klaseak = ikasturteaService.kalkulatuKlaseak(ikasturtea);
-
+        Map<String, String> deskribapenaMap = ikasturtea.getEgunBereziak().stream()
+        	    .collect(Collectors.toMap(
+        	        eb -> eb.getData().toString(),
+        	        EgunBerezi::getDeskribapena,
+        	        (a, b) -> a  //Ez litzateke bikoizturik egon beharko, baina badazpada, lehenengoa hartu
+        	    ));
+        
+        model.addAttribute("ikasturteGuztiak", ikasturteGuztiak);
         model.addAttribute("ikasturtea", ikasturtea);
         model.addAttribute("hilabeteka", hilabeteka);
         model.addAttribute("klaseMap", klaseak);
+        model.addAttribute("deskribapenaMap", deskribapenaMap);
 
         return "kudeatzaile/egutegia/index";
     }
     
     @PostMapping("/aldatu")
-    public String aldatuEgunMota(@RequestParam("data") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data,
-                                 @RequestParam("mota") EgunMota mota) {
-        Ikasturtea ikasturtea = ikasturteaService.getAktiboakByMaila(1).stream().findFirst().orElse(null);
+    public String aldatuEgunMota(
+            @RequestParam("data") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data,
+            @RequestParam("mota") EgunMota mota,
+            @RequestParam(value = "ordezkatua", required = false) Astegunak ordezkatua,
+            @RequestParam("ikasturteaId") Long ikasturteaId) {
+
+    	Ikasturtea ikasturtea = ikasturteaService.getById(ikasturteaId);
         if (ikasturtea != null) {
-            ikasturteaService.aldatuEgunMota(ikasturtea, data, mota);
+            ikasturteaService.aldatuEgunMota(ikasturtea, data, mota, ordezkatua);
         }
-        return "redirect:/kudeatzaile/egutegia";
+        return "redirect:/kudeatzaile/egutegia?ikasturteaId=" + ikasturteaId;
     }
 
 

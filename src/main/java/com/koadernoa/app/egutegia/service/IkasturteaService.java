@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.koadernoa.app.egutegia.entitateak.Astegunak;
 import com.koadernoa.app.egutegia.entitateak.EgunBerezi;
 import com.koadernoa.app.egutegia.entitateak.EgunMota;
 
@@ -157,23 +158,40 @@ public class IkasturteaService {
     }
     
     @Transactional
-    public void aldatuEgunMota(Ikasturtea ikasturtea, LocalDate data, EgunMota mota) {
+    public void aldatuEgunMota(Ikasturtea ikasturtea, LocalDate data, EgunMota mota, Astegunak ordezkatua) {
         for (EgunBerezi eb : ikasturtea.getEgunBereziak()) {
             if (eb.getData().equals(data)) {
                 eb.setMota(mota);
+                if (mota == EgunMota.ORDEZKATUA) {
+                    eb.setOrdezkatua(ordezkatua);
+                    eb.setDeskribapena("Ordezkatua: " + (ordezkatua != null ? ordezkatua.name() : ""));
+                } else {
+                    eb.setOrdezkatua(null); // garbitu aurreko balioa
+                    eb.setDeskribapena("Eskuz aldatuta");
+                }
                 return;
             }
         }
-        // Ez bada existitzen, berria sortu (opzionala)
+
         EgunBerezi berria = new EgunBerezi();
         berria.setData(data);
         berria.setMota(mota);
-        berria.setDeskribapena("Eskuz aldatu");
+        if (mota == EgunMota.ORDEZKATUA) {
+            berria.setOrdezkatua(ordezkatua);
+            berria.setDeskribapena("Ordezkatua: " + (ordezkatua != null ? ordezkatua.name() : ""));
+        } else {
+            berria.setDeskribapena("Eskuz aldatuta");
+        }
         berria.setIkasturtea(ikasturtea);
         ikasturtea.getEgunBereziak().add(berria);
     }
 
-
+    public List<Ikasturtea> getAktiboak() {
+        return ikasturteaRepository.findByAktiboaTrue();
+    }
+    public Ikasturtea getById(Long id) {
+        return ikasturteaRepository.findById(id).orElse(null);
+    }
 	
 	
 }
