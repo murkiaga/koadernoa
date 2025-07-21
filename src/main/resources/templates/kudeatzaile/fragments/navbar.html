@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    
+</head>
+<body>
+
+<div th:fragment="kudeatzaile-navbar">
+    <nav>
+        <ul>
+            <li><a th:href="@{/kudeatzaile}"
+       			   th:classappend="${currentPath == '/kudeatzaile' or currentPath == '/kudeatzaile/'} ? 'active'">Hasiera</a></li>
+
+            <li><a th:href="@{/kudeatzaile/zikloak}"
+                   th:classappend="${currentPath == '/kudeatzaile/zikloak'} ? 'active'">Zikloak kudeatu</a></li>
+
+            <li><a th:href="@{/kudeatzaile/taldeak}"
+                   th:classappend="${currentPath == '/kudeatzaile/taldeak'} ? 'active'">Taldeak kudeatu</a></li>
+
+            <li><a th:href="@{/kudeatzaile/moduloak}"
+                   th:classappend="${currentPath == '/kudeatzaile/moduloak'} ? 'active'">Moduluak kudeatu</a></li>
+
+            <li><a th:href="@{/kudeatzaile/irakasleak}"
+                   th:classappend="${currentPath == '/kudeatzaile/irakasleak'} ? 'active'">Irakasleak kudeatu</a></li>
+
+            <li><a th:href="@{/kudeatzaile/egutegia}"
+                   th:classappend="${currentPath == '/kudeatzaile/egutegia'} ? 'active'">Egutegia kudeatu</a></li>
+
+            <li><a th:href="@{/kudeatzaile/konfigurazioa}"
+                   th:classappend="${currentPath == '/kudeatzaile/konfigurazioa'} ? 'active'">Konfigurazioa</a></li>
+
+            <li><a th:href="@{/kudeatzaile/koadernoak}"
+                   th:classappend="${currentPath == '/kudeatzaile/koadernoak'} ? 'active'">Koadernoak</a></li>
+
+            <li style="margin-left:auto;"><a th:href="@{/logout}">Irten</a></li>
+        </ul>
+    </nav>
+</div>
+
+</body>
+</html>

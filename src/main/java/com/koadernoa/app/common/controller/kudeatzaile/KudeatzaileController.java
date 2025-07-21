@@ -32,9 +32,9 @@ public class KudeatzaileController {
 	private final TaldeaService taldeaService;
     private final ModuloaService moduloaService;
 
-	@GetMapping
+	@GetMapping({"","/"})
     public String kudeatzaileDashboard(Model model) {
-        return "kudeatzaile_dashboard";
+        return "/kudeatzaile/kudeatzaile_dashboard";
     }
 //----ZIKLOAK
 	@GetMapping("/zikloak")
@@ -114,7 +114,8 @@ public class KudeatzaileController {
 	
 //----MODULOAK
     @GetMapping("/moduloak")
-    public String moduloZerrenda(@RequestParam(name = "taldeaId", required = false) Long taldeaId, Model model) {
+    public String moduloZerrenda(@RequestParam(name = "taldeaId", required = false) Long taldeaId, 
+    							Model model) {
     	List<Moduloa> moduluak;
         if (taldeaId != null) {
             moduluak = moduloaService.getByTaldeaId(taldeaId);
@@ -124,6 +125,7 @@ public class KudeatzaileController {
         model.addAttribute("taldeaId", taldeaId);
         model.addAttribute("moduluak", moduluak);
         model.addAttribute("taldeak", taldeaService.getAll());
+        
         return "kudeatzaile/moduloak/index";
     }
     

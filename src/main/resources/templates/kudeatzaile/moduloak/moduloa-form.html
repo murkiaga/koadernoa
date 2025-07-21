@@ -15,6 +15,15 @@
 
     <label>Kodea:</label>
     <input type="text" th:field="*{kodea}" required/><br/>
+    
+    <label>Maila:</label>
+	<select th:field="*{maila}" required>
+	    <option value="">-- Aukeratu maila --</option>
+	    <option th:each="m : ${T(com.koadernoa.app.egutegia.entitateak.Maila).values()}"
+	            th:value="${m}"
+	            th:text="${m}">
+	    </option>
+	</select><br/>
 
     <label>Taldea:</label>
     <select th:field="*{taldea}" required>

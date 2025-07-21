@@ -3,8 +3,10 @@
 <head>
     <title>Moduluen Zerrenda</title>
     <meta charset="UTF-8">
+    <link rel="stylesheet" th:href="@{/css/navbar.css}">
 </head>
 <body>
+	<div th:replace="/kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
 
 <h1>Moduluen Zerrenda</h1>
 
@@ -29,6 +31,7 @@
             <th>ID</th>
             <th>Kodea</th>
             <th>Izena</th>
+            <th>Maila</th>
             <th>Taldea</th>
             <th>Aukerak</th>
         </tr>
@@ -38,6 +41,7 @@
             <td th:text="${moduloa.id}">1</td>
             <td th:text="${moduloa.kodea}">ADAT</td>
             <td th:text="${moduloa.izena}">Datuen Atzipena</td>
+            <td th:text="${moduloa.maila}">LEHENENGOA</td>
             <td th:text="${moduloa.taldea.izena}">2AM3</td>
             <td>
                 <a th:href="@{/kudeatzaile/moduloak/editatu/{id}(id=${moduloa.id})}">Editatu</a>

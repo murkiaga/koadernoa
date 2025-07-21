@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Egutegia</title>
+    <link rel="stylesheet" th:href="@{/css/navbar.css}">
     <style>
         .lektibo1   { background-color: #b3d9ff; }  /* urdin argia */
         .lektibo2   { background-color: #ffd699; }  /* laranja argia */
@@ -16,6 +17,7 @@
     </style>
 </head>
 <body>
+	<div th:replace="/kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
 
 <h2 th:text="${ikasturtea.izena}">Ikasturtea</h2>
 

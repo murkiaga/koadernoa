@@ -19,6 +19,8 @@ import com.koadernoa.app.egutegia.entitateak.EgunBerezi;
 import com.koadernoa.app.egutegia.entitateak.EgunMota;
 import com.koadernoa.app.egutegia.service.IkasturteaService;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 @Controller
 @RequestMapping("/kudeatzaile/egutegia")
 public class EgutegiaController {
@@ -30,7 +32,8 @@ public class EgutegiaController {
     }
     
     @GetMapping({"","/"})
-    public String erakutsiEgutegiaNagusia(@RequestParam(name = "ikasturteaId", required = false) Long ikasturteaId, Model model) {
+    public String erakutsiEgutegiaNagusia(@RequestParam(name = "ikasturteaId", required = false) Long ikasturteaId, 
+    										Model model) {
     	List<Ikasturtea> ikasturteGuztiak = ikasturteaService.getAktiboak(); // edo getAll()
         Ikasturtea ikasturtea;
 

@@ -21,6 +21,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
+
 public class Koadernoa {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
