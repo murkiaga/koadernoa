@@ -21,18 +21,6 @@
 
 <h2 th:text="${ikasturtea.izena}">Ikasturtea</h2>
 
-<form method="get" th:action="@{/kudeatzaile/egutegia}">
-    <label>Ikasturtea aukeratu:</label>
-    <select name="ikasturteaId" onchange="this.form.submit()">
-        <option th:each="i : ${ikasturteGuztiak}"
-                th:value="${i.id}"
-                th:selected="${i.id} == ${ikasturtea.id}"
-                th:text="${i.izena} + ' - ' + ${i.maila} + (i.aktiboa ? ' (aktiboa)' : '')">
-        </option>
-    </select>
-</form>
-
-
 <div th:each="entry : ${hilabeteka}">
     <h3 th:text="${entry.key}">Hilabetea</h3>
     <table>
@@ -63,7 +51,7 @@
     <p id="egunDataText"></p>
     <form id="egunForm" method="post" th:action="@{/kudeatzaile/egutegia/aldatu}">
         <input type="hidden" name="data" id="egunDataInput" />
-        <input type="hidden" name="ikasturteaId" th:value="${ikasturtea.id}" />
+        <input type="hidden" name="egutegiaId" th:value="${egutegia.id}" />
         <select name="mota">
             <option th:each="m : ${T(com.koadernoa.app.egutegia.entitateak.EgunMota).values()}"
                     th:value="${m}" 

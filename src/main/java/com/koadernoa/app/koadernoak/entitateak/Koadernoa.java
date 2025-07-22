@@ -2,6 +2,7 @@ package com.koadernoa.app.koadernoak.entitateak;
 
 import java.util.List;
 
+import com.koadernoa.app.egutegia.entitateak.Egutegia;
 import com.koadernoa.app.egutegia.entitateak.Ikasturtea;
 import com.koadernoa.app.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.modulua.entitateak.Moduloa;
@@ -30,7 +31,7 @@ public class Koadernoa {
     private Moduloa moduloa;
 
     @ManyToOne
-    private Ikasturtea ikasturtea;
+    private Egutegia egutegia;
 
     @ManyToMany
     private List<Irakaslea> irakasleak;

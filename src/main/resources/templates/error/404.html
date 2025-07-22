@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>404 - Ez da aurkitu</title>
+    <link rel="stylesheet" th:href="@{/css/navbar.css}">
+</head>
+<body>
+	<div th:replace="/kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+    <h1>404 - Ez da aurkitu</h1>
+
+    <p th:if="${errorea}" th:text="${errorea}">Eskatutako orria ez da existitzen.</p>
+    <p th:if="${errorea == null}">Ez da informaziorik aurkitu eskaera honetarako.</p>
+
+    <a th:href="@{/kudeatzaile}">Itzuli hasierara</a>
+</body>
+</html>

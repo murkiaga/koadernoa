@@ -29,6 +29,6 @@ public class EgunBerezi {
     private Astegunak ordezkatua; // ASTELEHENA-...-OSTIRALA
 
     @ManyToOne
-    private Ikasturtea ikasturtea;
+    private Egutegia egutegia;
 }
 

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Ikasturte berria</title>
+    <link rel="stylesheet" th:href="@{/css/navbar.css}">
+</head>
+<body>
+    <div th:replace="/kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+
+    <h1>Ikasturte berria sortu</h1>
+
+    <form th:action="@{/kudeatzaile/ikasturteak/gorde}" th:object="${ikasturtea}" method="post" id="ikasturteaForm">
+        <label for="izena">Izena:</label>
+        <input type="text" id="izena" name="izena" th:field="*{izena}" required>
+        <br>
+        <label for="aktiboa">Aktiboa:</label>
+        <input type="checkbox" id="aktiboa" name="aktiboa" th:field="*{aktiboa}">
+        <br>
+        <button type="submit">Gorde</button>
+    </form>
+    
+    <script>
+        function balidatuFormularioa(event) {
+            const izenaInput = document.getElementById("izena");
+            const izena = izenaInput.value.trim();
+            const regex = /^\d{4}-\d{4}$/;
+
+            if (!regex.test(izena)) {
+                alert("Izenak formatu hau eduki behar du: 2025-2026");
+                izenaInput.focus();
+                event.preventDefault();
+                return false;
+            }
+
+            const [lehenUrtea, bigarrenUrtea] = izena.split("-").map(Number);
+            if (bigarrenUrtea !== lehenUrtea + 1) {
+                alert("Bigarren urtea lehenengoaren hurrengoa izan behar da.");
+                izenaInput.focus();
+                event.preventDefault();
+                return false;
+            }
+
+            return true;
+        }
+
+        window.addEventListener("DOMContentLoaded", function () {
+            document.getElementById("ikasturteaForm").addEventListener("submit", balidatuFormularioa);
+        });
+    </script>
+</body>
+</html>

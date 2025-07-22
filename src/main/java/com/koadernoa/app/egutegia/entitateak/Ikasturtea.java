@@ -19,22 +19,12 @@ import lombok.Setter;
 @Setter
 @Entity
 public class Ikasturtea {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String izena; //"2024-2025"
+    private String izena; // Adib. "2025-2026"
     private boolean aktiboa;
-    
-    private LocalDate hasieraData;
-    private LocalDate bukaeraData;
-    
-    private LocalDate lehenEbalBukaera;   // 1. ebaluazioaren bukaera
-    private LocalDate bigarrenEbalBukaera; // 2. ebaluazioaren bukaera
-    // 3. ebaluazioa: bigarrenetik bukaerara
-    
-    @Enumerated(EnumType.STRING)
-    private Maila maila; // LEHENENGOA, BIGARRENA
 
-    @OneToMany(mappedBy = "ikasturtea", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    private List<EgunBerezi> egunBereziak;
+    @OneToMany(mappedBy = "ikasturtea", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Egutegia> egutegiak;
 }

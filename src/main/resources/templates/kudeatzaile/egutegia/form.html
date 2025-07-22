@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+    <meta charset="UTF-8">
+    <title>Egutegi berria sortu</title>
+    <link rel="stylesheet" th:href="@{/css/navbar.css}">
+</head>
+<body>
+<div th:replace="/kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+
+<h1>Egutegi berria sortu</h1>
+
+<form th:action="@{/kudeatzaile/egutegia/gorde}" method="post">
+    
+    <!-- Maila hautatzeko -->
+    <label for="maila">Maila:</label>
+    <select name="maila" id="maila" required>
+        <option th:each="m : ${T(com.koadernoa.app.egutegia.entitateak.Maila).values()}"
+                th:value="${m}" th:text="${m}">
+        </option>
+    </select>
+    <br><br>
+
+    <!-- Hasiera data -->
+    <label for="hasieraData">Hasiera data:</label>
+    <input type="date" id="hasieraData" name="hasieraData" required>
+    <br><br>
+
+    <!-- Bukaera data -->
+    <label for="bukaeraData">Bukaera data:</label>
+    <input type="date" id="bukaeraData" name="bukaeraData" required>
+    <br><br>
+
+    <!-- 1. ebaluazioaren bukaera -->
+    <label for="lehenEbalBukaera">1. Ebaluazio bukaera:</label>
+    <input type="date" id="lehenEbalBukaera" name="lehenEbalBukaera">
+    <br><br>
+
+    <!-- 2. ebaluazioaren bukaera -->
+    <label for="bigarrenEbalBukaera">2. Ebaluazio bukaera:</label>
+    <input type="date" id="bigarrenEbalBukaera" name="bigarrenEbalBukaera">
+    <br><br>
+
+    <!-- Ikasturtea ezkutuan -->
+    <input type="hidden" name="ikasturtea.id" th:value="${egutegia.ikasturtea.id}"/>
+
+    <button type="submit">Gorde</button>
+</form>
+
+</body>
+</html>

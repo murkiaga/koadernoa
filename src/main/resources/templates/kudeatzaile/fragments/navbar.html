@@ -13,19 +13,22 @@
        			   th:classappend="${currentPath == '/kudeatzaile' or currentPath == '/kudeatzaile/'} ? 'active'">Hasiera</a></li>
 
             <li><a th:href="@{/kudeatzaile/zikloak}"
-                   th:classappend="${currentPath == '/kudeatzaile/zikloak'} ? 'active'">Zikloak kudeatu</a></li>
+                   th:classappend="${currentPath == '/kudeatzaile/zikloak'} ? 'active'">Zikloak</a></li>
 
             <li><a th:href="@{/kudeatzaile/taldeak}"
-                   th:classappend="${currentPath == '/kudeatzaile/taldeak'} ? 'active'">Taldeak kudeatu</a></li>
+                   th:classappend="${currentPath == '/kudeatzaile/taldeak'} ? 'active'">Taldeak</a></li>
 
             <li><a th:href="@{/kudeatzaile/moduloak}"
-                   th:classappend="${currentPath == '/kudeatzaile/moduloak'} ? 'active'">Moduluak kudeatu</a></li>
+                   th:classappend="${currentPath == '/kudeatzaile/moduloak'} ? 'active'">Moduluak</a></li>
 
             <li><a th:href="@{/kudeatzaile/irakasleak}"
-                   th:classappend="${currentPath == '/kudeatzaile/irakasleak'} ? 'active'">Irakasleak kudeatu</a></li>
+                   th:classappend="${currentPath == '/kudeatzaile/irakasleak'} ? 'active'">Irakasleak</a></li>
+
+			<li><a th:href="@{/kudeatzaile/ikasturteak}"
+       				th:classappend="${currentPath.startsWith('/kudeatzaile/ikasturteak')} ? 'active'">Ikasturteak</a></li>
 
             <li><a th:href="@{/kudeatzaile/egutegia}"
-                   th:classappend="${currentPath == '/kudeatzaile/egutegia'} ? 'active'">Egutegia kudeatu</a></li>
+                   th:classappend="${currentPath.startsWith('/kudeatzaile/egutegia')} ? 'active'">Egutegiak</a></li>
 
             <li><a th:href="@{/kudeatzaile/konfigurazioa}"
                    th:classappend="${currentPath == '/kudeatzaile/konfigurazioa'} ? 'active'">Konfigurazioa</a></li>

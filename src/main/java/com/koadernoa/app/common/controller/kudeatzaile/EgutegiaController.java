@@ -1,11 +1,10 @@
 package com.koadernoa.app.common.controller.kudeatzaile;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.time.LocalDate;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.format.annotation.DateTimeFormat;
@@ -17,99 +16,98 @@ import com.koadernoa.app.egutegia.entitateak.Ikasturtea;
 import com.koadernoa.app.egutegia.entitateak.Astegunak;
 import com.koadernoa.app.egutegia.entitateak.EgunBerezi;
 import com.koadernoa.app.egutegia.entitateak.EgunMota;
+import com.koadernoa.app.egutegia.entitateak.Egutegia;
+import com.koadernoa.app.egutegia.service.EgutegiaService;
 import com.koadernoa.app.egutegia.service.IkasturteaService;
 
-import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 
 @Controller
+@RequiredArgsConstructor
 @RequestMapping("/kudeatzaile/egutegia")
 public class EgutegiaController {
 
 	private final IkasturteaService ikasturteaService;
+	private final EgutegiaService egutegiaService;
 
-    public EgutegiaController(IkasturteaService ikasturteaService) {
-        this.ikasturteaService = ikasturteaService;
-    }
     
-    @GetMapping({"","/"})
-    public String erakutsiEgutegiaNagusia(@RequestParam(name = "ikasturteaId", required = false) Long ikasturteaId, 
-    										Model model) {
-    	List<Ikasturtea> ikasturteGuztiak = ikasturteaService.getAktiboak(); // edo getAll()
-        Ikasturtea ikasturtea;
+	@GetMapping({"", "/"})
+	public String erakutsiIkasturteAktibokoEgutegiak(Model model) {
+	    Optional<Ikasturtea> aktiboaOpt = ikasturteaService.getAktiboa();
 
-        if (ikasturteaId != null) {
-            ikasturtea = ikasturteaService.getById(ikasturteaId);
-        } else {
-            // Lehenetsia: 1. mailakoa
-            ikasturtea = ikasturteaService.getAktiboakByMaila(1).stream().findFirst().orElse(null);
-        }
+	    if (aktiboaOpt.isEmpty()) {
+	        model.addAttribute("errorea", "Ez dago ikasturte aktiborik");
+	        return "error/404";
+	    }
 
-        if (ikasturtea == null) {
-            return "kudeatzaile/egutegia/hutsik";
-        }
+	    Ikasturtea aktiboa = aktiboaOpt.get();
+	    List<Egutegia> egutegiak = aktiboa.getEgutegiak();
 
-        Map<String, List<List<LocalDate>>> hilabeteka = ikasturteaService.prestatuHilabetekoEgutegiak(ikasturtea);
-        Map<String, String> klaseak = ikasturteaService.kalkulatuKlaseak(ikasturtea);
-        Map<String, String> deskribapenaMap = ikasturtea.getEgunBereziak().stream()
-        	    .collect(Collectors.toMap(
-        	        eb -> eb.getData().toString(),
-        	        EgunBerezi::getDeskribapena,
-        	        (a, b) -> a  //Ez litzateke bikoizturik egon beharko, baina badazpada, lehenengoa hartu
-        	    ));
-        
-        model.addAttribute("ikasturteGuztiak", ikasturteGuztiak);
-        model.addAttribute("ikasturtea", ikasturtea);
-        model.addAttribute("hilabeteka", hilabeteka);
-        model.addAttribute("klaseMap", klaseak);
-        model.addAttribute("deskribapenaMap", deskribapenaMap);
+	    model.addAttribute("ikasturtea", aktiboa);
+	    model.addAttribute("egutegiak", egutegiak);
 
-        return "kudeatzaile/egutegia/index";
-    }
+	    return "kudeatzaile/egutegia/zerrenda";
+	}
+	
+	@GetMapping("/{egutegiaId}")
+	public String erakutsiEgutegiBat(@PathVariable("egutegiaId") Long egutegiaId, Model model) {
+	    Egutegia egutegia = egutegiaService.getById(egutegiaId);
+	    if (egutegia == null) {
+	        model.addAttribute("errorea", "Ez da egutegia aurkitu.");
+	        return "error/404";
+	    }
+
+	    Map<String, List<List<LocalDate>>> hilabeteka = egutegiaService.prestatuHilabetekoEgutegiak(egutegia);
+	    Map<String, String> klaseak = egutegiaService.kalkulatuKlaseak(egutegia);
+	    Map<String, String> deskribapenaMap = egutegia.getEgunBereziak().stream()
+	        .collect(Collectors.toMap(
+	            eb -> eb.getData().toString(),
+	            EgunBerezi::getDeskribapena,
+	            (a, b) -> a
+	        ));
+
+	    model.addAttribute("egutegia", egutegia);
+	    model.addAttribute("ikasturtea", egutegia.getIkasturtea());
+	    model.addAttribute("hilabeteka", hilabeteka);
+	    model.addAttribute("klaseMap", klaseak);
+	    model.addAttribute("deskribapenaMap", deskribapenaMap);
+
+	    return "kudeatzaile/egutegia/egutegi-fitxa";
+	}
+
     
-    @PostMapping("/aldatu")
-    public String aldatuEgunMota(
-            @RequestParam("data") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data,
-            @RequestParam("mota") EgunMota mota,
-            @RequestParam(value = "ordezkatua", required = false) Astegunak ordezkatua,
-            @RequestParam("ikasturteaId") Long ikasturteaId) {
+	@PostMapping("/aldatu")
+	public String aldatuEgunMota(
+	        @RequestParam("data") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data,
+	        @RequestParam("mota") EgunMota mota,
+	        @RequestParam(value = "ordezkatua", required = false) Astegunak ordezkatua,
+	        @RequestParam("egutegiaId") Long egutegiaId) {
 
-    	Ikasturtea ikasturtea = ikasturteaService.getById(ikasturteaId);
-        if (ikasturtea != null) {
-            ikasturteaService.aldatuEgunMota(ikasturtea, data, mota, ordezkatua);
-        }
-        return "redirect:/kudeatzaile/egutegia?ikasturteaId=" + ikasturteaId;
-    }
+	    Egutegia egutegia = egutegiaService.getById(egutegiaId);
+	    egutegiaService.aldatuEgunMota(egutegia, data, mota, ordezkatua);
 
+	    return "redirect:/kudeatzaile/egutegia/" + egutegiaId;
+	}
+	
+	@GetMapping("/sortu")
+	public String sortuForm(Model model) {
+	    Ikasturtea aktiboa = ikasturteaService.getAktiboa().orElse(null);
+	    if (aktiboa == null) {
+	        model.addAttribute("errorea", "Ez dago ikasturte aktiborik");
+	        return "error/404";
+	    }
 
-    @GetMapping("/sortu")
-    public String sortuEgutegia(Model model) {
-    	Ikasturtea berria = new Ikasturtea();
-        model.addAttribute("ikasturtea", berria);
-        model.addAttribute("egunMotak", EgunMota.values());
-        return "kudeatzaile/egutegia/egutegia-sortu-form";
-    }
+	    Egutegia egutegia = new Egutegia();
+	    egutegia.setIkasturtea(aktiboa);
 
-    @PostMapping("/gorde")
-    public String gordeIkasturtea(@ModelAttribute Ikasturtea ikasturtea) {
-        //Egunak sortu (astebururik gabe)
-        List<EgunBerezi> lektiboak = new ArrayList<>();
-        LocalDate hasiera = ikasturtea.getHasieraData();
-        LocalDate bukaera = ikasturtea.getBukaeraData();
+	    model.addAttribute("egutegia", egutegia);
+	    return "kudeatzaile/egutegia/form";
+	}
 
-        for (LocalDate date = hasiera; !date.isAfter(bukaera); date = date.plusDays(1)) {
-            if (date.getDayOfWeek().getValue() < 6) { // 1-5: astelehena-ostirala
-                EgunBerezi eb = new EgunBerezi();
-                eb.setData(date);
-                eb.setDeskribapena("Automatikoki sortua");
-                eb.setMota(EgunMota.LEKTIBOA);
-                eb.setIkasturtea(ikasturtea);
-                lektiboak.add(eb);
-            }
-        }
+	@PostMapping("/gorde")
+	public String gordeEgutegia(@ModelAttribute Egutegia egutegia) {
+	    egutegiaService.sortuLektiboEgunak(egutegia); // datak eta lektiboak sortu
+	    return "redirect:/kudeatzaile/egutegia?egutegiaId=" + egutegia.getId();
+	}
 
-        ikasturtea.setEgunBereziak(lektiboak);
-        ikasturteaService.gordeIkasturtea(ikasturtea);
-
-        return "redirect:/kudeatzaile/egutegia";
-    }
 }
