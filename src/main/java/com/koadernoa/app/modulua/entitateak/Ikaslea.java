@@ -2,7 +2,6 @@ package com.koadernoa.app.modulua.entitateak;
 
 import java.util.List;
 
-import com.koadernoa.app.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.zikloak.entitateak.Taldea;
 
 import jakarta.persistence.Entity;

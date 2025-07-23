@@ -1,4 +1,4 @@
-package com.koadernoa.app.common.controller.kudeatzaile;
+package com.koadernoa.app.funtzionalitateak.kudeatzaile;
 
 import java.util.List;
 import java.time.LocalDate;

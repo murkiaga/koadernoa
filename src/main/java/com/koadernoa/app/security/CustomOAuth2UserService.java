@@ -19,6 +19,7 @@ import com.koadernoa.app.irakasleak.entitateak.Rola;
 import com.koadernoa.app.irakasleak.repository.IrakasleaRepository;
 
 import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.HttpSession;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 public class CustomOAuth2UserService implements OAuth2UserService<OidcUserRequest, OidcUser> {
 
     private final IrakasleaRepository irakasleaRepository;
+    private final HttpSession httpSession;
     
     @PostConstruct
     public void printMe() {
@@ -59,6 +61,11 @@ public class CustomOAuth2UserService implements OAuth2UserService<OidcUserReques
                 berria.setRola(Rola.IRAKASLEA);
                 return irakasleaRepository.save(berria);
             });
+
+        //Gorde irakasleaId sessionean mintegia falta bada
+        if (irakaslea.getMintegia() == null) {
+            httpSession.setAttribute("irakasleaId", irakaslea.getId());
+        }
 
         //Autoritatea sortu (Spring Security-k "ROLE_" + rola izena espero du)
         GrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + irakaslea.getRola().name());

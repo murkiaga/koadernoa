@@ -15,13 +15,14 @@ import jakarta.annotation.PostConstruct;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-
-    private CustomOAuth2UserService customOAuth2UserService;
     
+	private final CustomOAuth2UserService customOAuth2UserService;
     private final IrakasleaRepository irakasleaRepository;
     
-    public SecurityConfig(IrakasleaRepository irakasleaRepository) {
+    public SecurityConfig(IrakasleaRepository irakasleaRepository,
+    		CustomOAuth2UserService customOAuth2UserService) {
         this.irakasleaRepository = irakasleaRepository;
+        this.customOAuth2UserService = customOAuth2UserService;
     }
     
     @PostConstruct
@@ -43,9 +44,9 @@ public class SecurityConfig {
             .oauth2Login(oauth -> oauth
             	    .loginPage("/login")
             	    .userInfoEndpoint(userInfo -> userInfo
-            	        .oidcUserService(new CustomOAuth2UserService(irakasleaRepository))
+            	        .oidcUserService(customOAuth2UserService)
             	    )
-            	    .defaultSuccessUrl("/irakasle", true)
+            	    .defaultSuccessUrl("/aukeratu-mintegia", true)
             	    .failureUrl("/login?error")
             )
             .exceptionHandling(ex -> ex

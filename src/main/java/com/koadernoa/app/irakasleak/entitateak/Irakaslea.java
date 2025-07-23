@@ -3,6 +3,7 @@ package com.koadernoa.app.irakasleak.entitateak;
 import java.util.List;
 
 import com.koadernoa.app.koadernoak.entitateak.Koadernoa;
+import com.koadernoa.app.zikloak.entitateak.Familia;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -28,6 +29,9 @@ public class Irakaslea {
     private String emaila;
     private String pasahitza;
     private String kontu_mota;
+    
+    @Enumerated(EnumType.STRING)
+    private Familia mintegia;
     
     @ManyToMany(mappedBy = "irakasleak")
     private List<Koadernoa> koadernoak;

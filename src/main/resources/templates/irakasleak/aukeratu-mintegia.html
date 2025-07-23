@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Mintegia aukeratu</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1>Aukeratu zure mintegia</h1>
+    <form method="post" th:action="@{/aukeratu-mintegia}">
+        <select name="mintegia" required>
+            <option th:each="fam : ${familiaGuztiak}" th:value="${fam}" th:text="${fam}"></option>
+        </select>
+        <button type="submit">Gorde</button>
+    </form>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Irakasleak</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" th:href="@{/css/navbar.css}">
+</head>
+<body>
+	<div th:replace="/kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+    <h1>Irakasle zerrenda</h1>
+
+    <table>
+    <thead>
+        <tr>
+            <th>Izena</th>
+            <th>Emaila</th>
+            <th>Rola</th>
+            <th>Mintegia</th>
+            <th>Aldatu</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr th:each="irakasle : ${irakasleak}">
+		    <td th:text="${irakasle.izena}">Izena</td>
+		    <td th:text="${irakasle.emaila}">Emaila</td>
+		    <td th:text="${irakasle.rola}">Rola</td>
+		    <td>
+		        <form th:action="@{'/kudeatzaile/irakasleak/' + ${irakasle.id} + '/mintegia'}" method="post">
+		            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+		            <select name="mintegia">
+		                <option th:each="fam : ${familiaGuztiak}"
+		                        th:value="${fam}"
+		                        th:text="${fam}"
+		                        th:selected="${fam == irakasle.mintegia}">
+		                </option>
+		            </select>
+		    </td>
+		    <td>
+		            <button type="submit">Gorde</button>
+		        </form>
+		    </td>
+		</tr>
+    </tbody>
+</table>
+
+</body>
+</html>

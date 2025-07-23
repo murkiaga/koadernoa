@@ -1,4 +1,4 @@
-package com.koadernoa.app.common.controller.kudeatzaile;
+package com.koadernoa.app.funtzionalitateak.kudeatzaile;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
