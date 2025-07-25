@@ -44,4 +44,10 @@ public class Koadernoa {
 
     @OneToMany(mappedBy = "koadernoa", cascade = CascadeType.ALL)
     private List<NotaFitxategia> notaFitxategiak;
+    
+    public String getIzena() {
+        if (moduloa == null || egutegia == null || egutegia.getIkasturtea() == null)
+            return "(koaderno osatu gabea)";
+        return moduloa.getIzena() + " - " + egutegia.getIkasturtea().getIzena();
+    }
 }

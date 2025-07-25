@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+
+<div th:fragment="navbar (koadernoAktiboa, irakasleKoadernoak)">
+    <nav>
+        <span th:text="${koadernoAktiboa != null ? koadernoAktiboa.izena : 'Ez dago koadernorik'}">Koaderno izena</span>
+
+
+        <div>
+            <label>Koadernoak:</label>
+            <select onchange="location.href='/irakasle/koaderno/' + this.value">
+                <option th:each="k : ${irakasleKoadernoak}"
+                        th:value="${k.id}"
+                        th:text="${k.izena}"
+                        th:selected="${k.id == koadernoAktiboa.id}">
+                </option>
+            </select>
+        </div>
+
+        <ul>
+            <li><a th:href="@{/irakasle}">Hasiera</a></li>
+            <li><a th:href="@{/irakasle/egutegia}">Egutegia</a></li>
+            <li><a th:href="@{/irakasle/ikasleak}">Ikasleak</a></li>
+            <li><a th:href="@{/irakasle/denboralizazioa}">Denboralizazioa</a></li>
+            <li><a th:href="@{/irakasle/notak}">Notak</a></li>
+            <li><a th:href="@{/irakasle/estatistikak}">Estatistikak</a></li>
+        </ul>
+    </nav>
+</div>
+
+</body>
+</html>

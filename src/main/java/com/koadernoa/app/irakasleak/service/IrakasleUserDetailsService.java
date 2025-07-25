@@ -8,14 +8,13 @@ import org.springframework.stereotype.Service;
 import com.koadernoa.app.irakasleak.entitateak.IrakasleUserDetails;
 import com.koadernoa.app.irakasleak.repository.IrakasleaRepository;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class IrakasleUserDetailsService implements UserDetailsService {
 
     private final IrakasleaRepository irakasleaRepository;
-
-    public IrakasleUserDetailsService(IrakasleaRepository repo) {
-        this.irakasleaRepository = repo;
-    }
 
     @Override
     public UserDetails loadUserByUsername(String erabiltzaileIzena) throws UsernameNotFoundException {

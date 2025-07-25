@@ -11,6 +11,5 @@ public interface IrakasleaRepository extends JpaRepository<Irakaslea, Long> {
 	Optional<Irakaslea> findByIzena(String izena);
 	
 	Optional<Irakaslea> findByEmaila(String emaila);
-
 	
 }

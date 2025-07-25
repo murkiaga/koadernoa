@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import com.koadernoa.app.egutegia.entitateak.Egutegia;
 import com.koadernoa.app.egutegia.entitateak.Ikasturtea;
 import com.koadernoa.app.egutegia.entitateak.Maila;
+import com.koadernoa.app.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.modulua.entitateak.Moduloa;
@@ -33,6 +34,14 @@ public class KoadernoaService {
                 koadernoaRepository.save(koadernoa);
             }
         }
+    }
+    
+    public Koadernoa findById(Long id) {
+        return koadernoaRepository.findById(id).orElseThrow();
+    }
+
+    public List<Koadernoa> findByIrakaslea(Irakaslea irakaslea) {
+        return koadernoaRepository.findByIrakasleakContaining(irakaslea);
     }
 
 }

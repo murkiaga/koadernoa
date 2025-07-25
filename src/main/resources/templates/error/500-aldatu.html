@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="eu" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>500 - Barneko errorea</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #fff3f3;
+            color: #900;
+            text-align: center;
+            padding: 50px;
+        }
+        h1 {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        p {
+            font-size: 20px;
+        }
+        a {
+            margin-top: 20px;
+            display: inline-block;
+            color: #900;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>500 - Barneko errorea</h1>
+    <p>Barkatu, zerbitzarian ustekabeko errore bat gertatu da.</p>
+    <p>Saiatu berriro une baten buruan edo jarri harremanetan sistemako arduradunarekin.</p>
+    <a th:href="@{/}">Hasierako orrira itzuli</a>
+</body>
+</html>

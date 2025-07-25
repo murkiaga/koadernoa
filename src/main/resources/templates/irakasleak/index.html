@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+    <meta charset="UTF-8">
+    <title>Irakaslearen orrialdea</title>
+</head>
+<body>
+
+<!-- Navbar-a soilik bistaratzen da baldin eta koadernoAktiboa ez bada null -->
+<div th:if="${koadernoAktiboa != null}"
+     th:replace="irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakaslea.koadernoak})">
+</div>
+
+<h1 th:text="'Kaixo, ' + ${irakaslea.izena} + '!'">Kaixo!</h1>
+
+<div th:if="${!koadernoAktiboDago}">
+    <p>Ez duzu koadernorik aukeratuta edo sortuta. Hasi koaderno berria sortzen!</p>
+    <a th:href="@{/irakasle/koaderno/berria}" class="btn btn-primary">Koaderno berria sortu</a>
+</div>
+
+<div th:if="${koadernoAktiboDago}">
+    <p>Hemen zure koaderno aktiboarekin lan egiteko edukiak egongo lirateke.</p>
+    <!-- Eduki gehiago hemen -->
+</div>
+
+</body>
+</html>
