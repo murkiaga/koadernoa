@@ -3,19 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <title>Irakaslearen orrialdea</title>
+    <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
 </head>
 <body>
 
 <!-- Navbar-a soilik bistaratzen da baldin eta koadernoAktiboa ez bada null -->
 <div th:if="${koadernoAktiboa != null}"
-     th:replace="irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakaslea.koadernoak})">
+     th:replace="irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})">
 </div>
 
 <h1 th:text="'Kaixo, ' + ${irakaslea.izena} + '!'">Kaixo!</h1>
 
 <div th:if="${!koadernoAktiboDago}">
     <p>Ez duzu koadernorik aukeratuta edo sortuta. Hasi koaderno berria sortzen!</p>
-    <a th:href="@{/irakasle/koaderno/berria}" class="btn btn-primary">Koaderno berria sortu</a>
+    <a th:href="@{/irakasle/koadernoa/berria}" class="btn btn-primary">Koaderno berria sortu</a>
 </div>
 
 <div th:if="${koadernoAktiboDago}">

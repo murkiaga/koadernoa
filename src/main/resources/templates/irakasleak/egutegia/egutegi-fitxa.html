@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+    <meta charset="UTF-8">
+    <title>Egutegia</title>
+    <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
+    <style>
+        .lektibo1   { background-color: #b3d9ff; }
+        .lektibo2   { background-color: #ffd699; }
+        .lektibo3   { background-color: #b2f2bb; }
+        .jaieguna   { color: red; font-weight: bold; }
+        .ezlektiboa { background-color: black; color: white; }
+        .ordezkatua { background-color: yellow; }
+        .blank      { background-color: #f0f0f0; }
+        table       { border-collapse: collapse; margin-bottom: 2rem; }
+        th, td      { border: 1px solid #ccc; padding: 4px; text-align: center; width: 30px; height: 30px; }
+    </style>
+</head>
+<body>
+    <!-- Irakaslearen navbarra -->
+    <div th:if="${koadernoAktiboa != null}"
+     th:replace="irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})"></div>
+	
+    <h2 th:text="${ikasturtea.izena}">Ikasturtea</h2>
+
+    <div th:each="entry : ${hilabeteka}">
+        <h3 th:text="${entry.key}">Hilabetea</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Ig</th><th>Al</th><th>Ar</th><th>Az</th><th>Og</th><th>Or</th><th>Lr</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="astea : ${entry.value}">
+                    <td th:each="egun : ${astea}"
+                        th:class="${egun == null} ? 'blank' : ''"
+                        th:classappend="${egun != null} ? ${klaseMap[egun.toString()]} : ''"
+                        th:title="${egun != null} ? ${deskribapenaMap[egun.toString()]} : ''"
+                        th:text="${egun != null ? egun.dayOfMonth : ''}">
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

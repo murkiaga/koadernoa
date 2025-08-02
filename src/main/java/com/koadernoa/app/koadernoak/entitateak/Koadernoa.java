@@ -39,8 +39,8 @@ public class Koadernoa {
     @OneToMany(mappedBy = "koadernoa")
     private List<Jarduera> jarduerak;
 
-    @Embedded
-    private Estatistikak estatistikak;
+    @OneToMany(mappedBy = "koadernoa", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<EstatistikaEbaluazioan> estatistikak;
 
     @OneToMany(mappedBy = "koadernoa", cascade = CascadeType.ALL)
     private List<NotaFitxategia> notaFitxategiak;

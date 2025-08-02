@@ -7,6 +7,11 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 public class IrakasleUserDetails implements UserDetails {
 
     private final Irakaslea irakaslea;

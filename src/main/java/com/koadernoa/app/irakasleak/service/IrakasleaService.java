@@ -1,5 +1,7 @@
 package com.koadernoa.app.irakasleak.service;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 import com.koadernoa.app.irakasleak.entitateak.Irakaslea;
@@ -22,5 +24,15 @@ public class IrakasleaService {
         return irakasleaRepository.findByIzena(izena).orElseThrow();
     }
     
+    public Irakaslea getLogeatutaDagoenIrakaslea(Authentication auth) {
+        String emaila = null;
+        if (auth.getPrincipal() instanceof OAuth2User oAuth2User) {
+            emaila = oAuth2User.getAttribute("email");
+        } else {
+            emaila = auth.getName();
+        }
+        return findByEmaila(emaila);
+    }
+
     
 }

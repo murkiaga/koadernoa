@@ -1,33 +1,15 @@
 package com.koadernoa.app.egutegia.service;
 
 import com.koadernoa.app.egutegia.entitateak.Ikasturtea;
-import com.koadernoa.app.egutegia.entitateak.Maila;
 import com.koadernoa.app.egutegia.repository.IkasturteaRepository;
-import com.koadernoa.app.zikloak.repository.TaldeaRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.format.TextStyle;
-import java.time.temporal.TemporalAdjusters;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import com.koadernoa.app.egutegia.entitateak.Astegunak;
-import com.koadernoa.app.egutegia.entitateak.EgunBerezi;
-import com.koadernoa.app.egutegia.entitateak.EgunMota;
 
 @Service
 @RequiredArgsConstructor
@@ -37,10 +19,9 @@ public class IkasturteaService {
 	private final IkasturteaRepository ikasturteaRepository;
 	
 	public Ikasturtea getIkasturteAktiboa() {
-		List<Ikasturtea> aktiboak = ikasturteaRepository.findByAktiboaTrue();
-	    if (aktiboak.isEmpty()) return null;
-	    return aktiboak.get(0); // Lehena
-    }
+	    return ikasturteaRepository.findByAktiboaTrue()
+	        .orElseThrow(() -> new IllegalStateException("Ez dago ikasturte aktiborik"));
+	}
 
     @Transactional
     public void gordeIkasturtea(Ikasturtea ikasturtea) {
