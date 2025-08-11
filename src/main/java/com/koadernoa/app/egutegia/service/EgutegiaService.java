@@ -167,5 +167,24 @@ public class EgutegiaService {
 	public Optional<Egutegia> getAktiboEtaMaila(Maila maila) {
 	    return egutegiaRepository.findByIkasturtea_AktiboaTrueAndMaila(maila);
 	}
+	
+	public List<LocalDate> getEgunakHilabetekoBista(int urtea, int hilabetea, Egutegia egutegia) {
+	    LocalDate lehenEguna = LocalDate.of(urtea, hilabetea, 1);
+	    LocalDate azkenEguna = lehenEguna.withDayOfMonth(lehenEguna.lengthOfMonth());
+
+	    DayOfWeek lehenAsteguna = lehenEguna.getDayOfWeek();
+	    int atzera = lehenAsteguna.getValue() - 1; // astelehena = 1, igandea = 7
+
+	    LocalDate hasiera = lehenEguna.minusDays(atzera);
+	    LocalDate amaiera = azkenEguna.plusDays(6 - azkenEguna.getDayOfWeek().getValue());
+
+	    List<LocalDate> guztiak = new ArrayList<>();
+	    for (LocalDate d = hasiera; !d.isAfter(amaiera); d = d.plusDays(1)) {
+	        if (d.getDayOfWeek() != DayOfWeek.SATURDAY && d.getDayOfWeek() != DayOfWeek.SUNDAY) {
+	            guztiak.add(d);
+	        }
+	    }
+	    return guztiak;
+	}
 
 }

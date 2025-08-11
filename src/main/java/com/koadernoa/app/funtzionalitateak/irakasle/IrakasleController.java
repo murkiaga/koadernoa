@@ -41,32 +41,6 @@ public class IrakasleController {
 	private final KoadernoaService koadernoaService;
 	private final EgutegiaService egutegiaService;
 	
-	@ModelAttribute("koadernoAktiboa")
-	public Koadernoa getKoadernoAktiboa(Authentication auth) {
-	    String emaila = null;
-	    if (auth.getPrincipal() instanceof OAuth2User oAuth2User) {
-	        emaila = oAuth2User.getAttribute("email");
-	    } else {
-	        emaila = auth.getName(); // fallback
-	    }
-	    Irakaslea irakaslea = irakasleaService.findByEmaila(emaila);
-	    //Hemen, irakasleak ez baditu koadernoak, null itzuli (ez aktiborik)
-	    return irakaslea.getKoadernoak().stream().findFirst().orElse(null);
-	}
-	
-	@ModelAttribute("irakasleKoadernoAktiboak")
-	public List<Koadernoa> getKoadernoAktiboak(Authentication auth) {
-	    String emaila = null;
-	    if (auth.getPrincipal() instanceof OAuth2User oAuth2User) {
-	        emaila = oAuth2User.getAttribute("email");
-	    } else {
-	        emaila = auth.getName(); // fallback
-	    }
-	    Irakaslea irakaslea = irakasleaService.findByEmaila(emaila);
-	    return irakaslea.getKoadernoak().stream()
-	        .filter(k -> k.getEgutegia().getIkasturtea().isAktiboa())
-	        .toList();
-	}
 	
 	@GetMapping("/koaderno/{id}")
     public String hautatuKoadernoa(@PathVariable Long id, Model model) {

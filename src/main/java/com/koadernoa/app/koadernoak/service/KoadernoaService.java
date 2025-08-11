@@ -1,5 +1,6 @@
 package com.koadernoa.app.koadernoak.service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,7 +17,10 @@ import com.koadernoa.app.irakasleak.repository.IrakasleaRepository;
 import com.koadernoa.app.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.koadernoak.entitateak.EbaluazioMota;
 import com.koadernoa.app.koadernoak.entitateak.EstatistikaEbaluazioan;
+import com.koadernoa.app.koadernoak.entitateak.Jarduera;
+import com.koadernoa.app.koadernoak.entitateak.JardueraSortuDto;
 import com.koadernoa.app.koadernoak.entitateak.KoadernoaSortuDto;
+import com.koadernoa.app.koadernoak.repository.JardueraRepository;
 import com.koadernoa.app.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.modulua.entitateak.Moduloa;
 import com.koadernoa.app.modulua.repository.ModuloaRepository;
@@ -33,6 +37,7 @@ public class KoadernoaService {
     private final IrakasleaRepository irakasleaRepository;
     private final KoadernoaRepository koadernoaRepository;
     private final IkasturteaRepository ikasturteaRepository;
+    private final JardueraRepository jardueraRepository;
 	
     public void sortuKoadernoakIkasturteBerrirako(Ikasturtea ikasturtea) {
         for (Egutegia egutegia : ikasturtea.getEgutegiak()) {
@@ -144,6 +149,49 @@ public class KoadernoaService {
             })
             .toList();
     }
+    
+    @Transactional
+    public void gordeJarduera(Koadernoa koadernoa, JardueraSortuDto dto) {
+        Jarduera j = new Jarduera();
+        j.setKoadernoa(koadernoa);
+        j.setTitulua(dto.getTitulua());
+        j.setDeskribapena(dto.getDeskribapena());
+        j.setData(dto.getData());
+        j.setEginda(dto.isEginda());
+        j.setOrduak(dto.getOrduak());
+        j.setMota(dto.getMota());
+        jardueraRepository.save(j);
+    }
+    
+    public void eguneratuJarduera(Koadernoa koadernoa, Long id, JardueraSortuDto dto) {
+        Jarduera j = jardueraRepository.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Ez da jarduera aurkitu"));
+
+        // Segurtasuna: koadernoarena dela egiaztatu
+        if(!j.getKoadernoa().getId().equals(koadernoa.getId())){
+            throw new IllegalStateException("Ez duzu jarduera hau editatzeko baimenik");
+        }
+
+        // Eremuak eguneratu
+        j.setTitulua(dto.getTitulua());
+        j.setDeskribapena(dto.getDeskribapena());
+        j.setData(dto.getData());
+        j.setEginda(dto.isEginda());
+        j.setOrduak(dto.getOrduak());
+        j.setMota(dto.getMota());
+
+        jardueraRepository.save(j); // UPDATE egingo du
+    }
+    
+    public List<Jarduera> lortuJarduerakDataTartean(Koadernoa k, LocalDate from, LocalDate to){
+        return jardueraRepository.findByKoadernoaAndDataBetweenOrderByDataAscIdAsc(k, from, to);
+    }
+    
+    public Jarduera lortuJardueraKoadernoan(Koadernoa koadernoa, Long id) {
+        if (koadernoa == null) return null;
+        return jardueraRepository.findByIdAndKoadernoa(id, koadernoa);
+    }
+
 
 
 }

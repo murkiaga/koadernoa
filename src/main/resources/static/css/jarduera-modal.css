@@ -1,0 +1,16 @@
+/* MODAL */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index: 9999;}
+.modal-content{background:#fff;min-width: min(640px, 96vw);max-width:90vw;max-height: 90vh; overflow-y:auto;overflow-y: auto;display: block;border-radius:10px;padding:1rem 1.25rem;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem}
+.close{border:none;background:transparent;font-size:1.5rem;cursor:pointer;line-height:1}
+.form-row{display:flex;flex-direction:column;gap:.3rem;margin:.6rem 0}
+.form-row input[type="text"],
+.form-row input[type="number"],
+.form-row textarea,
+.form-row select{padding:.5rem .6rem;border:1px solid #d0d7de;border-radius:6px}
+.checkbox-row{flex-direction:row;align-items:center;gap:.5rem}
+.modal-actions{display:flex;justify-content:flex-end;gap:.6rem;margin-top:1rem}
+.btn{padding:.5rem .9rem;border-radius:6px;border:1px solid transparent;cursor:pointer}
+.btn.secondary{background:#f3f4f6;border-color:#d1d5db}
+.btn.primary{background:#1abc9c;color:#fff}
+/* zure egutegiko kutxekin bat egiteko, ez ukitu existitzen den .taula-egutegia estilua */

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+    <meta charset="UTF-8">
+    <title>Denboralizazioa</title>
+    <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
+    <link rel="stylesheet" th:href="@{/css/jarduera-modal.css}">
+    <style>
+
+        h2, h3 {
+            text-transform: capitalize;
+        }
+
+        .hilabetea {
+            margin-bottom: 2rem;
+        }
+
+        .taula-egutegia {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .taula-egutegia th,
+        .taula-egutegia td {
+            border: 1px solid #ccc;
+            vertical-align: top;
+            width: 20%; /* 5 zutabe: AL-OR */
+            height: 90px;
+            position: relative;
+        }
+
+        .taula-egutegia th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+            text-align: center;
+            padding: 3px;      /* Lehen 8px edo gehiagokoa izan daiteke */
+		    height: 24px;      /* Altueraren kontrol zuzena */
+		    font-size: 0.9rem; /* Letra tamaina txikiagoa nahi baduzu */
+        }
+
+        .egun-zenbakia {
+            position: absolute;
+            top: 4px;
+            right: 6px;
+            font-size: 0.75rem;
+            color: #333;
+        }
+
+        .blank {
+            background-color: #f0f0f0;
+        }
+
+        .lektibo1 { background-color: #b3d9ff; }
+        .lektibo2 { background-color: #ffd699; }
+        .lektibo3 { background-color: #b2f2bb; }
+        .jaieguna { background-color: #ffe6e6; color: red; font-weight: bold; }
+        .ezlektiboa { background-color: black; color: white; }
+        .ordezkatua { background-color: yellow; }
+        .egun-zenbakia.testu-zuria {
+		    color: white !important;
+		}
+		
+		.jarduerak{list-style:none;margin:22px 4px 4px;padding:0;display:flex;flex-direction:column;gap:4px}
+		.jarduera-item{font-size:.8rem;line-height:1.2;border-radius:6px;padding:2px 6px;border:1px solid #e5e7eb;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+		.jarduera-item:hover{background:#f3f4f6}
+
+
+
+    </style>
+    
+   	<script th:src="@{/js/jarduera-modal.js}"></script>
+   
+</head>
+<body>
+
+<!-- Navbar -->
+<div th:if="${koadernoAktiboa != null}"
+     th:replace="irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})"></div>
+
+<!-- Hilabetea + botoiak -->
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <a th:href="@{/irakasle/denboralizazioa(hilabetea=${hilabetea == 1 ? 12 : hilabetea - 1}, urtea=${hilabetea == 1 ? urtea - 1 : urtea})}">
+        ⬅ Aurrekoa
+    </a>
+
+    <h2 th:text="${hilabeteUrtea}" style="margin: 0; text-align: center; flex: 1;">Hilabetea</h2>
+
+    <a th:href="@{/irakasle/denboralizazioa(hilabetea=${hilabetea == 12 ? 1 : hilabetea + 1}, urtea=${hilabetea == 12 ? urtea + 1 : urtea})}">
+        Hurrengoa ➡
+    </a>
+</div>
+
+<!-- Egutegi taula -->
+<table class="taula-egutegia">
+    <thead>
+        <tr>
+            <th>Astelehena</th>
+            <th>Asteartea</th>
+            <th>Asteazkena</th>
+            <th>Osteguna</th>
+            <th>Ostirala</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr th:each="astea : ${asteak}">
+		    <td th:each="egunaBista : ${astea}"
+			    th:class="${egunaBista.data == null} ? 'blank' : ''"
+			    th:classappend="${egunaBista.data != null} ? ${klaseMap[egunaBista.data.toString()]} : ''"
+			    th:title="${egunaBista.data != null} ? ${deskribapenaMap[egunaBista.data.toString()]} : ''"
+			    th:attr="data-date=${egunaBista.data != null ? egunaBista.data : null}"
+			    th:onclick="${egunaBista.data != null} ? 'irekiJardueraModala(this)' : null"
+			    style="cursor: pointer;">
+			    <div class="egun-zenbakia"
+			         th:text="${egunaBista.data != null ? egunaBista.data.dayOfMonth : ''}"
+			         th:classappend="${klaseMap[egunaBista.data.toString()] == 'ezlektiboa'} ? ' testu-zuria' : ''"
+			         th:style="${egunaBista.data != null && !egunaBista.hilabeteAktibokoa} ? 'color: #ccc;' : 'color: black;'">
+			    </div>
+			    <!-- Egun honetako jarduerak -->
+				  <ul class="jarduerak" th:if="${egunaBista.data != null and jardueraMap[egunaBista.data] != null}">
+				    <li class="jarduera-item"
+					    th:each="j : ${jardueraMap[egunaBista.data]}"
+					    th:text="${j.titulua}"
+					    th:attr="data-id=${j.id}"
+					    onclick="editatuJarduera(event, this)">
+					 </li>
+				  </ul>
+			</td>
+		</tr>
+    </tbody>
+</table>
+
+<!-- MODALA -->
+<div id="jardueraModal" class="modal" style="display:none">
+  <div class="modal-content" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3 id="jardueraModalTitle">Jarduera berria</h3>
+      <button type="button" class="close" onclick="itxiJardueraModala()">×</button>
+    </div>
+
+    <form th:action="@{/irakasle/denboralizazioa/jarduera}" method="post" id="jardueraForm">
+      <input type="hidden" name="id" id="jardueraId">
+      <input type="hidden" name="urtea" th:value="${urtea}">
+      <input type="hidden" name="hilabetea" th:value="${hilabetea}">
+      <input type="hidden" name="data" id="jardueraData">
+      <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+      <div class="form-row">
+        <label>Titulua</label>
+        <input name="titulua" id="jardueraTitulua" type="text" required>
+      </div>
+
+      <div class="form-row">
+        <label>Deskribapena</label>
+        <textarea name="deskribapena" id="jardueraDeskribapena" rows="3"></textarea>
+      </div>
+
+      <div class="form-row">
+        <label>Orduak</label>
+        <input name="orduak" id="jardueraOrduak" type="number" min="0" step="0.25" value="1">
+      </div>
+
+      <div class="form-row">
+        <label>Mota</label>
+        <select name="mota" id="jardueraMota">
+          <option value="planifikatua">Planifikatua</option>
+          <option value="eginda">Eginda</option>
+          <option value="ebaluazioa">Ebaluazioa</option>
+        </select>
+      </div>
+
+      <div class="form-row checkbox-row">
+        <label><input name="eginda" id="jardueraEginda" type="checkbox"> Eginda</label>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn secondary" onclick="itxiJardueraModala()">Ezeztatu</button>
+        <button type="submit" class="btn primary">Gorde</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+
+
+</body>
+
+
+
+</html>
