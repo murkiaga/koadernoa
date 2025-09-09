@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 
 import com.koadernoa.app.egutegia.entitateak.EgunBerezi;
@@ -65,12 +66,12 @@ public class IrakasleKoadernoaController {
 	
 	@GetMapping("/denboralizazioa")
 	public String erakutsiHilabetekoDenboralizazioa(
-	        @ModelAttribute("koadernoAktiboa") Koadernoa koadernoa,
-	        @RequestParam(name = "urtea", required = false) Integer urtea,
-	        @RequestParam(name = "hilabetea", required = false) Integer hilabetea,
-	        Model model) {
+	    @SessionAttribute(value = "koadernoAktiboa", required = false) Koadernoa koadernoa,
+	    @RequestParam(name="urtea", required=false) Integer urtea,
+	    @RequestParam(name="hilabetea", required=false) Integer hilabetea,
+	    Model model) {
 
-	    if (koadernoa == null) {
+	    if (koadernoa == null || koadernoa.getId() == null) {
 	        model.addAttribute("errorea", "Ez dago koaderno aktiborik aukeratuta.");
 	        return "error/404";
 	    }
@@ -150,34 +151,57 @@ public class IrakasleKoadernoaController {
 	
 	@PostMapping("/denboralizazioa/jarduera")
 	public String gordeEdoEguneratu(
-	    @ModelAttribute("koadernoAktiboa") Koadernoa koadernoa,
+	    @SessionAttribute(value = "koadernoAktiboa", required = false) Koadernoa koadernoa,
 	    @ModelAttribute JardueraSortuDto dto,
 	    @RequestParam("urtea") int urtea,
 	    @RequestParam("hilabetea") int hilabetea,
-	    @RequestParam(value = "id", required = false) Long id){
+	    @RequestParam(value = "id", required = false) Long id) {
 
-	    if (koadernoa == null) throw new IllegalStateException("Koaderno aktiborik ez");
-
-	    if(id == null){
-	        koadernoaService.gordeJarduera(koadernoa, dto);
-	    }else{
-	        koadernoaService.eguneratuJarduera(koadernoa, id, dto);
+	    if (koadernoa == null || koadernoa.getId() == null) {
+	        throw new IllegalStateException("Koaderno aktiborik ez");
 	    }
+
+	    if (id == null) koadernoaService.gordeJarduera(koadernoa, dto);
+	    else koadernoaService.eguneratuJarduera(koadernoa, id, dto);
 
 	    return "redirect:/irakasle/denboralizazioa?urtea=" + urtea + "&hilabetea=" + hilabetea;
 	}
 	
+	
 	@GetMapping(path="/denboralizazioa/jarduera/{id}",
-	            produces=org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
+	        produces=org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
 	public org.springframework.http.ResponseEntity<?> lortuJarduera(
-	    @PathVariable("id") Long id,                                   // ← izena zehaztuta
-	    @ModelAttribute("koadernoAktiboa") Koadernoa koadernoa) {
-	
+	    @PathVariable("id") Long id,
+	    @SessionAttribute(value = "koadernoAktiboa", required = false) Koadernoa koadernoa) {
+
+	    if (koadernoa == null || koadernoa.getId() == null) {
+	        return org.springframework.http.ResponseEntity.status(409)
+	            .body(java.util.Map.of("error", "Koaderno aktiboa falta da"));
+	    }
+
 	    Jarduera j = koadernoaService.lortuJardueraKoadernoan(koadernoa, id);
-	    if (j == null) return org.springframework.http.ResponseEntity.status(404)
-	                     .body(java.util.Map.of("error","Not found"));
+	    if (j == null) {
+	        return org.springframework.http.ResponseEntity.status(404)
+	            .body(java.util.Map.of("error","Not found"));
+	    }
 	    return org.springframework.http.ResponseEntity.ok(JardueraEditDto.from(j));
+	}
+	
+	
+	@PostMapping("/denboralizazioa/jarduera/{id}/ezabatu")
+	public String ezabatuJarduera(
+	        @SessionAttribute(value = "koadernoAktiboa", required = false) Koadernoa koadernoa,
+	        @PathVariable("id") Long id,
+	        @RequestParam("urtea") int urtea,
+	        @RequestParam("hilabetea") int hilabetea) {
+
+	    if (koadernoa == null || koadernoa.getId() == null) {
+	        throw new IllegalStateException("Koaderno aktiborik ez");
+	    }
+
+	    koadernoaService.ezabatuJarduera(koadernoa, id); // id koaderno horren barrukoa dela balidatu!
+	    return "redirect:/irakasle/denboralizazioa?urtea=" + urtea + "&hilabetea=" + hilabetea;
 	}
 
 }

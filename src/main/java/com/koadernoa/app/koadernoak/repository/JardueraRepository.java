@@ -10,12 +10,11 @@ import com.koadernoa.app.koadernoak.entitateak.Koadernoa;
 
 public interface JardueraRepository extends JpaRepository<Jarduera, Long>{
 	
-	List<Jarduera> findByKoadernoaAndDataBetweenOrderByDataAscIdAsc(
-            Koadernoa koadernoa,
-            LocalDate start,
-            LocalDate end
-    );
+	List<Jarduera> findByKoadernoaIdAndDataBetweenOrderByDataAscIdAsc(
+	        Long koadernoaId, LocalDate start, LocalDate end);
 
     // Editatzeko erabiliko duguna
-    Jarduera findByIdAndKoadernoa(Long id, Koadernoa koadernoa);
+	Jarduera findByIdAndKoadernoaId(Long id, Long koadernoaId);
+	
+	long deleteByIdAndKoadernoaId(Long id, Long koadernoId);
 }

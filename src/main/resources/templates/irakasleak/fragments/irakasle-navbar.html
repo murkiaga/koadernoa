@@ -8,13 +8,21 @@
 
             <div class="koaderno-hautapena">
                 <label for="koadernoSelect">Koadernoak:</label>
-                <select id="koadernoSelect" onchange="location.href='/irakasle/koadernoa/' + this.value">
-                    <option th:each="k : ${irakasleKoadernoak}"
-                            th:value="${k.id}"
-                            th:text="${k.izena}"
-                            th:selected="${k.id == koadernoAktiboa.id}">
-                    </option>
-                </select>
+                <select id="koadernoSelect" onchange="aldatuKoadernoa(this.value)">
+				  <option th:each="k : ${irakasleKoadernoak}"
+				          th:value="${k.id}"
+				          th:text="${k.izena}"
+				          th:selected="${k.id == koadernoAktiboa.id}">
+				  </option>
+				</select>
+				<script>
+				  function aldatuKoadernoa(id) {
+				    // Uneko bidea + query-a gorde
+				    const next = encodeURIComponent(location.pathname + location.search);
+				    // KONTUZ: '/irakasle/koaderno/{id}' da zuzen (ez '/koadernoa/')
+				    location.href = '/irakasle/koaderno/' + id + '?next=' + next;
+				  }
+				</script>
             </div>
 
             <ul class="nav-links">

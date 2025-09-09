@@ -16,13 +16,14 @@
 
 <div th:if="${!koadernoAktiboDago}">
     <p>Ez duzu koadernorik aukeratuta edo sortuta. Hasi koaderno berria sortzen!</p>
-    <a th:href="@{/irakasle/koadernoa/berria}" class="btn btn-primary">Koaderno berria sortu</a>
 </div>
 
 <div th:if="${koadernoAktiboDago}">
     <p>Hemen zure koaderno aktiboarekin lan egiteko edukiak egongo lirateke.</p>
     <!-- Eduki gehiago hemen -->
 </div>
+
+<a th:href="@{/irakasle/koadernoa/berria}" class="btn btn-primary">Koaderno berria sortu</a>
 
 </body>
 </html>

@@ -1,13 +1,24 @@
+// Helper txikia: elementuak jasotzeko eta akatsa argiago emateko
+function byId(id) {
+  const el = document.getElementById(id);
+  if (!el) throw new Error(`Element not found: #${id}`);
+  return el;
+}
+
 // Sortzeko (egunean klik)
 window.irekiJardueraModala = function(td){
   const data = td.getAttribute('data-date');
   if(!data) return;
-  // reset -> sortu modua
-  document.getElementById('jardueraForm').reset();
-  document.getElementById('jardueraId').value = '';
-  document.getElementById('jardueraData').value = data;
-  document.getElementById('jardueraModalTitle').textContent = 'Jarduera berria';
-  document.getElementById('jardueraModal').style.display = 'flex';
+
+  // Jarduera berria: ezabatu botoia ezkutatu eta form nagusia prestatu
+  ezkutatuEzabatuBotoia();
+
+  byId('jardueraForm').reset();
+  byId('jardueraId').value = '';
+  byId('jardueraData').value = data;
+  byId('jardueraMota').value = 'planifikatua'; // default
+  byId('jardueraModalTitle').textContent = 'Jarduera berria';
+  byId('jardueraModal').style.display = 'flex';
 };
 
 // Editatzeko (tituluan klik)
@@ -17,27 +28,26 @@ window.editatuJarduera = function(evt, el){
 
   fetch(`/irakasle/denboralizazioa/jarduera/${id}`, {credentials: 'same-origin'})
     .then(r => {
-      if (!r.ok) {
-        throw new Error(`Eskaria huts: ${r.status}`);
-      }
+      if (!r.ok) throw new Error(`Eskaria huts: ${r.status}`);
       const ct = r.headers.get('content-type') || '';
-      if (!ct.includes('application/json')) {
-        throw new Error('Ez da JSON jaso (agian loginera birbideratu da?)');
-      }
+      if (!ct.includes('application/json')) throw new Error('Ez da JSON jaso (loginera birbideratu ote?)');
       return r.json();
     })
     .then(j => {
-      document.getElementById('jardueraForm').reset();
-      document.getElementById('jardueraId').value = j.id;
-      document.getElementById('jardueraData').value = j.data; // "yyyy-MM-dd"
-      document.getElementById('jardueraTitulua').value = j.titulua || '';
-      document.getElementById('jardueraDeskribapena').value = j.deskribapena || '';
-      document.getElementById('jardueraOrduak').value = (j.orduak ?? 1);
-      document.getElementById('jardueraMota').value = j.mota || 'planifikatua';
-      document.getElementById('jardueraEginda').checked = !!j.eginda;
+      // Form nagusia bete (EGINDA EZ DAGO JADA; MOTA BAKARRIK)
+      byId('jardueraForm').reset();
+      byId('jardueraId').value = j.id;
+      byId('jardueraData').value = j.data; // "yyyy-MM-dd"
+      byId('jardueraTitulua').value = j.titulua || '';
+      byId('jardueraDeskribapena').value = j.deskribapena || '';
+      byId('jardueraOrduak').value = (j.orduak ?? 1);
+      byId('jardueraMota').value = j.mota || 'planifikatua';
 
-      document.getElementById('jardueraModalTitle').textContent = 'Jarduera editatu';
-      document.getElementById('jardueraModal').style.display = 'flex';
+      byId('jardueraModalTitle').textContent = 'Jarduera editatu';
+      byId('jardueraModal').style.display = 'flex';
+
+      // Editatzeko: ezabatu botoia prestatu (action eta ikusgai)
+      erakutsiEzabatuBotoia(j.id);
     })
     .catch(err => {
       console.error('Editatzeko datuak jasotzean errorea:', err);
@@ -47,6 +57,26 @@ window.editatuJarduera = function(evt, el){
 
 // Itxi
 window.itxiJardueraModala = function(){
-  document.getElementById('jardueraModal').style.display = 'none';
-  document.getElementById('jardueraForm').reset();
+  byId('jardueraModal').style.display = 'none';
+  byId('jardueraForm').reset();
+  ezkutatuEzabatuBotoia();
 };
+
+// ---- Ezabatu botoiaren kudeaketa ----
+function erakutsiEzabatuBotoia(jardueraId) {
+  const ezabatuBtn  = byId('jardueraEzabatuBtn');
+  const ezabatuForm = byId('jardueraEzabatuForm');
+  ezabatuForm.action = '/irakasle/denboralizazioa/jarduera/' + jardueraId + '/ezabatu';
+  ezabatuBtn.style.display = 'inline-block';
+}
+
+function ezkutatuEzabatuBotoia() {
+  const ezabatuBtn = document.getElementById('jardueraEzabatuBtn');
+  if (ezabatuBtn) ezabatuBtn.style.display = 'none';
+}
+
+function berretsiEtaEzabatu() {
+  if (confirm('Ziur jarduera ezabatu nahi duzula?')) {
+    byId('jardueraEzabatuForm').submit();
+  }
+}

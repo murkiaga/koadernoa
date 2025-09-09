@@ -23,7 +23,6 @@ public class JardueraEditDto {
         d.setData(j.getData());
         d.setTitulua(j.getTitulua());
         d.setDeskribapena(j.getDeskribapena());
-        d.setEginda(j.isEginda());
         d.setOrduak(j.getOrduak());
         d.setMota(j.getMota());
         return d;

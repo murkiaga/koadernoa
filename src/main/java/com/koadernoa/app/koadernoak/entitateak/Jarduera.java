@@ -23,7 +23,6 @@ public class Jarduera {
     private String titulua;
     private String deskribapena;
     private LocalDate data;
-    private boolean eginda;
     private float orduak;
     
     private String mota; //"planifikatua", "eginda", "ebaluazioa", etab.

@@ -32,18 +32,17 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class KoadernoaService {
 
-	private final ModuloaRepository moduloaRepository;
+    private final ModuloaRepository moduloaRepository;
     private final EgutegiaRepository egutegiaRepository;
     private final IrakasleaRepository irakasleaRepository;
     private final KoadernoaRepository koadernoaRepository;
     private final IkasturteaRepository ikasturteaRepository;
     private final JardueraRepository jardueraRepository;
-	
+
     public void sortuKoadernoakIkasturteBerrirako(Ikasturtea ikasturtea) {
         for (Egutegia egutegia : ikasturtea.getEgutegiak()) {
             Maila maila = egutegia.getMaila();
             List<Moduloa> moduluak = moduloaRepository.findByMaila(maila);
-
             for (Moduloa moduloa : moduluak) {
                 Koadernoa koadernoa = new Koadernoa();
                 koadernoa.setModuloa(moduloa);
@@ -52,7 +51,7 @@ public class KoadernoaService {
             }
         }
     }
-    
+
     public Koadernoa findById(Long id) {
         return koadernoaRepository.findById(id).orElseThrow();
     }
@@ -60,7 +59,7 @@ public class KoadernoaService {
     public List<Koadernoa> findByIrakaslea(Irakaslea irakaslea) {
         return koadernoaRepository.findByIrakasleakContaining(irakaslea);
     }
-    
+
     public List<Moduloa> lortuErabilgarriDaudenModuluak(Irakaslea irakaslea) {
         return moduloaRepository.findByTaldea_Zikloa_Familia(irakaslea.getMintegia());
     }
@@ -71,57 +70,50 @@ public class KoadernoaService {
 
     public List<Irakaslea> lortuFamiliaBerekoIrakasleak(Irakaslea irakaslea) {
         return irakasleaRepository.findByMintegia(irakaslea.getMintegia())
-            .stream()
-            .filter(i -> !i.getId().equals(irakaslea.getId()))
+            .stream().filter(i -> !i.getId().equals(irakaslea.getId()))
             .toList();
     }
 
     @Transactional
     public Koadernoa sortuKoadernoa(KoadernoaSortuDto dto, Irakaslea irakaslea) {
         Moduloa moduloa = moduloaRepository.findById(dto.getModuloaId())
-                .orElseThrow(() -> new IllegalArgumentException("Ez da modulu hori aurkitu."));
+            .orElseThrow(() -> new IllegalArgumentException("Ez da modulu hori aurkitu."));
 
         Egutegia egutegia = egutegiaRepository
-                .findByIkasturtea_AktiboaTrueAndMaila(moduloa.getMaila())
-                .orElseThrow(() -> new IllegalStateException("Ez da egutegirik aurkitu aktibo dagoen ikasturterako eta maila horretarako."));
+            .findByIkasturtea_AktiboaTrueAndMaila(moduloa.getMaila())
+            .orElseThrow(() -> new IllegalStateException("Ez da egutegirik aurkitu aktibo dagoen ikasturterako eta maila horretarako."));
 
         if (!moduloa.getTaldea().getZikloa().getFamilia().equals(irakaslea.getMintegia())) {
             throw new AccessDeniedException("Beste familiako modulua aukeratu da.");
         }
-
         if (!moduloa.getMaila().equals(egutegia.getMaila())) {
             throw new IllegalArgumentException("Moduluaren eta egutegiaren maila ez datoz bat.");
         }
 
         List<Irakaslea> irakasleak = new ArrayList<>();
-
-        // Beti gehitu irakasle sortzailea
         irakasleak.add(irakaslea);
 
-        // Beste irakasle batzuk baldin badaude, gehitu
         if (dto.getIrakasleIdZerrenda() != null && !dto.getIrakasleIdZerrenda().isEmpty()) {
             List<Irakaslea> besteIrakasleak = irakasleaRepository.findAllById(dto.getIrakasleIdZerrenda());
-            // Bakarra ez bada, sortzailea berriro ez gehitzeko
             for (Irakaslea i : besteIrakasleak) {
-                if (!i.getId().equals(irakaslea.getId())) {
-                    irakasleak.add(i);
-                }
+                if (!i.getId().equals(irakaslea.getId())) irakasleak.add(i);
             }
         }
+
         Koadernoa k = new Koadernoa();
         k.setModuloa(moduloa);
         k.setEgutegia(egutegia);
         k.setIrakasleak(irakasleak);
         k.setJarduerak(List.of());
         k.setNotaFitxategiak(List.of());
-        k.setEstatistikak(new ArrayList<>()); //hasieran hutsik
-        
+        k.setEstatistikak(new ArrayList<>());
+
         List<EstatistikaEbaluazioan> estatistikak = sortuEstatistikak(k);
         k.setEstatistikak(estatistikak);
 
         return koadernoaRepository.save(k);
     }
-    
+
     @Transactional
     private List<EstatistikaEbaluazioan> sortuEstatistikak(Koadernoa koadernoa) {
         Maila maila = koadernoa.getModuloa().getMaila();
@@ -140,58 +132,80 @@ public class KoadernoaService {
             );
         };
 
-        return ebaluazioMotak.stream()
-            .map(mota -> {
-                EstatistikaEbaluazioan e = new EstatistikaEbaluazioan();
-                e.setEbaluazioMota(mota);
-                e.setKoadernoa(koadernoa);
-                return e;
-            })
-            .toList();
+        return ebaluazioMotak.stream().map(mota -> {
+            EstatistikaEbaluazioan e = new EstatistikaEbaluazioan();
+            e.setEbaluazioMota(mota);
+            e.setKoadernoa(koadernoa);
+            return e;
+        }).toList();
+    }
+
+    /** INSERT segurua: Koadernoa referentziaz (managed) lotu */
+    @Transactional
+    public void gordeJarduera(Koadernoa koadernoa, JardueraSortuDto dto) {
+        if (koadernoa == null || koadernoa.getId() == null) {
+            throw new IllegalStateException("Koaderno aktiborik gabe ezin da jarduera gorde");
+        }
+        Jarduera j = new Jarduera();
+
+        // REFERENTZIAZ: ez pasatu objektua transiente/detached egoeran
+        Koadernoa ref = koadernoaRepository.getReferenceById(koadernoa.getId());
+        j.setKoadernoa(ref);
+
+        j.setTitulua(dto.getTitulua());
+        j.setDeskribapena(dto.getDeskribapena());
+        j.setData(dto.getData());
+        j.setOrduak(dto.getOrduak());
+        j.setMota(dto.getMota());
+
+        jardueraRepository.save(j);
+    }
+
+    /** UPDATE segurua: koadernoaren jabetza egiaztatu eta gorde */
+    @Transactional
+    public void eguneratuJarduera(Koadernoa koadernoa, Long id, JardueraSortuDto dto) {
+        if (koadernoa == null || koadernoa.getId() == null) {
+            throw new IllegalStateException("Koaderno aktiborik gabe ezin da jarduera eguneratu");
+        }
+        Jarduera j = jardueraRepository.findByIdAndKoadernoaId(id, koadernoa.getId());
+        if (j == null) {
+            throw new IllegalStateException("Ez da jarduera aurkitu edo ez dagokizu");
+        }
+
+        j.setTitulua(dto.getTitulua());
+        j.setDeskribapena(dto.getDeskribapena());
+        j.setData(dto.getData());
+        j.setOrduak(dto.getOrduak());
+        j.setMota(dto.getMota());
+
+        jardueraRepository.save(j);
+    }
+
+    /** QUERY-ak ID bidez, Detached/Transient saihesteko */
+    public List<Jarduera> lortuJarduerakDataTartean(Koadernoa koadernoa, LocalDate hasiera, LocalDate amaiera) {
+        if (koadernoa == null || koadernoa.getId() == null) return List.of();
+        return jardueraRepository.findByKoadernoaIdAndDataBetweenOrderByDataAscIdAsc(
+            koadernoa.getId(), hasiera, amaiera
+        );
+    }
+
+    public Jarduera lortuJardueraKoadernoan(Koadernoa koadernoa, Long id) {
+        if (koadernoa == null || koadernoa.getId() == null) return null;
+        return jardueraRepository.findByIdAndKoadernoaId(id, koadernoa.getId());
     }
     
     @Transactional
-    public void gordeJarduera(Koadernoa koadernoa, JardueraSortuDto dto) {
-        Jarduera j = new Jarduera();
-        j.setKoadernoa(koadernoa);
-        j.setTitulua(dto.getTitulua());
-        j.setDeskribapena(dto.getDeskribapena());
-        j.setData(dto.getData());
-        j.setEginda(dto.isEginda());
-        j.setOrduak(dto.getOrduak());
-        j.setMota(dto.getMota());
-        jardueraRepository.save(j);
-    }
-    
-    public void eguneratuJarduera(Koadernoa koadernoa, Long id, JardueraSortuDto dto) {
-        Jarduera j = jardueraRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Ez da jarduera aurkitu"));
-
-        // Segurtasuna: koadernoarena dela egiaztatu
-        if(!j.getKoadernoa().getId().equals(koadernoa.getId())){
-            throw new IllegalStateException("Ez duzu jarduera hau editatzeko baimenik");
+    public void ezabatuJarduera(Koadernoa koadernoa, Long jardueraId) {
+        if (koadernoa == null || koadernoa.getId() == null) {
+            throw new IllegalArgumentException("Koaderno aktiborik ez.");
         }
 
-        // Eremuak eguneratu
-        j.setTitulua(dto.getTitulua());
-        j.setDeskribapena(dto.getDeskribapena());
-        j.setData(dto.getData());
-        j.setEginda(dto.isEginda());
-        j.setOrduak(dto.getOrduak());
-        j.setMota(dto.getMota());
+        // Zure sinadurarekin: entity edo null
+        Jarduera jarduera = jardueraRepository.findByIdAndKoadernoaId(jardueraId, koadernoa.getId());
+        if (jarduera == null) {
+            throw new IllegalArgumentException("Jarduera ez da existitzen edo ez dagokio koaderno honi.");
+        }
 
-        jardueraRepository.save(j); // UPDATE egingo du
+        jardueraRepository.delete(jarduera);
     }
-    
-    public List<Jarduera> lortuJarduerakDataTartean(Koadernoa k, LocalDate from, LocalDate to){
-        return jardueraRepository.findByKoadernoaAndDataBetweenOrderByDataAscIdAsc(k, from, to);
-    }
-    
-    public Jarduera lortuJardueraKoadernoan(Koadernoa koadernoa, Long id) {
-        if (koadernoa == null) return null;
-        return jardueraRepository.findByIdAndKoadernoa(id, koadernoa);
-    }
-
-
-
 }

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttributes;
 
 import com.koadernoa.app.egutegia.entitateak.EgunBerezi;
@@ -43,11 +44,25 @@ public class IrakasleController {
 	
 	
 	@GetMapping("/koaderno/{id}")
-    public String hautatuKoadernoa(@PathVariable Long id, Model model) {
-        Koadernoa koadernoa = koadernoaService.findById(id);
-        model.addAttribute("koadernoAktiboa", koadernoa); // eguneratu sesioa
-        return "redirect:/irakasle";
-    }
+	public String hautatuKoadernoa(
+	        @PathVariable Long id,
+	        @RequestParam(value = "next", required = false) String next,
+	        Model model) {
+	    Koadernoa koadernoa = koadernoaService.findById(id);
+	    if (koadernoa == null) {
+	        return "redirect:/irakasle";
+	    }
+
+	    // Sesioan eguneratu
+	    model.addAttribute("koadernoAktiboa", koadernoa);
+
+	    // Open-redirect saihestu: barneko bideak bakarrik
+	    if (next != null && next.startsWith("/irakasle") && !next.startsWith("/irakasle/koaderno/")) {
+	        return "redirect:" + next;
+	    }
+	    return "redirect:/irakasle";
+	}
+
 	
     @GetMapping({"/old"})
     public String dashboard(@AuthenticationPrincipal OAuth2User oauthUser, Model model) {

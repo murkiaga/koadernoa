@@ -64,6 +64,33 @@
 		.jarduera-item{font-size:.8rem;line-height:1.2;border-radius:6px;padding:2px 6px;border:1px solid #e5e7eb;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 		.jarduera-item:hover{background:#f3f4f6}
 
+		.btn.danger {
+		    background: #dc2626; /* gorria */
+		    color: white;
+		    border: none;
+		    padding: 6px 10px;
+		    border-radius: 6px;
+		    cursor: pointer;
+		  }
+		 .btn.danger:hover { filter: brightness(0.95); }
+		 
+		 .modal-actions {
+		  display: flex;
+		  align-items: center;
+		  justify-content: flex-end; /* eskubi aldeko botoiak */
+		  gap: 0.5rem;
+		}
+		
+		.modal-actions .btn.danger {
+		  margin-right: auto; /* bultzatu ezkerrera */
+		  background: #dc2626;
+		  color: white;
+		  border: none;
+		  padding: 6px 10px;
+		  border-radius: 6px;
+		  cursor: pointer;
+		}
+		.modal-actions .btn.danger:hover { filter: brightness(0.95); }
 
 
     </style>
@@ -119,10 +146,10 @@
 				  <ul class="jarduerak" th:if="${egunaBista.data != null and jardueraMap[egunaBista.data] != null}">
 				    <li class="jarduera-item"
 					    th:each="j : ${jardueraMap[egunaBista.data]}"
-					    th:text="${j.titulua}"
+					    th:text="${ j.titulua + ' - ' + ( #strings.isEmpty(j.mota) ? 'planifikatua' : j.mota ) }"
 					    th:attr="data-id=${j.id}"
 					    onclick="editatuJarduera(event, this)">
-					 </li>
+					</li>
 				  </ul>
 			</td>
 		</tr>
@@ -137,6 +164,7 @@
       <button type="button" class="close" onclick="itxiJardueraModala()">×</button>
     </div>
 
+    <!-- FORM nagusia (sortu/eguneratu) -->
     <form th:action="@{/irakasle/denboralizazioa/jarduera}" method="post" id="jardueraForm">
       <input type="hidden" name="id" id="jardueraId">
       <input type="hidden" name="urtea" th:value="${urtea}">
@@ -168,14 +196,27 @@
         </select>
       </div>
 
-      <div class="form-row checkbox-row">
-        <label><input name="eginda" id="jardueraEginda" type="checkbox"> Eginda</label>
-      </div>
+      <!-- Botoiak: Ezabatu ezkerrean, Ezeztatu/Gorde eskuinean -->
+      <div class="modal-actions" style="display:flex; align-items:center; gap:.5rem; justify-content:flex-end;">
+        <button type="button"
+                id="jardueraEzabatuBtn"
+                class="btn danger"
+                style="display:none; margin-right:auto;"
+                onclick="berretsiEtaEzabatu()">Ezabatu</button>
 
-      <div class="modal-actions">
         <button type="button" class="btn secondary" onclick="itxiJardueraModala()">Ezeztatu</button>
         <button type="submit" class="btn primary">Gorde</button>
       </div>
+    </form>
+
+    <!-- FORM ezabatzeko (hidden, EZ botoirik) -->
+    <form id="jardueraEzabatuForm"
+          th:action="@{'/irakasle/denboralizazioa/jarduera/' + 0 + '/ezabatu'}"
+          method="post"
+          style="display:none;">
+      <input type="hidden" name="urtea" th:value="${urtea}">
+      <input type="hidden" name="hilabetea" th:value="${hilabetea}">
+      <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
     </form>
   </div>
 </div>
