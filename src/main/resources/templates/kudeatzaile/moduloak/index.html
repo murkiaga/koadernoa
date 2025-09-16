@@ -41,7 +41,7 @@
             <td th:text="${moduloa.id}">1</td>
             <td th:text="${moduloa.kodea}">ADAT</td>
             <td th:text="${moduloa.izena}">Datuen Atzipena</td>
-            <td th:text="${moduloa.maila}">LEHENENGOA</td>
+            <td th:text="${moduloa.maila.getKodea}">LEHENENGOA</td>
             <td th:text="${moduloa.taldea.izena}">2AM3</td>
             <td>
                 <a th:href="@{/kudeatzaile/moduloak/editatu/{id}(id=${moduloa.id})}">Editatu</a>

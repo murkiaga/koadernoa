@@ -21,7 +21,7 @@
         </thead>
         <tbody>
             <tr th:each="egutegia : ${egutegiak}">
-                <td th:text="${egutegia.maila}"></td>
+                <td th:text="${egutegia.maila.getKodea}"></td>
                 <td>
                     <a th:href="@{'/kudeatzaile/egutegia/' + ${egutegia.id}}">Ikusi</a>
                 </td>

@@ -10,15 +10,17 @@
 
 <h1>Egutegi berria sortu</h1>
 
-<form th:action="@{/kudeatzaile/egutegia/gorde}" method="post">
-    
-    <!-- Maila hautatzeko -->
-    <label for="maila">Maila:</label>
-    <select name="maila" id="maila" required>
-        <option th:each="m : ${T(com.koadernoa.app.egutegia.entitateak.Maila).values()}"
-                th:value="${m}" th:text="${m}">
-        </option>
-    </select>
+<form th:action="@{/kudeatzaile/egutegia/gorde}" th:object="${egutegia}" method="post">    
+    <!-- MAILA -->
+	  <select class="form-select" th:field="*{maila.id}" required>
+	    <option value="" disabled selected>-- Aukeratu maila --</option>
+	    <option th:each="m : ${mailak}"
+	            th:value="${m.id}"
+	            th:text="${m.izena} + ' (' + ${m.kodea} + ')'">
+	    </option>
+	  </select>
+	
+	  <div th:if="${#fields.hasErrors('maila')}" th:errors="*{maila}"></div>
     <br><br>
 
     <!-- Hasiera data -->

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.koadernoa.app.zikloak.entitateak.ZikloMaila;
+import com.koadernoa.app.egutegia.repository.MailaRepository;
 import com.koadernoa.app.modulua.entitateak.Moduloa;
 import com.koadernoa.app.modulua.service.ModuloaService;
 import com.koadernoa.app.zikloak.entitateak.Familia;
@@ -31,6 +32,7 @@ public class KudeatzaileController {
 	private final ZikloaService zikloaService;
 	private final TaldeaService taldeaService;
     private final ModuloaService moduloaService;
+    private final MailaRepository mailaRepository;
 
 	@GetMapping({"","/"})
     public String kudeatzaileDashboard(Model model) {
@@ -131,7 +133,7 @@ public class KudeatzaileController {
     
     @PostMapping("/moduloak/gorde")
     public String gordeModuloa(@ModelAttribute Moduloa moduloa) {
-        moduloaService.save(moduloa);
+        moduloaService.gordeModuloaKontrolekin(moduloa);
         return "redirect:/kudeatzaile/moduloak";
     }
 
@@ -146,6 +148,7 @@ public class KudeatzaileController {
 
         model.addAttribute("moduloa", moduloa);
         model.addAttribute("taldeak", taldeaService.getAll());
+        model.addAttribute("mailak", mailaRepository.findAllByAktiboTrueOrderByOrdenaAscIzenaAsc());
         return "kudeatzaile/moduloak/moduloa-form";
     }
 
@@ -154,6 +157,7 @@ public class KudeatzaileController {
         Moduloa moduloa = moduloaService.getById(id).orElseThrow();
         model.addAttribute("moduloa", moduloa);
         model.addAttribute("taldeak", taldeaService.getAll());
+        model.addAttribute("mailak", mailaRepository.findAllByAktiboTrueOrderByOrdenaAscIzenaAsc());
         return "kudeatzaile/moduloak/moduloa-form";
     }
 

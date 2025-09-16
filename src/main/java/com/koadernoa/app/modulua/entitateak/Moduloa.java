@@ -3,8 +3,6 @@ package com.koadernoa.app.modulua.entitateak;
 import com.koadernoa.app.zikloak.entitateak.Taldea;
 
 import java.util.List;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.EnumType;
 
 import com.koadernoa.app.egutegia.entitateak.Maila;
 import com.koadernoa.app.koadernoak.entitateak.Koadernoa;
@@ -28,7 +26,7 @@ public class Moduloa {
     private String izena;
     private String kodea; //"ADAT"
     
-    @Enumerated(EnumType.STRING)
+    @ManyToOne(optional=false)
     private Maila maila;
 
     @ManyToOne

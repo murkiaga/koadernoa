@@ -1,41 +1,45 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
 <head>
-    <title>Moduloa Gorde</title>
+  <meta charset="UTF-8">
+  <title>Moduloa Gorde</title>
+  <link rel="stylesheet" th:href="@{/css/navbar.css}">
 </head>
 <body>
+
+<!-- Navbar fragmenta -->
+<div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+
 <h1 th:text="${moduloa.id != null} ? 'Editatu Moduloa' : 'Modulo Berria Sortu'">Moduloa</h1>
 
-
 <form th:action="@{/kudeatzaile/moduloak/gorde}" th:object="${moduloa}" method="post">
-    <input type="hidden" th:field="*{id}" />
+  <input type="hidden" th:field="*{id}" />
 
-    <label>Izena:</label>
-    <input type="text" th:field="*{izena}" required/><br/>
+  <label>Izena:</label>
+  <input type="text" th:field="*{izena}" required /><br/>
 
-    <label>Kodea:</label>
-    <input type="text" th:field="*{kodea}" required/><br/>
-    
-    <label>Maila:</label>
-	<select th:field="*{maila}" required>
-	    <option value="">-- Aukeratu maila --</option>
-	    <option th:each="m : ${T(com.koadernoa.app.egutegia.entitateak.Maila).values()}"
-	            th:value="${m}"
-	            th:text="${m}">
-	    </option>
-	</select><br/>
+  <label>Kodea:</label>
+  <input type="text" th:field="*{kodea}" required /><br/>
 
-    <label>Taldea:</label>
-    <select th:field="*{taldea}" required>
-        <option value="">-- Aukeratu taldea --</option>
-        <option th:each="t : ${taldeak}"
-                th:value="${t.id}"
-                th:text="${t.izena}"
-                th:selected="${t.id == moduloa.taldea?.id}">
-        </option>
-    </select><br/>
+  <label>Maila:</label>
+  <select th:field="*{maila.id}" required>
+    <option value="">-- Aukeratu maila --</option>
+    <option th:each="m : ${mailak}"
+            th:value="${m.id}"
+            th:text="${m.izena} + ' (' + ${m.kodea} + ')'">
+    </option>
+  </select><br/>
 
-    <button type="submit">Gorde</button>
+  <label>Taldea:</label>
+  <select th:field="*{taldea.id}" required>
+    <option value="">-- Aukeratu taldea --</option>
+    <option th:each="t : ${taldeak}"
+            th:value="${t.id}"
+            th:text="${t.izena}">
+    </option>
+  </select><br/>
+
+  <button type="submit">Gorde</button>
 </form>
 
 <a th:href="@{/kudeatzaile/moduloak}">Itzuli moduluen zerrendara</a>

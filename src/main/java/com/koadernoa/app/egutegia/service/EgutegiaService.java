@@ -165,7 +165,7 @@ public class EgutegiaService {
 	}
 	
 	public Optional<Egutegia> getAktiboEtaMaila(Maila maila) {
-	    return egutegiaRepository.findByIkasturtea_AktiboaTrueAndMaila(maila);
+	    return egutegiaRepository.findByIkasturtea_AktiboaTrueAndMaila_Id(maila.getId());
 	}
 	
 	public List<LocalDate> getEgunakHilabetekoBista(int urtea, int hilabetea, Egutegia egutegia) {

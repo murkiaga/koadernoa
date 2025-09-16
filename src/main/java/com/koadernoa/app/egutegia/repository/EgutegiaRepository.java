@@ -8,6 +8,6 @@ import com.koadernoa.app.egutegia.entitateak.Egutegia;
 import com.koadernoa.app.egutegia.entitateak.Maila;
 
 public interface EgutegiaRepository extends JpaRepository<Egutegia, Long>{
-
-	Optional<Egutegia> findByIkasturtea_AktiboaTrueAndMaila(Maila maila);
+	
+	Optional<Egutegia> findByIkasturtea_AktiboaTrueAndMaila_Id(Long mailaId);
 }

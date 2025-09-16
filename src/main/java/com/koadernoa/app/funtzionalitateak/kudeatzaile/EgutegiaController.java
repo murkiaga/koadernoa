@@ -13,6 +13,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import com.koadernoa.app.egutegia.entitateak.Ikasturtea;
+import com.koadernoa.app.egutegia.repository.MailaRepository;
 import com.koadernoa.app.egutegia.entitateak.Astegunak;
 import com.koadernoa.app.egutegia.entitateak.EgunBerezi;
 import com.koadernoa.app.egutegia.entitateak.EgunMota;
@@ -29,6 +30,16 @@ public class EgutegiaController {
 
 	private final IkasturteaService ikasturteaService;
 	private final EgutegiaService egutegiaService;
+	
+	private final MailaRepository mailaRepository;
+	
+	@ModelAttribute("mailak")
+    public List<com.koadernoa.app.egutegia.entitateak.Maila> loadMailak() {
+        // Aukeratu zure repo metodoa; adib. aktibo + ordena:
+        return mailaRepository.findAllByAktiboTrueOrderByOrdenaAscIzenaAsc();
+        // edo, besterik ezean:
+        // return mailaRepository.findAll(Sort.by("ordena").ascending().and(Sort.by("izena")));
+    }
 
     
 	@GetMapping({"", "/"})
@@ -101,6 +112,7 @@ public class EgutegiaController {
 	    egutegia.setIkasturtea(aktiboa);
 
 	    model.addAttribute("egutegia", egutegia);
+	    model.addAttribute("mailak", mailaRepository.findAllByAktiboTrueOrderByOrdenaAscIzenaAsc());
 	    return "kudeatzaile/egutegia/form";
 	}
 

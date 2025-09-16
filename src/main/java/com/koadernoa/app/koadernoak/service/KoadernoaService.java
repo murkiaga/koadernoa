@@ -42,7 +42,7 @@ public class KoadernoaService {
     public void sortuKoadernoakIkasturteBerrirako(Ikasturtea ikasturtea) {
         for (Egutegia egutegia : ikasturtea.getEgutegiak()) {
             Maila maila = egutegia.getMaila();
-            List<Moduloa> moduluak = moduloaRepository.findByMaila(maila);
+            List<Moduloa> moduluak = moduloaRepository.findByMaila_Id(maila.getId());
             for (Moduloa moduloa : moduluak) {
                 Koadernoa koadernoa = new Koadernoa();
                 koadernoa.setModuloa(moduloa);
@@ -80,13 +80,14 @@ public class KoadernoaService {
             .orElseThrow(() -> new IllegalArgumentException("Ez da modulu hori aurkitu."));
 
         Egutegia egutegia = egutegiaRepository
-            .findByIkasturtea_AktiboaTrueAndMaila(moduloa.getMaila())
-            .orElseThrow(() -> new IllegalStateException("Ez da egutegirik aurkitu aktibo dagoen ikasturterako eta maila horretarako."));
+                .findByIkasturtea_AktiboaTrueAndMaila_Id(moduloa.getMaila().getId())
+                .orElseThrow(() -> new IllegalStateException(
+                    "Ez da egutegirik aurkitu aktibo dagoen ikasturterako eta maila horretarako."));
 
         if (!moduloa.getTaldea().getZikloa().getFamilia().equals(irakaslea.getMintegia())) {
             throw new AccessDeniedException("Beste familiako modulua aukeratu da.");
         }
-        if (!moduloa.getMaila().equals(egutegia.getMaila())) {
+        if (!java.util.Objects.equals(moduloa.getMaila().getId(), egutegia.getMaila().getId())) {
             throw new IllegalArgumentException("Moduluaren eta egutegiaren maila ez datoz bat.");
         }
 
@@ -116,21 +117,20 @@ public class KoadernoaService {
 
     @Transactional
     private List<EstatistikaEbaluazioan> sortuEstatistikak(Koadernoa koadernoa) {
-        Maila maila = koadernoa.getModuloa().getMaila();
+    	Egutegia eg = koadernoa.getEgutegia();
 
-        List<EbaluazioMota> ebaluazioMotak = switch (maila) {
-            case LEHENENGOA -> List.of(
-                EbaluazioMota.LEHENENGO_EBALUAZIOA,
-                EbaluazioMota.BIGARREN_EBALUAZIOA,
-                EbaluazioMota.LEHENENGO_FINALA,
-                EbaluazioMota.BIGARREN_FINALA
-            );
-            case BIGARRENA -> List.of(
-                EbaluazioMota.LEHENENGO_EBALUAZIOA,
-                EbaluazioMota.LEHENENGO_FINALA,
-                EbaluazioMota.BIGARREN_FINALA
-            );
-        };
+        List<EbaluazioMota> ebaluazioMotak = new ArrayList<>();
+        // Beti 1. ebaluazioa
+        ebaluazioMotak.add(EbaluazioMota.LEHENENGO_EBALUAZIOA);
+
+        // 2. ebaluazioa definituta badago egutegian, gehitu
+        if (eg.getBigarrenEbalBukaera() != null) {
+            ebaluazioMotak.add(EbaluazioMota.BIGARREN_EBALUAZIOA);
+        }
+
+        // Bi finalak beti
+        ebaluazioMotak.add(EbaluazioMota.LEHENENGO_FINALA);
+        ebaluazioMotak.add(EbaluazioMota.BIGARREN_FINALA);
 
         return ebaluazioMotak.stream().map(mota -> {
             EstatistikaEbaluazioan e = new EstatistikaEbaluazioan();

@@ -11,6 +11,6 @@ import com.koadernoa.app.zikloak.entitateak.Familia;
 public interface ModuloaRepository extends JpaRepository<Moduloa, Long>{
 
 	List<Moduloa> findByTaldeaId(Long taldeaId);
-	List<Moduloa> findByMaila(Maila maila);
+	List<Moduloa> findByMaila_Id(Long mailaId);
 	List<Moduloa> findByTaldea_Zikloa_Familia(Familia familia);
 }

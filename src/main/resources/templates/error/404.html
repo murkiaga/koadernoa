@@ -2,10 +2,10 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>404 - Ez da aurkitu</title>
-    <link rel="stylesheet" th:href="@{/css/navbar.css}">
+    <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
 </head>
 <body>
-	<div th:replace="/kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+	<div th:replace="irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})"></div>
     <h1>404 - Ez da aurkitu</h1>
 
     <p th:if="${errorea}" th:text="${errorea}">Eskatutako orria ez da existitzen.</p>

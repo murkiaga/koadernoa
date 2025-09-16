@@ -81,7 +81,12 @@
 		    <artifactId>jakarta.validation-api</artifactId>
 		</dependency>
 
-		
+
+		<dependency>
+			<groupId>com.AM3Ethazi</groupId>
+			<artifactId>com.AM3Ethazi</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 
 	<build>
