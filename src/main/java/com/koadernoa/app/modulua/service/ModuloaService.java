@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import com.koadernoa.app.egutegia.entitateak.Maila;
 import com.koadernoa.app.egutegia.repository.MailaRepository;
 import com.koadernoa.app.modulua.entitateak.Moduloa;
+import com.koadernoa.app.modulua.entitateak.ModuloaFormDto;
 import com.koadernoa.app.modulua.repository.ModuloaRepository;
 import com.koadernoa.app.zikloak.entitateak.Taldea;
 import com.koadernoa.app.zikloak.repository.TaldeaRepository;
@@ -47,31 +48,22 @@ public class ModuloaService {
     }
     
     @Transactional
-    public Moduloa gordeModuloaKontrolekin(Moduloa incoming) {
-        // 1) Resolve Maila
-        Long mailaId = incoming.getMaila() != null ? incoming.getMaila().getId() : null;
-        if (mailaId == null) throw new IllegalArgumentException("Maila falta da");
-        Maila maila = mailaRepository.findById(mailaId)
-                .orElseThrow(() -> new IllegalArgumentException("Maila ez da existitzen: " + mailaId));
+    public Moduloa saveFromDto(ModuloaFormDto dto) {
+        // Resolve erlazioak
+        Maila maila = mailaRepository.findById(dto.getMailaId())
+            .orElseThrow(() -> new IllegalArgumentException("Maila ez da existitzen: " + dto.getMailaId()));
+        Taldea taldea = taldeaService.getById(dto.getTaldeaId())
+            .orElseThrow(() -> new IllegalArgumentException("Taldea ez da existitzen: " + dto.getTaldeaId()));
 
-        // 2) Resolve Taldea
-        Long taldeaId = incoming.getTaldea() != null ? incoming.getTaldea().getId() : null;
-        if (taldeaId == null) throw new IllegalArgumentException("Taldea falta da");
-        Taldea taldea = taldeaService.getById(taldeaId)
-                .orElseThrow(() -> new IllegalArgumentException("Taldea ez da existitzen: " + taldeaId));
+        // Edit vs create
+        Moduloa target = (dto.getId() != null)
+            ? moduloaRepository.findById(dto.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Moduloa ez da existitzen: " + dto.getId()))
+            : new Moduloa();
 
-        // 3) Edit vs Create: beti entitate kudeatua gorde
-        Moduloa target;
-        if (incoming.getId() != null) {
-            target = moduloaRepository.findById(incoming.getId())
-                    .orElseThrow(() -> new IllegalArgumentException("Moduloa ez da existitzen: " + incoming.getId()));
-        } else {
-            target = new Moduloa();
-        }
-
-        // 4) Eremuak kopiatu
-        target.setIzena(incoming.getIzena());
-        target.setKodea(incoming.getKodea());
+        // Set eremuak
+        target.setIzena(dto.getIzena().trim());
+        target.setKodea(dto.getKodea().trim());
         target.setMaila(maila);
         target.setTaldea(taldea);
 

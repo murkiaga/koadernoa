@@ -7,37 +7,44 @@
 </head>
 <body>
 
-<!-- Navbar fragmenta -->
 <div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
 
-<h1 th:text="${moduloa.id != null} ? 'Editatu Moduloa' : 'Modulo Berria Sortu'">Moduloa</h1>
+<h1 th:text="${moduloaForm.id != null} ? 'Editatu Moduloa' : 'Modulo Berria Sortu'">Moduloa</h1>
 
-<form th:action="@{/kudeatzaile/moduloak/gorde}" th:object="${moduloa}" method="post">
-  <input type="hidden" th:field="*{id}" />
+<form th:action="@{/kudeatzaile/moduloak/gorde}" th:object="${moduloaForm}" method="post">
+  <input type="hidden" th:field="*{id}"/>
 
   <label>Izena:</label>
-  <input type="text" th:field="*{izena}" required /><br/>
+  <input type="text" th:field="*{izena}" required/>
+  <div th:if="${#fields.hasErrors('izena')}" th:errors="*{izena}"></div>
+  <br/>
 
   <label>Kodea:</label>
-  <input type="text" th:field="*{kodea}" required /><br/>
+  <input type="text" th:field="*{kodea}" required/>
+  <div th:if="${#fields.hasErrors('kodea')}" th:errors="*{kodea}"></div>
+  <br/>
 
   <label>Maila:</label>
-  <select th:field="*{maila.id}" required>
+  <select th:field="*{mailaId}" required>
     <option value="">-- Aukeratu maila --</option>
     <option th:each="m : ${mailak}"
             th:value="${m.id}"
             th:text="${m.izena} + ' (' + ${m.kodea} + ')'">
     </option>
-  </select><br/>
+  </select>
+  <div th:if="${#fields.hasErrors('mailaId')}" th:errors="*{mailaId}"></div>
+  <br/>
 
   <label>Taldea:</label>
-  <select th:field="*{taldea.id}" required>
+  <select th:field="*{taldeaId}" required>
     <option value="">-- Aukeratu taldea --</option>
     <option th:each="t : ${taldeak}"
             th:value="${t.id}"
             th:text="${t.izena}">
     </option>
-  </select><br/>
+  </select>
+  <div th:if="${#fields.hasErrors('taldeaId')}" th:errors="*{taldeaId}"></div>
+  <br/>
 
   <button type="submit">Gorde</button>
 </form>

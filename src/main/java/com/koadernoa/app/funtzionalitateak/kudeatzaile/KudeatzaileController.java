@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.koadernoa.app.zikloak.entitateak.ZikloMaila;
 import com.koadernoa.app.egutegia.repository.MailaRepository;
 import com.koadernoa.app.modulua.entitateak.Moduloa;
+import com.koadernoa.app.modulua.entitateak.ModuloaFormDto;
 import com.koadernoa.app.modulua.service.ModuloaService;
 import com.koadernoa.app.zikloak.entitateak.Familia;
 import com.koadernoa.app.zikloak.entitateak.Taldea;
@@ -21,6 +23,7 @@ import com.koadernoa.app.zikloak.entitateak.Zikloa;
 import com.koadernoa.app.zikloak.service.TaldeaService;
 import com.koadernoa.app.zikloak.service.ZikloaService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 
@@ -132,30 +135,41 @@ public class KudeatzaileController {
     }
     
     @PostMapping("/moduloak/gorde")
-    public String gordeModuloa(@ModelAttribute Moduloa moduloa) {
-        moduloaService.gordeModuloaKontrolekin(moduloa);
+    public String gordeModuloa(@Valid @ModelAttribute("moduloaForm") ModuloaFormDto form,
+                               BindingResult br,
+                               Model model) {
+        if (br.hasErrors()) {
+            // berriz kargatu aukerak
+            model.addAttribute("taldeak", taldeaService.getAll());
+            model.addAttribute("mailak", mailaRepository.findAllByAktiboTrueOrderByOrdenaAscIzenaAsc());
+            return "kudeatzaile/moduloak/moduloa-form";
+        }
+        moduloaService.saveFromDto(form);
         return "redirect:/kudeatzaile/moduloak";
     }
 
     @GetMapping("/moduloak/sortu")
-    public String sortuModuloaForm(@RequestParam(name = "taldeaId", required = false) Long taldeaId, Model model) {
-        Moduloa moduloa = new Moduloa();
-
-        if (taldeaId != null) {
-            Taldea taldea = taldeaService.getById(taldeaId).orElse(null);
-            moduloa.setTaldea(taldea);
-        }
-
-        model.addAttribute("moduloa", moduloa);
+    public String sortuModuloaForm(@RequestParam(name = "taldeaId", required = false) Long taldeaId,
+                                   Model model) {
+        ModuloaFormDto form = new ModuloaFormDto();
+        if (taldeaId != null) form.setTaldeaId(taldeaId); // aurrez hautatu
+        model.addAttribute("moduloaForm", form);
         model.addAttribute("taldeak", taldeaService.getAll());
         model.addAttribute("mailak", mailaRepository.findAllByAktiboTrueOrderByOrdenaAscIzenaAsc());
         return "kudeatzaile/moduloak/moduloa-form";
     }
 
     @GetMapping("/moduloak/editatu/{id}")
-    public String editatuModuloa(@PathVariable("id") Long id, Model model) {
-        Moduloa moduloa = moduloaService.getById(id).orElseThrow();
-        model.addAttribute("moduloa", moduloa);
+    public String editatuModuloa(@PathVariable Long id, Model model) {
+        Moduloa m = moduloaService.getById(id).orElseThrow();
+        ModuloaFormDto form = new ModuloaFormDto();
+        form.setId(m.getId());
+        form.setIzena(m.getIzena());
+        form.setKodea(m.getKodea());
+        form.setMailaId(m.getMaila() != null ? m.getMaila().getId() : null);
+        form.setTaldeaId(m.getTaldea() != null ? m.getTaldea().getId() : null);
+
+        model.addAttribute("moduloaForm", form);
         model.addAttribute("taldeak", taldeaService.getAll());
         model.addAttribute("mailak", mailaRepository.findAllByAktiboTrueOrderByOrdenaAscIzenaAsc());
         return "kudeatzaile/moduloak/moduloa-form";
