@@ -65,8 +65,8 @@
             <tr th:each="ziklo : ${zikloak}">
                 <td th:text="${ziklo.id}">1</td>
                 <td>
-				  <a th:href="@{/kudeatzaile/zikloak/{id}(id=${ziklo.id})}"
-				     th:text="${ziklo.izena}">DAW</a>
+				  <a th:href="@{/kudeatzaile/taldeak(zikloaId=${ziklo.id})}"
+   							th:text="${ziklo.izena}">DAW</a>
 				</td>
                 <td th:text="${ziklo.maila}">GOIMAILA</td>
                 <td th:text="${ziklo.familia}">INFORMATIKA</td>

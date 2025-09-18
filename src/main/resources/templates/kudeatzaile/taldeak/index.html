@@ -1,45 +1,89 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Taldeak kudeatu</title>
-    <meta charset="UTF-8">
-    <link rel="stylesheet" th:href="@{/css/navbar.css}">
+  <title>Taldeak kudeatu</title>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" th:href="@{/css/navbar.css}">
 </head>
 <body>
-	<div th:replace="/kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
-	
-    <h1>Taldeak</h1>
 
-    <a th:href="@{/kudeatzaile/taldeak/sortu}">➕ Sortu talde berria</a>
+  <div th:replace="/kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
 
-    <table border="1" cellpadding="8" cellspacing="0">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Izena</th>
-                <th>Zikloa</th>
-                <th>Ekintzak</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr th:each="taldea : ${taldeak}">
-                <td th:text="${taldea.id}">1</td>
-                <td>
-                    <a th:href="@{/kudeatzaile/moduloak(taldeaId=${taldea.id})}"
-                       th:text="${taldea.izena}">1SMA</a>
-                </td>
-                <td th:text="${taldea.zikloa.izena}">Informatika</td>
-                <td>
-                    <a th:href="@{/kudeatzaile/taldeak/editatu/{id}(id=${taldea.id})}">✏️ Editatu</a>
-                    |
-                    <a th:href="@{/kudeatzaile/taldeak/ezabatu/{id}(id=${taldea.id})}"
-                       onclick="return confirm('Ziur zaude ezabatu nahi duzula?');">🗑️ Ezabatu</a>
-                </td>
-            </tr>
-        </tbody>
-    </table>
+  <h1>Taldeak</h1>
 
-    <br>
-    <a th:href="@{/kudeatzaile/taldeak/sortu}">➕ Sortu talde berria</a>
+  <div th:if="${msg}" style="color:green" th:text="${msg}"></div>
+  <div th:if="${errorea}" style="color:red" th:text="${errorea}"></div>
+
+  <a th:href="@{/kudeatzaile/taldeak/sortu}">➕ Sortu talde berria</a>
+
+	<form method="get" th:action="@{/kudeatzaile/taldeak}" style="margin: 1em 0;">
+	  <label for="zikloaId">Zikloa:</label>
+	  <select id="zikloaId" name="zikloaId" onchange="this.form.submit()">
+	    <option value="" th:selected="${zikloaId == null}">— Guztiak —</option>
+	    <option th:each="z : ${zikloak}"
+	            th:value="${z.id}"
+	            th:text="${z.izena + ' (' + z.maila + ', ' + z.familia + ')'}"
+	            th:selected="${zikloaId != null and z.id == zikloaId}">
+	    </option>
+	  </select>
+	  <noscript><button type="submit">Iragazi</button></noscript>
+	  <a th:if="${zikloaId != null}" th:href="@{/kudeatzaile/taldeak}" style="margin-left: .5em;">(Garbitu)</a>
+	</form>
+
+  <table border="1" cellpadding="8" cellspacing="0">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Izena</th>
+        <th>Zikloa</th>
+        <th>Tutorea</th>
+        <th>Ekintzak</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr th:each="taldea : ${taldeak}">
+        <td th:text="${taldea.id}">1</td>
+
+        <td>
+          <a th:href="@{/kudeatzaile/moduloak(taldeaId=${taldea.id})}"
+             th:text="${taldea.izena}">1SMA</a>
+        </td>
+
+        <td th:text="${taldea.zikloa != null ? taldea.zikloa.izena : '-'}">Informatika</td>
+
+        
+
+        <td>
+          <form th:action="@{/kudeatzaile/taldeak/{id}/tutorea(id=${taldea.id})}" method="post">
+            <!-- CSRF: controllerreko model-etik dator (csrf izan daiteke null) -->
+            <input type="hidden"
+                   th:if="${csrf != null}"
+                   th:name="${csrf.parameterName}"
+                   th:value="${csrf.token}"/>
+
+            <select name="irakasleId">
+              <option value="" th:selected="${taldea.tutorea == null}">(ez dago)</option>
+              <option th:each="ira : ${irakasleak}"
+				        th:value="${ira.id}"
+				        th:selected="${taldea.tutorea != null and ira.id == taldea.tutorea.id}"
+				        th:text="${ira.mintegia != null ? ira.izena + ' (' + ira.mintegia + ')' : ira.izena}">
+				</option>
+            </select>
+            <button type="submit">Gorde</button>
+          </form>
+        </td>
+
+        <td>
+          <a th:href="@{/kudeatzaile/taldeak/editatu/{id}(id=${taldea.id})}">✏️ Editatu</a>
+          |
+          <a th:href="@{/kudeatzaile/taldeak/ezabatu/{id}(id=${taldea.id})}"
+             onclick="return confirm('Ziur zaude ezabatu nahi duzula?');">🗑️ Ezabatu</a>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <br>
+  <a th:href="@{/kudeatzaile/taldeak/sortu}">➕ Sortu talde berria</a>
 </body>
 </html>

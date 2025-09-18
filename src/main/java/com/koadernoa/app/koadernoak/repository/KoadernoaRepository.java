@@ -13,4 +13,9 @@ public interface KoadernoaRepository extends JpaRepository<Koadernoa, Long>{
 	Optional<Koadernoa> findById(Long id);
 
 	List<Koadernoa> findByIrakasleakContaining(Irakaslea irakaslea);
+	
+	//Tutore entitatearen arabera. Tutorearen taldeko koadernoak:
+    List<Koadernoa> findByModuloa_Taldea_Tutorea(Irakaslea tutorea);
+    //Tutorearen IDaren arabera
+    List<Koadernoa> findByModuloa_Taldea_Tutorea_Id(Long tutoreId);
 }

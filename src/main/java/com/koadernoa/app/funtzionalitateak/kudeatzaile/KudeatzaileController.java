@@ -2,6 +2,7 @@ package com.koadernoa.app.funtzionalitateak.kudeatzaile;
 
 import java.util.List;
 
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -11,9 +12,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.koadernoa.app.zikloak.entitateak.ZikloMaila;
 import com.koadernoa.app.egutegia.repository.MailaRepository;
+import com.koadernoa.app.irakasleak.repository.IrakasleaRepository;
 import com.koadernoa.app.modulua.entitateak.Moduloa;
 import com.koadernoa.app.modulua.entitateak.ModuloaFormDto;
 import com.koadernoa.app.modulua.service.ModuloaService;
@@ -23,6 +26,7 @@ import com.koadernoa.app.zikloak.entitateak.Zikloa;
 import com.koadernoa.app.zikloak.service.TaldeaService;
 import com.koadernoa.app.zikloak.service.ZikloaService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -36,6 +40,7 @@ public class KudeatzaileController {
 	private final TaldeaService taldeaService;
     private final ModuloaService moduloaService;
     private final MailaRepository mailaRepository;
+    private final IrakasleaRepository irakasleaRepository;
 
 	@GetMapping({"","/"})
     public String kudeatzaileDashboard(Model model) {
@@ -83,11 +88,24 @@ public class KudeatzaileController {
 	
 //----TALDEAK
 	@GetMapping("/taldeak")
-    public String taldeZerrenda(Model model) {
-        List<Taldea> taldeak = taldeaService.getAll();
-        model.addAttribute("taldeak", taldeak);
-        return "kudeatzaile/taldeak/index";
-    }
+	public String taldeZerrenda(@RequestParam(name = "zikloaId", required = false) Long zikloaId,
+	                            Model model,
+	                            HttpServletRequest request) { // csrf-a baduzu model-era gehitzen jarrai dezakezu, aukeran
+	    List<Taldea> taldeak = (zikloaId != null)
+	            ? taldeaService.getByZikloaId(zikloaId)
+	            : taldeaService.getAll();
+
+	    model.addAttribute("taldeak", taldeak);
+	    model.addAttribute("irakasleak", irakasleaRepository.findAll());
+	    model.addAttribute("zikloak", zikloaService.getAll()); // dropdown-erako
+	    model.addAttribute("zikloaId", zikloaId);              // aukeratutako balioa
+
+	    // (aukeran) CSRF model-era gehitzen jarrai dezakezu:
+	    CsrfToken csrf = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
+	    model.addAttribute("csrf", csrf);
+
+	    return "kudeatzaile/taldeak/index";
+	}
 
     @GetMapping("/taldeak/sortu")
     public String taldeaSortuForm(Model model) {
@@ -113,6 +131,19 @@ public class KudeatzaileController {
     @PostMapping("/taldeak/ezabatu/{id}")
     public String ezabatuTaldea(@PathVariable("id") Long id) {
         taldeaService.deleteById(id);
+        return "redirect:/kudeatzaile/taldeak";
+    }
+    
+    @PostMapping("/taldeak/{id}/tutorea")
+    public String eguneratuTaldekoTutorea(@PathVariable("id") Long taldeaId,
+                                          @RequestParam(name = "irakasleId", required = false) Long irakasleId,
+                                          RedirectAttributes ra) {
+        try {
+            taldeaService.eguneratuTutorea(taldeaId, irakasleId);
+            ra.addFlashAttribute("msg", "Tutorea eguneratuta.");
+        } catch (RuntimeException ex) {
+            ra.addFlashAttribute("errorea", ex.getMessage());
+        }
         return "redirect:/kudeatzaile/taldeak";
     }
 
