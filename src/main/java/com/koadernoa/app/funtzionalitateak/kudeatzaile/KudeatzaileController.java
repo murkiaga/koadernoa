@@ -23,6 +23,7 @@ import com.koadernoa.app.modulua.service.ModuloaService;
 import com.koadernoa.app.zikloak.entitateak.Familia;
 import com.koadernoa.app.zikloak.entitateak.Taldea;
 import com.koadernoa.app.zikloak.entitateak.Zikloa;
+import com.koadernoa.app.zikloak.repository.FamiliaRepository;
 import com.koadernoa.app.zikloak.service.TaldeaService;
 import com.koadernoa.app.zikloak.service.ZikloaService;
 
@@ -41,6 +42,7 @@ public class KudeatzaileController {
     private final ModuloaService moduloaService;
     private final MailaRepository mailaRepository;
     private final IrakasleaRepository irakasleaRepository;
+    private final FamiliaRepository familiaRepository;
 
 	@GetMapping({"","/"})
     public String kudeatzaileDashboard(Model model) {
@@ -66,7 +68,7 @@ public class KudeatzaileController {
     public String sortuZikloaForm(Model model) {
         model.addAttribute("zikloa", new Zikloa());
         model.addAttribute("mailak", ZikloMaila.values());
-        model.addAttribute("familiak", Familia.values());
+        model.addAttribute("familiak", familiaRepository.findAll());
         return "kudeatzaile/zikloak/zikloa-form";
     }
 	
@@ -76,7 +78,7 @@ public class KudeatzaileController {
 			    .orElseThrow(() -> new IllegalArgumentException("Zikloa ez da aurkitu: " + id));
 	    model.addAttribute("zikloa", zikloa);
 	    model.addAttribute("mailak", ZikloMaila.values());
-	    model.addAttribute("familiak", Familia.values());
+	    model.addAttribute("familiak", familiaRepository.findAll());
 	    return "kudeatzaile/zikloak/zikloa-form";
 	}
 	

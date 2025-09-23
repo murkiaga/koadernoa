@@ -25,7 +25,7 @@ import com.koadernoa.app.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.modulua.entitateak.Moduloa;
 import com.koadernoa.app.modulua.repository.ModuloaRepository;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -36,7 +36,6 @@ public class KoadernoaService {
     private final EgutegiaRepository egutegiaRepository;
     private final IrakasleaRepository irakasleaRepository;
     private final KoadernoaRepository koadernoaRepository;
-    private final IkasturteaRepository ikasturteaRepository;
     private final JardueraRepository jardueraRepository;
 
     public void sortuKoadernoakIkasturteBerrirako(Ikasturtea ikasturtea) {
@@ -73,6 +72,7 @@ public class KoadernoaService {
             .stream().filter(i -> !i.getId().equals(irakaslea.getId()))
             .toList();
     }
+    
 
     @Transactional
     public Koadernoa sortuKoadernoa(KoadernoaSortuDto dto, Irakaslea irakaslea) {
@@ -207,5 +207,19 @@ public class KoadernoaService {
         }
 
         jardueraRepository.delete(jarduera);
+    }
+    
+    @Transactional(readOnly = true)
+    public boolean irakasleakBadaukaSarbidea(Irakaslea irakaslea, Koadernoa koadernoa) {
+        if (irakaslea == null || irakaslea.getId() == null) return false;
+        if (koadernoa == null || koadernoa.getId() == null) return false;
+        return koadernoaRepository.existsByIdAndIrakasleak_Id(koadernoa.getId(), irakaslea.getId());
+    }
+    
+    @Transactional(readOnly = true)
+    public boolean irakasleakBadaukaSarbidea(Irakaslea irakaslea, Long koadernoId) {
+        if (irakaslea == null || irakaslea.getId() == null) return false;
+        if (koadernoId == null) return false;
+        return koadernoaRepository.existsByIdAndIrakasleak_Id(koadernoId, irakaslea.getId());
     }
 }

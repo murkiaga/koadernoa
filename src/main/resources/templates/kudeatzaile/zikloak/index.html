@@ -69,7 +69,7 @@
    							th:text="${ziklo.izena}">DAW</a>
 				</td>
                 <td th:text="${ziklo.maila}">GOIMAILA</td>
-                <td th:text="${ziklo.familia}">INFORMATIKA</td>
+                <td th:text="${ziklo.familia != null ? ziklo.familia.izena : '—'}">INFORMATIKA</td>
                 <td>
                     <a th:href="@{/kudeatzaile/zikloak/editatu/{id}(id=${ziklo.id})}" class="btn btn-edit">Editatu</a>
                     <a th:href="@{/kudeatzaile/zikloak/ezabatu/{id}(id=${ziklo.id})}" class="btn btn-delete">Ezabatu</a>

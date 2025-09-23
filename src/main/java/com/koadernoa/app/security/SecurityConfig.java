@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.core.Authentication;
 
 import com.koadernoa.app.irakasleak.repository.IrakasleaRepository;
 
@@ -24,6 +25,7 @@ public class SecurityConfig {
         this.irakasleaRepository = irakasleaRepository;
         this.customOAuth2UserService = customOAuth2UserService;
     }
+   
     
     @PostConstruct
     public void printMe() {

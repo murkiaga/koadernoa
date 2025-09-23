@@ -20,6 +20,20 @@
     .muted { color:#6b7280; font-size:.9rem; }
     .actions { margin-top:12px; }
     .section { margin: 24px 0; }
+    
+    .inline-row {
+	  display: flex;
+	  gap: 12px;
+	  align-items: end;    /* botoia eta inputa oinarrian lerrokatuta */
+	  max-width: 520px;    /* zabalera txukunagoa */
+	}
+	.inline-row label { flex: 1; min-width: 240px; }
+	.inline-row button { flex: 0 0 auto; }
+	
+	@media (max-width: 520px) {
+	  .inline-row { flex-direction: column; align-items: stretch; }
+	  .inline-row button { width: 100%; }
+	}
   </style>
 </head>
 <body>
@@ -30,6 +44,7 @@
 <!-- Tab botoiak -->
 <div class="tabs" role="tablist" aria-label="Konfigurazio atalak">
   <button class="tab-btn" role="tab" aria-selected="true" aria-controls="panel-mailak" id="tab-mailak">Mailak</button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-familiak" id="tab-familiak">Familiak</button>
   <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-bestek" id="tab-bestek">TBD</button>
 </div>
 
@@ -90,6 +105,58 @@
       </div>
     </div>
   </form>
+</section>
+
+<!-- Familiak PANELA -->
+<section id="panel-familiak" class="tab-panel" role="tabpanel" aria-labelledby="tab-familiak" tabindex="0" aria-hidden="true">
+  <h2>Familiak</h2>
+  <p class="muted">Aktibatu/desaktibatu checkbox bidez. Azpian, familia berria sor dezakezu.</p>
+
+  <!-- Aktibo/desaktibo bulk form -->
+  <form th:action="@{/kudeatzaile/konfigurazioa/familiak/aktiboak}" th:object="${activeFamiliaForm}" method="post">
+    <table>
+      <thead>
+      <tr>
+        <th>Aktibo</th>
+        <th>Izena</th>
+        <th>Slug</th>
+        <th>ID</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:each="f : ${familiak}">
+        <td>
+          <input type="checkbox"
+                 th:name="|aktiboIds|"
+                 th:value="${f.id}"
+                 th:checked="${f.aktibo}">
+        </td>
+        <td th:text="${f.izena}">INFORMATIKA</td>
+        <td th:text="${f.slug}">informatika</td>
+        <td th:text="${f.id}">1</td>
+      </tr>
+      </tbody>
+    </table>
+    <div class="actions">
+      <button type="submit">Gorde aktiboak</button>
+    </div>
+  </form>
+
+  <h3 style="margin-top:24px;">Sortu familia berria</h3>
+	<form th:action="@{/kudeatzaile/konfigurazioa/familiak/sortu}" 
+	      th:object="${sortuFamiliaForm}" method="post">
+	  <div class="inline-row">
+	    <label style="margin:0;">
+	      <div class="muted">Izena</div>
+	      <input type="text" th:field="*{izena}" placeholder="INFORMATIKA" required>
+	    </label>
+	    <button type="submit">Sortu</button>
+	  </div>
+	  <p class="muted">
+	    Slug-a automatikoki sortuko da izenetik 
+	    (adib. “Fabrikazio Mekanikoa” → “fabrikazio-mekanikoa”).
+	  </p>
+	</form>
 </section>
 
 <!-- Etorkizuneko panelak: -->

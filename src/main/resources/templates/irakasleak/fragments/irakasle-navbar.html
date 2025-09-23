@@ -45,6 +45,12 @@
                     </a>
                 </li>
                 <li>
+				  <a th:href="@{/irakasle/programazioa}"
+				     th:classappend="${currentPath.startsWith('/irakasle/programazioa')} ? 'active'">
+				    Programazioa
+				  </a>
+				</li>
+                <li>
                     <a th:href="@{/irakasle/denboralizazioa}"
                        th:classappend="${currentPath.startsWith('/irakasle/denboralizazioa')} ? 'active'">
                         Denboralizazioa

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <title>Programazioa</title>
+  <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
+  <style>
+    .stack { display: grid; gap: 1rem; }
+    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 1rem; }
+    .row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: .75rem; }
+    .grid { display: grid; grid-template-columns: 120px 1fr 90px 90px 110px; gap: .5rem; align-items: center; }
+    .muted { color:#6b7280; font-size:.9rem; }
+    .tbl { width:100%; border-collapse: collapse; }
+    .tbl th, .tbl td { border-bottom:1px solid #eee; padding:.4rem .2rem; }
+    .actions { display:flex; gap:.5rem; }
+    form.inline { display:inline; }
+    input[type="text"], input[type="number"] { width:100%; padding:.35rem .5rem; }
+    h2 { margin:.2rem 0 0.8rem 0; }
+    .grid > div { align-self:center; }
+	.grid .actions { display:flex; gap:.5rem; align-items:center; }
+	.tbl th { font-weight:600; color:#374151; background:#f9fafb; }
+
+  </style>
+</head>
+<body>
+  <div th:if="${koadernoAktiboa != null}"
+       th:replace="irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})"></div>
+
+  <main class="stack" style="max-width:1000px;margin:1rem auto;">
+
+  <h1>Programazioa</h1>
+  <p class="muted" th:text="'Koadernoa: ' + ${koadernoAktiboa != null ? koadernoAktiboa.izena : '—'}"></p>
+
+  <div class="card">
+  <h2>Unitate Didaktiko berria</h2>
+
+  <form th:action="@{/irakasle/programazioa/ud}" method="post">
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th style="width:120px;">Kodea</th>
+          <th>Izenburua</th>
+          <th style="width:120px;">Orduak (h)</th>
+          <th style="width:110px;">Ordena</th>
+          <th style="width:140px;">Ekintzak</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <input type="text" name="kodea" placeholder="UD1" aria-label="UD kodea (adib. UD1)" required>
+          </td>
+          <td>
+            <input type="text" name="izenburua" placeholder="Adib. Sarrerak eta oinarriak" aria-label="UD izenburua" required>
+          </td>
+          <td>
+            <input type="number" name="orduak" min="0" step="1" value="0" inputmode="numeric"
+                   placeholder="0" aria-label="UD orduak">
+          </td>
+          <td>
+            <input type="number" name="posizioa" min="0" step="1" value="0" inputmode="numeric"
+                   placeholder="0" aria-label="UD ordena">
+          </td>
+          <td>
+            <button type="submit">Gehitu UD</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </form>
+
+  <p class="muted" style="margin-top:.4rem;">
+    <strong>Orduak (h)</strong>: UD honek zenbat ordu behar dituen. Azpi-jarduerak badituzu, <em>haien baturak</em> ordezkatuko du balio hau.<br>
+    <strong>Ordena</strong>: bistaratze-ordena. Zenbaki txikiagoak lehenago agertzen dira.
+  </p>
+</div>
+
+
+  <!-- UD zerrenda + JP zerrenda -->
+  <div class="stack" th:if="${unitateak != null}">
+    <div class="card" th:each="ud : ${unitateak}">
+      <div class="row">
+        <h2>
+          <span th:text="${ud.kodea}">UD1</span> — <span th:text="${ud.izenburua}">Izenburua</span>
+        </h2>
+        <div class="actions">
+          <form th:action="@{'/irakasle/programazioa/ud/' + ${ud.id} + '/eguneratu'}" method="post" class="inline">
+            <input type="text" name="kodea" th:value="${ud.kodea}" required>
+            <input type="text" name="izenburua" th:value="${ud.izenburua}" required>
+            <input type="number" name="orduak" th:value="${ud.orduak}" min="0">
+            <input type="number" name="posizioa" th:value="${ud.posizioa}" min="0">
+            <button type="submit">Gorde</button>
+          </form>
+          <form th:action="@{'/irakasle/programazioa/ud/' + ${ud.id} + '/ezabatu'}" method="post" class="inline"
+                onsubmit="return confirm('Ziur zaude UD hau ezabatu nahi duzula?');">
+            <button type="submit">Ezabatu</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Jarduera Planifikatuak -->
+      <h3 style="margin-top:.6rem;">Jarduera planifikatuak</h3>
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Izenburua</th>
+            <th style="width:120px;">Orduak</th>
+            <th style="width:220px;">Ekintzak</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="jp : ${ud.azpiJarduerak}">
+            <td th:text="${jp.izenburua}">Izenburua</td>
+            <td th:text="${jp.orduak}">0</td>
+            <td class="actions">
+              <form th:action="@{'/irakasle/programazioa/planifikatuak/' + ${jp.id} + '/eguneratu'}" method="post" class="inline">
+                <input type="text" name="izenburua" th:value="${jp.izenburua}" required>
+                <input type="number" name="orduak" th:value="${jp.orduak}" min="0">
+                <button type="submit">Gorde</button>
+              </form>
+              <form th:action="@{'/irakasle/programazioa/planifikatuak/' + ${jp.id} + '/ezabatu'}" method="post" class="inline"
+                    onsubmit="return confirm('Ezabatu jarduera planifikatua?');">
+                <button type="submit">Ezabatu</button>
+              </form>
+            </td>
+          </tr>
+
+          <!-- Berria -->
+          <tr>
+            <form th:action="@{'/irakasle/programazioa/ud/' + ${ud.id} + '/planifikatua'}" method="post">
+              <td><input type="text" name="izenburua" placeholder="Jarduera berria" required></td>
+              <td><input type="number" name="orduak" placeholder="Orduak" min="0" value="0"></td>
+              <td><button type="submit">Gehitu jarduera</button></td>
+            </form>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+</body>
+</html>

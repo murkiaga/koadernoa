@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.koadernoa.app.egutegia.entitateak.EgunBerezi;
 import com.koadernoa.app.egutegia.entitateak.Egutegia;
@@ -46,21 +47,52 @@ public class IrakasleController {
 	@GetMapping("/koaderno/{id}")
 	public String hautatuKoadernoa(
 	        @PathVariable Long id,
-	        @RequestParam(value = "next", required = false) String next,
-	        Model model) {
+	        @RequestParam(value = "next", required = false) String nextEncoded,
+	        Authentication auth,
+	        Model model,
+	        RedirectAttributes ra) {
+
 	    Koadernoa koadernoa = koadernoaService.findById(id);
 	    if (koadernoa == null) {
+	        ra.addFlashAttribute("error", "Koadernoa ez da existitzen.");
 	        return "redirect:/irakasle";
 	    }
 
-	    // Sesioan eguneratu
+	    // (Aukerakoa) Egiaztatu irakasleak koaderno honetarako sarbidea duela
+	    Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+	    if (!koadernoaService.irakasleakBadaukaSarbidea(irakaslea, koadernoa)) {
+	        ra.addFlashAttribute("error", "Ez duzu koaderno honetarako sarbiderik.");
+	        return "redirect:/irakasle";
+	    }
+
+	    // Sesioan gorde (@SessionAttributes("koadernoAktiboa") dela eta)
 	    model.addAttribute("koadernoAktiboa", koadernoa);
 
-	    // Open-redirect saihestu: barneko bideak bakarrik
-	    if (next != null && next.startsWith("/irakasle") && !next.startsWith("/irakasle/koaderno/")) {
+	    // 'next' DEKODETU eta modu seguruan balidatu
+	    String next = null;
+	    if (nextEncoded != null && !nextEncoded.isBlank()) {
+	        next = java.net.URLDecoder.decode(nextEncoded, java.nio.charset.StandardCharsets.UTF_8);
+	    }
+
+	    if (isSafeInternal(next)) {
 	        return "redirect:" + next;
 	    }
 	    return "redirect:/irakasle";
+	}
+	
+	private boolean isSafeInternal(String next) {
+	    if (next == null) return false;
+	    // injekzio saiakerak/kanpoko URL-ak baztertu
+	    if (next.contains("\r") || next.contains("\n")) return false;
+	    if (next.startsWith("http://") || next.startsWith("https://")) return false;
+	    if (!next.startsWith("/")) return false;
+
+	    // loopak saihestu eta bide zentzudunak onartu
+	    if (next.startsWith("/irakasle/koaderno/")) return false;
+	    // Nahi baduzu, hemen murriztu: /irakasle... soilik
+	    if (!next.startsWith("/irakasle")) return false;
+
+	    return true;
 	}
 
 	

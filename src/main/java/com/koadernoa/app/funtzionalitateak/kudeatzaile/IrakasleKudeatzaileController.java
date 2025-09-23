@@ -15,6 +15,7 @@ import com.koadernoa.app.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.irakasleak.repository.IrakasleaRepository;
 import com.koadernoa.app.modulua.service.ModuloaService;
 import com.koadernoa.app.zikloak.entitateak.Familia;
+import com.koadernoa.app.zikloak.repository.FamiliaRepository;
 import com.koadernoa.app.zikloak.service.TaldeaService;
 import com.koadernoa.app.zikloak.service.ZikloaService;
 
@@ -26,23 +27,23 @@ import lombok.RequiredArgsConstructor;
 public class IrakasleKudeatzaileController {
 	
 	private final IrakasleaRepository irakasleaRepository;
+	private final FamiliaRepository familiaRepository;
 	
 	@GetMapping({"","/"})
 	public String zerrenda(Model model) {
 	    List<Irakaslea> irakasleak = irakasleaRepository.findAll();
 	    model.addAttribute("irakasleak", irakasleak);
-	    model.addAttribute("familiaGuztiak", Familia.values()); //enum guztiak
+	    model.addAttribute("familiaGuztiak", familiaRepository.findAll());
 	    return "kudeatzaile/irakasleak/index";
 	}
 	
 	@PostMapping("/{id}/mintegia")
-	public String aldatuMintegia(@PathVariable("id") Long id, @RequestParam("mintegia") Familia mintegia) {
-	    Optional<Irakaslea> optional = irakasleaRepository.findById(id);
-	    if (optional.isPresent()) {
-	        Irakaslea irakaslea = optional.get();
-	        irakaslea.setMintegia(mintegia);
-	        irakasleaRepository.save(irakaslea);
-	    }
-	    return "redirect:/kudeatzaile/irakasleak";
-	}
+    public String aldatuMintegia(@PathVariable("id") Long id,
+                                 @RequestParam("mintegia") Long familiaId) {
+        Irakaslea irakaslea = irakasleaRepository.findById(id).orElseThrow();
+        Familia familia = familiaRepository.findById(familiaId).orElseThrow();
+        irakaslea.setMintegia(familia);
+        irakasleaRepository.save(irakaslea);
+        return "redirect:/kudeatzaile/irakasleak";
+    }
 }

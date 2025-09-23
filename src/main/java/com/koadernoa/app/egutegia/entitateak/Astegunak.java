@@ -5,5 +5,7 @@ public enum Astegunak {
 	ASTEARTEA,
 	ASTEAZKENA,
 	OSTEGUNA,
-	OSTIRALA
+	OSTIRALA,
+	LARUNBATA,
+	IGANDEA
 }

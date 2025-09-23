@@ -8,7 +8,9 @@
     <h1>Aukeratu zure mintegia</h1>
     <form method="post" th:action="@{/aukeratu-mintegia}">
         <select name="mintegia" required>
-            <option th:each="fam : ${familiaGuztiak}" th:value="${fam}" th:text="${fam}"></option>
+            <option th:each="fam : ${familiaGuztiak}"
+                    th:value="${fam.id}"
+                    th:text="${fam.izena}"></option>
         </select>
         <button type="submit">Gorde</button>
     </form>
