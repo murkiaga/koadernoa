@@ -7,6 +7,7 @@
   
   <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
   <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-XSRF-TOKEN'}"/>
+  <meta name="koaderno-id" th:content="${koadernoAktiboa != null ? koadernoAktiboa.id : ''}">
    
   <!-- SortableJS (d&d) -->
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
@@ -187,6 +188,8 @@
   const metaToken  = document.querySelector('meta[name="_csrf"]')?.content || '';
   const metaHeader = document.querySelector('meta[name="_csrf_header"]')?.content || '';
   const cookieToken = getCookie('XSRF-TOKEN'); // CookieCsrfTokenRepository.withHttpOnlyFalse()
+  
+  const KOADERNO_ID = document.querySelector('meta[name="koaderno-id"]')?.content || '';
 
   // Aukeratu tokena eta header egokia
   const CSRF_TOKEN  = metaToken || cookieToken || '';
