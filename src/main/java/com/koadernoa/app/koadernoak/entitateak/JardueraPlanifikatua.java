@@ -29,6 +29,10 @@ public class JardueraPlanifikatua {
     @Min(0)
     @Column(nullable = false)
     private int orduak = 0;
+    
+    @Min(0)
+    @Column(nullable=false)
+    private int posizioa = 0;
 
     public JardueraPlanifikatua() {}
 

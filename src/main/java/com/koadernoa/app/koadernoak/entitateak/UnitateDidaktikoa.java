@@ -43,7 +43,7 @@ public class UnitateDidaktikoa {
     private int posizioa = 0; // ordena
 
     @OneToMany(mappedBy = "unitatea", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("id ASC")
+    @OrderBy("posizioa ASC, id ASC")
     private List<JardueraPlanifikatua> azpiJarduerak = new ArrayList<>();
 
     public UnitateDidaktikoa() {}

@@ -4,21 +4,59 @@
   <meta charset="UTF-8">
   <title>Programazioa</title>
   <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
+  
+  <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
+  <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-XSRF-TOKEN'}"/>
+   
+  <!-- SortableJS (d&d) -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+  
   <style>
-    .stack { display: grid; gap: 1rem; }
-    .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 1rem; }
-    .row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: .75rem; }
-    .grid { display: grid; grid-template-columns: 120px 1fr 90px 90px 110px; gap: .5rem; align-items: center; }
-    .muted { color:#6b7280; font-size:.9rem; }
-    .tbl { width:100%; border-collapse: collapse; }
-    .tbl th, .tbl td { border-bottom:1px solid #eee; padding:.4rem .2rem; }
-    .actions { display:flex; gap:.5rem; }
-    form.inline { display:inline; }
-    input[type="text"], input[type="number"] { width:100%; padding:.35rem .5rem; }
-    h2 { margin:.2rem 0 0.8rem 0; }
-    .grid > div { align-self:center; }
-	.grid .actions { display:flex; gap:.5rem; align-items:center; }
-	.tbl th { font-weight:600; color:#374151; background:#f9fafb; }
+    :root{
+      --bg:#f6f7fb; --card:#fff; --muted:#6b7280; --text:#111827; --line:#e5e7eb;
+      --primary:#2563eb; --primary-600:#1d4ed8;
+    }
+    body{background:var(--bg); color:var(--text);}
+    .stack{display:grid; gap:1rem;}
+    .container{max-width:1000px; margin:1rem auto; padding:0 1rem;}
+    .card{background:var(--card); border:1px solid var(--line); border-radius:14px; box-shadow:0 2px 10px rgba(0,0,0,.04);}
+    .card-header{display:flex; align-items:center; gap:.75rem; padding:1rem 1rem; border-bottom:1px solid var(--line);}
+    .card-body{padding:.75rem 1rem 1rem;}
+    .muted{color:var(--muted); font-size:.95rem;}
+
+    /* UD akordeoia */
+    .ud-list{display:grid; gap:.5rem; list-style:none; padding:0; margin:0;}
+    .ud-item{background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden;}
+    .ud-header{display:grid; grid-template-columns: 24px 24px 1fr auto; align-items:center; gap:.5rem; padding:.8rem 1rem; cursor:pointer;}
+    .handle{cursor:grab; opacity:.7;}
+    .caret{transition:transform .2s ease;}
+    .ud-item.open .caret{transform:rotate(90deg);}
+    .ud-title{font-weight:600;}
+    .ud-hours{color:var(--muted); margin-left:.5rem;}
+
+    .ud-actions{display:flex; gap:.5rem;}
+    .btn{display:inline-flex; align-items:center; gap:.4rem; padding:.45rem .7rem; border-radius:10px; border:1px solid var(--line); background:#fff; cursor:pointer;}
+    .btn:hover{background:#f9fafb;}
+    .btn-primary{background:var(--primary); color:#fff; border-color:var(--primary);}
+    .btn-primary:hover{background:var(--primary-600);}
+    .btn-ghost{background:transparent;}
+    .badge{font-size:.85rem; color:var(--muted)}
+    .add-row{display:flex; justify-content:center; padding:.8rem;}
+
+    /* Jarduera zerrenda */
+    .jp-list{display:grid; gap:.4rem; list-style:none; margin:0; padding:.5rem 0 0 0;}
+    .jp-item{background:#fff; border:1px dashed var(--line); border-radius:10px; padding:.55rem .7rem; display:grid; grid-template-columns:24px 1fr auto; align-items:center; gap:.5rem;}
+    .jp-title{font-weight:500;}
+    .jp-hours{color:var(--muted); margin-left:.5rem;}
+
+    /* Modal (native <dialog>) */
+    dialog.modal{border:none; border-radius:16px; width:min(560px, 92vw); padding:0; box-shadow:0 20px 60px rgba(0,0,0,.25);}
+    .modal header{padding:1rem 1.2rem; border-bottom:1px solid var(--line); font-weight:700;}
+    .modal .content{padding:1rem 1.2rem; display:grid; gap:.8rem;}
+    .modal .actions{padding:1rem 1.2rem; display:flex; gap:.6rem; justify-content:flex-end; border-top:1px solid var(--line);}
+    .field{display:grid; gap:.3rem;}
+    .field label{font-size:.9rem; color:var(--muted);}
+    .field input[type="text"], .field input[type="number"]{padding:.55rem .7rem; border:1px solid var(--line); border-radius:10px; width:100%;}
 
   </style>
 </head>
@@ -26,117 +64,257 @@
   <div th:if="${koadernoAktiboa != null}"
        th:replace="irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})"></div>
 
-  <main class="stack" style="max-width:1000px;margin:1rem auto;">
-
-  <h1>Programazioa</h1>
-  <p class="muted" th:text="'Koadernoa: ' + ${koadernoAktiboa != null ? koadernoAktiboa.izena : '—'}"></p>
-
-  <div class="card">
-  <h2>Unitate Didaktiko berria</h2>
-
-  <form th:action="@{/irakasle/programazioa/ud}" method="post">
-    <table class="tbl">
-      <thead>
-        <tr>
-          <th style="width:120px;">Kodea</th>
-          <th>Izenburua</th>
-          <th style="width:120px;">Orduak (h)</th>
-          <th style="width:110px;">Ordena</th>
-          <th style="width:140px;">Ekintzak</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>
-            <input type="text" name="kodea" placeholder="UD1" aria-label="UD kodea (adib. UD1)" required>
-          </td>
-          <td>
-            <input type="text" name="izenburua" placeholder="Adib. Sarrerak eta oinarriak" aria-label="UD izenburua" required>
-          </td>
-          <td>
-            <input type="number" name="orduak" min="0" step="1" value="0" inputmode="numeric"
-                   placeholder="0" aria-label="UD orduak">
-          </td>
-          <td>
-            <input type="number" name="posizioa" min="0" step="1" value="0" inputmode="numeric"
-                   placeholder="0" aria-label="UD ordena">
-          </td>
-          <td>
-            <button type="submit">Gehitu UD</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </form>
-
-  <p class="muted" style="margin-top:.4rem;">
-    <strong>Orduak (h)</strong>: UD honek zenbat ordu behar dituen. Azpi-jarduerak badituzu, <em>haien baturak</em> ordezkatuko du balio hau.<br>
-    <strong>Ordena</strong>: bistaratze-ordena. Zenbaki txikiagoak lehenago agertzen dira.
-  </p>
-</div>
-
-
-  <!-- UD zerrenda + JP zerrenda -->
-  <div class="stack" th:if="${unitateak != null}">
-    <div class="card" th:each="ud : ${unitateak}">
-      <div class="row">
-        <h2>
-          <span th:text="${ud.kodea}">UD1</span> — <span th:text="${ud.izenburua}">Izenburua</span>
-        </h2>
-        <div class="actions">
-          <form th:action="@{'/irakasle/programazioa/ud/' + ${ud.id} + '/eguneratu'}" method="post" class="inline">
-            <input type="text" name="kodea" th:value="${ud.kodea}" required>
-            <input type="text" name="izenburua" th:value="${ud.izenburua}" required>
-            <input type="number" name="orduak" th:value="${ud.orduak}" min="0">
-            <input type="number" name="posizioa" th:value="${ud.posizioa}" min="0">
-            <button type="submit">Gorde</button>
-          </form>
-          <form th:action="@{'/irakasle/programazioa/ud/' + ${ud.id} + '/ezabatu'}" method="post" class="inline"
-                onsubmit="return confirm('Ziur zaude UD hau ezabatu nahi duzula?');">
-            <button type="submit">Ezabatu</button>
-          </form>
+  <main class="container stack">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h1 style="margin:0;">Programazioa</h1>
+          <div class="muted" th:text="'Koadernoa: ' + ${koadernoAktiboa != null ? koadernoAktiboa.izena : '—'}"></div>
+        </div>
+        <div style="margin-left:auto; display:flex; gap:.5rem;">
+          <button id="btn-open-add-ud" class="btn btn-primary">+ UD berria</button>
         </div>
       </div>
 
-      <!-- Jarduera Planifikatuak -->
-      <h3 style="margin-top:.6rem;">Jarduera planifikatuak</h3>
-      <table class="tbl">
-        <thead>
-          <tr>
-            <th>Izenburua</th>
-            <th style="width:120px;">Orduak</th>
-            <th style="width:220px;">Ekintzak</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr th:each="jp : ${ud.azpiJarduerak}">
-            <td th:text="${jp.izenburua}">Izenburua</td>
-            <td th:text="${jp.orduak}">0</td>
-            <td class="actions">
-              <form th:action="@{'/irakasle/programazioa/planifikatuak/' + ${jp.id} + '/eguneratu'}" method="post" class="inline">
-                <input type="text" name="izenburua" th:value="${jp.izenburua}" required>
-                <input type="number" name="orduak" th:value="${jp.orduak}" min="0">
-                <button type="submit">Gorde</button>
-              </form>
-              <form th:action="@{'/irakasle/programazioa/planifikatuak/' + ${jp.id} + '/ezabatu'}" method="post" class="inline"
-                    onsubmit="return confirm('Ezabatu jarduera planifikatua?');">
-                <button type="submit">Ezabatu</button>
-              </form>
-            </td>
-          </tr>
+      <div class="card-body">
+        <!-- UDen zerrenda + akordeoi + d&d -->
+        <ul id="udList" class="ud-list">
+          <li class="ud-item" th:each="ud : ${unitateak}" th:attr="data-ud-id=${ud.id}">
+            <div class="ud-header" onclick="toggleUd(this)">
+              <span class="handle" title="Arrastatu ordena aldatzeko">≡</span>
+              <span class="caret">›</span>
+              <div>
+                <span class="ud-title" th:text="${ud.kodea + ' — ' + ud.izenburua}">UD1 — Izenburua</span>
+                <span class="ud-hours" th:text="|(${ud.orduak}h)|">(10h)</span>
+              </div>
+              <div class="ud-actions" onclick="event.stopPropagation()">
+                <button class="btn" th:attr="data-ud-id=${ud.id}" onclick="openUdEdit(this)">Editatu</button>
+                <form th:action="@{'/irakasle/programazioa/ud/' + ${ud.id} + '/ezabatu'}" method="post" class="inline"
+                      onsubmit="return confirm('Ziur zaude UD hau ezabatu nahi duzula?');">
+                      <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                  <button class="btn btn-ghost" type="submit">Ezabatu</button>
+                </form>
+              </div>
+            </div>
 
-          <!-- Berria -->
-          <tr>
-            <form th:action="@{'/irakasle/programazioa/ud/' + ${ud.id} + '/planifikatua'}" method="post">
-              <td><input type="text" name="izenburua" placeholder="Jarduera berria" required></td>
-              <td><input type="number" name="orduak" placeholder="Orduak" min="0" value="0"></td>
-              <td><button type="submit">Gehitu jarduera</button></td>
-            </form>
-          </tr>
-        </tbody>
-      </table>
+            <div class="ud-content" style="display:none; padding:.4rem 1rem 1rem;">
+              <ul class="jp-list" th:attr="data-ud-id=${ud.id}">
+                <li class="jp-item" th:each="jp : ${ud.azpiJarduerak}" th:attr="data-jp-id=${jp.id}">
+                  <span class="handle" title="Arrastatu ordena aldatzeko">≡</span>
+                  <div>
+                    <span class="jp-title" th:text="${jp.izenburua}">Jarduera</span>
+                    <span class="jp-hours" th:text="'(' + ${jp.orduak} + 'h)'">(0h)</span>
+                  </div>
+                  <div class="ud-actions">
+                    <button class="btn" th:attr="data-jp-id=${jp.id}" onclick="openJpEdit(this)">Editatu</button>
+                    <form th:action="@{'/irakasle/programazioa/planifikatuak/' + ${jp.id} + '/ezabatu'}" method="post" class="inline"
+                          onsubmit="return confirm('Ezabatu jarduera planifikatua?');">
+                      <button class="btn btn-ghost" type="submit">Ezabatu</button>
+                    </form>
+                  </div>
+                </li>
+              </ul>
+
+              <div class="add-row">
+                <button class="btn" th:attr="data-ud-id=${ud.id}" onclick="openJpAdd(this)">+ Jarduera berria</button>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
     </div>
-  </div>
-</main>
+  </main>
+
+  <!-- MODAL: UD sortu/edita -->
+  <dialog id="udModal" class="modal">
+    <form method="dialog" id="udModalForm">
+		<input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <header>UDa</header>
+      <div class="content">
+        <input type="hidden" id="udId">
+        <div class="field">
+          <label>Kodea</label>
+          <input type="text" id="udKodea" required>
+        </div>
+        <div class="field">
+          <label>Izenburua</label>
+          <input type="text" id="udIzenburua" required>
+        </div>
+        <div class="field">
+          <label>Orduak (h)</label>
+          <input type="number" id="udOrduak" min="0" step="1" value="0">
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn" type="button" onclick="closeUdModal()">Utzi</button>
+        <button class="btn btn-primary" type="submit">Gorde</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- MODAL: Jarduera sortu/edita -->
+  <dialog id="jpModal" class="modal">
+    <form method="dialog" id="jpModalForm">
+		<input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <header>Jarduera</header>
+      <div class="content">
+        <input type="hidden" id="jpId">
+        <input type="hidden" id="jpUdId">
+        <div class="field">
+          <label>Izenburua</label>
+          <input type="text" id="jpIzenburua" required>
+        </div>
+        <div class="field">
+          <label>Orduak (h)</label>
+          <input type="number" id="jpOrduak" min="0" step="1" value="0">
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn" type="button" onclick="closeJpModal()">Utzi</button>
+        <button class="btn btn-primary" type="submit">Gorde</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+  // ---------- CSRF helpers ----------
+  function getCookie(name){
+    const m = document.cookie.match(new RegExp('(^| )' + name + '=([^;]*)'));
+    return m ? decodeURIComponent(m[2]) : '';
+  }
+
+  // Meta-tik (Thymeleaf-ek injektatua) edo cookie-tik (CookieCsrfTokenRepository)
+  const metaToken  = document.querySelector('meta[name="_csrf"]')?.content || '';
+  const metaHeader = document.querySelector('meta[name="_csrf_header"]')?.content || '';
+  const cookieToken = getCookie('XSRF-TOKEN'); // CookieCsrfTokenRepository.withHttpOnlyFalse()
+
+  // Aukeratu tokena eta header egokia
+  const CSRF_TOKEN  = metaToken || cookieToken || '';
+  const CSRF_HEADER = metaToken ? (metaHeader || 'X-CSRF-TOKEN')
+                                : (cookieToken ? 'X-XSRF-TOKEN' : '');
+
+  // Fetch JSON laguntzailea (CSRF automatikoa + session cookie-ak)
+  const fjson = (url, method, body) => fetch(url, {
+    method,
+    credentials: 'same-origin',
+    headers: Object.assign(
+      { 'Content-Type': 'application/json' },
+      CSRF_TOKEN ? { [CSRF_HEADER]: CSRF_TOKEN } : {}
+    ),
+    body: body ? JSON.stringify(body) : undefined
+  }).then(r => {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const ct = r.headers.get('content-type') || '';
+    return ct.includes('application/json') ? r.json() : { ok: true };
+  }).catch(e => {
+    console.error(e);
+    alert('Errorea: ' + e.message);
+    throw e;
+  });
+
+  // ---------- accordion ----------
+  function toggleUd(el) {
+    const item = el.closest('.ud-item');
+    item.classList.toggle('open');
+    const content = item.querySelector('.ud-content');
+    content.style.display = content.style.display === 'none' ? 'block' : 'none';
+  }
+
+  // ---------- modal: UD ----------
+  const udModal = document.getElementById('udModal');
+  const udForm  = document.getElementById('udModalForm');
+
+  document.getElementById('btn-open-add-ud').addEventListener('click', () => {
+    udForm.reset();
+    document.getElementById('udId').value = '';
+    udModal.showModal();
+  });
+
+  function openUdEdit(btn){
+    const id = btn.getAttribute('data-ud-id');
+    fjson(`/irakasle/programazioa/api/ud/${id}`, 'GET').then(d=>{
+      document.getElementById('udId').value = d.id;
+      document.getElementById('udKodea').value = d.kodea;
+      document.getElementById('udIzenburua').value = d.izenburua;
+      document.getElementById('udOrduak').value = d.orduak ?? 0;
+      udModal.showModal();
+    });
+  }
+  function closeUdModal(){ udModal.close(); }
+
+  udForm.addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const payload = {
+      id: document.getElementById('udId').value || null,
+      kodea: document.getElementById('udKodea').value,
+      izenburua: document.getElementById('udIzenburua').value,
+      orduak: parseInt(document.getElementById('udOrduak').value || '0', 10)
+    };
+    const url = payload.id ? `/irakasle/programazioa/api/ud/${payload.id}` : `/irakasle/programazioa/api/ud`;
+    const method = payload.id ? 'PUT' : 'POST';
+    fjson(url, method, payload).then(()=>location.reload());
+  });
+
+  // ---------- modal: JP ----------
+  const jpModal = document.getElementById('jpModal');
+  const jpForm  = document.getElementById('jpModalForm');
+
+  function openJpAdd(btn){
+    jpForm.reset();
+    document.getElementById('jpId').value = '';
+    document.getElementById('jpUdId').value = btn.getAttribute('data-ud-id');
+    jpModal.showModal();
+  }
+  function openJpEdit(btn){
+    const id = btn.getAttribute('data-jp-id');
+    fjson(`/irakasle/programazioa/api/jp/${id}`, 'GET').then(d=>{
+      document.getElementById('jpId').value = d.id;
+      document.getElementById('jpUdId').value = d.udId;
+      document.getElementById('jpIzenburua').value = d.izenburua;
+      document.getElementById('jpOrduak').value = d.orduak ?? 0;
+      jpModal.showModal();
+    });
+  }
+  function closeJpModal(){ jpModal.close(); }
+
+  jpForm.addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const id = document.getElementById('jpId').value;
+    const payload = {
+      udId: parseInt(document.getElementById('jpUdId').value, 10),
+      izenburua: document.getElementById('jpIzenburua').value,
+      orduak: parseInt(document.getElementById('jpOrduak').value || '0', 10)
+    };
+    const url = id ? `/irakasle/programazioa/api/jp/${id}` : `/irakasle/programazioa/api/jp`;
+    const method = id ? 'PUT' : 'POST';
+    fjson(url, method, id ? payload : { ...payload }).then(()=>location.reload());
+  });
+
+  // ---------- d&d: UD ordena ----------
+  new Sortable(document.getElementById('udList'), {
+    handle: '.handle',
+    animation: 150,
+    onEnd: () => {
+      const ids = [...document.querySelectorAll('#udList .ud-item')].map(li => parseInt(li.getAttribute('data-ud-id')));
+      fjson('/irakasle/programazioa/api/ud/ordenatu', 'POST', { udIds: ids });
+    }
+  });
+
+  // ---------- d&d: JP (kross-UD mugimendua ere bai) ----------
+  document.querySelectorAll('.jp-list').forEach(list=>{
+    new Sortable(list, {
+      group: 'jp',
+      handle: '.handle',
+      animation: 150,
+      onEnd: (evt)=>{
+        const jpId = parseInt(evt.item.getAttribute('data-jp-id'));
+        const toUdId = parseInt(evt.to.getAttribute('data-ud-id'));
+        const newIndex = evt.newIndex;
+        fjson('/irakasle/programazioa/api/jp/mugitu', 'POST', { jpId, toUdId, newIndex });
+      }
+    });
+  });
+</script>
+
 </body>
 </html>

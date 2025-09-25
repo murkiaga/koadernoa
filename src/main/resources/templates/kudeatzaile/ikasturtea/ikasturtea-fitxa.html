@@ -47,7 +47,7 @@
     <h2>Egutegiak</h2>
     <ul>
         <li th:each="egutegia : ${ikasturtea.egutegiak}">
-            <span th:text="${egutegia.maila}"></span> |
+            <span th:text="${egutegia.maila.getIzena}"></span> |
             <span th:text="${#temporals.format(egutegia.hasieraData, 'yyyy-MM-dd')}"></span> →
             <span th:text="${#temporals.format(egutegia.bukaeraData, 'yyyy-MM-dd')}"></span>
         </li>
