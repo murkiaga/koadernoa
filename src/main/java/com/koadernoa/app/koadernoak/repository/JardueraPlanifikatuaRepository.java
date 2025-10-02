@@ -13,6 +13,15 @@ public interface JardueraPlanifikatuaRepository extends JpaRepository<JardueraPl
     
     long countByUnitatea_Id(Long udId);
 
-    @Query("select coalesce(sum(j.orduak), 0) from JardueraPlanifikatua j where j.unitatea.id = :udId")
+    @Query("select coalesce(sum(j.orduak),0) from JardueraPlanifikatua j where j.unitatea.id=:udId")
     Integer sumOrduakByUdId(@Param("udId") Long udId);
+
+    // (Aukeran) multiple UDentzako bat-batean:
+    @Query("""
+           select j.unitatea.id, coalesce(sum(j.orduak),0)
+           from JardueraPlanifikatua j
+           where j.unitatea.id in :udIds
+           group by j.unitatea.id
+           """)
+    List<Object[]> sumOrduakByUdIds(@Param("udIds") List<Long> udIds);
 }

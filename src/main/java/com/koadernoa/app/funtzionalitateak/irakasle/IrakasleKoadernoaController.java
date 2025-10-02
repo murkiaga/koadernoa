@@ -25,6 +25,9 @@ import com.koadernoa.app.koadernoak.entitateak.JardueraSortuDto;
 import com.koadernoa.app.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.koadernoak.entitateak.KoadernoaSortuDto;
 import com.koadernoa.app.koadernoak.service.KoadernoaService;
+import com.koadernoa.app.modulua.entitateak.Matrikula;
+import com.koadernoa.app.modulua.entitateak.MatrikulaEgoera;
+import com.koadernoa.app.modulua.repository.MatrikulaRepository;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -43,6 +46,7 @@ public class IrakasleKoadernoaController {
 	private final IrakasleaService irakasleaService;
 	private final KoadernoaService koadernoaService;
 	private final EgutegiaService egutegiaService;
+	private final MatrikulaRepository matrikulaRepository;
 
 	@GetMapping("/koadernoa/berria")
 	public String erakutsiFormularioa(Authentication auth, Model model) {
@@ -199,6 +203,29 @@ public class IrakasleKoadernoaController {
 
 	    koadernoaService.ezabatuJarduera(koadernoa, id); // id koaderno horren barrukoa dela balidatu!
 	    return "redirect:/irakasle/denboralizazioa?urtea=" + urtea + "&hilabetea=" + hilabetea;
+	}
+	
+	@GetMapping("/ikasleak")
+	public String ikasleZerrenda(
+	    @ModelAttribute("koadernoAktiboa") Koadernoa koadernoAktiboa,
+	    Model model
+	) {
+	    // Koaderno aktiborik ez badago → orri sinple bat erakutsi
+	    if (koadernoAktiboa == null || koadernoAktiboa.getId() == null) {
+	        return "irakasleak/errorea_koadernoa";
+	    }
+
+	    // Egoera GUZTIAK ekarri (repoan definituta dagoen metodoa)
+	    List<Matrikula> matrikulak =
+	        matrikulaRepository.findAllByKoadernoaFetchIkasleaOrderByIzena(koadernoAktiboa.getId());
+
+	    model.addAttribute("matrikulak", matrikulak);
+	    model.addAttribute("kop", matrikulak.size());
+
+	    // 🔹 Alias txiki bat txantiloirako: ${koadernoa.*} erabiltzen baduzu titulua/izenak...
+	    model.addAttribute("koadernoa", koadernoAktiboa);
+
+	    return "irakasleak/ikasleak/index";
 	}
 
 }

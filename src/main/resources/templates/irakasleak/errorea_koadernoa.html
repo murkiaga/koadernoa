@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head><meta charset="UTF-8"><title>Koadernoa falta da</title></head>
+<body>
+  <div th:replace="irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})"></div>
+	</div>
+  <div style="max-width:800px;margin:2rem auto;padding:1rem;">
+    <h2>Ez dago koaderno aktiborik aukeratuta</h2>
+    <p>Mesedez, aukeratu koaderno aktiboa lehenik.</p>
+    <p><a th:href="@{/irakasle}">Itzuli hasierara</a></p>
+  </div>
+</body>
+</html>

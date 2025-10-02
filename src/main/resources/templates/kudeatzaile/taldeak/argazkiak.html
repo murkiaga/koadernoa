@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <title th:text="${taldea.izena} + ' — Argazkiak'">Argazkiak</title>
+  <link rel="stylesheet" th:href="@{/css/navbar.css}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+	  :root { --b:#e5e7eb; --t:#111827; --m:#2563eb; --mut:#6b7280; }
+	  body { color:var(--t); }
+	  .page { max-width:1200px; margin:1rem auto; padding:0 1rem; }
+	  h1 { font-size:1.5rem; margin:.5rem 0 1rem; }
+	  .topbar { display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--b); padding-bottom:.5rem; margin-bottom:1rem; }
+	  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; }
+	  .card { border:1px solid var(--b); border-radius:14px; overflow:hidden; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.04); position:relative; }
+	  .ph { display:block; width:100%; height:160px; object-fit:cover; background:#f3f4f6; }
+	  .meta { padding:.6rem .75rem .75rem; }
+	  .surnames { font-size:.95rem; color:#111827; line-height:1.1; }
+	  .name { font-weight:700; font-size:1.05rem; line-height:1.2; }
+	  .idline { font-size:.85rem; color:var(--mut); margin-top:.15rem; }
+	  .progress { height:4px; background:#e5e7eb; width:100%; }
+	  .bar { height:100%; width:0%; background:var(--m); transition:width .2s; }
+	  .hidden-input { display:none; }
+	  .badge { background:#eef2ff; color:#374151; border-radius:999px; padding:.15rem .5rem; font-size:.85rem; }
+	
+	  /* 🔹 “Igo” botoia: desktop-ean txikia, goiko eskuinean */
+	  .upload-cta {
+	    position:absolute; top:.5rem; right:.5rem;
+	    background:#ffffffcc; border:1px solid var(--b); border-radius:999px;
+	    padding:.2rem .6rem; font-size:.85rem; cursor:pointer; backdrop-filter:saturate(1.2) blur(2px);
+	  }
+	
+	</style>
+  
+
+  <script>
+	  const csrfHeader = document.getElementById('csrfHeader')?.value;
+	  const csrfToken  = document.getElementById('csrfToken')?.value;
+		if (csrfHeader && csrfToken) {
+		  xhr.setRequestHeader(csrfHeader, csrfToken); // gehienetan "X-CSRF-TOKEN" edo "X-XSRF-TOKEN"
+	  }
+	  function gotoTeam(id){
+	    if (!id) return;
+	    // /kudeatzaile/taldeak/{id}/argazkiak-era joan
+	    window.location.href = "/kudeatzaile/taldeak/" + id + "/argazkiak";
+	  }
+	  
+
+  function gotoTeam(id){
+    if(!id) return;
+    window.location.href = "/kudeatzaile/taldeak/" + id + "/argazkiak";
+  }
+
+  function openPicker(btn){
+    const card = btn.closest('.card');
+    const input = card.querySelector('.hidden-input');
+    input.click();
+  }
+
+  function uploadPhoto(input){
+    const card = input.closest('.card');
+    const url  = input.getAttribute('data-post-url');
+    const img  = card.querySelector('.ph');
+    const bar  = card.querySelector('.bar');
+
+    const file = input.files[0];
+    if(!file) return;
+
+    // Aurreikuspena berehala
+    const prev = URL.createObjectURL(file);
+    img.src = prev;
+
+    const form = new FormData();
+    form.append('foto', file);
+
+    // CSRF
+    const csrfHeader = document.getElementById('csrfHeader')?.value;
+    const csrfToken  = document.getElementById('csrfToken')?.value;
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+    if (csrfHeader && csrfToken) xhr.setRequestHeader(csrfHeader, csrfToken);
+
+    xhr.upload.addEventListener('progress', (e) => {
+      if (e.lengthComputable) {
+        const p = Math.round(e.loaded * 100 / e.total);
+        bar.style.width = p + '%';
+      }
+    });
+
+    xhr.onreadystatechange = function(){
+      if (xhr.readyState === 4) {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const res = JSON.parse(xhr.responseText);
+            if (res.ok && res.url) img.src = res.url;
+            else alert(res.errorea || 'Ezin izan da irudia gorde.');
+          } catch(e) {
+            alert('Zerbitzariaren erantzuna baliogabea da.');
+          }
+        } else {
+          alert('Errorea igotzean (' + xhr.status + ').');
+        }
+        setTimeout(() => bar.style.width = '0%', 600);
+        input.value = '';
+      }
+    };
+
+    xhr.send(form);
+  }
+  </script>
+
+</head>
+<body>
+  <div th:replace="/kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+
+  <div class="page">
+    <div class="topbar">
+	  <h1 th:text="${taldea.izena} + ' — Ikasleen argazkiak'">Ikasleen argazkiak</h1>
+	  <div style="display:flex; align-items:center; gap:.5rem;">
+	    <label for="taldeSelector" style="font-size:.9rem;color:#6b7280;">Taldea:</label>
+	    <select id="taldeSelector" onchange="gotoTeam(this.value)">
+	      <option th:each="t : ${taldeak}"
+	              th:value="${t.id}"
+	              th:text="${t.izena}"
+	              th:selected="${t.id == taldea.id}">
+	      </option>
+	    </select>
+	    <a th:href="@{/kudeatzaile/taldeak}" style="text-decoration:none">← Talde zerrendara</a>
+	  </div>
+	</div>
+
+    <div class="grid" th:if="${!#lists.isEmpty(ikasleak)}">
+      <div class="card" th:each="ik : ${ikasleak}" th:attr="data-ikasle-id=${ik.id}">
+        <button class="upload-cta" type="button" onclick="openPicker(this)">Igo</button>
+
+        <img class="ph"
+             th:src="${#strings.isEmpty(ik.argazkiPath) ? '/img/avatar-user.svg' : ik.argazkiPath}"
+             alt="argazkia">
+
+        <div class="progress"><div class="bar"></div></div>
+
+        <div class="meta">
+          <div class="surnames"
+               th:text="${(ik.abizena1?:'') + (ik.abizena2!=null && !#strings.isEmpty(ik.abizena2) ? ' ' + ik.abizena2 : '')}">
+            Abizena1 Abizena2
+          </div>
+          <div class="name" th:text="${ik.izena}">Izena</div>
+          <div class="idline">
+            <span th:text="${ik.hna}">HNA</span>
+            <span th:if="${ik.nan != null and !#strings.isEmpty(ik.nan)}"
+                  th:text="' · ' + ${ik.nan}"> · NAN</span>
+          </div>
+        </div>
+
+        <!-- File input ezkutuan, mugikor-kamera onartuta -->
+        <input class="hidden-input"
+               type="file"
+               accept="image/*"
+               capture="environment"
+               onchange="uploadPhoto(this)"
+               th:attr="data-post-url=@{'/kudeatzaile/taldeak/' + ${taldea.id} + '/argazkiak/' + ${ik.id}}">
+      </div>
+    </div>
+
+    <div th:if="${#lists.isEmpty(ikasleak)}" style="color:#6b7280;">
+      Talde honek ez du ikaslerik.
+    </div>
+  </div>
+
+  <input type="hidden" id="csrfName"  th:if="${csrf != null}" th:value="${csrf.parameterName}">
+  <input type="hidden" id="csrfToken" th:if="${csrf != null}" th:value="${csrf.token}">
+  <input type="hidden" id="csrfHeader" th:if="${csrf != null}" th:value="${csrf.headerName}">
+
+  <script>
+	  
+    function openPicker(btn){
+      const card = btn.closest('.card');
+      const input = card.querySelector('.hidden-input');
+      input.click();
+    }
+
+    function uploadPhoto(input){
+      const card = input.closest('.card');
+      const url = input.getAttribute('data-post-url');
+      const img = card.querySelector('.ph');
+      const bar = card.querySelector('.bar');
+
+      const file = input.files[0];
+      if(!file) return;
+
+      // Aurreikuspena berehala (aukera)
+      const prev = URL.createObjectURL(file);
+      img.src = prev;
+
+      const form = new FormData();
+      form.append('foto', file);
+
+      // CSRF
+      const csrfName = document.getElementById('csrfName')?.value;
+      const csrfToken = document.getElementById('csrfToken')?.value;
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', url, true);
+
+      if (csrfName && csrfToken) {
+        xhr.setRequestHeader('X-CSRF-TOKEN', csrfToken); // Spring Securityk honekin nahikoa izaten du
+      }
+
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const p = Math.round(e.loaded * 100 / e.total);
+          bar.style.width = p + '%';
+        }
+      });
+
+      xhr.onreadystatechange = function(){
+        if (xhr.readyState === 4) {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const res = JSON.parse(xhr.responseText);
+              if (res.ok && res.url) {
+                img.src = res.url; // behin gorde ondoren, finala jarri
+              } else {
+                alert(res.errorea || 'Ezin izan da irudia gorde.');
+              }
+            } catch(e) {
+              alert('Zerbitzariaren erantzuna baliogabea da.');
+            }
+          } else {
+            alert('Errorea igotzean (' + xhr.status + ').');
+          }
+          setTimeout(() => bar.style.width = '0%', 600);
+          input.value = ''; // garbitu
+        }
+      };
+
+      xhr.send(form);
+    }
+  </script>
+  <script th:src="@{/js/kudeatzaile-nav.js}"></script>
+</body>
+</html>

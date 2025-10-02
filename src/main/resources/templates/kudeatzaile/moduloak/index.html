@@ -4,6 +4,7 @@
     <title>Moduluen Zerrenda</title>
     <meta charset="UTF-8">
     <link rel="stylesheet" th:href="@{/css/navbar.css}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
 	<div th:replace="/kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
@@ -24,6 +25,7 @@
 
 
 <a th:href="@{/kudeatzaile/moduloak/sortu(taldeaId=${param.taldeaId})}">Sortu Modulo Berria</a>
+
 
 <table border="1">
     <thead>
@@ -51,7 +53,46 @@
     </tbody>
 </table>
 
-<a th:href="@{/kudeatzaile}">Itzuli Hasierara</a>
+<div th:if="${taldeaId != null}" style="margin:.75rem 0 1rem;">
+  <a th:href="@{/kudeatzaile/taldeak/{id}/argazkiak(id=${taldeaId})}"
+   style="display:inline-flex;align-items:center;gap:.4rem;padding:.4rem .7rem;border:1px solid #e5e7eb;border-radius:.5rem;text-decoration:none;">
+   📸 Argazkiak gehitu
+  </a>
+</div>
 
+<!-- IKASLE ZERRENDA: taldeaId badagoenean bakarrik -->
+<div th:if="${taldeaId != null}" style="margin-top: 2rem;">
+  <h2 style="margin-bottom:.5rem;">Ikasleak
+    <small style="font-weight: normal; color:#6b7280;"
+           th:text="'(' + ${#lists.size(ikasleak)} + ' ikasle)'"> (0 ikasle)</small>
+  </h2>
+
+  <table border="1" cellpadding="8" cellspacing="0" style="width:100%; border-collapse:collapse;">
+    <thead>
+      <tr>
+        <th>HNA (DIE)</th>
+        <th>NAN (DNI)</th>
+        <th>Abizena 1</th>
+        <th>Abizena 2</th>
+        <th>Izena</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr th:each="ik : ${ikasleak}">
+        <td th:text="${ik.hna}">HNA</td>
+        <td th:text="${ik.nan != null ? ik.nan : '-'}">NAN</td>
+        <td th:text="${ik.abizena1 != null ? ik.abizena1 : '-'}">Abizena 1</td>
+        <td th:text="${ik.abizena2 != null ? ik.abizena2 : '-'}">Abizena 2</td>
+        <td th:text="${ik.izena != null ? ik.izena : '-'}">Izena</td>
+      </tr>
+      <tr th:if="${#lists.isEmpty(ikasleak)}">
+        <td colspan="5" style="text-align:center; color:#6b7280;">Ez dago ikaslerik talde honetan oraindik.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<a th:href="@{/kudeatzaile}">Itzuli Hasierara</a>
+<script th:src="@{/js/kudeatzaile-nav.js}"></script>
 </body>
 </html>

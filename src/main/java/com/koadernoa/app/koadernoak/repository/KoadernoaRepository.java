@@ -22,4 +22,6 @@ public interface KoadernoaRepository extends JpaRepository<Koadernoa, Long>{
     boolean existsByIdAndIrakasleak_Id(Long koadernoId, Long irakasleId);
     
     List<Koadernoa> findAllByIrakasleak_Id(Long irakasleId);
+    
+    List<Koadernoa> findByModuloa_Taldea_Id(Long taldeaId);
 }

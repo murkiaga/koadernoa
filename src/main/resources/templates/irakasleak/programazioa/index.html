@@ -40,6 +40,7 @@
     .btn:hover{background:#f9fafb;}
     .btn-primary{background:var(--primary); color:#fff; border-color:var(--primary);}
     .btn-primary:hover{background:var(--primary-600);}
+    .btn-primary:focus{outline:2px solid #93c5fd;outline-offset:2px;}
     .btn-ghost{background:transparent;}
     .badge{font-size:.85rem; color:var(--muted)}
     .add-row{display:flex; justify-content:center; padding:.8rem;}
@@ -59,6 +60,8 @@
     .field label{font-size:.9rem; color:var(--muted);}
     .field input[type="text"], .field input[type="number"]{padding:.55rem .7rem; border:1px solid var(--line); border-radius:10px; width:100%;}
 
+	.btn-danger{ background:#dc2626; color:#fff; border-color:#dc2626; }
+	.btn-danger:hover{ background:#b91c1c; }
   </style>
 </head>
 <body>
@@ -78,51 +81,51 @@
       </div>
 
       <div class="card-body">
-        <!-- UDen zerrenda + akordeoi + d&d -->
-        <ul id="udList" class="ud-list">
-          <li class="ud-item" th:each="ud : ${unitateak}" th:attr="data-ud-id=${ud.id}">
-            <div class="ud-header" onclick="toggleUd(this)">
-              <span class="handle" title="Arrastatu ordena aldatzeko">≡</span>
-              <span class="caret">›</span>
-              <div>
-                <span class="ud-title" th:text="${ud.kodea + ' — ' + ud.izenburua}">UD1 — Izenburua</span>
-                <span class="ud-hours" th:text="|(${ud.orduak}h)|">(10h)</span>
-              </div>
-              <div class="ud-actions" onclick="event.stopPropagation()">
-                <button class="btn" th:attr="data-ud-id=${ud.id}" onclick="openUdEdit(this)">Editatu</button>
-                <form th:action="@{'/irakasle/programazioa/ud/' + ${ud.id} + '/ezabatu'}" method="post" class="inline"
-                      onsubmit="return confirm('Ziur zaude UD hau ezabatu nahi duzula?');">
-                      <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                  <button class="btn btn-ghost" type="submit">Ezabatu</button>
-                </form>
-              </div>
-            </div>
+		  <!-- UDen zerrenda + akordeoi + d&d -->
+		  <ul id="udList" class="ud-list">
+		    <li class="ud-item" th:each="ud : ${unitateak}" th:attr="data-ud-id=${ud.id}">
+		      <div class="ud-header" onclick="toggleUd(this)">
+		        <span class="handle" title="Arrastatu ordena aldatzeko">≡</span>
+		        <span class="caret">›</span>
+		
+		        <div>
+		          <span class="ud-title" th:text="|${ud.kodea} — ${ud.izenburua}|">UD1 — Izenburua</span>
+		          <!-- (UD orduak) (Σ jardueretan) -->
+		          <span class="ud-hours"
+		                th:text="|(${ud.orduak}h) (${jpOrduakMap[ud.id] ?: 0}h jardueretan)|">
+		            (10h) (6h jardueretan)
+		          </span>
+		        </div>
+		
+		        <div class="ud-actions" onclick="event.stopPropagation()">
+		          <button class="btn" th:attr="data-ud-id=${ud.id}" onclick="openUdEdit(this)">Editatu</button>
+		        </div>
+		      </div>
+		
+		      <div class="ud-content" style="display:none; padding:.4rem 1rem 1rem;">
+		        <ul class="jp-list" th:attr="data-ud-id=${ud.id}">
+		          <li class="jp-item" th:each="jp : ${ud.azpiJarduerak}" th:attr="data-jp-id=${jp.id}">
+		            <span class="handle" title="Arrastatu ordena aldatzeko">≡</span>
+		            <div>
+		              <span class="jp-title" th:text="${jp.izenburua}">Jarduera</span>
+		              <span class="jp-hours" th:text="|(${jp.orduak}h)|">(0h)</span>
+		            </div>
+		            <div class="ud-actions">
+		              <button class="btn" th:attr="data-jp-id=${jp.id}" onclick="openJpEdit(this)">Editatu</button>
+		            </div>
+		          </li>
+		        </ul>
+		
+		        <div class="add-row">
+		          <button class="btn btn-primary" th:attr="data-ud-id=${ud.id}" onclick="openJpAdd(this)">
+		            + Jarduera berria
+		          </button>
+		        </div>
+		      </div>
+		    </li>
+		  </ul>
+		</div>
 
-            <div class="ud-content" style="display:none; padding:.4rem 1rem 1rem;">
-              <ul class="jp-list" th:attr="data-ud-id=${ud.id}">
-                <li class="jp-item" th:each="jp : ${ud.azpiJarduerak}" th:attr="data-jp-id=${jp.id}">
-                  <span class="handle" title="Arrastatu ordena aldatzeko">≡</span>
-                  <div>
-                    <span class="jp-title" th:text="${jp.izenburua}">Jarduera</span>
-                    <span class="jp-hours" th:text="'(' + ${jp.orduak} + 'h)'">(0h)</span>
-                  </div>
-                  <div class="ud-actions">
-                    <button class="btn" th:attr="data-jp-id=${jp.id}" onclick="openJpEdit(this)">Editatu</button>
-                    <form th:action="@{'/irakasle/programazioa/planifikatuak/' + ${jp.id} + '/ezabatu'}" method="post" class="inline"
-                          onsubmit="return confirm('Ezabatu jarduera planifikatua?');">
-                      <button class="btn btn-ghost" type="submit">Ezabatu</button>
-                    </form>
-                  </div>
-                </li>
-              </ul>
-
-              <div class="add-row">
-                <button class="btn" th:attr="data-ud-id=${ud.id}" onclick="openJpAdd(this)">+ Jarduera berria</button>
-              </div>
-            </div>
-          </li>
-        </ul>
-      </div>
     </div>
   </main>
 
@@ -147,6 +150,9 @@
         </div>
       </div>
       <div class="actions">
+		<button id="udDeleteBtn" class="btn btn-danger" type="button" style="margin-right:auto; display:none;">
+    		Ezabatu UD
+  		</button>
         <button class="btn" type="button" onclick="closeUdModal()">Utzi</button>
         <button class="btn btn-primary" type="submit">Gorde</button>
       </div>
@@ -171,6 +177,9 @@
         </div>
       </div>
       <div class="actions">
+		 <button id="jpDeleteBtn" class="btn btn-danger" type="button" style="margin-right:auto; display:none;">
+    		Ezabatu jarduera
+  		</button>
         <button class="btn" type="button" onclick="closeJpModal()">Utzi</button>
         <button class="btn btn-primary" type="submit">Gorde</button>
       </div>
@@ -230,8 +239,12 @@
   document.getElementById('btn-open-add-ud').addEventListener('click', () => {
     udForm.reset();
     document.getElementById('udId').value = '';
+    udDeleteBtn.style.display = 'none';
     udModal.showModal();
   });
+  
+  // ---- UD modal: delete toggle + action
+  const udDeleteBtn = document.getElementById('udDeleteBtn');
 
   function openUdEdit(btn){
     const id = btn.getAttribute('data-ud-id');
@@ -240,6 +253,15 @@
       document.getElementById('udKodea').value = d.kodea;
       document.getElementById('udIzenburua').value = d.izenburua;
       document.getElementById('udOrduak').value = d.orduak ?? 0;
+      
+      // Edit mode -> erakutsi "Ezabatu UD"
+      udDeleteBtn.style.display = 'inline-flex';
+      udDeleteBtn.onclick = () => {
+        if (confirm('Ziur zaude UD hau (eta bere jarduera guztiak) ezabatu nahi dituzula?')) {
+          fjson(`/irakasle/programazioa/api/ud/${d.id}`, 'DELETE').then(()=>location.reload());
+        }
+      };
+      
       udModal.showModal();
     });
   }
@@ -266,6 +288,7 @@
     jpForm.reset();
     document.getElementById('jpId').value = '';
     document.getElementById('jpUdId').value = btn.getAttribute('data-ud-id');
+    jpDeleteBtn.style.display = 'none'; // berria -> ezabatu ez
     jpModal.showModal();
   }
   function openJpEdit(btn){
@@ -275,6 +298,14 @@
       document.getElementById('jpUdId').value = d.udId;
       document.getElementById('jpIzenburua').value = d.izenburua;
       document.getElementById('jpOrduak').value = d.orduak ?? 0;
+
+      jpDeleteBtn.style.display = 'inline-flex';
+      jpDeleteBtn.onclick = () => {
+        if (confirm('Ziur zaude jarduera hau ezabatu nahi duzula?')) {
+          fjson(`/irakasle/programazioa/api/jp/${d.id}`, 'DELETE').then(()=>location.reload());
+        }
+      };
+
       jpModal.showModal();
     });
   }

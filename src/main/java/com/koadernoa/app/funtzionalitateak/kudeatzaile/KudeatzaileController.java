@@ -1,6 +1,8 @@
 package com.koadernoa.app.funtzionalitateak.kudeatzaile;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
@@ -12,6 +14,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.koadernoa.app.zikloak.entitateak.ZikloMaila;
@@ -19,8 +23,9 @@ import com.koadernoa.app.egutegia.repository.MailaRepository;
 import com.koadernoa.app.irakasleak.repository.IrakasleaRepository;
 import com.koadernoa.app.modulua.entitateak.Moduloa;
 import com.koadernoa.app.modulua.entitateak.ModuloaFormDto;
+import com.koadernoa.app.modulua.repository.IkasleaRepository;
+import com.koadernoa.app.modulua.service.IkasleArgazkiService;
 import com.koadernoa.app.modulua.service.ModuloaService;
-import com.koadernoa.app.zikloak.entitateak.Familia;
 import com.koadernoa.app.zikloak.entitateak.Taldea;
 import com.koadernoa.app.zikloak.entitateak.Zikloa;
 import com.koadernoa.app.zikloak.repository.FamiliaRepository;
@@ -28,6 +33,7 @@ import com.koadernoa.app.zikloak.service.TaldeaService;
 import com.koadernoa.app.zikloak.service.ZikloaService;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -43,6 +49,8 @@ public class KudeatzaileController {
     private final MailaRepository mailaRepository;
     private final IrakasleaRepository irakasleaRepository;
     private final FamiliaRepository familiaRepository;
+    private final IkasleaRepository ikasleaRepository;
+    private final IkasleArgazkiService ikasleArgazkiService;
 
 	@GetMapping({"","/"})
     public String kudeatzaileDashboard(Model model) {
@@ -96,8 +104,18 @@ public class KudeatzaileController {
 	    List<Taldea> taldeak = (zikloaId != null)
 	            ? taldeaService.getByZikloaId(zikloaId)
 	            : taldeaService.getAll();
+	    
+	    //Taldeetako ikasle kopurua jasotzeko
+	    List<Long> ids = taldeak.stream().map(Taldea::getId).toList();
+	    Map<Long, Long> ikasleKop = new HashMap<>();
+	    ikasleaRepository.countByTaldeaIds(ids).forEach(row ->
+	        ikasleKop.put(row.getTaldeaId(), row.getKop())
+	    );
+	    // faltan daudenak 0-ra
+	    for (Long id : ids) ikasleKop.putIfAbsent(id, 0L);
 
 	    model.addAttribute("taldeak", taldeak);
+	    model.addAttribute("ikasleKop", ikasleKop);
 	    model.addAttribute("irakasleak", irakasleaRepository.findAll());
 	    model.addAttribute("zikloak", zikloaService.getAll()); // dropdown-erako
 	    model.addAttribute("zikloaId", zikloaId);              // aukeratutako balioa
@@ -148,6 +166,52 @@ public class KudeatzaileController {
         }
         return "redirect:/kudeatzaile/taldeak";
     }
+    
+    @GetMapping("/taldeak/{id}/argazkiak")
+    public String taldeArgazkiak(@PathVariable("id") Long taldeId,
+                                 Model model,
+                                 HttpServletRequest request) {
+        var taldea = taldeaService.getById(taldeId)
+                .orElseThrow(() -> new IllegalArgumentException("Taldea ez da aurkitu: " + taldeId));
+
+        model.addAttribute("taldea", taldea);
+        model.addAttribute("ikasleak",
+            ikasleaRepository.findByTaldea_IdOrderByAbizena1AscAbizena2AscIzenaAsc(taldeId));
+
+        // 🔹 CSRF model-era modu sinplean
+        CsrfToken csrf = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
+        model.addAttribute("csrf", csrf);
+
+        model.addAttribute("taldeak", taldeaService.getAllWithStudents());
+
+        return "kudeatzaile/taldeak/argazkiak";
+    }
+    
+    @PostMapping("/taldeak/{taldeId}/argazkiak/{ikasleId}")
+    @ResponseBody
+    public Map<String,Object> igoArgazkia(@PathVariable Long taldeId,
+                                          @PathVariable Long ikasleId,
+                                          @RequestParam("foto") MultipartFile file,
+                                          HttpServletResponse resp) {
+        Map<String,Object> out = new HashMap<>();
+        try {
+            // (Aukeran) egiaztatu ikaslea talde horretakoa dela
+            var ikasleaOpt = ikasleaRepository.findById(ikasleId);
+            if (ikasleaOpt.isEmpty() || ikasleaOpt.get().getTaldea()==null
+                    || !ikasleaOpt.get().getTaldea().getId().equals(taldeId)) {
+                throw new IllegalArgumentException("Ikaslea ez dator talde honekin bat.");
+            }
+
+            String url = ikasleArgazkiService.gordeArgazkia(ikasleId, file);
+            out.put("ok", true);
+            out.put("url", url);
+        } catch (Exception e) {
+            resp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            out.put("ok", false);
+            out.put("errorea", e.getMessage());
+        }
+        return out;
+    }
 
 	
 //----MODULOAK
@@ -157,6 +221,9 @@ public class KudeatzaileController {
     	List<Moduloa> moduluak;
         if (taldeaId != null) {
             moduluak = moduloaService.getByTaldeaId(taldeaId);
+            // Ikasle zerrenda gehitu modelera
+            model.addAttribute("ikasleak",
+                ikasleaRepository.findByTaldea_IdOrderByAbizena1AscAbizena2AscIzenaAsc(taldeaId));
         } else {
             moduluak = moduloaService.getAll();
         }

@@ -1,5 +1,6 @@
 package com.koadernoa.app.zikloak.service;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -7,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import com.koadernoa.app.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.irakasleak.repository.IrakasleaRepository;
+import com.koadernoa.app.modulua.repository.IkasleaRepository;
 import com.koadernoa.app.zikloak.entitateak.Taldea;
 import com.koadernoa.app.zikloak.repository.TaldeaRepository;
 
@@ -19,6 +21,7 @@ public class TaldeaService {
 	
 	private final TaldeaRepository taldeaRepository;
 	private final IrakasleaRepository irakasleaRepository;
+	private final IkasleaRepository ikasleaRepository;
 
     public List<Taldea> getAll() {
         return taldeaRepository.findAll();
@@ -63,5 +66,12 @@ public class TaldeaService {
 
         taldea.setTutorea(irakaslea);
         //@Transactional dela eta, ez da save() beharrezkoa
+    }
+    
+    public List<Taldea> getAllWithStudents() {
+        return ikasleaRepository.findDistinctTaldeakWithStudents()
+                .stream()
+                .sorted(Comparator.comparing(Taldea::getIzena)) // aukeran: ordenatu izenez
+                .toList();
     }
 }

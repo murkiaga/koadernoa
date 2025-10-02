@@ -1,45 +1,91 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    
-</head>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
 <body>
-
 <div th:fragment="kudeatzaile-navbar">
-    <nav>
+  <div class="k-nav">
+    <!-- Goiko barra (brand + desktop menu + hamburger) -->
+    <div class="k-navbar">
+      <a class="k-brand" th:href="@{/kudeatzaile}">Kudeaketa</a>
+
+      <!-- Desktop menua -->
+      <nav class="k-desktop" aria-label="Kudeatzaile nabigazioa">
         <ul>
-            <li><a th:href="@{/kudeatzaile}"
-       			   th:classappend="${currentPath == '/kudeatzaile' or currentPath == '/kudeatzaile/'} ? 'active'">Hasiera</a></li>
+          <li><a th:href="@{/kudeatzaile}"
+                 th:classappend="${currentPath == '/kudeatzaile' or currentPath == '/kudeatzaile/'} ? 'active'">Hasiera</a></li>
 
-            <li><a th:href="@{/kudeatzaile/zikloak}"
-                   th:classappend="${currentPath == '/kudeatzaile/zikloak'} ? 'active'">Zikloak</a></li>
+          <li><a th:href="@{/kudeatzaile/zikloak}"
+                 th:classappend="${currentPath == '/kudeatzaile/zikloak'} ? 'active'">Zikloak</a></li>
 
-            <li><a th:href="@{/kudeatzaile/taldeak}"
-                   th:classappend="${currentPath == '/kudeatzaile/taldeak'} ? 'active'">Taldeak</a></li>
+          <li><a th:href="@{/kudeatzaile/taldeak}"
+                 th:classappend="${currentPath == '/kudeatzaile/taldeak'} ? 'active'">Taldeak</a></li>
 
-            <li><a th:href="@{/kudeatzaile/moduloak}"
-                   th:classappend="${currentPath == '/kudeatzaile/moduloak'} ? 'active'">Moduluak</a></li>
+          <li><a th:href="@{/kudeatzaile/moduloak}"
+                 th:classappend="${currentPath == '/kudeatzaile/moduloak'} ? 'active'">Moduluak</a></li>
 
-            <li><a th:href="@{/kudeatzaile/irakasleak}"
-                   th:classappend="${currentPath == '/kudeatzaile/irakasleak'} ? 'active'">Irakasleak</a></li>
+          <li><a th:href="@{/kudeatzaile/irakasleak}"
+                 th:classappend="${currentPath == '/kudeatzaile/irakasleak'} ? 'active'">Irakasleak</a></li>
 
-			<li><a th:href="@{/kudeatzaile/ikasturteak}"
-       				th:classappend="${currentPath.startsWith('/kudeatzaile/ikasturteak')} ? 'active'">Ikasturteak</a></li>
+          <li><a th:href="@{/kudeatzaile/ikasturteak}"
+                 th:classappend="${currentPath.startsWith('/kudeatzaile/ikasturteak')} ? 'active'">Ikasturteak</a></li>
 
-            <li><a th:href="@{/kudeatzaile/egutegia}"
-                   th:classappend="${currentPath.startsWith('/kudeatzaile/egutegia')} ? 'active'">Egutegiak</a></li>
+          <li><a th:href="@{/kudeatzaile/egutegia}"
+                 th:classappend="${currentPath.startsWith('/kudeatzaile/egutegia')} ? 'active'">Egutegiak</a></li>
 
-            <li><a th:href="@{/kudeatzaile/konfigurazioa}"
-                   th:classappend="${currentPath == '/kudeatzaile/konfigurazioa'} ? 'active'">Konfigurazioa</a></li>
+          <li><a th:href="@{/kudeatzaile/konfigurazioa}"
+                 th:classappend="${currentPath == '/kudeatzaile/konfigurazioa'} ? 'active'">Konfigurazioa</a></li>
 
-            <li><a th:href="@{/kudeatzaile/koadernoak}"
-                   th:classappend="${currentPath == '/kudeatzaile/koadernoak'} ? 'active'">Koadernoak</a></li>
+          <li style="margin-left:auto;"><a th:href="@{/kudeatzaile/koadernoak}"
+                 th:classappend="${currentPath == '/kudeatzaile/koadernoak'} ? 'active'">Koadernoak</a></li>
 
-            <li style="margin-left:auto;"><a th:href="@{/logout}">Irten</a></li>
+          <li><a th:href="@{/logout}">Irten</a></li>
         </ul>
-    </nav>
-</div>
+      </nav>
 
+      <!-- Hamburger (mugikorra) -->
+      <button class="k-hamb" type="button" onclick="KNav.toggle()" aria-expanded="false" aria-controls="kNav">
+        ☰ Menua
+      </button>
+    </div>
+
+    <!-- Panel tolesgarria (mugikorra, fullscreen) -->
+    <div id="kNav" class="k-panel" aria-hidden="true">
+      <div class="k-panel-header">
+        <button type="button" onclick="KNav.toggle()" aria-label="Itxi">✕ Itxi</button>
+      </div>
+      <div class="k-panel-content">
+        <ul class="k-list" aria-label="Kudeatzaile nabigazioa, mugikorra">
+          <li><a th:href="@{/kudeatzaile}"
+                 th:classappend="${currentPath == '/kudeatzaile' or currentPath == '/kudeatzaile/'} ? 'active'">Hasiera</a></li>
+
+          <li><a th:href="@{/kudeatzaile/zikloak}"
+                 th:classappend="${currentPath == '/kudeatzaile/zikloak'} ? 'active'">Zikloak</a></li>
+
+          <li><a th:href="@{/kudeatzaile/taldeak}"
+                 th:classappend="${currentPath == '/kudeatzaile/taldeak'} ? 'active'">Taldeak</a></li>
+
+          <li><a th:href="@{/kudeatzaile/moduloak}"
+                 th:classappend="${currentPath == '/kudeatzaile/moduloak'} ? 'active'">Moduluak</a></li>
+
+          <li><a th:href="@{/kudeatzaile/irakasleak}"
+                 th:classappend="${currentPath == '/kudeatzaile/irakasleak'} ? 'active'">Irakasleak</a></li>
+
+          <li><a th:href="@{/kudeatzaile/ikasturteak}"
+                 th:classappend="${currentPath.startsWith('/kudeatzaile/ikasturteak')} ? 'active'">Ikasturteak</a></li>
+
+          <li><a th:href="@{/kudeatzaile/egutegia}"
+                 th:classappend="${currentPath.startsWith('/kudeatzaile/egutegia')} ? 'active'">Egutegiak</a></li>
+
+          <li><a th:href="@{/kudeatzaile/konfigurazioa}"
+                 th:classappend="${currentPath == '/kudeatzaile/konfigurazioa'} ? 'active'">Konfigurazioa</a></li>
+
+          <li><a th:href="@{/kudeatzaile/koadernoak}"
+                 th:classappend="${currentPath == '/kudeatzaile/koadernoak'} ? 'active'">Koadernoak</a></li>
+
+          <li><a th:href="@{/logout}">Irten</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>

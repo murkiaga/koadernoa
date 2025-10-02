@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <title>Ikasleak – [[${koadernoAktiboa != null ? koadernoAktiboa.izena : ''}]]</title>
+  <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
+  <style>
+    :root { --b:#e5e7eb; --t:#111827; --m:#2563eb; --mut:#6b7280; }
+    body { color:var(--t); }
+    .page { max-width:1200px; margin:1rem auto; padding:0 1rem; }
+    h1 { font-size:1.5rem; margin:.5rem 0 1rem; }
+    .grid {
+      display:grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap:12px;
+    }
+    .card {
+      border:1px solid var(--b);
+      border-radius:14px;
+      overflow:hidden;
+      background:#fff;
+      box-shadow: 0 1px 2px rgba(0,0,0,.04);
+    }
+    .ph {
+      display:block; width:100%; height:160px; object-fit:cover; background:#f3f4f6;
+    }
+    .meta { padding:.6rem .75rem .75rem; }
+    .surnames { font-size:.95rem; color:#111827; line-height:1.1; }
+    .name { font-weight:700; font-size:1.05rem; line-height:1.2; }
+    .idline { font-size:.85rem; color:var(--mut); margin-top:.15rem; }
+    .topbar {
+      display:flex; align-items:center; justify-content:space-between; gap:.5rem;
+      margin-bottom:.5rem; border-bottom:1px solid var(--b); padding-bottom:.5rem;
+    }
+    .badge { background:#eef2ff; color:#374151; border-radius:999px; padding:.15rem .5rem; font-size:.85rem; }
+  </style>
+</head>
+<body>
+  	<!-- Navbar -->
+	<div th:if="${koadernoAktiboa != null}"
+	     th:replace="irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})">
+	</div>
+
+  <div class="page">
+    <div class="topbar">
+      <h1 th:text="${koadernoa != null ? koadernoa.izena + ' — Ikasleak' : 'Ikasleak'}">Ikasleak</h1>
+      <span class="badge" th:text="${kop} + ' ikasle'">0 ikasle</span>
+    </div>
+
+    <div th:if="${#lists.isEmpty(matrikulak)}" style="color:#6b7280;">
+      Ez dago ikasle aktiborik koaderno honetan oraindik.
+    </div>
+
+    <div class="grid" th:if="${!#lists.isEmpty(matrikulak)}">
+      <div class="card" th:each="m : ${matrikulak}">
+		  
+        <!-- Argazkia -->
+        <img class="ph"
+	     th:src="${#strings.isEmpty(m.ikaslea.argazkiPath) ? '/img/avatar-user.svg' : m.ikaslea.argazkiPath}"
+	     alt="argazkia">
+
+        <!-- Testuak -->
+        <div class="meta">
+          <div class="surnames"
+               th:text="${(m.ikaslea.abizena1?:'') + (m.ikaslea.abizena2!=null && !#strings.isEmpty(m.ikaslea.abizena2) ? ' ' + m.ikaslea.abizena2 : '')}">
+            Abizena1 Abizena2
+          </div>
+          <div class="name" th:text="${m.ikaslea.izena}">Izena</div>
+          <div class="idline">
+            <span th:text="${m.ikaslea.hna}">HNA</span>
+            <span th:if="${m.ikaslea.nan != null and !#strings.isEmpty(m.ikaslea.nan)}"
+                  th:text="' · ' + ${m.ikaslea.nan}"> · NAN</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

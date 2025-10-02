@@ -43,10 +43,15 @@ public class ProgramazioaController {
             ra.addFlashAttribute("error", "Ez dago koaderno aktiborik aukeratuta.");
             return "redirect:/irakasle";
         }
+        
+        
 
         var programazioa = programazioaService.getOrCreateForKoadernoa(koadernoAktiboa);
+        var unitateak = programazioa.getUnitateak();
+        
         model.addAttribute("programazioa", programazioa);
-        model.addAttribute("unitateak", programazioa.getUnitateak());
+        model.addAttribute("unitateak", unitateak);
+        model.addAttribute("jpOrduakMap", programazioaService.planifikatutakoOrduakMap(unitateak));
         return "irakasleak/programazioa/index";
     }
 

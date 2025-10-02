@@ -2,6 +2,8 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title th:text="'Zikloaren fitxa - ' + ${zikloa.izena}">Zikloaren fitxa</title>
+    <link rel="stylesheet" th:href="@{/css/navbar.css}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
 <h1 th:text="${zikloa.izena} + ' (' + ${zikloa.maila} + ', ' + ${zikloa.familia} + ')'">Ziklo izena</h1>
@@ -29,5 +31,7 @@
 
 <a th:href="@{/kudeatzaile/taldeak/sortu}">Talde berria sortu</a><br/>
 <a th:href="@{/kudeatzaile/zikloak}">Itzuli zikloen zerrendara</a>
+
+<script th:src="@{/js/kudeatzaile-nav.js}"></script>
 </body>
 </html>
