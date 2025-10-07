@@ -12,14 +12,14 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import com.koadernoa.app.egutegia.entitateak.Ikasturtea;
-import com.koadernoa.app.egutegia.repository.MailaRepository;
-import com.koadernoa.app.egutegia.entitateak.Astegunak;
-import com.koadernoa.app.egutegia.entitateak.EgunBerezi;
-import com.koadernoa.app.egutegia.entitateak.EgunMota;
-import com.koadernoa.app.egutegia.entitateak.Egutegia;
-import com.koadernoa.app.egutegia.service.EgutegiaService;
-import com.koadernoa.app.egutegia.service.IkasturteaService;
+import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
+import com.koadernoa.app.objektuak.egutegia.entitateak.EgunBerezi;
+import com.koadernoa.app.objektuak.egutegia.entitateak.EgunMota;
+import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
+import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
+import com.koadernoa.app.objektuak.egutegia.repository.MailaRepository;
+import com.koadernoa.app.objektuak.egutegia.service.EgutegiaService;
+import com.koadernoa.app.objektuak.egutegia.service.IkasturteaService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -34,7 +34,7 @@ public class EgutegiaController {
 	private final MailaRepository mailaRepository;
 	
 	@ModelAttribute("mailak")
-    public List<com.koadernoa.app.egutegia.entitateak.Maila> loadMailak() {
+    public List<com.koadernoa.app.objektuak.egutegia.entitateak.Maila> loadMailak() {
         // Aukeratu zure repo metodoa; adib. aktibo + ordena:
         return mailaRepository.findAllByAktiboTrueOrderByOrdenaAscIzenaAsc();
         // edo, besterik ezean:

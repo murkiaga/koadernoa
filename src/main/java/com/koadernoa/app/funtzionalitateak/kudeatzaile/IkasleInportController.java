@@ -10,14 +10,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.koadernoa.app.egutegia.repository.MailaRepository;
-import com.koadernoa.app.irakasleak.repository.IrakasleaRepository;
-import com.koadernoa.app.modulua.service.ModuloaService;
-import com.koadernoa.app.zikloak.entitateak.InportazioTxostena;
-import com.koadernoa.app.zikloak.repository.FamiliaRepository;
-import com.koadernoa.app.zikloak.service.InportazioZerbitzua;
-import com.koadernoa.app.zikloak.service.TaldeaService;
-import com.koadernoa.app.zikloak.service.ZikloaService;
+import com.koadernoa.app.objektuak.egutegia.repository.MailaRepository;
+import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
+import com.koadernoa.app.objektuak.modulua.service.ModuloaService;
+import com.koadernoa.app.objektuak.zikloak.entitateak.InportazioTxostena;
+import com.koadernoa.app.objektuak.zikloak.repository.FamiliaRepository;
+import com.koadernoa.app.objektuak.zikloak.service.InportazioZerbitzua;
+import com.koadernoa.app.objektuak.zikloak.service.TaldeaService;
+import com.koadernoa.app.objektuak.zikloak.service.ZikloaService;
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;

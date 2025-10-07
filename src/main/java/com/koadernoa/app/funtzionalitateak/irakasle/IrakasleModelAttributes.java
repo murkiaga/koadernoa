@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.SessionAttribute;
 
-import com.koadernoa.app.irakasleak.entitateak.Irakaslea;
-import com.koadernoa.app.irakasleak.service.IrakasleaService;
-import com.koadernoa.app.koadernoak.entitateak.Koadernoa;
+import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
+import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 
 import lombok.RequiredArgsConstructor;
 

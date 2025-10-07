@@ -11,9 +11,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.koadernoa.app.egutegia.entitateak.Ikasturtea;
-import com.koadernoa.app.egutegia.service.EgutegiaService;
-import com.koadernoa.app.egutegia.service.IkasturteaService;
+import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
+import com.koadernoa.app.objektuak.egutegia.service.EgutegiaService;
+import com.koadernoa.app.objektuak.egutegia.service.IkasturteaService;
 
 import lombok.RequiredArgsConstructor;
 

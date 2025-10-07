@@ -6,10 +6,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.koadernoa.app.irakasleak.entitateak.Irakaslea;
-import com.koadernoa.app.irakasleak.repository.IrakasleaRepository;
-import com.koadernoa.app.zikloak.entitateak.Familia;
-import com.koadernoa.app.zikloak.repository.FamiliaRepository;
+import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
+import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
+import com.koadernoa.app.objektuak.zikloak.entitateak.Familia;
+import com.koadernoa.app.objektuak.zikloak.repository.FamiliaRepository;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;

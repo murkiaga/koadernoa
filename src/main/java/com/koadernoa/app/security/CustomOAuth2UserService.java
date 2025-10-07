@@ -8,15 +8,15 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
 
+import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
+import com.koadernoa.app.objektuak.irakasleak.entitateak.Rola;
+import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
+
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 
 import java.util.List;
-
-import com.koadernoa.app.irakasleak.entitateak.Irakaslea;
-import com.koadernoa.app.irakasleak.entitateak.Rola;
-import com.koadernoa.app.irakasleak.repository.IrakasleaRepository;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpSession;

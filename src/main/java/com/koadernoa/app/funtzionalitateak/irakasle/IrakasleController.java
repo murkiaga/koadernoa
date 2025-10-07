@@ -19,16 +19,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.koadernoa.app.egutegia.entitateak.EgunBerezi;
-import com.koadernoa.app.egutegia.entitateak.Egutegia;
-import com.koadernoa.app.egutegia.service.EgutegiaService;
-import com.koadernoa.app.irakasleak.entitateak.Irakaslea;
-import com.koadernoa.app.irakasleak.service.IrakasleaService;
-import com.koadernoa.app.koadernoak.entitateak.Koadernoa;
-import com.koadernoa.app.koadernoak.service.KoadernoaService;
-import com.koadernoa.app.modulua.service.ModuloaService;
-import com.koadernoa.app.zikloak.service.TaldeaService;
-import com.koadernoa.app.zikloak.service.ZikloaService;
+import com.koadernoa.app.objektuak.egutegia.entitateak.EgunBerezi;
+import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
+import com.koadernoa.app.objektuak.egutegia.service.EgutegiaService;
+import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
+import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
+import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
+import com.koadernoa.app.objektuak.modulua.service.ModuloaService;
+import com.koadernoa.app.objektuak.zikloak.service.TaldeaService;
+import com.koadernoa.app.objektuak.zikloak.service.ZikloaService;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;

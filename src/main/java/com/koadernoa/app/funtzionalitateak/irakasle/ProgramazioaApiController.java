@@ -3,10 +3,10 @@ package com.koadernoa.app.funtzionalitateak.irakasle;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.koadernoa.app.irakasleak.service.IrakasleaService;
-import com.koadernoa.app.koadernoak.entitateak.Koadernoa;
-import com.koadernoa.app.koadernoak.service.KoadernoaService;
-import com.koadernoa.app.koadernoak.service.ProgramazioaService;
+import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
+import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
+import com.koadernoa.app.objektuak.koadernoak.service.ProgramazioaService;
 
 import lombok.RequiredArgsConstructor;
 

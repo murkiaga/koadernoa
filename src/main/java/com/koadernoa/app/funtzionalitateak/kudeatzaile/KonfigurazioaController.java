@@ -8,10 +8,10 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
-import com.koadernoa.app.egutegia.entitateak.Maila;
-import com.koadernoa.app.egutegia.repository.MailaRepository;
-import com.koadernoa.app.zikloak.entitateak.Familia;
-import com.koadernoa.app.zikloak.repository.FamiliaRepository;
+import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
+import com.koadernoa.app.objektuak.egutegia.repository.MailaRepository;
+import com.koadernoa.app.objektuak.zikloak.entitateak.Familia;
+import com.koadernoa.app.objektuak.zikloak.repository.FamiliaRepository;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

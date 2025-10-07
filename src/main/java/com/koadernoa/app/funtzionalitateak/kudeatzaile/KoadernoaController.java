@@ -5,12 +5,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.koadernoa.app.egutegia.entitateak.Ikasturtea;
-import com.koadernoa.app.egutegia.service.IkasturteaService;
-import com.koadernoa.app.koadernoak.service.KoadernoaService;
-import com.koadernoa.app.modulua.service.ModuloaService;
-import com.koadernoa.app.zikloak.service.TaldeaService;
-import com.koadernoa.app.zikloak.service.ZikloaService;
+import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
+import com.koadernoa.app.objektuak.egutegia.service.IkasturteaService;
+import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
+import com.koadernoa.app.objektuak.modulua.service.ModuloaService;
+import com.koadernoa.app.objektuak.zikloak.service.TaldeaService;
+import com.koadernoa.app.objektuak.zikloak.service.ZikloaService;
 
 import lombok.RequiredArgsConstructor;
 

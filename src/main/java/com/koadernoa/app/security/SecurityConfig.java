@@ -8,9 +8,10 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
-import org.springframework.security.core.Authentication;
 
-import com.koadernoa.app.irakasleak.repository.IrakasleaRepository;
+import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
+
+import org.springframework.security.core.Authentication;
 
 import jakarta.annotation.PostConstruct;
 
