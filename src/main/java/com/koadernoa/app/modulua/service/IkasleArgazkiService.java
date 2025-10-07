@@ -2,6 +2,9 @@ package com.koadernoa.app.modulua.service;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.nio.file.Files;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -18,49 +21,55 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class IkasleArgazkiService {
 
-    @Value("${koadernoa.uploads.dir}")
-    private String uploadRoot;
-
+	@Value("${koadernoa.uploads.dir}")
+    private String baseDir;
     @Value("${koadernoa.uploads.ikasleak-subdir:ikasleak}")
-    private String ikasleSubdir;
+    private String subdir;
 
     private final IkasleaRepository ikasleaRepository;
 
     public String gordeArgazkia(Long ikasleId, MultipartFile file) throws IOException {
-        if (file == null || file.isEmpty()) throw new IllegalArgumentException("Fitxategia hutsik dago.");
-        String contentType = file.getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
-            throw new IllegalArgumentException("Irudi-mota baliogabea.");
-        }
+        Ikaslea ik = ikasleaRepository.findById(ikasleId)
+                      .orElseThrow(() -> new IllegalArgumentException("Ikaslea ez da existitzen"));
+        if (file == null || file.isEmpty()) throw new IllegalArgumentException("Fitxategia hutsik");
 
-        // Onartutako luzapen sinpleak (JPEG/PNG/WebP)
-        String ext = ".jpg";
-        if (contentType.contains("png")) ext = ".png";
-        else if (contentType.contains("webp")) ext = ".webp";
+        // Eduki mota -> luzapena
+        String ct = file.getContentType();
+        String ext = switch (ct) {
+            case "image/jpeg" -> ".jpg";
+            case "image/png"  -> ".png";
+            case "image/webp" -> ".webp";
+            default -> throw new IllegalArgumentException("Irudi formatua ez da onartzen: " + ct);
+        };
 
-        Path dir = Path.of(uploadRoot, ikasleSubdir, String.valueOf(ikasleId));
+        // HNA derrigor
+        String hna = ik.getHna();
+        if (hna == null || hna.isBlank())
+            throw new IllegalStateException("Ikasleak ez dauka HNA baliorik");
+
+        Path root = Paths.get(baseDir).toAbsolutePath().normalize();
+        Path dir  = root.resolve(subdir).normalize();
         Files.createDirectories(dir);
 
-        // Izendapena: originala ez zaigu axola; gordeko dugu "profile" izenarekin
-        Path target = dir.resolve("profile" + ext);
+        // Helburua (gainidaztea onartzen da)
+        Path target = dir.resolve(hna + ext).normalize();
 
-        // Ezabatu aurreko profile.* existitzen bada
-        try (var s = Files.list(dir)) {
-            s.filter(p -> p.getFileName().toString().startsWith("profile."))
-             .forEach(p -> { try { Files.deleteIfExists(p); } catch (IOException ignored) {} });
+        // (aukerakoa) lehen ezabatu beste luzapenekin (formatoa aldatzen bada)
+        for (String e : List.of(".jpg",".png",".webp")) {
+            if (!e.equals(ext)) {
+                Files.deleteIfExists(dir.resolve(hna + e));
+            }
         }
 
         // Gorde
-        file.transferTo(target.toFile());
+        try (var in = file.getInputStream()) {
+            Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
+        }
 
-        // DB-an path publikoa (handler-ak /uploads/** zerbitzatzen du)
-        String publicPath = "/uploads/" + ikasleSubdir + "/" + ikasleId + "/profile" + ext;
-
-        Ikaslea ikaslea = ikasleaRepository.findById(ikasleId)
-                .orElseThrow(() -> new IllegalArgumentException("Ikaslea ez da existitzen: " + ikasleId));
-        ikaslea.setArgazkiPath(publicPath);
-        ikasleaRepository.save(ikaslea);
-
-        return publicPath;
+        // DBn URL erlatiboa gorde
+        String url = "/uploads/" + subdir + "/" + hna + ext;
+        ik.setArgazkiPath(url);
+        ikasleaRepository.save(ik);
+        return url;
     }
 }

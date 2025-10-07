@@ -45,7 +45,7 @@ public class SecurityConfig {
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/kudeatzaile/**").hasAnyRole("ADMIN", "KUDEATZAILEA")
                 .requestMatchers("/irakasle", "/irakasle/**").hasAnyRole("ADMIN", "KUDEATZAILEA", "IRAKASLEA")
-                .requestMatchers("/login", "/login/oauth2/**", "/oauth2/**", "/css/**", "/js/**").permitAll()
+                .requestMatchers("/login", "/login/oauth2/**", "/oauth2/**", "/css/**", "/js/**", "/uploads/**").permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth -> oauth
