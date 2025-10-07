@@ -56,9 +56,12 @@
       <div class="card" th:each="ik : ${ikasleak}" th:attr="data-ikasle-id=${ik.id}">
         <button class="upload-cta" type="button" onclick="openPicker(this)">Igo</button>
 
-        <img class="ph"
-             th:src="${#strings.isEmpty(ik.argazkiPath) ? '/img/avatar-user.svg' : ik.argazkiPath}"
-             alt="argazkia">
+        <th:block th:with="tick=${#dates.createNow().time / 300000}">
+  <img class="ph"
+       th:src="${#strings.isEmpty(ik.argazkiPath) 
+                ? '/img/avatar-user.svg' 
+                : ik.argazkiPath + '?v=' + tick}">
+</th:block>
 
         <div class="progress"><div class="bar"></div></div>
 

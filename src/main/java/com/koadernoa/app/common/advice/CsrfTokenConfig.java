@@ -15,6 +15,7 @@ import java.nio.file.Path;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.CacheControl;
 import org.springframework.security.web.csrf.CsrfToken;
 
 @Configuration
@@ -44,6 +45,6 @@ public class CsrfTokenConfig implements WebMvcConfigurer {
         Path root = Paths.get(baseDir).toAbsolutePath().normalize();
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:" + root.toString() + "/")
-                .setCachePeriod(3600);
+                .setCacheControl(CacheControl.noStore()); // <-- Cacherik ez
     }
 }

@@ -1,87 +1,99 @@
 <div th:fragment="navbar (koadernoAktiboa, irakasleKoadernoak)">
-    <nav>
-        <div class="navbar-left">
-            <span class="koaderno-izena"
-                  th:text="${koadernoAktiboa != null ? koadernoAktiboa.izena : 'Ez dago koadernorik'}">
-                Koaderno izena
-            </span>
+  <div class="t-nav">
+    <!-- Goiko barra (desktop menu + hamburger) -->
+    <div class="t-navbar">
+      <div class="t-left">
+        <span class="koaderno-izena"
+              th:text="${koadernoAktiboa != null ? koadernoAktiboa.izena : 'Ez dago koadernorik'}">
+          Koaderno izena
+        </span>
 
-            <div class="koaderno-hautapena">
-                <label for="koadernoSelect">Koadernoak:</label>
-                <select id="koadernoSelect" onchange="aldatuKoadernoa(this.value)">
-				  <option th:each="k : ${irakasleKoadernoak}"
-				          th:value="${k.id}"
-				          th:text="${k.izena}"
-				          th:selected="${k.id == koadernoAktiboa.id}">
-				  </option>
-				</select>
-				<script>
-				  function aldatuKoadernoa(id) {
-				    // Uneko bidea + query-a gorde
-				    const next = encodeURIComponent(location.pathname + location.search);
-				    // KONTUZ: '/irakasle/koaderno/{id}' da zuzen (ez '/koadernoa/')
-				    location.href = '/irakasle/koaderno/' + id + '?next=' + next;
-				  }
-				</script>
-            </div>
-
-            <ul class="nav-links">
-                <li>
-                    <a th:href="@{/irakasle}"
-                       th:classappend="${currentPath == '/kudeatzaile' or currentPath == '/irakasle'} ? 'active'">
-                        Hasiera
-                    </a>
-                </li>
-                <li>
-                    <a th:href="@{/irakasle/egutegia}"
-                       th:classappend="${currentPath.startsWith('/irakasle/egutegia')} ? 'active'">
-                        Egutegia
-                    </a>
-                </li>
-                <li>
-                    <a th:href="@{/irakasle/ikasleak}"
-                       th:classappend="${currentPath.startsWith('/irakasle/ikasleak')} ? 'active'">
-                        Ikasleak
-                    </a>
-                </li>
-                <li>
-				  <a th:href="@{/irakasle/programazioa}"
-				     th:classappend="${currentPath.startsWith('/irakasle/programazioa')} ? 'active'">
-				    Programazioa
-				  </a>
-				</li>
-                <li>
-                    <a th:href="@{/irakasle/denboralizazioa}"
-                       th:classappend="${currentPath.startsWith('/irakasle/denboralizazioa')} ? 'active'">
-                        Denboralizazioa
-                    </a>
-                </li>
-                <li>
-                    <a th:href="@{/irakasle/notak}"
-                       th:classappend="${currentPath.startsWith('/irakasle/notak')} ? 'active'">
-                        Notak
-                    </a>
-                </li>
-                <li>
-                    <a th:href="@{/irakasle/estatistikak}"
-                       th:classappend="${currentPath.startsWith('/irakasle/estatistikak')} ? 'active'">
-                        Estatistikak
-                    </a>
-                </li>
-                <li th:if="${#authorization.expression('hasRole(''KUDEATZAILEA'')')}">
-                    <a th:href="@{/kudeatzaile}"
-                       >
-                        Kudeaketa
-                    </a>
-                </li>
-            </ul>
+        <div class="koaderno-hautapena">
+          <label for="koadernoSelect">Koadernoak:</label>
+          <select id="koadernoSelect" onchange="aldatuKoadernoa(this.value)">
+            <option th:each="k : ${irakasleKoadernoak}"
+                    th:value="${k.id}"
+                    th:text="${k.izena}"
+                    th:selected="${koadernoAktiboa != null and k.id == koadernoAktiboa.id}">
+            </option>
+          </select>
         </div>
+      </div>
 
-        <div class="navbar-right">
-            <form th:action="@{/logout}" method="post">
-				<input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                <button type="submit">Logout</button>
+      <!-- Desktop nab: ikusgai soilik pantaila zabalean -->
+      <nav class="t-desktop" aria-label="Irakasle nabigazioa">
+        <ul class="nav-links">
+          <li><a th:href="@{/irakasle}"
+                 th:classappend="${currentPath == '/irakasle'} ? 'active'">Hasiera</a></li>
+          <li><a th:href="@{/irakasle/egutegia}"
+                 th:classappend="${currentPath.startsWith('/irakasle/egutegia')} ? 'active'">Egutegia</a></li>
+          <li><a th:href="@{/irakasle/ikasleak}"
+                 th:classappend="${currentPath.startsWith('/irakasle/ikasleak')} ? 'active'">Ikasleak</a></li>
+          <li><a th:href="@{/irakasle/programazioa}"
+                 th:classappend="${currentPath.startsWith('/irakasle/programazioa')} ? 'active'">Programazioa</a></li>
+          <li><a th:href="@{/irakasle/denboralizazioa}"
+                 th:classappend="${currentPath.startsWith('/irakasle/denboralizazioa')} ? 'active'">Denboralizazioa</a></li>
+          <li><a th:href="@{/irakasle/notak}"
+                 th:classappend="${currentPath.startsWith('/irakasle/notak')} ? 'active'">Notak</a></li>
+          <li><a th:href="@{/irakasle/estatistikak}"
+                 th:classappend="${currentPath.startsWith('/irakasle/estatistikak')} ? 'active'">Estatistikak</a></li>
+          <li th:if="${#authorization.expression('hasRole(''KUDEATZAILEA'')')}">
+            <a th:href="@{/kudeatzaile}">Kudeaketa</a>
+          </li>
+          <li>
+            <form th:action="@{/logout}" method="post" style="display:inline">
+              <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+              <button type="submit" class="logout-btn">Logout</button>
             </form>
-        </div>
-    </nav>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Hamburger (mugikorra) -->
+      <button class="t-hamb" type="button" onclick="TNav.toggle()" aria-expanded="false" aria-controls="tNav">
+        ☰ Menua
+      </button>
+    </div>
+
+    <!-- Panel tolesgarria (mugikorra, fullscreen) -->
+    <div id="tNav" class="t-panel" aria-hidden="true">
+      <div class="t-panel-header">
+        <button type="button" onclick="TNav.toggle()" aria-label="Itxi">✕ Itxi</button>
+      </div>
+      <div class="t-panel-content">
+        <ul class="t-list">
+          <li><a th:href="@{/irakasle}"
+                 th:classappend="${currentPath == '/irakasle'} ? 'active'">Hasiera</a></li>
+          <li><a th:href="@{/irakasle/egutegia}"
+                 th:classappend="${currentPath.startsWith('/irakasle/egutegia')} ? 'active'">Egutegia</a></li>
+          <li><a th:href="@{/irakasle/ikasleak}"
+                 th:classappend="${currentPath.startsWith('/irakasle/ikasleak')} ? 'active'">Ikasleak</a></li>
+          <li><a th:href="@{/irakasle/programazioa}"
+                 th:classappend="${currentPath.startsWith('/irakasle/programazioa')} ? 'active'">Programazioa</a></li>
+          <li><a th:href="@{/irakasle/denboralizazioa}"
+                 th:classappend="${currentPath.startsWith('/irakasle/denboralizazioa')} ? 'active'">Denboralizazioa</a></li>
+          <li><a th:href="@{/irakasle/notak}"
+                 th:classappend="${currentPath.startsWith('/irakasle/notak')} ? 'active'">Notak</a></li>
+          <li><a th:href="@{/irakasle/estatistikak}"
+                 th:classappend="${currentPath.startsWith('/irakasle/estatistikak')} ? 'active'">Estatistikak</a></li>
+          <li th:if="${#authorization.expression('hasRole(''KUDEATZAILEA'')')}">
+            <a th:href="@{/kudeatzaile}">Kudeaketa</a>
+          </li>
+          <li>
+            <form th:action="@{/logout}" method="post">
+              <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+              <button type="submit" class="logout-btn">Logout</button>
+            </form>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function aldatuKoadernoa(id){
+      const next = encodeURIComponent(location.pathname + location.search);
+      location.href = '/irakasle/koaderno/' + id + '?next=' + next;
+    }
+  </script>
 </div>
