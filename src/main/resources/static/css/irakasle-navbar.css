@@ -1,11 +1,10 @@
 /* ===== Orokorra ===== */
-.t-nav { border-bottom: 1px solid #2c3e50; background:#2c3e50; }
+.t-nav { border-bottom: 1px solid #2c3e50; background:#2c3e50; padding-top: max(8px, env(safe-area-inset-top));}
 .t-nav * { box-sizing: border-box; }
 
-.t-navbar {
+.t-nav .t-navbar{
   display:flex; align-items:center; justify-content:space-between;
-  gap:.75rem; max-width:1200px; margin:0 auto; padding:.6rem 1rem;
-  color:#fff;
+  gap:.5rem; width:100%; margin:0; padding: .75rem 1rem;
 }
 .t-left { display:flex; align-items:center; gap:1rem; flex-wrap:wrap; }
 

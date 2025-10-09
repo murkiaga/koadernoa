@@ -1,9 +1,11 @@
 package com.koadernoa.app.objektuak.modulua.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -34,4 +36,16 @@ public interface IkasleaRepository extends JpaRepository<Ikaslea, Long> {
     
     @Query("select distinct i.taldea from Ikaslea i where i.taldea is not null")
     List<Taldea> findDistinctTaldeakWithStudents();
+    
+    //Inportazio excelean orain ikasle hau ez bada agertzen, taldea=null
+    @Modifying
+    @Query("""
+      update Ikaslea i
+      set i.taldea = null
+      where i.taldea.id = :taldeaId
+        and (:hnakIsEmpty = true or i.hna not in :hnak)
+    """)
+    int removeTaldeaForNotInHnaAndTaldea(@Param("hnak") Collection<String> hnak,
+                                         @Param("taldeaId") Long taldeaId,
+                                         @Param("hnakIsEmpty") boolean hnakIsEmpty);
 }

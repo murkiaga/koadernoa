@@ -2,11 +2,15 @@ package com.koadernoa.app.objektuak.zikloak.service;
 
 import java.io.IOException;
 import java.text.Normalizer;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -30,7 +34,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class InportazioZerbitzua {
 
-	private final TaldeaRepository taldeaRepo;
+    private final TaldeaRepository taldeaRepo;
     private final KoadernoaRepository koadernoaRepo;
     private final IkasleaRepository ikasleaRepo;
     private final MatrikulaRepository matrikulaRepo;
@@ -46,11 +50,16 @@ public class InportazioZerbitzua {
         Taldea taldea = taldeaRepo.findById(taldeaId)
             .orElseThrow(() -> new IllegalArgumentException("Taldea ez da existitzen"));
 
-      
-        List<Koadernoa> koadernoak =
-        	    koadernoaRepo.findByModuloa_Taldea_Id(taldeaId);
+        // Ikasturte AKTIBOKO koadernoak (ID zerrenda + entitateak)
+        List<Long> koadernoAktiboIds = koadernoaRepo.findActiveYearKoadernoIdsByTaldea(taldeaId);
+        List<Koadernoa> koadernoakAktiboak = koadernoAktiboIds.isEmpty()
+            ? List.of()
+            : koadernoaRepo.findAllById(koadernoAktiboIds);
 
         InportazioTxostena tx = new InportazioTxostena();
+
+        // Excelen agertutako HNA multzoa → sinkronizaziorako giltza
+        Set<String> importatutakoHNAk = new HashSet<>();
 
         try (XSSFWorkbook wb = new XSSFWorkbook(mf.getInputStream())) {
             Sheet sh = wb.getSheet(SHEET_NAME);
@@ -68,29 +77,31 @@ public class InportazioZerbitzua {
                     tx.setBaztertuak(tx.getBaztertuak() + 1);
                     continue;
                 }
+                importatutakoHNAk.add(hna);
 
                 String nan   = norm(getCellStr(row, col.get("NAN")));
                 String ab1   = norm(getCellStr(row, col.get("AB1")));
                 String ab2   = norm(getCellStr(row, col.get("AB2")));
                 String izena = norm(getCellStr(row, col.get("IZENA")));
 
-                // HNA agintzen du
-                Ikaslea ik = ikasleaRepo.findByHna(hna).orElseGet(Ikaslea::new);
+                Ikaslea ik = ikasleaRepo.findByHna(hna).orElse(new Ikaslea());
                 boolean berria = (ik.getId() == null);
 
-                if (berria) ik.setHna(hna);            // finkatu behin
-                if (!isBlank(nan)) ik.setNan(nan);
+                if (berria) ik.setHna(hna);       // behin finkatu
+                if (!isBlank(nan))   ik.setNan(nan);
                 if (!isBlank(izena)) ik.setIzena(izena);
-                if (!isBlank(ab1)) ik.setAbizena1(ab1);
-                if (!isBlank(ab2)) ik.setAbizena2(ab2);
-                ik.setTaldea(taldea);                  // egungo taldea snapshot sinplea
+                if (!isBlank(ab1))   ik.setAbizena1(ab1);
+                if (!isBlank(ab2))   ik.setAbizena2(ab2);
+
+                // Talde esleipena: inportatutako GUZTIEI talde hau ezarri
+                ik.setTaldea(taldea);
 
                 ikasleaRepo.save(ik);
                 if (berria) tx.setSortuak(tx.getSortuak() + 1);
-                else tx.setEguneratuak(tx.getEguneratuak() + 1);
+                else        tx.setEguneratuak(tx.getEguneratuak() + 1);
 
-                // Matrikulatu TALDEKO KOADERNO GUZTIETAN (duplicaterik ez)
-                for (Koadernoa koa : koadernoak) {
+                // Matrikulazioa: ikasturte AKTIBOKO koaderno GUZTIAK (duplicaterik gabe)
+                for (Koadernoa koa : koadernoakAktiboak) {
                     boolean badago = matrikulaRepo.existsByIkasleaIdAndKoadernoaId(ik.getId(), koa.getId());
                     if (!badago) {
                         Matrikula m = new Matrikula();
@@ -102,6 +113,30 @@ public class InportazioZerbitzua {
                 }
             }
         }
+
+        // 🔥 SINKRONIZAZIOA (ikasturte aktiboa):
+        // 1) Excelen agertU EZ direnak → matrikulak ezabatu aktiboko koadernoetan
+        if (!koadernoAktiboIds.isEmpty()) {
+            int ezabatuta = matrikulaRepo.deleteByKoadernoInAndIkasleaHnaNotIn(
+                koadernoAktiboIds,
+                new ArrayList<>(importatutakoHNAk),
+                importatutakoHNAk.isEmpty()
+            );
+            if (ezabatuta > 0) {
+                tx.getOharrak().add("Desagertutakoen bajak: " + ezabatuta + " matrikula ezabatu dira (ikasturte aktiboa).");
+            }
+        }
+
+        // 2) Excelen agertU EZ direnak → TALDEA kendu (null) talde honetan
+        int kenduta = ikasleaRepo.removeTaldeaForNotInHnaAndTaldea(
+            importatutakoHNAk,
+            taldeaId,
+            importatutakoHNAk.isEmpty()
+        );
+        if (kenduta > 0) {
+            tx.getOharrak().add("Taldetik kenduta (null jarrita): " + kenduta + " ikasle.");
+        }
+
         return tx;
     }
 
@@ -109,11 +144,6 @@ public class InportazioZerbitzua {
     //       LAGUNTZAILEAK
     // =======================
 
-    /**
-     * Goiburu malgua: lehenik izenez bilatzen du (sinonimoak onartuta),
-     * ezin bada, posizio lehenetsietara erortzen da:
-     * 0=Zbk (skip), 1=HNA, 2=NAN, 3=Abizena_1, 4=Abizena_2, 5=Izena
-     */
     private Map<String, Integer> readHeaderFlexible(Row header) {
         Map<String, Integer> byName = new HashMap<>();
         if (header != null) {
@@ -130,7 +160,6 @@ public class InportazioZerbitzua {
         Integer iAb2 = findCol(byName, List.of("ABIZENA_2 APELLIDO_2","ABIZENA 2","APELLIDO 2","APELLIDO_2"));
         Integer iIze = findCol(byName, List.of("IZENA NOMBRE","IZENA","NOMBRE"));
 
-        // Denak huts? erori posizio lehenetsietara (ordenaren arabera)
         if (iHna == null && iNan == null && iAb1 == null && iAb2 == null && iIze == null) {
             iHna = 1; iNan = 2; iAb1 = 3; iAb2 = 4; iIze = 5;
         }
@@ -149,7 +178,6 @@ public class InportazioZerbitzua {
             String k = normHeader(c);
             Integer i = byName.get(k);
             if (i != null) return i;
-            // bilaketa lausoagoa (substring)
             for (var e : byName.entrySet()) {
                 if (e.getKey().contains(k)) return e.getValue();
             }
@@ -161,12 +189,10 @@ public class InportazioZerbitzua {
         if (s == null) return null;
         String t = s.trim().toUpperCase().replace('_', ' ');
         t = t.replaceAll("\\s+", " ");
-        // diakritikoak kendu (segurtasunagatik)
         t = Normalizer.normalize(t, Normalizer.Form.NFD).replaceAll("\\p{M}+", "");
         return t;
     }
 
-    /** Gelaxka → String segurua: zenbakizkoak ez daitezela notazio zientifikora joan */
     private String getCellStr(Row row, Integer idx) {
         if (row == null || idx == null || idx < 0) return null;
         Cell c = row.getCell(idx);
@@ -177,7 +203,6 @@ public class InportazioZerbitzua {
                 case STRING -> blankToNull(c.getStringCellValue());
                 case NUMERIC -> {
                     double d = c.getNumericCellValue();
-                    // zenbaki osoa bada, ez jarri .0
                     if (Math.floor(d) == d) yield Long.toString(Math.round(d));
                     else yield Double.toString(d);
                 }
@@ -205,7 +230,7 @@ public class InportazioZerbitzua {
     private boolean isBlank(String s) { return s == null || s.isBlank(); }
     private String norm(String s) { return isBlank(s) ? null : s.trim().replaceAll("\\s+", " "); }
 
-    /** HNA normalizazioa: maiuskula + karaktere ez-alfanumerikoak kendu */
+    /** HNA normalizazioa: maiuskula + ez-alfanumerikoak kendu */
     private String normHna(String s) {
         if (isBlank(s)) return null;
         String t = s.trim().toUpperCase();
