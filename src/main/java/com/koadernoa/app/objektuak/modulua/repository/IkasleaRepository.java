@@ -48,4 +48,18 @@ public interface IkasleaRepository extends JpaRepository<Ikaslea, Long> {
     int removeTaldeaForNotInHnaAndTaldea(@Param("hnak") Collection<String> hnak,
                                          @Param("taldeaId") Long taldeaId,
                                          @Param("hnakIsEmpty") boolean hnakIsEmpty);
+    
+    //Koadernoa inportazioa egin ostean sortu bada, inportatzeko aukera
+    @Query("""
+	      select i
+	      from Ikaslea i
+	      where i.taldea.id = :taldeaId
+	        and not exists (
+	            select 1 from Matrikula m
+	            where m.ikaslea = i and m.koadernoa.id = :koadernoaId
+	        )
+	      order by i.abizena1 asc, i.abizena2 asc, i.izena asc
+	    """)
+	    List<Ikaslea> findTeamStudentsNotEnrolledInKoaderno(@Param("taldeaId") Long taldeaId,
+	                                                        @Param("koadernoaId") Long koadernoaId);
 }

@@ -48,8 +48,24 @@
     </div>
 
     <div th:if="${#lists.isEmpty(matrikulak)}" style="color:#6b7280;">
-      Ez dago ikasle aktiborik koaderno honetan oraindik.
-    </div>
+	  <p>Ez dago ikasle matrikulaturik koaderno honetan oraindik.</p>
+	
+	  <p style="margin:.25rem 0 0">
+	    Taldean dauden ikasle kopurua:
+	    <strong th:text="${taldeIkasleKop != null ? taldeIkasleKop : 0}">0</strong>
+	  </p>
+	
+	  <form th:if="${taldeIkasleKop != null and taldeIkasleKop > 0}"
+	        th:action="@{/irakasle/koaderno/{id}/inportatu-taldetik(id=${koadernoa.id})}"
+	        method="post"
+	        style="margin-top:.5rem"
+	        onsubmit="return confirm('Taldeko ikasle guztiak matrikulatu koaderno honetan?');">
+	    <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+	    <button type="submit" style="background:#2563eb;color:#fff;border:none;border-radius:.5rem;padding:.5rem .8rem;cursor:pointer;">
+	      Inportatu taldeko ikasleak
+	    </button>
+	  </form>
+	</div>
 
     <div class="grid" th:if="${!#lists.isEmpty(matrikulak)}">
       <div class="card" th:each="m : ${matrikulak}">

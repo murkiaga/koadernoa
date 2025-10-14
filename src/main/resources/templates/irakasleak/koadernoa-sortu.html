@@ -1,20 +1,152 @@
-<form th:action="@{/irakasle/koadernoa/berria}" th:object="${koadernoaDto}" method="post">
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <title>Koaderno berria</title>
+  <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
+  <style>
+	 
+	.page {
+	  display: flex;
+	  justify-content: center;      /* horizontalki erdian */
+	  align-items: flex-start;      /* goialdetik hasi (ez guztiz erdian bertikalean) */
+	  min-height: calc(100vh - 120px); /* goiko navbar + tartearekin */
+	  padding: 2rem 1rem;
+	  background: #f8fafc;          /* apur bat argiagoa atzean, nahi baduzu */
+	}
+	
+	.koad-sortu {
+	  width: 100%;
+	  max-width: 800px;             /* gehienezko zabalera */
+	  background: #fff;
+	  border: 1px solid #e5e7eb;
+	  border-radius: 12px;
+	  padding: 24px 28px;
+	  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+	}
+    .koad-sortu h2{margin:0 0 12px}
+	.koad-sortu label{display:block;margin:.5rem 0 .25rem;font-weight:600}
+	.koad-sortu select{min-width:320px}
+	
+	.koad-sortu .teachers{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.25rem 1rem;margin-top:.25rem}
+	
+	/* GRID */
+	.koad-sortu .grid-viewport{
+	  border:1px solid #e5e7eb;border-radius:12px;overflow:auto;margin-top:14px;
+	  max-height:520px;background:#fff;
+	}
+	.koad-sortu table.grid{width:100%;border-collapse:collapse;table-layout:fixed}
+	.koad-sortu .grid col:first-child{width:60px}
+	.koad-sortu .grid th, .koad-sortu .grid td{border:1px solid #eee;height:48px;box-sizing:border-box}
+	.koad-sortu .grid thead th{
+	  background:#fafafa;font-weight:600;text-align:center;padding:.6rem;white-space:nowrap;
+	  position:sticky;top:0;z-index:2;
+	}
+	.koad-sortu .grid thead th:first-child{padding:0}
+	.koad-sortu .grid tbody th{background:#fcfcfc;text-align:center;font-weight:500}
+	.koad-sortu .grid td{cursor:pointer}
+	.koad-sortu .grid td.selected{background:#dcdcdc}
+	
+	/* Botoiak (navbarrek ez ukitzeko, prefixatu) */
+	.koad-sortu .actions{margin-top:20px;display:flex;justify-content:space-between;align-items:center}
+	.koad-sortu .btn{padding:.7rem 1.4rem;border-radius:10px;border:1px solid transparent;cursor:pointer;font-weight:600;font-size:1rem;transition:all .15s ease}
+	.koad-sortu .btn.cancel{background:#f3f4f6;color:#444;border:1px solid #d1d5db}
+	.koad-sortu .btn.cancel:hover{background:#e5e7eb}
+	.koad-sortu .btn.primary{background:#3b82f6;color:#fff}
+	.koad-sortu .btn.primary:hover{background:#2563eb}
+  </style>
+</head>
+<body>
 
-    <label>Moduloa:</label>
-    <select th:field="*{moduloaId}">
-        <option th:each="m : ${moduluak}" th:value="${m.id}" 
+<!-- Navbar -->
+<div th:if="${koadernoAktiboa != null}"
+     th:replace="irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})"></div>
+
+<div class="page">
+  <div class="card koad-sortu">
+    <h2>Koaderno berria</h2>
+
+    <form th:action="@{/irakasle/koadernoa/berria}" th:object="${koadernoaDto}" method="post">
+      <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+      <!-- 1) Moduloa -->
+      <label>Moduloa</label>
+      <select th:field="*{moduloaId}" required>
+        <option value="" disabled selected>Aukeratu modulu bat...</option>
+        <option th:each="m : ${moduluak}" th:value="${m.id}"
                 th:text="${m.izena} + ' (' + ${m.taldea.izena} + ')'"></option>
-    </select>
+      </select>
 
-    <div th:if="${not #lists.isEmpty(irakasleAukeragarriak)}">
-	    <label>Beste irakasle batzuk (aukerakoa):</label>
-	    <div th:each="i : ${irakasleAukeragarriak}">
-	        <input type="checkbox" th:value="${i.id}" th:field="*{irakasleIdZerrenda}" />
-	        <span th:text="${i.izena}"></span>
-	    </div>
-	</div>
+      <!-- 2) Beste irakasleak (aukerakoa) -->
+      <div th:if="${not #lists.isEmpty(irakasleAukeragarriak)}">
+        <label>Beste irakasle batzuk (aukerakoa)</label>
+        <div class="teachers">
+          <label th:each="i : ${irakasleAukeragarriak}">
+            <input type="checkbox" th:value="${i.id}" th:field="*{irakasleIdZerrenda}"/>
+            <span th:text="${i.izena}"></span>
+          </label>
+        </div>
+      </div>
 
+      <!-- 3) Ordutegia (12x5) -->
+      <label style="margin-top:1rem">Ordutegia (klik egin gelaxkak hautatzeko)</label>
+      <div class="grid-viewport">
+        <table class="grid">
+          <colgroup>
+            <col>         <!-- 60px: lehen zutabea, CSS-an ezarria -->
+            <col span="5">
+          </colgroup>
 
+          <thead>
+            <tr>
+              <th></th>
+              <th th:each="c : ${cols}" th:text="${#strings.capitalize(c.name().toLowerCase())}"></th>
+            </tr>
+          </thead>
 
-    <button type="submit">Koadernoa sortu</button>
-</form>
+          <tbody id="gridBody">
+            <tr th:each="r : ${rows}">
+              <th th:text="${r}"></th>
+              <td th:each="c, stat : ${cols}"
+                  th:attr="data-col=${stat.index + 1}, data-row=${r}"
+                  th:classappend="${selected.contains((stat.index + 1) + '-' + r)} ? 'selected' : ''"
+                  onclick="toggleCell(this)"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- hautatutako gelaxken input ezkutuak -->
+      <div id="hiddenInputs">
+        <template id="tpl"><input type="hidden" name="cells" /></template>
+      </div>
+
+      <!-- Beheko botoiak -->
+      <div class="actions">
+		  <a th:href="@{/irakasle}" class="btn cancel">Ezeztatu</a>
+		  <button type="submit" class="btn primary">Koadernoa sortu</button>
+		</div>
+    </form>
+  </div>
+</div>
+
+<script>
+function toggleCell(td){
+  td.classList.toggle('selected');
+  const col = td.dataset.col, row = td.dataset.row;
+  const key = col + '-' + row;
+  const hidden = document.querySelector(`#hiddenInputs input[name="cells"][value="${key}"]`);
+  if (td.classList.contains('selected')) {
+    if (!hidden) {
+      const tpl = document.getElementById('tpl').content.cloneNode(true);
+      tpl.querySelector('input').value = key;
+      document.getElementById('hiddenInputs').appendChild(tpl);
+    }
+  } else {
+    if (hidden) hidden.remove();
+  }
+}
+</script>
+
+</body>
+</html>

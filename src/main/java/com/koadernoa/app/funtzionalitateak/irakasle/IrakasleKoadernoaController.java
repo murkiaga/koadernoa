@@ -1,5 +1,6 @@
 package com.koadernoa.app.funtzionalitateak.irakasle;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -12,7 +13,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
 import com.koadernoa.app.objektuak.egutegia.entitateak.EgunBerezi;
 import com.koadernoa.app.objektuak.egutegia.entitateak.EgunaBista;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
@@ -22,18 +25,29 @@ import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Jarduera;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.JardueraEditDto;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.JardueraSortuDto;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoOrdutegiBlokea;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoaSortuDto;
+import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
 import com.koadernoa.app.objektuak.modulua.entitateak.Matrikula;
 import com.koadernoa.app.objektuak.modulua.entitateak.MatrikulaEgoera;
+import com.koadernoa.app.objektuak.modulua.repository.IkasleaRepository;
 import com.koadernoa.app.objektuak.modulua.repository.MatrikulaRepository;
+import com.koadernoa.app.objektuak.modulua.service.IkasleaService;
+
+import jakarta.transaction.Transactional;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import lombok.RequiredArgsConstructor;
 
@@ -47,6 +61,17 @@ public class IrakasleKoadernoaController {
 	private final KoadernoaService koadernoaService;
 	private final EgutegiaService egutegiaService;
 	private final MatrikulaRepository matrikulaRepository;
+	private final KoadernoaRepository koadernoaRepository;
+	private final IkasleaRepository ikasleaRepository;
+	private final IkasleaService ikasleaService;
+
+	private static final List<Astegunak> ASTE_ORDENA = List.of(
+	        Astegunak.ASTELEHENA,
+	        Astegunak.ASTEARTEA,
+	        Astegunak.ASTEAZKENA,
+	        Astegunak.OSTEGUNA,
+	        Astegunak.OSTIRALA
+	    );
 
 	@GetMapping("/koadernoa/berria")
 	public String erakutsiFormularioa(Authentication auth, Model model) {
@@ -55,15 +80,41 @@ public class IrakasleKoadernoaController {
         model.addAttribute("irakasleAukeragarriak", koadernoaService.lortuFamiliaBerekoIrakasleak(irakaslea));
         model.addAttribute("irakasleLogeatua", irakaslea);
         model.addAttribute("koadernoaDto", new KoadernoaSortuDto());
+        //Ordutegia zehazteko:
+        model.addAttribute("rows", IntStream.rangeClosed(1, 12).boxed().toList());
+        model.addAttribute("cols", ASTE_ORDENA);
+        model.addAttribute("selected", Set.of()); //hasiera hutsa
         return "irakasleak/koadernoa-sortu";
     }
 
-	@PostMapping("/koadernoa/berria")
-	public String sortuKoadernoa(@ModelAttribute KoadernoaSortuDto dto, Authentication auth) {
+	@PostMapping("/berria")
+	public String submit(@ModelAttribute("koadernoaDto") KoadernoaSortuDto dto,
+						Authentication auth,
+	                     @RequestParam(name = "cells", required = false) List<String> cells) {
 		Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
-	    koadernoaService.sortuKoadernoa(dto, irakaslea);
+	    koadernoaService.sortuKoadernoa(dto, irakaslea, cells == null ? List.of() : cells);
 	    return "redirect:/irakasle";
 	}
+	
+	@PostMapping("/koadernoa/{id}/ordutegia/cell")
+    @ResponseBody
+    public ResponseEntity<?> toggleCell(@PathVariable Long id,
+                                        @RequestParam int col,
+                                        @RequestParam int row,
+                                        @RequestParam boolean selected) {
+        koadernoaService.setSlotSelected(id, col, row, selected);
+        return ResponseEntity.ok(Map.of("ok", true));
+    }
+
+	
+	private void addBlock(Koadernoa k, int col, int start, int end) {
+        KoadernoOrdutegiBlokea b = new KoadernoOrdutegiBlokea();
+        b.setKoadernoa(k);
+        b.setAsteguna(ASTE_ORDENA.get(col - 1));
+        b.setHasieraSlot(start);
+        b.setIraupenaSlot(end - start + 1);
+        k.getOrdutegiak().add(b);
+    }
 	
 	@GetMapping("/denboralizazioa")
 	public String erakutsiHilabetekoDenboralizazioa(
@@ -214,6 +265,18 @@ public class IrakasleKoadernoaController {
 	    if (koadernoAktiboa == null || koadernoAktiboa.getId() == null) {
 	        return "irakasleak/errorea_koadernoa";
 	    }
+	    
+	    //Koadernoaren taldeko ikasle kopurua
+	    Long taldeId = (koadernoAktiboa != null && koadernoAktiboa.getModuloa() != null && koadernoAktiboa.getModuloa().getTaldea() != null)
+	        ? koadernoAktiboa.getModuloa().getTaldea().getId()
+	        : null;
+
+	    long taldeIkasleKop = 0L;
+	    if (taldeId != null) {
+	      taldeIkasleKop = ikasleaRepository.countByTaldea_Id(taldeId);
+	    }
+	    model.addAttribute("taldeIkasleKop", taldeIkasleKop);
+	    
 
 	    // Egoera GUZTIAK ekarri (repoan definituta dagoen metodoa)
 	    List<Matrikula> matrikulak =
@@ -227,5 +290,21 @@ public class IrakasleKoadernoaController {
 
 	    return "irakasleak/ikasleak/index";
 	}
+	
+	@PostMapping("/koaderno/{id}/inportatu-taldetik")
+	public String inportatuTaldekoIkasleakKoadernoan(@PathVariable("id") Long koadernoaId,
+	                                                 RedirectAttributes ra) {
+	    var res = ikasleaService.importTeamStudentsIntoKoaderno(koadernoaId);
+
+	    if (res.ohartarazpena() != null) {
+	        ra.addFlashAttribute("errorea", res.ohartarazpena());
+	    } else if (res.sortuak() > 0) {
+	        ra.addFlashAttribute("msg", res.sortuak() + " ikasle matrikulatu dira koaderno honetan.");
+	    } else {
+	        ra.addFlashAttribute("msg", "Ez zegoen inor inportatzeko: taldeko ikasle guztiak jada matrikulatuta daude.");
+	    }
+	    return "redirect:/irakasle/ikasleak";
+	}
+	
 
 }

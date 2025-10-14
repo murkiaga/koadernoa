@@ -2,9 +2,12 @@ package com.koadernoa.app.funtzionalitateak.irakasle;
 
 import java.security.Principal;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,12 +22,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
 import com.koadernoa.app.objektuak.egutegia.entitateak.EgunBerezi;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
 import com.koadernoa.app.objektuak.egutegia.service.EgutegiaService;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoOrdutegiBlokea;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
+import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
 import com.koadernoa.app.objektuak.modulua.service.ModuloaService;
 import com.koadernoa.app.objektuak.zikloak.service.TaldeaService;
@@ -41,7 +47,13 @@ public class IrakasleController {
 
 	private final IrakasleaService irakasleaService;
 	private final KoadernoaService koadernoaService;
+	private final KoadernoaRepository koadernoaRepository;
 	private final EgutegiaService egutegiaService;
+	
+	private static final List<Astegunak> ASTE_ORDENA = List.of(
+            Astegunak.ASTELEHENA, Astegunak.ASTEARTEA, Astegunak.ASTEAZKENA,
+            Astegunak.OSTEGUNA, Astegunak.OSTIRALA
+    );
 	
 	
 	@GetMapping("/koaderno/{id}")
@@ -95,18 +107,7 @@ public class IrakasleController {
 	    return true;
 	}
 
-	
-    @GetMapping({"/old"})
-    public String dashboard(@AuthenticationPrincipal OAuth2User oauthUser, Model model) {
-    	String email = oauthUser.getAttribute("email");
 
-        //DB-tik irakaslea lortu
-    	Irakaslea irakaslea = irakasleaService.findByEmaila(email);
-
-        model.addAttribute("irakaslea", irakaslea);
-        return "dashboard"; //dashboard.html orria renderizatzeko
-    }
-    
     @GetMapping({"/", ""})
     public String index(Model model, Authentication auth, @ModelAttribute("koadernoAktiboa") Koadernoa koadernoAktiboa) {
     	String emaila = null;
@@ -117,6 +118,28 @@ public class IrakasleController {
             emaila = auth.getName(); // fallback, adib. test lokaletan
         }
 
+        Koadernoa koadernoa = koadernoaRepository.findWithOrdutegiaById(koadernoAktiboa.getId()).orElseThrow();
+        
+        model.addAttribute("ikasturteaIzena",
+        		koadernoa.getEgutegia()!=null && koadernoa.getEgutegia().getIkasturtea()!=null
+                        ? koadernoa.getEgutegia().getIkasturtea().getIzena() : "(ikasturterik ez)");
+        
+        model.addAttribute("rows", IntStream.rangeClosed(1, 12).boxed().toList());
+        model.addAttribute("cols", ASTE_ORDENA);
+        // hautatutako slot-ak set batean
+        Set<String> selected = new HashSet<>();
+        if (koadernoa.getOrdutegiak() != null) {
+            for (KoadernoOrdutegiBlokea b : koadernoa.getOrdutegiak()) {
+                int col = ASTE_ORDENA.indexOf(b.getAsteguna()) + 1;
+                for (int s = b.getHasieraSlot(); s <= b.bukaeraSlot(); s++) {
+                    selected.add(col + "-" + s);
+                }
+            }
+        }
+        model.addAttribute("selected", selected);
+        model.addAttribute("editable", false); // defektuz blokeatuta
+
+        
         Irakaslea irakaslea = irakasleaService.findByEmaila(emaila);
         model.addAttribute("irakaslea", irakaslea);
         model.addAttribute("koadernoAktiboDago", koadernoAktiboa != null);

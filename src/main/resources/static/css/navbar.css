@@ -15,6 +15,20 @@
 .k-nav .k-hamb{ display:none !important; }          /* desktop-ean ez */
 .k-nav .k-panel{ display:none !important; }         /* panel mugikorra ezkutuan (beti) */
 
+
+/* Ikasturte aktiboaren badge-a */
+.k-year-badge{
+  display:inline-block;
+  padding:.15rem .45rem;
+  border-radius:.5rem;
+  font-size:.85rem;
+  line-height:1;
+  background:#eef2ff;      /* argi urdina */
+  color:#1f3344;           /* zure navbar koloreekin koherente */
+  border:1px solid #c7d2fe;
+  white-space:nowrap;
+}
+
 /* ====== Mugikorra ====== */
 @media (max-width: 640px){
   .k-nav .k-desktop{ display:none !important; }     /* ezkutatu desktop-menua */

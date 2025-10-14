@@ -3,6 +3,7 @@ package com.koadernoa.app.objektuak.koadernoak.repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -35,4 +36,12 @@ public interface KoadernoaRepository extends JpaRepository<Koadernoa, Long>{
 	        and k.egutegia.ikasturtea.aktiboa = true
 	    """)
 	    List<Long> findActiveYearKoadernoIdsByTaldea(@Param("taldeaId") Long taldeaId);
+    
+    @EntityGraph(attributePaths = {
+            "ordutegiak",
+            "egutegia",
+            "egutegia.ikasturtea",
+            "moduloa"
+        })
+        Optional<Koadernoa> findWithOrdutegiaById(Long id);
 }

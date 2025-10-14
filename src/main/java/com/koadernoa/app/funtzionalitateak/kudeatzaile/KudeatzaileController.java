@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.koadernoa.app.objektuak.egutegia.repository.IkasturteaRepository;
 import com.koadernoa.app.objektuak.egutegia.repository.MailaRepository;
 import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
@@ -51,6 +52,13 @@ public class KudeatzaileController {
     private final FamiliaRepository familiaRepository;
     private final IkasleaRepository ikasleaRepository;
     private final IkasleArgazkiService ikasleArgazkiService;
+    private final IkasturteaRepository ikasturteaRepository;
+    
+    /** Kudeatzaileko orri guztietan erabilgarri: ikasturte aktiboa */
+    @ModelAttribute("ikasturteAktiboa")
+    public com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea ikasturteAktiboa() {
+        return ikasturteaRepository.findByAktiboaTrue().orElse(null);
+    }
 
 	@GetMapping({"","/"})
     public String kudeatzaileDashboard(Model model) {
