@@ -25,28 +25,32 @@
     .card-body{padding:.75rem 1rem 1rem;}
     .muted{color:var(--muted); font-size:.95rem;}
 
-    /* UD akordeoia */
-    .ud-list{display:grid; gap:.5rem; list-style:none; padding:0; margin:0;}
-    .ud-item{background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden;}
-    .ud-header{display:grid; grid-template-columns: 24px 24px 1fr auto; align-items:center; gap:.5rem; padding:.8rem 1rem; cursor:pointer;}
-    .handle{cursor:grab; opacity:.7;}
+    /* Ebaluaketa/UD/Jarduera akordeoia */
+    .ebal-list, .ud-list, .jp-list{display:grid; gap:.5rem; list-style:none; padding:0; margin:0;}
+    .ebal-item, .ud-item{background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden;}
+    .ebal-header, .ud-header{display:grid; grid-template-columns: 24px 1fr auto; align-items:center; gap:.5rem; padding:.8rem 1rem; cursor:pointer;}
     .caret{transition:transform .2s ease;}
-    .ud-item.open .caret{transform:rotate(90deg);}
-    .ud-title{font-weight:600;}
-    .ud-hours{color:var(--muted); margin-left:.5rem;}
+    .ebal-item.open > .ebal-header .caret,
+    .ud-item.open   > .ud-header   .caret{transform:rotate(90deg);}
+    .handle{cursor:grab; opacity:.7;}
+    .title{font-weight:700;}
+    .badge{font-size:.85rem; color:var(--muted)}
+    .hours-warn{color:#b91c1c; font-weight:600;} /* planifikatua > erabilgarri */
 
-    .ud-actions{display:flex; gap:.5rem;}
+    .actions{display:flex; gap:.5rem;}
     .btn{display:inline-flex; align-items:center; gap:.4rem; padding:.45rem .7rem; border-radius:10px; border:1px solid var(--line); background:#fff; cursor:pointer;}
     .btn:hover{background:#f9fafb;}
     .btn-primary{background:var(--primary); color:#fff; border-color:var(--primary);}
     .btn-primary:hover{background:var(--primary-600);}
     .btn-primary:focus{outline:2px solid #93c5fd;outline-offset:2px;}
     .btn-ghost{background:transparent;}
-    .badge{font-size:.85rem; color:var(--muted)}
+    .btn-danger{ background:#dc2626; color:#fff; border-color:#dc2626; }
+    .btn-danger:hover{ background:#b91c1c; }
+
     .add-row{display:flex; justify-content:center; padding:.8rem;}
 
     /* Jarduera zerrenda */
-    .jp-list{display:grid; gap:.4rem; list-style:none; margin:0; padding:.5rem 0 0 0;}
+    .jp-list{gap:.4rem; margin:0; padding:.5rem 0 0 0;}
     .jp-item{background:#fff; border:1px dashed var(--line); border-radius:10px; padding:.55rem .7rem; display:grid; grid-template-columns:24px 1fr auto; align-items:center; gap:.5rem;}
     .jp-title{font-weight:500;}
     .jp-hours{color:var(--muted); margin-left:.5rem;}
@@ -58,10 +62,25 @@
     .modal .actions{padding:1rem 1.2rem; display:flex; gap:.6rem; justify-content:flex-end; border-top:1px solid var(--line);}
     .field{display:grid; gap:.3rem;}
     .field label{font-size:.9rem; color:var(--muted);}
-    .field input[type="text"], .field input[type="number"]{padding:.55rem .7rem; border:1px solid var(--line); border-radius:10px; width:100%;}
+    .field input[type="text"], .field input[type="number"], .field input[type="date"]{padding:.55rem .7rem; border:1px solid var(--line); border-radius:10px; width:100%;}
+  	
+  	/* Ebaluaketa koloreak (pastel bigunak) */
+	.ebal-item.color-1 { background-color: #e8f0fe; }  /* urdinxka */
+	.ebal-item.color-2 { background-color: #e7f9ed; }  /* berde argia */
+	.ebal-item.color-3 { background-color: #fff3cd; }  /* horixka */
+	.ebal-item.color-4 { background-color: #fce8e6; }  /* arrosa */
+	.ebal-item.color-5 { background-color: #f0e7ff; }  /* more argia */
+	.ebal-item.color-6 { background-color: #e0f7fa; }  /* turkesa leuna */
+	
+	/* kolorea ez dadin disolbatu mugen eta zerrenden artean */
+	.ebal-item { border-left: 6px solid transparent; }
+	.ebal-item.color-1 { border-color: #a4c2fa; }
+	.ebal-item.color-2 { border-color: #9ee3b3; }
+	.ebal-item.color-3 { border-color: #ffe58a; }
+	.ebal-item.color-4 { border-color: #f9a8a8; }
+	.ebal-item.color-5 { border-color: #c3b4ff; }
+	.ebal-item.color-6 { border-color: #a7ecf0; }
 
-	.btn-danger{ background:#dc2626; color:#fff; border-color:#dc2626; }
-	.btn-danger:hover{ background:#b91c1c; }
   </style>
 </head>
 <body>
@@ -72,70 +91,149 @@
     <div class="card">
       <div class="card-header">
         <div>
-          <h1 style="margin:0;">Programazioa</h1>
+          <h1 style="margin:0; display:flex; align-items:baseline; gap:.5rem;">
+            <span>Programazioa</span>
+          </h1>
           <div class="muted" th:text="'Koadernoa: ' + ${koadernoAktiboa != null ? koadernoAktiboa.izena : '—'}"></div>
         </div>
         <div style="margin-left:auto; display:flex; gap:.5rem;">
-          <button id="btn-open-add-ud" class="btn btn-primary">+ UD berria</button>
+          <button id="btn-open-add-ebal" class="btn btn-primary">+ Ebaluaketa berria</button>
         </div>
       </div>
 
       <div class="card-body">
-		  <!-- UDen zerrenda + akordeoi + d&d -->
-		  <ul id="udList" class="ud-list">
-		    <li class="ud-item" th:each="ud : ${unitateak}" th:attr="data-ud-id=${ud.id}">
-		      <div class="ud-header" onclick="toggleUd(this)">
-		        <span class="handle" title="Arrastatu ordena aldatzeko">≡</span>
-		        <span class="caret">›</span>
-		
-		        <div>
-		          <span class="ud-title" th:text="|${ud.kodea} — ${ud.izenburua}|">UD1 — Izenburua</span>
-		          <!-- (UD orduak) (Σ jardueretan) -->
-		          <span class="ud-hours"
-		                th:text="|(${ud.orduak}h) (${jpOrduakMap[ud.id] ?: 0}h jardueretan)|">
-		            (10h) (6h jardueretan)
-		          </span>
-		        </div>
-		
-		        <div class="ud-actions" onclick="event.stopPropagation()">
-		          <button class="btn" th:attr="data-ud-id=${ud.id}" onclick="openUdEdit(this)">Editatu</button>
-		        </div>
-		      </div>
-		
-		      <div class="ud-content" style="display:none; padding:.4rem 1rem 1rem;">
-		        <ul class="jp-list" th:attr="data-ud-id=${ud.id}">
-		          <li class="jp-item" th:each="jp : ${ud.azpiJarduerak}" th:attr="data-jp-id=${jp.id}">
-		            <span class="handle" title="Arrastatu ordena aldatzeko">≡</span>
-		            <div>
-		              <span class="jp-title" th:text="${jp.izenburua}">Jarduera</span>
-		              <span class="jp-hours" th:text="|(${jp.orduak}h)|">(0h)</span>
-		            </div>
-		            <div class="ud-actions">
-		              <button class="btn" th:attr="data-jp-id=${jp.id}" onclick="openJpEdit(this)">Editatu</button>
-		            </div>
-		          </li>
-		        </ul>
-		
-		        <div class="add-row">
-		          <button class="btn btn-primary" th:attr="data-ud-id=${ud.id}" onclick="openJpAdd(this)">
-		            + Jarduera berria
-		          </button>
-		        </div>
-		      </div>
-		    </li>
-		  </ul>
-		</div>
+        <!-- EBALUAKETA -> UD -> JP -->
+        <ul id="ebalList" class="ebal-list">
+          <li th:each="eb, iter : ${ebaluaketak}"
+		    th:with="colorIdx=${(iter.index % 6) + 1}"
+		    class="ebal-item"
+		    th:attr="data-eb-id=${eb.id}"
+		    th:classappend="| color-${colorIdx}|">
+            <div class="ebal-header" onclick="toggleEbal(this)">
+              <span class="caret">›</span>
+              <div>
+                <div class="title" th:text="${eb.izena}">1. Ebaluaketa</div>
+                <div class="badge">
+                  <!-- (planifikatuta / erabilgarri) -->
+                  <span th:with="planif=${ebalUdOrduak[eb.id] ?: 0},
+                                 dispo=${ebalDispon[eb.id] ?: 0}"
+                        th:classappend="${planif > dispo} ? ' hours-warn' : ''"
+                        th:text="|(${planif}h / ${dispo}h erabilgarri)|">
+                    (0h / 0h erabilgarri)
+                  </span>
+                  <!-- Aukeran, data-mugak ere -->
+                  <span class="badge" th:text="| — ${eb.hasieraData} → ${eb.bukaeraData}|"> — 2025-09-10 → 2026-01-31</span>
+                </div>
+              </div>
+              <div class="actions" style="margin-left:auto" onclick="event.stopPropagation()">
+                <button class="btn" th:attr="data-eb-id=${eb.id}" onclick="openEbalEdit(this)">Editatu</button>
+              </div>
+            </div>
 
+            <div class="ebal-content" style="display:none; padding:.4rem 1rem 1rem;">
+              <!-- EB barruko UD-ak -->
+              <ul class="ud-list" th:attr="data-eb-id=${eb.id}">
+                <li class="ud-item" th:each="ud : ${eb.unitateak}" th:attr="data-ud-id=${ud.id}">
+                  <div class="ud-header" onclick="toggleUd(this)">
+                    <span class="handle" title="Arrastatu ordena aldatzeko">≡</span>
+                    <div>
+                      <span class="title" th:text="|${ud.kodea} — ${ud.izenburua}|">UD1 — Izenburua</span>
+                      <span class="badge"
+					      th:with="jp=${jpOrduakMap[ud.id] ?: 0}"
+					      th:text="|(${ud.orduak}h) (jardueretan ${jp}h)|">
+					   (0h) (jardueretan 0h)
+					  </span>
+                    </div>
+                    <div class="actions" style="margin-left:auto" onclick="event.stopPropagation()">
+                      <button class="btn" th:attr="data-ud-id=${ud.id}" onclick="openUdEdit(this)">Editatu</button>
+                    </div>
+                  </div>
+
+                  <div class="ud-content" style="display:none; padding:.4rem 1rem 1rem;">
+                    <ul class="jp-list" th:attr="data-ud-id=${ud.id}">
+                      <li class="jp-item" th:each="jp : ${ud.azpiJarduerak}" th:attr="data-jp-id=${jp.id}">
+                        <span class="handle" title="Arrastatu ordena aldatzeko">≡</span>
+                        <div>
+                          <span class="jp-title" th:text="${jp.izenburua}">Jarduera</span>
+                          <span class="jp-hours" th:text="|(${jp.orduak}h)|">(0h)</span>
+                        </div>
+                        <div class="actions">
+                          <button class="btn" th:attr="data-jp-id=${jp.id}" onclick="openJpEdit(this)">Editatu</button>
+                        </div>
+                      </li>
+                    </ul>
+
+                    <div class="add-row">
+                      <button class="btn btn-primary" th:attr="data-ud-id=${ud.id}" onclick="openJpAdd(this)">
+                        + Jarduera berria
+                      </button>
+                    </div>
+                  </div>
+                </li>
+              </ul>
+
+              <div class="add-row">
+                <button class="btn btn-primary" th:attr="data-eb-id=${eb.id}" onclick="openUdAdd(this)">
+                  + UD berria ebaluazio honetan
+                </button>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Denboralizaziora bolkatu --> 
+    <div class="actions">
+      <button id="btnPreviewBulk" class="btn btn-primary"
+              th:attr="data-koaderno-id=${koadernoAktiboa.id}"
+              th:disabled="${!canBulk}">
+        Denboralizaziora bolkatu (aurreikusi)
+      </button>
+    </div>
+    <div th:if="${!canBulk}" class="alert alert-warning mt-2">
+      Ezin da bolkatu: egutegia/ordutegia/programazioa osatu gabe.
     </div>
   </main>
+
+  <!-- MODAL: Ebaluaketa sortu/edita -->
+  <dialog id="ebalModal" class="modal">
+    <form method="dialog" id="ebalModalForm">
+      <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <header>Ebaluaketa</header>
+      <div class="content">
+        <input type="hidden" id="ebalId">
+        <div class="field">
+          <label>Izena</label>
+          <input type="text" id="ebalIzena" placeholder="1. Ebaluaketa" required>
+        </div>
+        <div class="field">
+          <label>Hasiera data</label>
+          <input type="date" id="ebalHasiera">
+        </div>
+        <div class="field">
+          <label>Bukaera data</label>
+          <input type="date" id="ebalBukaera">
+        </div>
+      </div>
+      <div class="actions">
+        <button id="ebalDeleteBtn" class="btn btn-danger" type="button" style="margin-right:auto; display:none;">
+          Ezabatu ebaluaketa
+        </button>
+        <button class="btn" type="button" onclick="closeEbalModal()">Utzi</button>
+        <button class="btn btn-primary" type="submit">Gorde</button>
+      </div>
+    </form>
+  </dialog>
 
   <!-- MODAL: UD sortu/edita -->
   <dialog id="udModal" class="modal">
     <form method="dialog" id="udModalForm">
-		<input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
       <header>UDa</header>
       <div class="content">
         <input type="hidden" id="udId">
+        <input type="hidden" id="udEbalId">
         <div class="field">
           <label>Kodea</label>
           <input type="text" id="udKodea" required>
@@ -150,9 +248,9 @@
         </div>
       </div>
       <div class="actions">
-		<button id="udDeleteBtn" class="btn btn-danger" type="button" style="margin-right:auto; display:none;">
-    		Ezabatu UD
-  		</button>
+        <button id="udDeleteBtn" class="btn btn-danger" type="button" style="margin-right:auto; display:none;">
+          Ezabatu UD
+        </button>
         <button class="btn" type="button" onclick="closeUdModal()">Utzi</button>
         <button class="btn btn-primary" type="submit">Gorde</button>
       </div>
@@ -162,7 +260,7 @@
   <!-- MODAL: Jarduera sortu/edita -->
   <dialog id="jpModal" class="modal">
     <form method="dialog" id="jpModalForm">
-		<input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
       <header>Jarduera</header>
       <div class="content">
         <input type="hidden" id="jpId">
@@ -177,14 +275,32 @@
         </div>
       </div>
       <div class="actions">
-		 <button id="jpDeleteBtn" class="btn btn-danger" type="button" style="margin-right:auto; display:none;">
-    		Ezabatu jarduera
-  		</button>
+        <button id="jpDeleteBtn" class="btn btn-danger" type="button" style="margin-right:auto; display:none;">
+          Ezabatu jarduera
+        </button>
         <button class="btn" type="button" onclick="closeJpModal()">Utzi</button>
         <button class="btn btn-primary" type="submit">Gorde</button>
       </div>
     </form>
   </dialog>
+  
+  <!-- Modal denboralizaziora bolkatu -->
+  <div id="bulkModal" class="modal" style="display:none">
+    <div class="modal-content">
+      <h3>Aurreikuspena</h3>
+      <table id="bulkTable" class="table">
+        <thead>
+          <tr><th>Data</th><th>Titulua</th><th>Orduak</th><th>Mota</th><th>Azalpena</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="modal-actions">
+        <label><input type="checkbox" id="chkReplace" checked> Aurreko planifikatuak garbitu</label>
+        <button id="btnConfirmBulk" class="btn btn-success">Berretsi bolketa</button>
+        <button id="btnCloseBulk" class="btn">Itxi</button>
+      </div>
+    </div>
+  </div>
 
   <script>
   // ---------- CSRF helpers ----------
@@ -192,20 +308,15 @@
     const m = document.cookie.match(new RegExp('(^| )' + name + '=([^;]*)'));
     return m ? decodeURIComponent(m[2]) : '';
   }
-
-  // Meta-tik (Thymeleaf-ek injektatua) edo cookie-tik (CookieCsrfTokenRepository)
   const metaToken  = document.querySelector('meta[name="_csrf"]')?.content || '';
   const metaHeader = document.querySelector('meta[name="_csrf_header"]')?.content || '';
-  const cookieToken = getCookie('XSRF-TOKEN'); // CookieCsrfTokenRepository.withHttpOnlyFalse()
-  
+  const cookieToken = getCookie('XSRF-TOKEN');
   const KOADERNO_ID = document.querySelector('meta[name="koaderno-id"]')?.content || '';
 
-  // Aukeratu tokena eta header egokia
   const CSRF_TOKEN  = metaToken || cookieToken || '';
   const CSRF_HEADER = metaToken ? (metaHeader || 'X-CSRF-TOKEN')
                                 : (cookieToken ? 'X-XSRF-TOKEN' : '');
 
-  // Fetch JSON laguntzailea (CSRF automatikoa + session cookie-ak)
   const fjson = (url, method, body) => fetch(url, {
     method,
     credentials: 'same-origin',
@@ -225,43 +336,90 @@
   });
 
   // ---------- accordion ----------
-  function toggleUd(el) {
+  function toggleEbal(el){
+    const item = el.closest('.ebal-item');
+    item.classList.toggle('open');
+    const content = item.querySelector('.ebal-content');
+    content.style.display = content.style.display === 'none' ? 'block' : 'none';
+  }
+  function toggleUd(el){
     const item = el.closest('.ud-item');
     item.classList.toggle('open');
     const content = item.querySelector('.ud-content');
     content.style.display = content.style.display === 'none' ? 'block' : 'none';
   }
 
-  // ---------- modal: UD ----------
+  // ---------- Ebaluaketa modal ----------
+  const ebalModal = document.getElementById('ebalModal');
+  const ebalForm  = document.getElementById('ebalModalForm');
+  const ebalDeleteBtn = document.getElementById('ebalDeleteBtn');
+
+  document.getElementById('btn-open-add-ebal').addEventListener('click', () => {
+    ebalForm.reset();
+    document.getElementById('ebalId').value = '';
+    ebalDeleteBtn.style.display = 'none';
+    ebalModal.showModal();
+  });
+
+  function openEbalEdit(btn){
+    const id = btn.getAttribute('data-eb-id');
+    fjson(`/irakasle/programazioa/api/ebal/${id}`, 'GET').then(d=>{
+      document.getElementById('ebalId').value = d.id;
+      document.getElementById('ebalIzena').value = d.izena || '';
+      document.getElementById('ebalHasiera').value = d.hasieraData || '';
+      document.getElementById('ebalBukaera').value = d.bukaeraData || '';
+
+      ebalDeleteBtn.style.display = 'inline-flex';
+      ebalDeleteBtn.onclick = () => {
+        if (confirm('Ziur zaude ebaluaketa hau (eta bere UD guztiak) ezabatu nahi dituzula?')) {
+          fjson(`/irakasle/programazioa/api/ebal/${d.id}`, 'DELETE').then(()=>location.reload());
+        }
+      };
+      ebalModal.showModal();
+    });
+  }
+  function closeEbalModal(){ ebalModal.close(); }
+
+  ebalForm.addEventListener('submit', (e)=>{
+    e.preventDefault();
+    const payload = {
+      id: document.getElementById('ebalId').value || null,
+      izena: document.getElementById('ebalIzena').value,
+      hasieraData: document.getElementById('ebalHasiera').value || null,
+      bukaeraData: document.getElementById('ebalBukaera').value || null
+    };
+    const url = payload.id ? `/irakasle/programazioa/api/ebal/${payload.id}` : `/irakasle/programazioa/api/ebal`;
+    const method = payload.id ? 'PUT' : 'POST';
+    fjson(url, method, payload).then(()=>location.reload());
+  });
+
+  // ---------- UD modal ----------
   const udModal = document.getElementById('udModal');
   const udForm  = document.getElementById('udModalForm');
-
-  document.getElementById('btn-open-add-ud').addEventListener('click', () => {
-    udForm.reset();
-    document.getElementById('udId').value = '';
-    udDeleteBtn.style.display = 'none';
-    udModal.showModal();
-  });
-  
-  // ---- UD modal: delete toggle + action
   const udDeleteBtn = document.getElementById('udDeleteBtn');
 
+  function openUdAdd(btn){
+    udForm.reset();
+    document.getElementById('udId').value = '';
+    document.getElementById('udEbalId').value = btn.getAttribute('data-eb-id');
+    udDeleteBtn.style.display = 'none';
+    udModal.showModal();
+  }
   function openUdEdit(btn){
     const id = btn.getAttribute('data-ud-id');
     fjson(`/irakasle/programazioa/api/ud/${id}`, 'GET').then(d=>{
       document.getElementById('udId').value = d.id;
+      document.getElementById('udEbalId').value = d.ebaluaketaId;
       document.getElementById('udKodea').value = d.kodea;
       document.getElementById('udIzenburua').value = d.izenburua;
       document.getElementById('udOrduak').value = d.orduak ?? 0;
-      
-      // Edit mode -> erakutsi "Ezabatu UD"
+
       udDeleteBtn.style.display = 'inline-flex';
       udDeleteBtn.onclick = () => {
         if (confirm('Ziur zaude UD hau (eta bere jarduera guztiak) ezabatu nahi dituzula?')) {
           fjson(`/irakasle/programazioa/api/ud/${d.id}`, 'DELETE').then(()=>location.reload());
         }
       };
-      
       udModal.showModal();
     });
   }
@@ -271,6 +429,7 @@
     e.preventDefault();
     const payload = {
       id: document.getElementById('udId').value || null,
+      ebaluaketaId: parseInt(document.getElementById('udEbalId').value, 10),
       kodea: document.getElementById('udKodea').value,
       izenburua: document.getElementById('udIzenburua').value,
       orduak: parseInt(document.getElementById('udOrduak').value || '0', 10)
@@ -280,15 +439,16 @@
     fjson(url, method, payload).then(()=>location.reload());
   });
 
-  // ---------- modal: JP ----------
+  // ---------- JP modal ----------
   const jpModal = document.getElementById('jpModal');
   const jpForm  = document.getElementById('jpModalForm');
+  const jpDeleteBtn = document.getElementById('jpDeleteBtn');
 
   function openJpAdd(btn){
     jpForm.reset();
     document.getElementById('jpId').value = '';
     document.getElementById('jpUdId').value = btn.getAttribute('data-ud-id');
-    jpDeleteBtn.style.display = 'none'; // berria -> ezabatu ez
+    jpDeleteBtn.style.display = 'none';
     jpModal.showModal();
   }
   function openJpEdit(btn){
@@ -305,7 +465,6 @@
           fjson(`/irakasle/programazioa/api/jp/${d.id}`, 'DELETE').then(()=>location.reload());
         }
       };
-
       jpModal.showModal();
     });
   }
@@ -324,14 +483,19 @@
     fjson(url, method, id ? payload : { ...payload }).then(()=>location.reload());
   });
 
-  // ---------- d&d: UD ordena ----------
-  new Sortable(document.getElementById('udList'), {
-    handle: '.handle',
-    animation: 150,
-    onEnd: () => {
-      const ids = [...document.querySelectorAll('#udList .ud-item')].map(li => parseInt(li.getAttribute('data-ud-id')));
-      fjson('/irakasle/programazioa/api/ud/ordenatu', 'POST', { udIds: ids });
-    }
+  // ---------- d&d: UD ordena (ebaluazio barruan) + kross-ebaluaketa ----------
+  document.querySelectorAll('.ud-list').forEach(list=>{
+    new Sortable(list, {
+      group: { name:'ud', pull:true, put:true },
+      handle: '.handle',
+      animation: 150,
+      onEnd: (evt)=>{
+        const udId = parseInt(evt.item.getAttribute('data-ud-id'));
+        const toEbalId = parseInt(evt.to.getAttribute('data-eb-id'));
+        const newIndex = evt.newIndex;
+        fjson('/irakasle/programazioa/api/ud/mugitu', 'POST', { udId, toEbaluaketaId: toEbalId, newIndex });
+      }
+    });
   });
 
   // ---------- d&d: JP (kross-UD mugimendua ere bai) ----------
@@ -348,7 +512,91 @@
       }
     });
   });
-</script>
 
+  // ------- Programazioa --> Denboralizazioa:
+  (function(){
+    const btn = document.getElementById('btnPreviewBulk');
+    if(!btn) return;
+
+    const modal   = document.getElementById('bulkModal');
+    const tbody   = document.querySelector('#bulkTable tbody');
+    const chkRepl = document.getElementById('chkReplace');
+    const btnOk   = document.getElementById('btnConfirmBulk');
+    const btnClose= document.getElementById('btnCloseBulk');
+
+    const csrfToken  = document.querySelector('meta[name="_csrf"]')?.content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+
+    function openModal(){ modal.style.display='block'; }
+    function closeModal(){ modal.style.display='none'; }
+
+    btn.addEventListener('click', async ()=>{
+      const koadernoId = btn.dataset.koadernoId;
+      try {
+        const res = await fetch(`/irakasle/programazioa/preview?koadernoId=${koadernoId}`, {
+          headers: { 'Accept':'application/json' }
+        });
+        if(!res.ok){
+          const msg = await res.text();
+          alert(msg || 'Errorea aurreikustean');
+          return;
+        }
+        const data = await res.json(); // [{data, titulua, orduak, mota, azalpena}]
+        tbody.innerHTML = '';
+        if(!data.length){
+          tbody.innerHTML = '<tr><td colspan="5">Ez dago sortzeko jarduerarik.</td></tr>';
+        } else {
+          for(const item of data){
+            const tr = document.createElement('tr');
+            const d  = item.data; // ISO-8601
+            tr.innerHTML = `
+              <td>${d}</td>
+              <td>${item.titulua}</td>
+              <td>${item.orduak}</td>
+              <td>${item.mota}</td>
+              <td>${item.azalpena||''}</td>`;
+            tbody.appendChild(tr);
+          }
+        }
+        openModal();
+      } catch(e){
+        console.error(e);
+        alert('Ezin izan da aurreikuspena lortu.');
+      }
+    });
+
+    btnOk.addEventListener('click', async ()=>{
+      const koadernoId = btn.dataset.koadernoId;
+      const params = new URLSearchParams();
+      params.set('koadernoId', koadernoId);
+      params.set('replaceExisting', chkRepl.checked ? 'true' : 'false');
+
+      try{
+        const res = await fetch('/irakasle/programazioa/bolkatu', {
+          method: 'POST',
+          headers: {
+            'Content-Type':'application/x-www-form-urlencoded',
+            ...(csrfHeader && csrfToken ? { [csrfHeader]: csrfToken } : {})
+          },
+          body: params.toString()
+        });
+        if(res.redirected){
+          window.location = res.url; // flash mezuak ikusteko
+          return;
+        }
+        if(!res.ok){
+          const txt = await res.text();
+          alert(txt || 'Errorea bolkatzean.');
+          return;
+        }
+      }catch(e){
+        console.error(e);
+        alert('Errore ezustekoa bolkatzean.');
+      }
+    });
+
+    btnClose.addEventListener('click', closeModal);
+  })();
+  </script>
 </body>
 </html>

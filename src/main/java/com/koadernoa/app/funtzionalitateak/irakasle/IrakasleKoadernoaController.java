@@ -28,7 +28,12 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.JardueraSortuDto;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoOrdutegiBlokea;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoaSortuDto;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.Programazioa;
+import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoOrdutegiBlokeaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
+import com.koadernoa.app.objektuak.koadernoak.repository.ProgramazioaRepository;
+import com.koadernoa.app.objektuak.koadernoak.service.AsistentziaService;
+import com.koadernoa.app.objektuak.koadernoak.service.DenboralizazioGeneratorService;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
 import com.koadernoa.app.objektuak.modulua.entitateak.Matrikula;
 import com.koadernoa.app.objektuak.modulua.entitateak.MatrikulaEgoera;
@@ -41,6 +46,7 @@ import jakarta.transaction.Transactional;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -61,9 +67,10 @@ public class IrakasleKoadernoaController {
 	private final KoadernoaService koadernoaService;
 	private final EgutegiaService egutegiaService;
 	private final MatrikulaRepository matrikulaRepository;
-	private final KoadernoaRepository koadernoaRepository;
 	private final IkasleaRepository ikasleaRepository;
 	private final IkasleaService ikasleaService;
+	private final AsistentziaService asistentziaService;
+	private final KoadernoOrdutegiBlokeaRepository koadernoOrdutegiBlokeaRepository;
 
 	private static final List<Astegunak> ASTE_ORDENA = List.of(
 	        Astegunak.ASTELEHENA,
@@ -87,7 +94,7 @@ public class IrakasleKoadernoaController {
         return "irakasleak/koadernoa-sortu";
     }
 
-	@PostMapping("/berria")
+	@PostMapping("/koadernoa/berria")
 	public String submit(@ModelAttribute("koadernoaDto") KoadernoaSortuDto dto,
 						Authentication auth,
 	                     @RequestParam(name = "cells", required = false) List<String> cells) {
@@ -164,7 +171,7 @@ public class IrakasleKoadernoaController {
 	        asteak.add(new ArrayList<>(astea));
 	    }
 	    
-	    Map<String, String> klaseMap = egutegiaService.kalkulatuKlaseak(egutegia);
+	    Map<String, String> egunMap = egutegiaService.kalkulatuKlaseak(egutegia);
 	    Map<String, String> deskribapenaMap = egutegia.getEgunBereziak().stream()
 	            .collect(Collectors.toMap(
 	                    eb -> eb.getData().toString(),
@@ -184,6 +191,13 @@ public class IrakasleKoadernoaController {
 	    // Lortu jarduerak (gehitu metodo hau servicean)
 	    List<Jarduera> jarduerak = koadernoaService.lortuJarduerakDataTartean(koadernoa, hasiera, amaiera);
 
+	    //Lortu asistentzia egunak
+	    List<Astegunak> astegunak = koadernoOrdutegiBlokeaRepository
+	            .findAstegunakByKoadernoaId(koadernoa.getId());
+	    Set<Astegunak> blokAstegunak = new HashSet<>(astegunak);
+	    Map<String, Boolean> asistentziaEgunMap =
+	    		asistentziaService.kalkulatuAsistentziaEgunak(blokAstegunak, egutegia, unekoUrtea, unekoHilabetea);
+	    
 	    Map<LocalDate, List<Jarduera>> jardueraMap = jarduerak.stream()
 	        .collect(Collectors.groupingBy(Jarduera::getData));
 
@@ -195,7 +209,8 @@ public class IrakasleKoadernoaController {
 	    model.addAttribute("urtea", unekoUrtea);
 	    model.addAttribute("hilabetea", unekoHilabetea);
 	    model.addAttribute("asteak", asteak);
-	    model.addAttribute("klaseMap", klaseMap);
+	    model.addAttribute("egunMap", egunMap);
+	    model.addAttribute("asistentziaEgunMap", asistentziaEgunMap);
 	    model.addAttribute("deskribapenaMap", deskribapenaMap);
 
 	    return "irakasleak/denboralizazioa";
@@ -256,6 +271,7 @@ public class IrakasleKoadernoaController {
 	    return "redirect:/irakasle/denboralizazioa?urtea=" + urtea + "&hilabetea=" + hilabetea;
 	}
 	
+
 	@GetMapping("/ikasleak")
 	public String ikasleZerrenda(
 	    @ModelAttribute("koadernoAktiboa") Koadernoa koadernoAktiboa,

@@ -80,13 +80,6 @@
 		    <groupId>jakarta.validation</groupId>
 		    <artifactId>jakarta.validation-api</artifactId>
 		</dependency>
-
-
-		<dependency>
-			<groupId>com.AM3Ethazi</groupId>
-			<artifactId>com.AM3Ethazi</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
-		</dependency>
 		
 		<dependency>
 		  <groupId>org.apache.poi</groupId>
@@ -97,40 +90,32 @@
 
 	<build>
 		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<configuration>
-					<annotationProcessorPaths>
-						<path>
-							<groupId>org.projectlombok</groupId>
-							<artifactId>lombok</artifactId>
-						</path>
-					</annotationProcessorPaths>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-				<configuration>
-					<excludes>
-						<exclude>
-							<groupId>org.projectlombok</groupId>
-							<artifactId>lombok</artifactId>
-						</exclude>
-					</excludes>
-				</configuration>
-			</plugin>
-			<plugin>
-			  <artifactId>maven-compiler-plugin</artifactId>
-			  <version>3.11.0</version>
-			  <configuration>
-			    <source>${java.version}</source>
-			    <target>${java.version}</target>
-			    <parameters>true</parameters> <!-- HEMEN -->
-			  </configuration>
-			</plugin>
-		</plugins>
+	    <!-- Spring Boot plugin OK -->
+	    <plugin>
+	      <groupId>org.springframework.boot</groupId>
+	      <artifactId>spring-boot-maven-plugin</artifactId>
+	      <configuration>
+	        <excludes>
+	          <exclude>
+	            <groupId>org.projectlombok</groupId>
+	            <artifactId>lombok</artifactId>
+	          </exclude>
+	        </excludes>
+	      </configuration>
+	    </plugin>
+	
+	    <!-- Compiler plugin: BAKARRA -->
+	    <plugin>
+	      <groupId>org.apache.maven.plugins</groupId>
+	      <artifactId>maven-compiler-plugin</artifactId>
+	      <version>3.11.0</version>
+	      <configuration>
+	        <source>${java.version}</source>
+	        <target>${java.version}</target>
+	        <parameters>true</parameters>
+	      </configuration>
+	    </plugin>
+	  </plugins>
 	</build>
 
 </project>

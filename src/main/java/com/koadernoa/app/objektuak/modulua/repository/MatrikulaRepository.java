@@ -33,4 +33,10 @@ public interface MatrikulaRepository extends JpaRepository<Matrikula, Long> {
     int deleteByKoadernoInAndIkasleaHnaNotIn(@Param("koadernoIds") List<Long> koadernoIds,
                                              @Param("hnak") List<String> hnak,
                                              @Param("hnakIsEmpty") boolean hnakIsEmpty);
+	
+	List<Matrikula> findByKoadernoaIdAndEgoera(Long koadernoaId, MatrikulaEgoera egoera);
+	
+	default List<Matrikula> findByKoadernoaIdAndEgoeraMatrikulatuta(Long koadernoaId){
+        return findByKoadernoaIdAndEgoera(koadernoaId, MatrikulaEgoera.MATRIKULATUA);
+    }
 }

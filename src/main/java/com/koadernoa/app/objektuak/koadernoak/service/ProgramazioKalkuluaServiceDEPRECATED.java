@@ -11,21 +11,19 @@ import org.springframework.transaction.annotation.Transactional;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.JardueraPlanifikatua;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
-import com.koadernoa.app.objektuak.koadernoak.entitateak.Ordutegia;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Programazioa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.SaioProposamenaDTO;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.UnitateDidaktikoa;
-import com.koadernoa.app.objektuak.koadernoak.repository.OrdutegiaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.ProgramazioaRepository;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class ProgramazioKalkuluaService {
+public class ProgramazioKalkuluaServiceDEPRECATED {
 
     private final ProgramazioaRepository programazioaRepository;
-    private final OrdutegiaRepository ordutegiaRepository;
+    //private final OrdutegiaRepository ordutegiaRepository;
 
 
     /** 
@@ -44,6 +42,7 @@ public class ProgramazioKalkuluaService {
      * @param hasieraData Noiztik hasi planifikatzea (adib. ikasturte hasiera)
      * @param egunOporraldiak Aukerakoa: saiorik egongo ez den datak (jai/ez-lektibo)
      */
+    /**
     @Transactional(readOnly = true)
     public List<SaioProposamenaDTO> sortuSaioProposamenak(Koadernoa koadernoa, LocalDate hasieraData, Set<LocalDate> egunOporraldiak) {
         Programazioa p = programazioaRepository.findByKoadernoa(koadernoa)
@@ -56,34 +55,35 @@ public class ProgramazioKalkuluaService {
         Map<Astegunak, List<Ordutegia>> asteMapa = slotak.stream()
                 .collect(Collectors.groupingBy(Ordutegia::getEguna, LinkedHashMap::new, Collectors.toList()));
 
-        // Iterazio estatua: UD zerrenda (posizioz) eta barruan azpijarduerak
-        List<UnitateDidaktikoa> udZerrenda = new ArrayList<>(p.getUnitateak());
-        // ziurtatu ordena
-        udZerrenda.sort(Comparator.comparingInt(UnitateDidaktikoa::getPosizioa).thenComparing(UnitateDidaktikoa::getId));
+        // ✅ EBAL → UD flatten (EBAL.ordena → UD.posizioa → UD.id)
+        List<UnitateDidaktikoa> udZerrenda =
+            p.getEbaluaketak() == null ? List.of()
+            : p.getEbaluaketak().stream()
+                .sorted(Comparator.comparing(e -> Optional.ofNullable(((com.koadernoa.app.objektuak.koadernoak.entitateak.Ebaluaketa)e).getOrdena()).orElse(0)))
+                .flatMap(e -> e.getUnitateak() == null ? java.util.stream.Stream.<UnitateDidaktikoa>empty()
+                                                        : e.getUnitateak().stream())
+                .sorted(Comparator
+                    .comparingInt(UnitateDidaktikoa::getPosizioa)
+                    .thenComparing(UnitateDidaktikoa::getId))
+                .collect(Collectors.toList());
 
         int udIdx = 0;
         int udOrduFaltan = udZerrenda.isEmpty() ? 0 : udZerrenda.get(0).getOrduakEfektiboak();
 
-        // Azpijarduera iterazioa
+        // Azpijarduerak UD bakoitzean
         List<JardueraPlanifikatua> ajZerrenda = udZerrenda.isEmpty() ? List.of() : new ArrayList<>(udZerrenda.get(0).getAzpiJarduerak());
         int ajIdx = 0;
-        int ajOrduFaltan = !ajZerrenda.isEmpty() ? ajZerrenda.get(0).getOrduak() : 0;
+        int ajOrduFaltan = !ajZerrenda.isEmpty() ? Optional.ofNullable(ajZerrenda.get(0).getOrduak()).orElse(0) : 0;
 
         List<SaioProposamenaDTO> emaitza = new ArrayList<>();
         LocalDate data = hasieraData;
 
         while (udIdx < udZerrenda.size()) {
-            if (egunOporraldiak != null && egunOporraldiak.contains(data)) {
-                data = data.plusDays(1);
-                continue;
-            }
+            if (egunOporraldiak != null && egunOporraldiak.contains(data)) { data = data.plusDays(1); continue; }
 
             Astegunak egunaEnum = toAsteEguna(data.getDayOfWeek());
             List<Ordutegia> egungoSlotak = asteMapa.getOrDefault(egunaEnum, List.of());
-            if (egungoSlotak.isEmpty()) {
-                data = data.plusDays(1);
-                continue;
-            }
+            if (egungoSlotak.isEmpty()) { data = data.plusDays(1); continue; }
 
             for (Ordutegia slot : egungoSlotak) {
                 if (udIdx >= udZerrenda.size()) break;
@@ -105,7 +105,6 @@ public class ProgramazioKalkuluaService {
                     }
 
                     int hartu = Math.min(slotIraupena, beharra);
-                    // saio bat proposatu: slot-eko tarte osoa unitate/azpijarduera berarentzat
                     int orduHasiera = slot.getOrduHasiera() + kontsumitu;
                     int orduAmaiera = orduHasiera + hartu - 1;
 
@@ -117,15 +116,13 @@ public class ProgramazioKalkuluaService {
                     slotIraupena -= hartu;
                     kontsumitu += hartu;
 
-                    // eguneratu faltan
                     if (!ajZerrenda.isEmpty() && ajIdx < ajZerrenda.size()) {
                         ajOrduFaltan -= hartu;
                         if (ajOrduFaltan <= 0) {
                             ajIdx++;
                             if (ajIdx < ajZerrenda.size()) {
-                                ajOrduFaltan = ajZerrenda.get(ajIdx).getOrduak();
+                                ajOrduFaltan = Optional.ofNullable(ajZerrenda.get(ajIdx).getOrduak()).orElse(0);
                             } else {
-                                // azpijarduerak bukatuta → pasatu UD-ko gainerakora edo 0
                                 ajOrduFaltan = 0;
                             }
                         }
@@ -140,17 +137,18 @@ public class ProgramazioKalkuluaService {
                             udOrduFaltan = hurrengoa.getOrduakEfektiboak();
                             ajZerrenda = new ArrayList<>(hurrengoa.getAzpiJarduerak());
                             ajIdx = 0;
-                            ajOrduFaltan = !ajZerrenda.isEmpty() ? ajZerrenda.get(0).getOrduak() : 0;
+                            ajOrduFaltan = !ajZerrenda.isEmpty()
+                                    ? Optional.ofNullable(ajZerrenda.get(0).getOrduak()).orElse(0)
+                                    : 0;
                         }
                     }
                 }
             }
-
             data = data.plusDays(1);
         }
-
         return emaitza;
     }
+    */
 
     private static Astegunak toAsteEguna(DayOfWeek dow) {
         return switch (dow) {

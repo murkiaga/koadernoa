@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <title th:text="|Asistentzia — ${data}|">Asistentzia</title>
+  <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
+
+  <!-- CSRF (AJAXerako) -->
+  <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
+  <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}"/>
+
+  <style>
+    /* Overlay + modal */
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.45);
+      backdrop-filter: blur(4px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+      z-index: 1000;
+    }
+    .modal {
+      position: relative;
+      width: min(1100px, 92vw);
+      max-height: 90vh;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px; border-bottom: 1px solid #e5e7eb;
+    }
+    .modal-body {
+      padding: 12px 16px; overflow: auto;
+    }
+    .modal-footer {
+      padding: 12px 16px; border-top: 1px solid #e5e7eb;
+      display: flex; justify-content: flex-end; gap: .5rem;
+    }
+    .btn-icon {
+      appearance: none; border: 1px solid #e5e7eb; background: #fff;
+      border-radius: 8px; padding: 6px 10px; cursor: pointer;
+    }
+    .btn-icon:hover { background: #f3f4f6; }
+    .btn-primary {
+      appearance: none; border: 1px solid #e5e7eb; background: #fff;
+      border-radius: 8px; padding: 6px 10px; cursor: pointer;
+    }
+    .btn-primary:hover { background: #f3f4f6; }
+
+    /* Taula */
+    table.asis { width:100%; border-collapse:collapse }
+    table.asis th, table.asis td { border:1px solid #ddd; padding:6px; text-align:center }
+    table.asis th { background:#f8f8f8; position: sticky; top: 0; z-index: 1; }
+    .col-ordu { min-width:180px }
+    .mini { font-size:.8rem; color:#666 }
+    .chk-wrap { display:flex; gap:.5rem; justify-content:center; align-items:center }
+    .chip { font-size:.75rem; padding:2px 6px; border:1px solid #e5e7eb; border-radius:999px; }
+  </style>
+</head>
+<body>
+<!-- Navbar mantendu dezakezu; overlay-ak gainetik estaliko du -->
+<div th:if="${koadernoAktiboa != null}"
+     th:replace="irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})"></div>
+
+<!-- OVERLAY + MODAL -->
+<div class="overlay" onclick="itxiAsistentzia()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h3 style="margin:0" th:text="|${#temporals.format(data, 'yyyy-MM-dd')} — Eguneko asistentzia|">Eguneko asistentzia</h3>
+      <button type="button" class="btn-icon" title="Itxi" onclick="itxiAsistentzia()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Ez dugu submit erabiliko; form mantentzen da fallbackerako -->
+      <form id="asisForm" th:action="@{/irakasle/asistentzia}" method="post">
+        <input type="hidden" name="data" th:value="${data}">
+        <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+        <table class="asis">
+          <thead>
+            <tr>
+              <th>Ikaslea</th>
+              <th th:each="s : ${saioak}" class="col-ordu">
+                <div th:text="|${s.hasieraSlot}. ordua|"></div>
+                <div class="mini">huts. Just. Berandu.</div>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="m : ${matrikulak}">
+              <td th:text="${m.ikaslea.izena + ' ' + m.ikaslea.abizena1}">Ikasle 1</td>
+
+              <td th:each="s : ${saioak}">
+                <!-- Fallback submiterako hidden input (balioa JS-ak eguneratzen du) -->
+                <input type="hidden"
+                       th:id="${'hidden_' + s.id + '_' + m.id}"
+                       th:name="${'chk_' + s.id + '_' + m.id}"
+                       th:value="${egoeraMap[s.id] != null and egoeraMap[s.id][m.id] != null ? egoeraMap[s.id][m.id] : ''}"/>
+
+                <div class="chk-wrap">
+                  <!-- HUTS -->
+                  <label class="chip">
+                    <input type="checkbox" class="asis-chk"
+                           th:attr="data-group=${s.id + '_' + m.id}"
+                           th:data-saioa="${s.id}"
+                           th:data-matrikula="${m.id}"
+                           value="HUTS"
+                           th:checked="${egoeraMap[s.id] != null and egoeraMap[s.id][m.id] != null and egoeraMap[s.id][m.id].name() == 'HUTS'}">
+                    H
+                  </label>
+
+                  <!-- JUSTIFIKATUA -->
+                  <label class="chip">
+                    <input type="checkbox" class="asis-chk"
+                           th:attr="data-group=${s.id + '_' + m.id}"
+                           th:data-saioa="${s.id}"
+                           th:data-matrikula="${m.id}"
+                           value="JUSTIFIKATUA"
+                           th:checked="${egoeraMap[s.id] != null and egoeraMap[s.id][m.id] != null and egoeraMap[s.id][m.id].name() == 'JUSTIFIKATUA'}">
+                    J
+                  </label>
+
+                  <!-- BERANDU -->
+                  <label class="chip">
+                    <input type="checkbox" class="asis-chk"
+                           th:attr="data-group=${s.id + '_' + m.id}"
+                           th:data-saioa="${s.id}"
+                           th:data-matrikula="${m.id}"
+                           value="BERANDU"
+                           th:checked="${egoeraMap[s.id] != null and egoeraMap[s.id][m.id] != null and egoeraMap[s.id][m.id].name() == 'BERANDU'}">
+                    B
+                  </label>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <!-- Beheko X botoia (eskatuta) -->
+      <button type="button" class="btn-primary" onclick="itxiAsistentzia()">✕ Itxi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // Itxi laguntzaileak
+  window.itxiAsistentzia = function(){
+    if (window.history.length > 1) { window.history.back(); }
+    else { window.location.href = '/irakasle/denboralizazioa'; }
+  };
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') itxiAsistentzia();
+  });
+
+  const csrf = document.querySelector('meta[name="_csrf"]')?.content;
+  const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
+
+  function postMarka(saioaId, matrikulaId, egoera){
+    const params = new URLSearchParams();
+    params.append('saioaId', saioaId);
+    params.append('matrikulaId', matrikulaId);
+    if (egoera) params.append('egoera', egoera);
+
+    return fetch('/irakasle/asistentzia/markatu', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        [csrfHeader]: csrf || ''
+      },
+      body: params.toString()
+    }).then(r => {
+      if(!r.ok) throw new Error('Errorea gordetzean');
+      return r.json();
+    });
+  }
+
+  // 3 checkbox talde bakoitzean: 1 bakarra edo bat ere ez (ETORRI)
+  document.addEventListener('change', function(e){
+    const cb = e.target;
+    if (cb.tagName !== 'INPUT' || cb.type !== 'checkbox' || !cb.classList.contains('asis-chk')) return;
+
+    const group = cb.dataset.group; // "saioaId_matrikulaId"
+    const peers = document.querySelectorAll('input.asis-chk[data-group="'+group+'"]');
+
+    // Exklusibitatea
+    if (cb.checked) peers.forEach(x => { if (x !== cb) x.checked = false; });
+
+    // Egoera kalkulatu
+    let selected = null;
+    peers.forEach(x => { if (x.checked) selected = x.value; }); // HUTS/JUSTIFIKATUA/BERANDU edo null
+
+    const [saioaId, matrikulaId] = group.split('_');
+
+    // Fallback submiterako hidden input eguneratu
+    const hidden = document.getElementById('hidden_' + group);
+    if (hidden) hidden.value = selected ? selected : "";
+
+    // AJAX autosave
+    postMarka(saioaId, matrikulaId, selected)
+      .catch(err => {
+        alert('Ezin izan da gorde: ' + err.message);
+        // Rollback sinplea: desmarkatu dena (ETORRI)
+        peers.forEach(x => x.checked = false);
+        if (hidden) hidden.value = "";
+      });
+  });
+
+  // (Aukeran) scrollarekin thead itsatsita dago; ez da JS behar
+})();
+</script>
+
+</body>
+</html>

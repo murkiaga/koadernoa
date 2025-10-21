@@ -41,6 +41,10 @@ public class UnitateDidaktikoa {
 
     @Column(nullable = false)
     private int posizioa = 0; // ordena
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ebaluaketa_id")
+    private Ebaluaketa ebaluaketa;
 
     @OneToMany(mappedBy = "unitatea", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("posizioa ASC, id ASC")

@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.SortedSet;
@@ -21,7 +22,6 @@ import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
 import com.koadernoa.app.objektuak.egutegia.repository.EgutegiaRepository;
-import com.koadernoa.app.objektuak.egutegia.repository.IkasturteaRepository;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.EbaluazioMota;
@@ -389,4 +389,9 @@ public class KoadernoaService {
         }
         return null;
     }
+    
+    public Optional<Koadernoa> findByIdWithOrdutegiaAndEgutegia(Long id) {
+	  return koadernoaRepository.findByIdWithOrdutegiaAndEgutegia(id);
+	}
+    
 }

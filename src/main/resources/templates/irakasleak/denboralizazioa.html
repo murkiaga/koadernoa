@@ -92,6 +92,13 @@
 		}
 		.modal-actions .btn.danger:hover { filter: brightness(0.95); }
 
+		.btn-asistentzia{
+		  position:absolute; left:6px; top:4px; 
+		  font-size:.85rem; text-decoration:none;
+		  padding:2px 6px; border:1px solid #ddd; border-radius:6px;
+		  background:#fff; cursor:pointer
+		}
+		.btn-asistentzia:hover{ background:#f3f4f6 }
 
     </style>
     
@@ -132,16 +139,23 @@
         <tr th:each="astea : ${asteak}">
 		    <td th:each="egunaBista : ${astea}"
 			    th:class="${egunaBista.data == null} ? 'blank' : ''"
-			    th:classappend="${egunaBista.data != null} ? ${klaseMap[egunaBista.data.toString()]} : ''"
+			    th:classappend="${egunaBista.data != null} ? ${egunMap[egunaBista.data.toString()]} : ''"
 			    th:title="${egunaBista.data != null} ? ${deskribapenaMap[egunaBista.data.toString()]} : ''"
 			    th:attr="data-date=${egunaBista.data != null ? egunaBista.data : null}"
-			    th:onclick="${egunaBista.data != null} ? 'irekiJardueraModala(this)' : null"
 			    style="cursor: pointer;">
 			    <div class="egun-zenbakia"
 			         th:text="${egunaBista.data != null ? egunaBista.data.dayOfMonth : ''}"
-			         th:classappend="${klaseMap[egunaBista.data.toString()] == 'ezlektiboa'} ? ' testu-zuria' : ''"
+			         th:classappend="${egunMap[egunaBista.data.toString()] == 'ezlektiboa'} ? ' testu-zuria' : ''"
 			         th:style="${egunaBista.data != null && !egunaBista.hilabeteAktibokoa} ? 'color: #ccc;' : 'color: black;'">
 			    </div>
+			    <!-- Asistentzia botoia (lektiboa bada soilik) -->
+				<a th:if="${egunaBista.data != null 
+          					and (asistentziaEgunMap[egunaBista.data.toString()] == true)}"
+				   th:href="@{/irakasle/asistentzia(data=${egunaBista.data})}"
+				   class="btn-asistentzia"
+				   title="Egun honetako asistentzia">
+				  👤✔
+				</a>
 			    <!-- Egun honetako jarduerak -->
 				  <ul class="jarduerak" th:if="${egunaBista.data != null and jardueraMap[egunaBista.data] != null}">
 				    <li class="jarduera-item"
@@ -222,6 +236,26 @@
 </div>
 
 
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const table = document.querySelector('.taula-egutegia');
+  if(!table) return;
+
+  table.addEventListener('click', function(e){
+    // 1) Asistentzia botoiaren klikak EZ ukitu
+    if (e.target.closest('a.btn-asistentzia')) return;
+
+    // 2) Jarduera modala: soilik TD kliketan
+    const td = e.target.closest('td[data-date]');
+    if (!td) return;
+
+    // data-date balioarekin ireki modala
+    if (typeof irekiJardueraModala === 'function') {
+      irekiJardueraModala(td);
+    }
+  });
+});
+</script>
 
 
 </body>

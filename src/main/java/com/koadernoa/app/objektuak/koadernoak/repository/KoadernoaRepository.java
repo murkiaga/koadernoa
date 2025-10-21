@@ -13,8 +13,6 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 
 public interface KoadernoaRepository extends JpaRepository<Koadernoa, Long>{
 
-	Optional<Koadernoa> findById(Long id);
-
 	List<Koadernoa> findByIrakasleakContaining(Irakaslea irakaslea);
 	
 	//Tutore entitatearen arabera. Tutorearen taldeko koadernoak:
@@ -44,4 +42,12 @@ public interface KoadernoaRepository extends JpaRepository<Koadernoa, Long>{
             "moduloa"
         })
         Optional<Koadernoa> findWithOrdutegiaById(Long id);
+    
+    @Query("""
+		  select k from Koadernoa k
+		    left join fetch k.ordutegiak
+		    left join fetch k.egutegia eg
+		  where k.id = :id
+		""")
+		Optional<Koadernoa> findByIdWithOrdutegiaAndEgutegia(@Param("id") Long id);
 }

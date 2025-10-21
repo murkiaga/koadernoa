@@ -27,17 +27,16 @@
     <table>
 	    <thead>
 	        <tr>
-	            <th>Ig</th><th>Al</th><th>Ar</th><th>Az</th><th>Og</th><th>Or</th><th>Lr</th>
+	            <th>Al</th><th>Ar</th><th>Az</th><th>Og</th><th>Or</th><th>Lr</th><th>Ig</th>
 	        </tr>
 	    </thead>
 	    <tbody>
 	        <tr th:each="astea : ${entry.value}">
 	            <td th:each="egun : ${astea}"
 				    th:class="${egun == null} ? 'blank' : ''"
-				    th:data-eguna="${egun}" 
+				    th:data-eguna="${egun}"
 				    th:classappend="${egun != null} ? ${klaseMap[egun.toString()]} : ''"
 				    th:text="${egun != null ? egun.dayOfMonth : ''}"
-				    onclick="egunaKlikatuta(this, event)"
 				    th:title="${egun != null} ? ${deskribapenaMap[egun.toString()]} : ''">
 				</td>
 	        </tr>
@@ -54,10 +53,9 @@
         <input type="hidden" name="data" id="egunDataInput" />
         <input type="hidden" name="egutegiaId" th:value="${egutegia.id}" />
         <select name="mota">
-            <option th:each="m : ${T(com.koadernoa.app.egutegia.entitateak.EgunMota).values()}"
-                    th:value="${m}" 
-                    th:text="${m}">
-            </option>
+            <option th:each="m : ${T(com.koadernoa.app.objektuak.egutegia.entitateak.EgunMota).values()}"
+		        th:value="${m}" th:text="${m}">
+			</option>
         </select>
         <select name="ordezkatua" style="display:none">
 		    <option value="">-- Hautatu ordezkatzen duen eguna --</option>
@@ -72,45 +70,61 @@
 </div>
 
 <script>
-    function egunaKlikatuta(td, event) {
-	    event.stopPropagation();
+	(function(){
+	  const popup = document.getElementById("egunAldaketaForm");
+	  const txt   = document.getElementById("egunDataText");
+	  const input = document.getElementById("egunDataInput");
+	  const motaSelect = document.querySelector('select[name="mota"]');
+	  const ordezkatuaSelect = document.querySelector('select[name="ordezkatua"]');
 	
-	    const data = td.getAttribute("data-eguna");
-	    const popup = document.getElementById("egunAldaketaForm");
-	    
-	    const motaSelect = document.querySelector('select[name="mota"]');
-		const ordezkatuaSelect = document.querySelector('select[name="ordezkatua"]');
-		
-		motaSelect.addEventListener("change", () => {
-		    if (motaSelect.value === 'ORDEZKATUA') {
-		        ordezkatuaSelect.style.display = 'inline-block';
-		    } else {
-		        ordezkatuaSelect.style.display = 'none';
-		    }
-		});
-	    
+	  function toggleOrdezkatua() {
+	    ordezkatuaSelect.style.display = (motaSelect.value === 'ORDEZKATUA') ? 'inline-block' : 'none';
+	  }
+	  // Handler bakarra, ez bikoizteko
+	  if (!motaSelect.dataset.bound) {
+	    motaSelect.addEventListener('change', toggleOrdezkatua);
+	    motaSelect.dataset.bound = '1';
+	  }
 	
-	    document.getElementById("egunDataText").innerText = "Eguna: " + data;
-	    document.getElementById("egunDataInput").value = data;
+	  function irekituPopup(td, ev){
+	    const data = td.getAttribute('data-eguna');
+	    if (!data || data === 'null') return;
 	
-	    popup.style.left = event.pageX + "px";
-	    popup.style.top = event.pageY + "px";
+	    txt.textContent = "Eguna: " + data;
+	    input.value = data;
+	
+	    toggleOrdezkatua();
+	
+	    popup.style.left = ev.pageX + "px";
+	    popup.style.top  = ev.pageY + "px";
 	    popup.style.display = "block";
-	}
-	// ✅ Popup barruan klik egitean ezkutatu ez dadin
-    document.getElementById("egunAldaketaForm").addEventListener('click', function(e) {
-        e.stopPropagation();
-    });
-
-    // ❌ Popup kanpoan klik egitean itxi
-    window.addEventListener('click', function(e) {
-        const popup = document.getElementById("egunAldaketaForm");
-        if (popup.style.display === "block" && !popup.contains(e.target)) {
-            popup.style.display = 'none';
-        }
-    });
+	  }
+	
+	  // Delegazioa: TD[data-eguna] klik egitean ireki
+	  document.addEventListener('click', function(e){
+	    const td = e.target.closest('td[data-eguna]');
+	    if (!td) return;
+	    if (popup.contains(e.target)) return; // popup barruko klikek ez ireki berriro
+	
+	    irekituPopup(td, e);
+	
+	    // 🔑 Gakoa: ez utzi klik hau gorantz igarotzen (bestela berehala itxiko da)
+	    e.stopPropagation();
+	    // e.preventDefault(); // nahi izanez gero
+	  });
+	
+	  // Popup barruan klik egitean ez propagatu
+	  popup.addEventListener('click', function(e){ e.stopPropagation(); });
+	
+	  // Popup kanpoan klik eginez itxi
+	  window.addEventListener('click', function(e){
+	    if (popup.style.display === "block" && !popup.contains(e.target)) {
+	      popup.style.display = 'none';
+	    }
+	  });
+	})();
 </script>
 
-<script th:src="@{/js/kudeatzaile-nav.js}"></script>
+
 </body>
 </html>
