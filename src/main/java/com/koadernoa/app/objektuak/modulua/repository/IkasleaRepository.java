@@ -18,6 +18,8 @@ public interface IkasleaRepository extends JpaRepository<Ikaslea, Long> {
     Optional<Ikaslea> findByNan(String nan);
     long countByTaldea_Id(Long taldeaId);
     
+    List<Ikaslea> findByTaldea_Id(Long taldeaId);
+    
     interface TaldeKop {
         Long getTaldeaId();
         Long getKop();
@@ -51,15 +53,21 @@ public interface IkasleaRepository extends JpaRepository<Ikaslea, Long> {
     
     //Koadernoa inportazioa egin ostean sortu bada, inportatzeko aukera
     @Query("""
-	      select i
-	      from Ikaslea i
-	      where i.taldea.id = :taldeaId
-	        and not exists (
-	            select 1 from Matrikula m
-	            where m.ikaslea = i and m.koadernoa.id = :koadernoaId
-	        )
-	      order by i.abizena1 asc, i.abizena2 asc, i.izena asc
-	    """)
-	    List<Ikaslea> findTeamStudentsNotEnrolledInKoaderno(@Param("taldeaId") Long taldeaId,
-	                                                        @Param("koadernoaId") Long koadernoaId);
+            select i from Ikaslea i
+            where i.taldea.id = :taldeId
+              and i.id not in (
+                  select m.ikaslea.id from Matrikula m
+                  where m.koadernoa.id = :koadernoaId
+              )
+        """)
+        List<Ikaslea> findTeamStudentsNotEnrolledInKoaderno(@Param("taldeId") Long taldeId,
+                                                            @Param("koadernoaId") Long koadernoaId);
+    
+    
+    @Query("""
+            select i.hna from Ikaslea i
+            where i.taldea.id = :taldeaId
+              and i.hna is not null and i.hna <> ''
+        """)
+        List<String> findHnasByTaldeaId(@Param("taldeaId") Long taldeaId);
 }

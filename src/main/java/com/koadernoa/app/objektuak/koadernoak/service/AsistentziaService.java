@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -14,7 +15,6 @@ import com.koadernoa.app.objektuak.egutegia.entitateak.EgunBerezi;
 import com.koadernoa.app.objektuak.egutegia.entitateak.EgunMota;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Asistentzia;
-import com.koadernoa.app.objektuak.koadernoak.entitateak.Asistentzia.AsistentziaEgoera;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoOrdutegiBlokea;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Saioa;
@@ -22,7 +22,6 @@ import com.koadernoa.app.objektuak.koadernoak.repository.AsistentziaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoOrdutegiBlokeaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.SaioaRepository;
 import com.koadernoa.app.objektuak.modulua.entitateak.Matrikula;
-import com.koadernoa.app.objektuak.modulua.repository.MatrikulaRepository;
 
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +31,6 @@ import lombok.RequiredArgsConstructor;
 public class AsistentziaService {
   private final SaioaRepository saioaRepo;
   private final AsistentziaRepository asisRepo;
-  private final MatrikulaRepository matrRepo; 
   private final KoadernoOrdutegiBlokeaRepository koadernoOrdutegiBlokeaRepository;
 
   @Transactional
@@ -53,19 +51,17 @@ public class AsistentziaService {
   public void ensureSaioakForDate(Koadernoa koadernoa, LocalDate data) {
 	  if (!isEgunLektiboa(koadernoa.getEgutegia(), data)) return;
 
-	  var asteGuna = mapAsteguna(data.getDayOfWeek());
+	  //asteguna eraginkorra (ORDEZKATUA kontuan)
+	  var asteGunaEraginkorra = effectiveAsteguna(koadernoa.getEgutegia(), data);
+
 	  var blokeak = koadernoOrdutegiBlokeaRepository
-	                  .findByKoadernoaIdAndAsteguna(koadernoa.getId(), asteGuna);
+	      .findByKoadernoaIdAndAsteguna(koadernoa.getId(), asteGunaEraginkorra);
 
 	  for (var b : blokeak) {
-	    // slot bakoitzeko saio bana
+	    // slot bakoitzeko saio bana (orduak banaka)
 	    for (int slot = b.getHasieraSlot(); slot <= b.bukaeraSlot(); slot++) {
 	      ensureSaioa(
-	          koadernoa.getId(),
-	          data,
-	          slot,
-	          1,     // iraupenaSlot beti 1: saio = ordu
-	          b
+	          koadernoa.getId(), data, slot, 1, b
 	      );
 	    }
 	  }
@@ -179,6 +175,22 @@ public class AsistentziaService {
 	    }
 	    return map;
 	}
+  
+  	/** Egun ordezkatuen jatorrizko ordutegia jasotzeko */
+  	public Optional<EgunBerezi> getEgunBerezi(Egutegia egutegia, LocalDate data){
+	  if (egutegia == null || egutegia.getEgunBereziak() == null) return Optional.empty();
+	  return egutegia.getEgunBereziak().stream()
+	      .filter(eb -> data.equals(eb.getData()))
+	      .findFirst();
+	}
+  	/** Egun honetarako astegun "eraginkorra": ORDEZKATUA bada -> ordezkatua; bestela data.getDayOfWeek() */
+  	public Astegunak effectiveAsteguna(Egutegia egutegia, LocalDate data){
+  	  Astegunak base = mapAsteguna(data.getDayOfWeek());
+  	  return getEgunBerezi(egutegia, data)
+  	      .filter(eb -> eb.getMota() == EgunMota.ORDEZKATUA && eb.getOrdezkatua() != null)
+  	      .map(EgunBerezi::getOrdezkatua)
+  	      .orElse(base);
+  	}
 
 }
 

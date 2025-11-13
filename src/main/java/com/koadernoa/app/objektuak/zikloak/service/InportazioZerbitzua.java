@@ -43,9 +43,14 @@ public class InportazioZerbitzua {
 
     @Transactional
     public InportazioTxostena inportatuTaldekoXlsx(Long taldeaId, MultipartFile mf) throws IOException {
-        if (mf == null || mf.isEmpty()) throw new IllegalArgumentException("Ez da fitxategirik jaso");
+        if (mf == null || mf.isEmpty()) {
+            throw new IllegalArgumentException("Ez da fitxategirik jaso");
+        }
+
         String name = mf.getOriginalFilename() == null ? "" : mf.getOriginalFilename().toLowerCase();
-        if (!name.endsWith(".xlsx")) throw new IllegalArgumentException("XLSX fitxategia behar da");
+        if (!name.endsWith(".xlsx")) {
+            throw new IllegalArgumentException("XLSX fitxategia behar da");
+        }
 
         Taldea taldea = taldeaRepo.findById(taldeaId)
             .orElseThrow(() -> new IllegalArgumentException("Taldea ez da existitzen"));
@@ -58,12 +63,14 @@ public class InportazioZerbitzua {
 
         InportazioTxostena tx = new InportazioTxostena();
 
-        // Excelen agertutako HNA multzoa → sinkronizaziorako giltza
+        // Excelen agertutako HNA multzoa → gero talde-esleipena eguneratzeko erabiliko dugu
         Set<String> importatutakoHNAk = new HashSet<>();
 
         try (XSSFWorkbook wb = new XSSFWorkbook(mf.getInputStream())) {
             Sheet sh = wb.getSheet(SHEET_NAME);
-            if (sh == null) throw new IllegalArgumentException("Ez da aurkitu '" + SHEET_NAME + "' orria");
+            if (sh == null) {
+                throw new IllegalArgumentException("Ez da aurkitu '" + SHEET_NAME + "' orria");
+            }
 
             Map<String, Integer> col = readHeaderFlexible(sh.getRow(0));
 
@@ -114,20 +121,10 @@ public class InportazioZerbitzua {
             }
         }
 
-        // 🔥 SINKRONIZAZIOA (ikasturte aktiboa):
-        // 1) Excelen agertU EZ direnak → matrikulak ezabatu aktiboko koadernoetan
-        if (!koadernoAktiboIds.isEmpty()) {
-            int ezabatuta = matrikulaRepo.deleteByKoadernoInAndIkasleaHnaNotIn(
-                koadernoAktiboIds,
-                new ArrayList<>(importatutakoHNAk),
-                importatutakoHNAk.isEmpty()
-            );
-            if (ezabatuta > 0) {
-                tx.getOharrak().add("Desagertutakoen bajak: " + ezabatuta + " matrikula ezabatu dira (ikasturte aktiboa).");
-            }
-        }
+        //  Soberan geratzen diren matrikulak (ikaslea exceletik kendu delako,
+        // kudeatzailearen controllerreko ikasleaService.syncKoadernoakTalderako(taldeaId)ak ezabatzen ditu
 
-        // 2) Excelen agertU EZ direnak → TALDEA kendu (null) talde honetan
+        // 2) Excelen agertu EZ direnak → TALDEA kendu (null) talde honetan
         int kenduta = ikasleaRepo.removeTaldeaForNotInHnaAndTaldea(
             importatutakoHNAk,
             taldeaId,
