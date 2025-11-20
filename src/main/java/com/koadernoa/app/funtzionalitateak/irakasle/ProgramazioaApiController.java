@@ -8,13 +8,15 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.Ebaluaketa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
 import com.koadernoa.app.objektuak.koadernoak.service.ProgramazioaService;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.security.core.Authentication;
 
-import java.util.List;
 import java.util.Map;
+
 
 @RestController
 @RequestMapping("/irakasle/programazioa/api")
@@ -26,7 +28,7 @@ public class ProgramazioaApiController {
     private final IrakasleaService irakasleaService;
     private final KoadernoaService koadernoaService;
 
-    // ======== ACCESS ========
+ // ======== ACCESS ========
     private void checkAccess(Authentication auth, Koadernoa k) {
         var irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
         if (k == null || !koadernoaService.irakasleakBadaukaSarbidea(irakaslea, k)) {
@@ -78,7 +80,7 @@ public class ProgramazioaApiController {
         return Map.of("id", jp.getId(), "udId", jp.getUnitatea().getId(), "izenburua", jp.getIzenburua(), "orduak", jp.getOrduak());
     }
 
- // ======== EBALUAKETA: GET/CREATE/UPDATE/DELETE ========
+    // ======== EBALUAKETA: GET/CREATE/UPDATE/DELETE ========
 
     @GetMapping("/ebal/{id}")
     public Map<String,Object> getEbal(@PathVariable Long id,
@@ -149,7 +151,7 @@ public class ProgramazioaApiController {
         return ResponseEntity.ok(Map.of("ok", true));
     }
     
- // ======== UD: CREATE / UPDATE / DELETE ========
+    // ======== UD: CREATE / UPDATE / MOVE / DELETE ========
     @PostMapping("/ud")
     public ResponseEntity<?> createUd(@RequestBody Map<String,Object> body,
                                       @SessionAttribute(value="koadernoAktiboa", required=false) Koadernoa kSession,
@@ -159,9 +161,6 @@ public class ProgramazioaApiController {
         checkAccess(auth, k);
 
         Long ebaluaketaId = ((Number) body.get("ebaluaketaId")).longValue();
-
-        // Sarbide-guardia sinplea: UD ez dugu sortzen baina ebaluaketa koaderno horrena dela egiaztatu nahi baduzu,
-        // sartu ProgramazioaService-n existsByIdAndProgramazioa_Koadernoa_Id antzeko bat Ebaluaketarako.
 
         programazioaService.addUdToEbaluaketa(
             ebaluaketaId,
@@ -187,6 +186,28 @@ public class ProgramazioaApiController {
             ((Number) body.getOrDefault("orduak", 0)).intValue(),
             null // posizioa ez ukitu
         );
+        return ResponseEntity.ok(Map.of("ok", true));
+    }
+    
+    @PostMapping("/ud/mugitu")
+    public ResponseEntity<?> moveUd(@RequestBody Map<String,Object> body,
+                                    @SessionAttribute(value="koadernoAktiboa", required=false) Koadernoa k,
+                                    Authentication auth) {
+        checkAccess(auth, k);
+
+        Long udId = ((Number) body.get("udId")).longValue();
+        Long toEbaluaketaId = ((Number) body.get("toEbaluaketaId")).longValue();
+        int newIndex = ((Number) body.get("newIndex")).intValue();
+
+        // Egiaztatu UDa eta Ebaluaketa koaderno honetakoak direla
+        if (!programazioaService.udDagokioKoadernoari(udId, k.getId())
+         || !programazioaService.ebalDagokioKoadernoari(toEbaluaketaId, k.getId())) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.FORBIDDEN
+            );
+        }
+
+        programazioaService.moveOrReorderUd(k.getId(), udId, toEbaluaketaId, newIndex);
         return ResponseEntity.ok(Map.of("ok", true));
     }
 
@@ -237,7 +258,6 @@ public class ProgramazioaApiController {
         Long jpId = ((Number) body.get("jpId")).longValue();
         Long toUdId = ((Number) body.get("toUdId")).longValue();
         int newIndex = ((Number) body.get("newIndex")).intValue();
-        // Egiaztatu source eta target koaderno berekoak direla
         if (!programazioaService.jpDagokioKoadernoari(jpId, k.getId())
          || !programazioaService.udDagokioKoadernoari(toUdId, k.getId()))
             throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
@@ -266,4 +286,32 @@ public class ProgramazioaApiController {
     public ResponseEntity<?> status(org.springframework.web.server.ResponseStatusException e) {
         return ResponseEntity.status(e.getStatusCode()).body(Map.of("error", e.getReason()));
     }
+
+    // >>> DATA INTEGRITY HANDLER BERRIA <<<
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<?> handleDataIntegrity(DataIntegrityViolationException ex) {
+        String msg = ex.getMostSpecificCause() != null
+                ? ex.getMostSpecificCause().getMessage()
+                : (ex.getMessage() != null ? ex.getMessage() : "");
+
+        // Zure stacktracean agertzen zen constraint izena:
+        // "unitate_didaktikoak.uk_programazioa_kodea"
+        if (msg.contains("uk_programazioa_kodea")) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)  // 409
+                    .body(Map.of(
+                            "error",
+                            "Ezin dira 2 unitate didaktiko kode berdinarekin egon."
+                    ));
+        }
+
+        // Beste edozein DataIntegrity arazo orokorrerako
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of(
+                        "error",
+                        "Barne errorea gertatu da datuak gordetzean."
+                ));
+    }
+    // <<< DATA INTEGRITY HANDLER BERRIA
 }

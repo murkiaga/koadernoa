@@ -17,6 +17,7 @@ import com.koadernoa.app.objektuak.koadernoak.service.DenboralizazioGeneratorSer
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
 import com.koadernoa.app.objektuak.koadernoak.service.ProgramazioaService;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 
@@ -24,6 +25,7 @@ import static com.koadernoa.app.security.SecurityUtils.isKudeatzailea;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
@@ -92,6 +94,22 @@ public class ProgramazioaController {
       //UD guztien orduen batura (UD.orduak; planifikatuak aparteko map-ean)
       int totalUdHours = unitateak == null ? 0
           : unitateak.stream().mapToInt(ud -> java.util.Optional.ofNullable(ud.getOrduak()).orElse(0)).sum();
+      
+      // Programazioa lortu, inportazioa egin daitekeen edo ez ikusteko (hutsik badago)
+      Programazioa prog = programazioaRepository
+              .findByKoadernoa(koadernoAktiboa)
+              .orElse(null);
+      boolean programazioaHutsik =
+              (prog == null) ||
+              (prog.getEbaluaketak() == null || prog.getEbaluaketak().isEmpty());
+      model.addAttribute("programazioaHutsik", programazioaHutsik);
+
+      // HEMEN: inportatzekoKoadernoak beti sartu, nahiz eta hutsik egon.
+      List<Koadernoa> inportatzekoKoadernoak = java.util.Collections.emptyList();
+      if (programazioaHutsik) {
+          inportatzekoKoadernoak = koadernoaService.findInportatzekoKoadernoak(koadernoAktiboa);
+      }
+      model.addAttribute("inportatzekoKoadernoak", inportatzekoKoadernoak);
 
       model.addAttribute("koadernoAktiboa", k);
       model.addAttribute("programazioa", programazioa);
@@ -103,6 +121,42 @@ public class ProgramazioaController {
       model.addAttribute("ebalDispon", ebalDispon);
       model.addAttribute("ebalUdOrduak", ebalUdOrduak);
       return "irakasleak/programazioa/index";
+    }
+ // ---------- Programazioa inportatu ----------   
+    //Programazioa inportatu aurretik aurreikusi
+    @GetMapping("/aurreikusi/{koadernoId}")
+    public String aurreikusiProgramazioa(@PathVariable Long koadernoId, Model model) {
+        Koadernoa iturburua = koadernoaRepository.findById(koadernoId).orElseThrow();
+
+        Programazioa programazioa = programazioaService.getProgramazioaForKoaderno(iturburua);
+
+        model.addAttribute("koadernoa", iturburua);
+        model.addAttribute("programazioa", programazioa);
+
+        // programaziorik ez badago, fragment-ak mezu sinple bat erakutsi dezala
+        boolean hutsik = (programazioa == null) ||
+                         (programazioa.getEbaluaketak() == null || programazioa.getEbaluaketak().isEmpty());
+        model.addAttribute("programazioaHutsik", hutsik);
+
+        return "irakasleak/programazioa/aurreikuspena :: aurreikuspen-edukia";
+    }
+    
+    @PostMapping("/inportatu")
+    public String inportatuProgramazioa(@RequestParam("iturburuaId") Long iturburuaId,
+                                        @SessionAttribute("koadernoAktiboa") Koadernoa helburua,
+                                        RedirectAttributes ra) {
+        try {
+            Koadernoa iturburua = koadernoaRepository.findById(iturburuaId)
+                    .orElseThrow(() -> new IllegalArgumentException("Iturburuko koadernoa ez da existitzen"));
+
+            programazioaService.inportatuProgramazioa(iturburua, helburua);
+
+            ra.addFlashAttribute("success", "Programazioa ondo inportatu da.");
+        } catch (Exception ex) {
+            ex.printStackTrace(); // behin-behinean, logean ikusteko
+            ra.addFlashAttribute("error", "Ezin izan da programazioa inportatu: " + ex.getMessage());
+        }
+        return "redirect:/irakasle/programazioa";
     }
 
  // ---------- UD CRUD ----------

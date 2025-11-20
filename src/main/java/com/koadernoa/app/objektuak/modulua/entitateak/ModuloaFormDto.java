@@ -13,6 +13,9 @@ public class ModuloaFormDto {
 
     @NotBlank
     private String kodea;
+    
+    @NotBlank
+    private String eeiKodea;
 
     @NotNull
     private Long mailaId;

@@ -155,6 +155,42 @@ public class ProgramazioaService {
     }
 
     // ========= Ordena =========
+    
+    @Transactional
+    public void moveOrReorderUd(Long koadernoId, Long udId, Long toEbaluaketaId, int newIndex) {
+        var ud = udRepository.findById(udId).orElseThrow();
+        var toEbal = ebaluaketaRepository.findById(toEbaluaketaId).orElseThrow();
+
+        // Segurtasuna: ebaluaketa helburua koaderno honetakoa dela ziurtatu
+        if (!Objects.equals(
+                toEbal.getProgramazioa().getKoadernoa().getId(),
+                koadernoId
+        )) {
+            throw new IllegalArgumentException("Ebaluaketa ez dator koadernoarekin bat");
+        }
+
+        // 1) UDa target ebaluaketara mugitu (beharrezkoa bada)
+        ud.setEbaluaketa(toEbal);
+
+        // 2) Ebaluazio horretako UD zerrenda berria eraiki
+        //    (UD hau barne, newIndex posizioan txertatuta)
+        List<UnitateDidaktikoa> list = new ArrayList<>(toEbal.getUnitateak());
+        // kendu aurreko posiziotik
+        list.removeIf(x -> Objects.equals(x.getId(), ud.getId()));
+
+        // indizea mugen barruan:
+        newIndex = Math.max(0, Math.min(newIndex, list.size()));
+        list.add(newIndex, ud);
+
+        // 3) Zerrenda horretatik ID zerrenda atera eta reorderUd erabili
+        List<Long> udIds = list.stream()
+                .map(UnitateDidaktikoa::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        reorderUd(koadernoId, udIds);
+    }
+    
     @Transactional
     public void reorderUd(Long koadernoId, List<Long> udIds) {
         if (udIds == null) return;
@@ -213,6 +249,138 @@ public class ProgramazioaService {
     public boolean jpDagokioKoadernoari(Long jpId, Long koadernoId) {
         if (jpId == null || koadernoId == null) return false;
         return jpRepository.existsByIdAndUnitatea_Ebaluaketa_Programazioa_Koadernoa_Id(jpId, koadernoId);
+    }
+    
+ // ========= Programazioa inportatu ========
+       
+    public Programazioa getProgramazioaForKoaderno(Koadernoa koadernoa) {
+        return programazioaRepository.findByKoadernoa(koadernoa)
+                                     .orElse(null);
+    }
+    
+    @Transactional
+    public void inportatuProgramazioa(Koadernoa iturburua, Koadernoa helburua) {
+
+        // 1) EEI kodeak egiaztatu, badaudenean
+        String srcEei = iturburua.getModuloa() != null ? iturburua.getModuloa().getEeiKodea() : null;
+        String dstEei = helburua.getModuloa() != null ? helburua.getModuloa().getEeiKodea() : null;
+
+        if (srcEei != null && dstEei != null && !srcEei.equals(dstEei)) {
+            throw new IllegalStateException("EEI kodeak ez datoz bat; ezin da programazioa inportatu.");
+        }
+
+        // 2) Iturburuko eta helburuko programazioak lortu
+        Programazioa src = getProgramazioaForKoaderno(iturburua);
+        Programazioa dest = getProgramazioaForKoaderno(helburua);
+
+        if (src == null || src.getEbaluaketak() == null || src.getEbaluaketak().isEmpty()) {
+            throw new IllegalStateException("Iturburuko koadernoak ez du programaziorik (edo hutsik dago).");
+        }
+
+        // 3) Helburuko programazioa garbitu (ebaluaketak, UDak, jarduerak...)
+        if (dest.getEbaluaketak() != null) {
+            dest.getEbaluaketak().clear(); // orphanRemoval=true bada, hauek ezabatuko dira
+        } else {
+            dest.setEbaluaketak(new ArrayList<>());
+        }
+
+        dest.setIzenburua(src.getIzenburua());
+        dest.setAzalpena(src.getAzalpena());
+
+        Egutegia egutegia = helburua.getEgutegia();
+
+        int ebIndex = 0;
+        for (Ebaluaketa ebSrc : src.getEbaluaketak()) {
+            if (ebSrc == null) continue;
+
+            Ebaluaketa ebNew = new Ebaluaketa();
+            ebNew.setProgramazioa(dest);
+            ebNew.setIzena(ebSrc.getIzena());
+            // ordena gordetzen dugu, ez badago, indizearekin
+            ebNew.setOrdena(ebSrc.getOrdena() != null ? ebSrc.getOrdena() : ++ebIndex);
+
+            // Ebaluaketa datak egutegira egokituta
+            egokituEbaluaketaDatak(ebNew, ebNew.getOrdena(), egutegia);
+
+            ebNew.setUnitateak(new ArrayList<>());
+
+            // Hemen erabili zure UD klasearen izena
+            // adibidez: UnitateDidaktikoa edo UnitateDidaktikoaProgramazioa...
+            for (var udSrc : ebSrc.getUnitateak()) {
+                if (udSrc == null) continue;
+
+                UnitateDidaktikoa udNew = new UnitateDidaktikoa();
+                
+                udNew.setProgramazioa(dest);
+                udNew.setEbaluaketa(ebNew);
+                udNew.setPosizioa(udSrc.getPosizioa());
+                udNew.setKodea(udSrc.getKodea());
+                udNew.setIzenburua(udSrc.getIzenburua());
+                udNew.setOrduak(udSrc.getOrduak());
+                udNew.setAzpiJarduerak(new ArrayList<>());
+
+                for (JardueraPlanifikatua jpSrc : udSrc.getAzpiJarduerak()) {
+                    if (jpSrc == null) continue;
+
+                    JardueraPlanifikatua jpNew = new JardueraPlanifikatua();
+                    
+                    jpNew.setUnitatea(udNew);
+                    jpNew.setPosizioa(jpSrc.getPosizioa());
+                    jpNew.setIzenburua(jpSrc.getIzenburua());
+                    jpNew.setOrduak(jpSrc.getOrduak());
+
+                    udNew.getAzpiJarduerak().add(jpNew);
+                }
+
+                ebNew.getUnitateak().add(udNew);
+            }
+
+            dest.getEbaluaketak().add(ebNew);
+        }
+
+        // dest jada "managed" dago (getProgramazioaForKoaderno-k DBtik ekarri du),
+        // beraz normalean ez litzateke save behar, baina segurantzaz:
+        programazioaRepository.save(dest);
+    }
+
+    private void egokituEbaluaketaDatak(Ebaluaketa eb,
+                                        int ordena,
+                                        Egutegia egutegia) {
+        if (egutegia == null) return;
+
+        var has = egutegia.getHasieraData();
+        var buk = egutegia.getBukaeraData();
+        var e1  = egutegia.getLehenEbalBukaera();
+        var e2  = egutegia.getBigarrenEbalBukaera();
+
+        if (has == null || buk == null) {
+            return;
+        }
+
+        switch (ordena) {
+            case 1 -> {
+                eb.setHasieraData(has);
+                eb.setBukaeraData(e1 != null ? e1 : buk);
+            }
+            case 2 -> {
+                if (e1 == null) {
+                    eb.setHasieraData(has);
+                    eb.setBukaeraData(e2 != null ? e2 : buk);
+                } else {
+                    eb.setHasieraData(e1.plusDays(1));
+                    eb.setBukaeraData(e2 != null ? e2 : buk);
+                }
+            }
+            default -> {
+                if (e2 == null) {
+                    eb.setHasieraData(e1 != null ? e1.plusDays(1) : has);
+                    eb.setBukaeraData(buk);
+                } else {
+                    eb.setHasieraData(e2.plusDays(1));
+                    eb.setBukaeraData(buk);
+                }
+            }
+        }
     }
 
  // ========= Laguntzailea =========

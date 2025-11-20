@@ -274,6 +274,7 @@ public class KudeatzaileController {
         form.setId(m.getId());
         form.setIzena(m.getIzena());
         form.setKodea(m.getKodea());
+        form.setEeiKodea(m.getEeiKodea());
         form.setMailaId(m.getMaila() != null ? m.getMaila().getId() : null);
         form.setTaldeaId(m.getTaldea() != null ? m.getTaldea().getId() : null);
 

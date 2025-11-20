@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -24,15 +25,20 @@ import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
 import com.koadernoa.app.objektuak.egutegia.repository.EgutegiaRepository;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.Ebaluaketa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.EbaluazioMota;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.EstatistikaEbaluazioan;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Jarduera;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.JardueraPlanifikatua;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.JardueraSortuDto;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoOrdutegiBlokea;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoaSortuDto;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.Programazioa;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.UnitateDidaktikoa;
 import com.koadernoa.app.objektuak.koadernoak.repository.JardueraRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
+import com.koadernoa.app.objektuak.koadernoak.repository.ProgramazioaRepository;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 import com.koadernoa.app.objektuak.modulua.repository.ModuloaRepository;
 
@@ -47,6 +53,7 @@ public class KoadernoaService {
     private final IrakasleaRepository irakasleaRepository;
     private final KoadernoaRepository koadernoaRepository;
     private final JardueraRepository jardueraRepository;
+    private final ProgramazioaRepository programazioaRepository;
     
     //Aste-orden estandarra (astelehen-ostiral)
     private static final List<Astegunak> ASTE_ORDENA = List.of(
@@ -244,9 +251,6 @@ public class KoadernoaService {
     }
     
     
-    
-    
-    
     /** "col-row" (adib. "3-7") zerrendatik blokelista eraikitzen du. */
     private List<KoadernoOrdutegiBlokea> buildBlocksFromCells(Koadernoa k, List<String> cells) {
         if (cells == null || cells.isEmpty()) return new ArrayList<>();
@@ -393,5 +397,13 @@ public class KoadernoaService {
     public Optional<Koadernoa> findByIdWithOrdutegiaAndEgutegia(Long id) {
 	  return koadernoaRepository.findByIdWithOrdutegiaAndEgutegia(id);
 	}
+    
+    public List<Koadernoa> findInportatzekoKoadernoak(Koadernoa koadernoAktiboa) {
+        String eei = koadernoAktiboa.getModuloa().getEeiKodea();
+        if (eei == null || eei.isBlank()) {
+            return List.of(); // ez dago loturarik
+        }
+        return koadernoaRepository.findByModuloa_EeiKodeaAndIdNot(eei, koadernoAktiboa.getId());
+    }
     
 }

@@ -63,24 +63,23 @@
     .field{display:grid; gap:.3rem;}
     .field label{font-size:.9rem; color:var(--muted);}
     .field input[type="text"], .field input[type="number"], .field input[type="date"]{padding:.55rem .7rem; border:1px solid var(--line); border-radius:10px; width:100%;}
-  	
-  	/* Ebaluaketa koloreak (pastel bigunak) */
-	.ebal-item.color-1 { background-color: #e8f0fe; }  /* urdinxka */
-	.ebal-item.color-2 { background-color: #e7f9ed; }  /* berde argia */
-	.ebal-item.color-3 { background-color: #fff3cd; }  /* horixka */
-	.ebal-item.color-4 { background-color: #fce8e6; }  /* arrosa */
-	.ebal-item.color-5 { background-color: #f0e7ff; }  /* more argia */
-	.ebal-item.color-6 { background-color: #e0f7fa; }  /* turkesa leuna */
-	
-	/* kolorea ez dadin disolbatu mugen eta zerrenden artean */
-	.ebal-item { border-left: 6px solid transparent; }
-	.ebal-item.color-1 { border-color: #a4c2fa; }
-	.ebal-item.color-2 { border-color: #9ee3b3; }
-	.ebal-item.color-3 { border-color: #ffe58a; }
-	.ebal-item.color-4 { border-color: #f9a8a8; }
-	.ebal-item.color-5 { border-color: #c3b4ff; }
-	.ebal-item.color-6 { border-color: #a7ecf0; }
 
+  	/* Ebaluaketa koloreak (pastel bigunak) */
+	  .ebal-item.color-1 { background-color: #e8f0fe; }  /* urdinxka */
+	  .ebal-item.color-2 { background-color: #e7f9ed; }  /* berde argia */
+	  .ebal-item.color-3 { background-color: #fff3cd; }  /* horixka */
+	  .ebal-item.color-4 { background-color: #fce8e6; }  /* arrosa */
+	  .ebal-item.color-5 { background-color: #f0e7ff; }  /* more argia */
+	  .ebal-item.color-6 { background-color: #e0f7fa; }  /* turkesa leuna */
+	
+	  /* kolorea ez dadin disolbatu mugen eta zerrenden artean */
+	  .ebal-item { border-left: 6px solid transparent; }
+	  .ebal-item.color-1 { border-color: #a4c2fa; }
+	  .ebal-item.color-2 { border-color: #9ee3b3; }
+	  .ebal-item.color-3 { border-color: #ffe58a; }
+	  .ebal-item.color-4 { border-color: #f9a8a8; }
+	  .ebal-item.color-5 { border-color: #c3b4ff; }
+	  .ebal-item.color-6 { border-color: #a7ecf0; }
   </style>
 </head>
 <body>
@@ -94,10 +93,25 @@
           <h1 style="margin:0; display:flex; align-items:baseline; gap:.5rem;">
             <span>Programazioa</span>
           </h1>
-          <div class="muted" th:text="'Koadernoa: ' + ${koadernoAktiboa != null ? koadernoAktiboa.izena : '—'}"></div>
+          <div class="muted"
+               th:text="'Koadernoa: ' + ${koadernoAktiboa != null ? koadernoAktiboa.izena : '—'}">
+          </div>
         </div>
         <div style="margin-left:auto; display:flex; gap:.5rem;">
           <button id="btn-open-add-ebal" class="btn btn-primary">+ Ebaluaketa berria</button>
+          
+          <!-- Programazioa inportatzeko botoia
+		       soilik programazioa hutsik badago eta badago beste koadernorik -->
+		      <button id="programazioaInportatuBtn"
+		              class="btn"
+		              th:if="${programazioaHutsik and !#lists.isEmpty(inportatzekoKoadernoak)}">
+		        Programazioa inportatu
+		      </button>
+
+          <div th:if="${programazioaHutsik and #lists.isEmpty(inportatzekoKoadernoak)}"
+               class="muted">
+            Ez dago EEI kode berdina duen beste koadernorik programazioa inportatzeko.
+          </div>
         </div>
       </div>
 
@@ -105,10 +119,10 @@
         <!-- EBALUAKETA -> UD -> JP -->
         <ul id="ebalList" class="ebal-list">
           <li th:each="eb, iter : ${ebaluaketak}"
-		    th:with="colorIdx=${(iter.index % 6) + 1}"
-		    class="ebal-item"
-		    th:attr="data-eb-id=${eb.id}"
-		    th:classappend="| color-${colorIdx}|">
+		        th:with="colorIdx=${(iter.index % 6) + 1}"
+		        class="ebal-item"
+		        th:attr="data-eb-id=${eb.id}"
+		        th:classappend="| color-${colorIdx}|">
             <div class="ebal-header" onclick="toggleEbal(this)">
               <span class="caret">›</span>
               <div>
@@ -122,7 +136,10 @@
                     (0h / 0h erabilgarri)
                   </span>
                   <!-- Aukeran, data-mugak ere -->
-                  <span class="badge" th:text="| — ${eb.hasieraData} → ${eb.bukaeraData}|"> — 2025-09-10 → 2026-01-31</span>
+                  <span class="badge"
+                        th:text="| — ${eb.hasieraData} → ${eb.bukaeraData}|">
+                    — 2025-09-10 → 2026-01-31
+                  </span>
                 </div>
               </div>
               <div class="actions" style="margin-left:auto" onclick="event.stopPropagation()">
@@ -133,16 +150,21 @@
             <div class="ebal-content" style="display:none; padding:.4rem 1rem 1rem;">
               <!-- EB barruko UD-ak -->
               <ul class="ud-list" th:attr="data-eb-id=${eb.id}">
-                <li class="ud-item" th:each="ud : ${eb.unitateak}" th:attr="data-ud-id=${ud.id}">
+                <li class="ud-item"
+                    th:each="ud : ${eb.unitateak}"
+                    th:attr="data-ud-id=${ud.id}">
                   <div class="ud-header" onclick="toggleUd(this)">
                     <span class="handle" title="Arrastatu ordena aldatzeko">≡</span>
                     <div>
-                      <span class="title" th:text="|${ud.kodea} — ${ud.izenburua}|">UD1 — Izenburua</span>
+                      <span class="title"
+                            th:text="|${ud.kodea} — ${ud.izenburua}|">
+                        UD1 — Izenburua
+                      </span>
                       <span class="badge"
-					      th:with="jp=${jpOrduakMap[ud.id] ?: 0}"
-					      th:text="|(${ud.orduak}h) (jardueretan ${jp}h)|">
-					   (0h) (jardueretan 0h)
-					  </span>
+					        th:with="jp=${jpOrduakMap[ud.id] ?: 0}"
+					        th:text="|(${ud.orduak}h) (jardueretan ${jp}h)|">
+					       (0h) (jardueretan 0h)
+					      </span>
                     </div>
                     <div class="actions" style="margin-left:auto" onclick="event.stopPropagation()">
                       <button class="btn" th:attr="data-ud-id=${ud.id}" onclick="openUdEdit(this)">Editatu</button>
@@ -151,7 +173,9 @@
 
                   <div class="ud-content" style="display:none; padding:.4rem 1rem 1rem;">
                     <ul class="jp-list" th:attr="data-ud-id=${ud.id}">
-                      <li class="jp-item" th:each="jp : ${ud.azpiJarduerak}" th:attr="data-jp-id=${jp.id}">
+                      <li class="jp-item"
+                          th:each="jp : ${ud.azpiJarduerak}"
+                          th:attr="data-jp-id=${jp.id}">
                         <span class="handle" title="Arrastatu ordena aldatzeko">≡</span>
                         <div>
                           <span class="jp-title" th:text="${jp.izenburua}">Jarduera</span>
@@ -199,7 +223,10 @@
   <!-- MODAL: Ebaluaketa sortu/edita -->
   <dialog id="ebalModal" class="modal">
     <form method="dialog" id="ebalModalForm">
-      <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <input type="hidden"
+             th:if="${_csrf != null}"
+             th:name="${_csrf.parameterName}"
+             th:value="${_csrf.token}"/>
       <header>Ebaluaketa</header>
       <div class="content">
         <input type="hidden" id="ebalId">
@@ -217,7 +244,10 @@
         </div>
       </div>
       <div class="actions">
-        <button id="ebalDeleteBtn" class="btn btn-danger" type="button" style="margin-right:auto; display:none;">
+        <button id="ebalDeleteBtn"
+                class="btn btn-danger"
+                type="button"
+                style="margin-right:auto; display:none;">
           Ezabatu ebaluaketa
         </button>
         <button class="btn" type="button" onclick="closeEbalModal()">Utzi</button>
@@ -229,7 +259,10 @@
   <!-- MODAL: UD sortu/edita -->
   <dialog id="udModal" class="modal">
     <form method="dialog" id="udModalForm">
-      <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <input type="hidden"
+             th:if="${_csrf != null}"
+             th:name="${_csrf.parameterName}"
+             th:value="${_csrf.token}"/>
       <header>UDa</header>
       <div class="content">
         <input type="hidden" id="udId">
@@ -248,7 +281,10 @@
         </div>
       </div>
       <div class="actions">
-        <button id="udDeleteBtn" class="btn btn-danger" type="button" style="margin-right:auto; display:none;">
+        <button id="udDeleteBtn"
+                class="btn btn-danger"
+                type="button"
+                style="margin-right:auto; display:none;">
           Ezabatu UD
         </button>
         <button class="btn" type="button" onclick="closeUdModal()">Utzi</button>
@@ -260,7 +296,10 @@
   <!-- MODAL: Jarduera sortu/edita -->
   <dialog id="jpModal" class="modal">
     <form method="dialog" id="jpModalForm">
-      <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <input type="hidden"
+             th:if="${_csrf != null}"
+             th:name="${_csrf.parameterName}"
+             th:value="${_csrf.token}"/>
       <header>Jarduera</header>
       <div class="content">
         <input type="hidden" id="jpId">
@@ -275,7 +314,10 @@
         </div>
       </div>
       <div class="actions">
-        <button id="jpDeleteBtn" class="btn btn-danger" type="button" style="margin-right:auto; display:none;">
+        <button id="jpDeleteBtn"
+                class="btn btn-danger"
+                type="button"
+                style="margin-right:auto; display:none;">
           Ezabatu jarduera
         </button>
         <button class="btn" type="button" onclick="closeJpModal()">Utzi</button>
@@ -302,6 +344,10 @@
     </div>
   </div>
 
+  <!-- Programazioa inportatzeko modala (fragment-a) -->
+  <div th:replace="irakasleak/programazioa/programazioa-inport-modala :: programazioa-inport-modal"></div>
+
+  <!-- SCRIPT NAGUSIAK -->
   <script>
   // ---------- CSRF helpers ----------
   function getCookie(name){
@@ -325,11 +371,31 @@
       CSRF_TOKEN ? { [CSRF_HEADER]: CSRF_TOKEN } : {}
     ),
     body: body ? JSON.stringify(body) : undefined
-  }).then(r => {
-    if (!r.ok) throw new Error('HTTP ' + r.status);
+  })
+  .then(async r => {
     const ct = r.headers.get('content-type') || '';
-    return ct.includes('application/json') ? r.json() : { ok: true };
-  }).catch(e => {
+    const isJson = ct.includes('application/json');
+
+    let data = null;
+    if (isJson) {
+      try {
+        data = await r.json();
+      } catch (e) {
+        console.warn('JSON parse errorea', e);
+      }
+    }
+
+    if (!r.ok) {
+      const msg =
+        (data && (data.error || data.message)) ||
+        ('HTTP ' + r.status);
+      throw new Error(msg);
+    }
+
+    // OK bada, JSON bueltatzen badu datu hori; bestela {ok:true}
+    return data ?? { ok: true };
+  })
+  .catch(e => {
     console.error(e);
     alert('Errorea: ' + e.message);
     throw e;
@@ -598,5 +664,76 @@
     btnClose.addEventListener('click', closeModal);
   })();
   </script>
+
+  <!-- Programazioa inportatu MODALAREN script-a -->
+  <script>
+  // ---------- Programazioa inportatu modala ----------
+  (function() {
+    const modal = document.getElementById('programazioaImportModal');
+    const openBtn = document.getElementById('programazioaInportatuBtn');
+    const closeBtn = modal ? modal.querySelector('#modalCloseBtn') : null;
+    const aurreikuspenEdukia = modal ? modal.querySelector('#aurreikuspenEdukia') : null;
+    const inportatuForm = document.getElementById('inportatuForm');
+    const iturburuaInput = document.getElementById('iturburuaId');
+
+    // Botoia edo modala ez badago (adib. programazioa ez badago hutsik),
+    // ez da ezer egiten eta ez du errorea sortzen.
+    if (!modal || !openBtn) return;
+
+    function openModal() {
+      modal.classList.add('show');
+    }
+    function closeModal() {
+      modal.classList.remove('show');
+    }
+
+    openBtn.addEventListener('click', openModal);
+
+    if (closeBtn) {
+      closeBtn.addEventListener('click', closeModal);
+    }
+
+    modal.addEventListener('click', function(e) {
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
+
+    // Modal barruko click-ak: aurreikusi + inportatu
+    modal.addEventListener('click', function(e) {
+      const aurreikusiBtn = e.target.closest('.aurreikusi-btn');
+      const inportatuBtn = e.target.closest('.inportatu-btn');
+
+      if (aurreikusiBtn && aurreikuspenEdukia) {
+        const id = aurreikusiBtn.getAttribute('data-id');
+        if (!id) return;
+        aurreikuspenEdukia.innerHTML =
+          '<p style="color:#6b7280;font-size:0.9rem;">Kargatzen...</p>';
+
+        fetch('/irakasle/programazioa/aurreikusi/' + id)
+          .then(r => r.text())
+          .then(html => {
+            aurreikuspenEdukia.innerHTML = html;
+          })
+          .catch(() => {
+            aurreikuspenEdukia.innerHTML =
+              '<p style="color:#b91c1c;font-size:0.9rem;">Errorea aurreikuspena kargatzean.</p>';
+          });
+      }
+
+      if (inportatuBtn && inportatuForm && iturburuaInput) {
+        const id = inportatuBtn.getAttribute('data-id');
+        if (!id) return;
+        if (!confirm('Ziur zaude programazio hau uneko koadernora inportatu nahi duzula? ' +
+                     'Oraingo programazioa gainidatzi daiteke.')) {
+          return;
+        }
+        iturburuaInput.value = id;
+        inportatuForm.submit();
+      }
+    });
+  })();
+  </script>
+
 </body>
 </html>

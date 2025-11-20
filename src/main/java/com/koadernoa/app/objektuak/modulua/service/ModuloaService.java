@@ -64,6 +64,7 @@ public class ModuloaService {
         // Set eremuak
         target.setIzena(dto.getIzena().trim());
         target.setKodea(dto.getKodea().trim());
+        target.setEeiKodea(dto.getEeiKodea().trim());
         target.setMaila(maila);
         target.setTaldea(taldea);
 

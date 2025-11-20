@@ -24,6 +24,11 @@
   <input type="text" th:field="*{kodea}" required/>
   <div th:if="${#fields.hasErrors('kodea')}" th:errors="*{kodea}"></div>
   <br/>
+  
+  <label>EEI kodea:</label>
+  <input type="text" th:field="*{eeiKodea}" placeholder="0225, 0224..." />
+  <div th:if="${#fields.hasErrors('eeiKodea')}" th:errors="*{eeiKodea}"></div>
+  <br/>
 
   <label>Maila:</label>
   <select th:field="*{mailaId}" required>

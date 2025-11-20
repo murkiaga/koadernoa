@@ -31,6 +31,7 @@
     <thead>
         <tr>
             <th>ID</th>
+            <th>EEI kodea</th>
             <th>Kodea</th>
             <th>Izena</th>
             <th>Maila</th>
@@ -41,6 +42,7 @@
     <tbody>
         <tr th:each="moduloa : ${moduluak}">
             <td th:text="${moduloa.id}">1</td>
+            <td th:text="${moduloa.eeiKodea}">0225</td>
             <td th:text="${moduloa.kodea}">ADAT</td>
             <td th:text="${moduloa.izena}">Datuen Atzipena</td>
             <td th:text="${moduloa.maila.getKodea}">LEHENENGOA</td>

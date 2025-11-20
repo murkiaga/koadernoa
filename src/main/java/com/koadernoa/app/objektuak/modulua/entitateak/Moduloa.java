@@ -6,6 +6,7 @@ import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Taldea;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -23,7 +24,9 @@ public class Moduloa {
     private Long id;
 
     private String izena;
-    private String kodea; //"ADAT"
+    private String kodea; //"RELO"
+    @Column(name = "eei_kodea")
+    private String eeiKodea; //"0225" kode honek RELO eta SALO lotu
     
     @ManyToOne(optional=false)
     private Maila maila;

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <title>Programazioa inportatu (fragment)</title>
+</head>
+<body>
+
+<div th:fragment="programazioa-inport-modal">
+
+  <style>
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.35);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-card {
+      background: #fff;
+      max-width: 900px;
+      width: 95%;
+      max-height: 90vh;
+      overflow: auto;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+    .modal-header {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:1rem;
+    }
+    .modal-close-btn {
+      background:none;
+      border:none;
+      font-size:1.2rem;
+      cursor:pointer;
+    }
+    .modal-layout {
+      display:grid;
+      grid-template-columns: 1.2fr 1.8fr;
+      gap:1rem;
+    }
+    .modal-layout table {
+      width:100%;
+      border-collapse:collapse;
+      font-size:0.9rem;
+    }
+    .modal-layout th, .modal-layout td {
+      border:1px solid #e5e7eb;
+      padding:0.4rem 0.5rem;
+    }
+    .modal-layout th {
+      background:#f9fafb;
+    }
+    .badge {
+      display:inline-block;
+      padding:0.1rem 0.4rem;
+      border-radius:999px;
+      font-size:0.7rem;
+      background:#e5e7eb;
+    }
+  </style>
+
+  <div id="programazioaImportModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 style="margin:0;">Programazioa inportatu</h2>
+        <button type="button" id="modalCloseBtn" class="modal-close-btn">✕</button>
+      </div>
+
+      <div class="modal-layout">
+        <!-- EZKERRA: koadernoen zerrenda -->
+        <div>
+          <h3 style="margin-top:0;font-size:1rem;">EEI kode berdina duten koadernoak</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Ikasturtea</th>
+                <th>Koadernoa</th>
+                <th>Aukerak</th>
+              </tr>
+            </thead>
+            <tbody>
+            <!-- Koadernoen zerrenda -->
+            <tr th:each="k : ${inportatzekoKoadernoak}">
+              <td>
+                <!-- Koadernoa -> egutegia -> ikasturtea -> izena, null kasuak zainduta -->
+                <span th:text="${k.egutegia != null ? (k.egutegia.ikasturtea != null ? k.egutegia.ikasturtea.izena : '—') : '—'}">
+                  2025-2026
+                </span>
+              </td>
+              <td>
+                <span th:text="${k.izena}">ADAT - D eredua</span><br/>
+                <span class="badge"
+                      th:text="${k.moduloa != null ? k.moduloa.kodea : '-'}">
+                  ADAT
+                </span>
+              </td>
+              <td>
+                <button type="button"
+                        class="aurreikusi-btn"
+                        th:attr="data-id=${k.id}">
+                  Aurreikusi
+                </button>
+                <button type="button"
+                        class="inportatu-btn"
+                        th:attr="data-id=${k.id}">
+                  Inportatu
+                </button>
+              </td>
+            </tr>
+
+            <!-- Zerrenda hutsik badago -->
+            <tr th:if="${inportatzekoKoadernoak == null or #lists.isEmpty(inportatzekoKoadernoak)}">
+              <td colspan="3" style="text-align:center;color:#6b7280;">
+                Ez dago koadernorik inportatzeko.
+              </td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ESKUINA: aurreikuspena -->
+        <div>
+          <h3 style="margin-top:0;font-size:1rem;">Aurreikuspena</h3>
+          <div id="aurreikuspenEdukia"
+               style="border:1px solid #e5e7eb;border-radius:0.5rem;padding:0.5rem;min-height:6rem;">
+            <p style="color:#6b7280;font-size:0.9rem;">
+              Aukeratu koaderno bat ezkerreko zerrendan bere programazioa ikusteko.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hidden form inportatzeko (POST) -->
+      <form id="inportatuForm"
+            th:action="@{/irakasle/programazioa/inportatu}"
+            method="post"
+            style="display:none;">
+        <input type="hidden" name="iturburuaId" id="iturburuaId"/>
+        <input type="hidden"
+               th:if="${_csrf != null}"
+               th:name="${_csrf.parameterName}"
+               th:value="${_csrf.token}"/>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
