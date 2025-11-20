@@ -284,8 +284,8 @@ public class ProgramazioaService {
             dest.setEbaluaketak(new ArrayList<>());
         }
 
-        dest.setIzenburua(src.getIzenburua());
-        dest.setAzalpena(src.getAzalpena());
+        //dest.setIzenburua(src.getIzenburua());
+        //dest.setAzalpena(src.getAzalpena());
 
         Egutegia egutegia = helburua.getEgutegia();
 
