@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <title>Mailaren ebaluazioak</title>
+  <link rel="stylesheet" th:href="@{/css/navbar.css}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root { --b:#e5e7eb; --t:#111827; --m:#2563eb; --bg:#fff; }
+    body { color:var(--t); background:var(--bg); margin:0; font-family:system-ui, sans-serif; }
+    main { max-width: 960px; margin: 24px auto 40px; padding: 0 16px; }
+
+    h1 { font-size:1.6rem; margin-bottom:.3rem; }
+    .muted { color:#6b7280; font-size:.9rem; }
+
+    table { border-collapse: collapse; width:100%; margin-top:16px; }
+    th, td { border-bottom:1px solid var(--b); padding:8px; text-align:left; font-size:.92rem; }
+    th { background:#f9fafb; }
+
+    input[type="text"], input[type="number"] {
+      width:100%;
+      max-width:140px;
+      padding:4px 6px;
+      border:1px solid var(--b);
+      border-radius:6px;
+      font-size:.9rem;
+    }
+
+    .actions { margin-top:16px; display:flex; gap:8px; }
+    button {
+      border:none;
+      border-radius:999px;
+      padding:8px 16px;
+      cursor:pointer;
+      font-size:.9rem;
+    }
+    .btn-primary { background:var(--m); color:white; }
+    .btn-secondary { background:#e5e7eb; }
+
+    .flash { padding:8px 12px; border-radius:8px; margin-top:12px; font-size:.9rem; }
+    .flash-success { background:#dcfce7; color:#166534; }
+    .flash-error { background:#fee2e2; color:#b91c1c; }
+
+    .section { margin-top:24px; }
+  </style>
+</head>
+<body>
+<div th:replace="/kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+
+<main>
+  <h1>Ebaluazio momentuak</h1>
+  <p class="muted">
+    Maila:
+    <span th:text="${maila.izena}">1. maila</span>
+    (<span th:text="${maila.kodea}">LEHENENGOA</span>)
+  </p>
+
+  <!-- Flash mezuak -->
+  <div th:if="${success}" class="flash flash-success"
+       th:text="${success}">Success mezua</div>
+  <div th:if="${error}" class="flash flash-error"
+       th:text="${error}">Errore mezua</div>
+
+  <div class="section">
+    <form th:action="@{|/kudeatzaile/konfigurazioa/mailak/${maila.id}/ebaluazioak|}"
+          method="post">
+
+      <table>
+        <thead>
+        <tr>
+          <th>Aktibo</th>
+          <th>Ordena</th>
+          <th>Kodea</th>
+          <th>Izena</th>
+          <th>Ezabatu</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:if="${#lists.isEmpty(momentuak)}">
+          <td colspan="5" class="muted">
+            Ez dago oraindik ebaluazio momenturik definituta maila honetan.
+          </td>
+        </tr>
+        <tr th:each="em : ${momentuak}">
+          <!-- IDa mantentzeko -->
+          <input type="hidden" name="ids" th:value="${em.id}"/>
+
+          <td>
+            <input type="checkbox"
+                   th:name="${'aktibo_' + em.id}"
+                   th:checked="${em.aktibo}">
+          </td>
+          <td>
+            <input type="number" min="0"
+                   th:name="${'ordena_' + em.id}"
+                   th:value="${em.ordena}">
+          </td>
+          <td>
+            <input type="text"
+                   th:name="${'kodea_' + em.id}"
+                   th:value="${em.kodea}"
+                   placeholder="1_EBAL">
+          </td>
+          <td>
+            <input type="text"
+                   th:name="${'izena_' + em.id}"
+                   th:value="${em.izena}"
+                   placeholder="1. ebaluazioa">
+          </td>
+          <td>
+            <input type="checkbox"
+                   name="deleteIds"
+                   th:value="${em.id}">
+          </td>
+        </tr>
+        </tbody>
+      </table>
+
+      <h2 class="section" style="font-size:1.1rem;">Gehitu ebaluazio momentu berria</h2>
+      <p class="muted">
+        Kodea eta izena derrigorrezkoak dira. Ordena hutsik utziz gero, geroago
+        editatu dezakezu.
+      </p>
+
+      <table>
+        <tbody>
+        <tr>
+          <td style="width:20%;">Kodea</td>
+          <td style="width:30%;">
+            <input type="text" name="newKodea" placeholder="1_EBAL">
+          </td>
+        </tr>
+        <tr>
+          <td>Izena</td>
+          <td>
+            <input type="text" name="newIzena" placeholder="1. ebaluazioa">
+          </td>
+        </tr>
+        <tr>
+          <td>Ordena</td>
+          <td>
+            <input type="number" name="newOrdena" min="0" placeholder="1">
+          </td>
+        </tr>
+        </tbody>
+      </table>
+
+      <div class="actions">
+        <button type="submit" class="btn-primary">Gorde aldaketak</button>
+        <a th:href="@{/kudeatzaile/konfigurazioa#mailak}"
+           class="btn-secondary"
+           style="text-decoration:none;display:inline-flex;align-items:center;">
+          Itzuli mailen konfiguraziora
+        </a>
+      </div>
+    </form>
+  </div>
+</main>
+</body>
+</html>

@@ -58,28 +58,40 @@
   <form th:action="@{/kudeatzaile/konfigurazioa/mailak/aktiboak}" th:object="${activeForm}" method="post">
     <table>
       <thead>
-      <tr>
-        <th>Aktibo</th>
-        <th>Ordena</th>
-        <th>Kodea</th>
-        <th>Izena</th>
-        <th>ID</th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr th:each="m : ${mailak}">
-        <td>
-          <input type="checkbox"
-                 th:name="|aktiboIds|"
+		  <tr>
+		    <th>Aktibo</th>
+		    <th>Ordena</th>
+		    <th>Kodea</th>
+		    <th>Izena</th>
+		    <th>ID</th>
+		    <th>Ebaluazioak</th>
+		  </tr>
+		</thead>
+		<tbody>
+		<tr th:each="m : ${mailak}">
+		  <td>
+          	<input type="checkbox"
+                 name="aktiboIds"
                  th:value="${m.id}"
                  th:checked="${m.aktibo}">
-        </td>
-        <td th:text="${m.ordena}">1</td>
-        <td th:text="${m.kodea}">LEHENENGOA</td>
-        <td th:text="${m.izena}">1. maila</td>
-        <td th:text="${m.id}">1</td>
-      </tr>
-      </tbody>
+          </td>
+		  <td th:text="${m.ordena}">1</td>
+		  <td th:text="${m.kodea}">LEHENENGOA</td>
+		  <td th:text="${m.izena}">1. maila</td>
+		  <td th:text="${m.id}">1</td>
+		  <td>
+		    <ul>
+		      <li th:each="em : ${m.ebaluazioMomentuak}"
+		          th:text="${em.izena}">
+		        1. ebaluazioa
+		      </li>
+		    </ul>
+		    <a th:href="@{|/kudeatzaile/konfigurazioa/mailak/${m.id}/ebaluazioak|}">
+		      Editatu
+		    </a>
+		  </td>
+		</tr>
+		</tbody>
     </table>
     <div class="actions">
       <button type="submit">Gorde aktiboak</button>

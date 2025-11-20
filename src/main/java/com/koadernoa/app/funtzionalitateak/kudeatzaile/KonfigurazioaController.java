@@ -1,18 +1,26 @@
 package com.koadernoa.app.funtzionalitateak.kudeatzaile;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioMomentua;
+import com.koadernoa.app.objektuak.ebaluazioa.repository.EbaluazioMomentuaRepository;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
 import com.koadernoa.app.objektuak.egutegia.repository.MailaRepository;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Familia;
 import com.koadernoa.app.objektuak.zikloak.repository.FamiliaRepository;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -25,6 +33,7 @@ public class KonfigurazioaController {
 
     private final MailaRepository mailaRepository;
     private final FamiliaRepository familiaRepository;
+    private final EbaluazioMomentuaRepository ebaluazioMomentuaRepository;
 
     // ---- GET: orria ----
     @GetMapping
@@ -181,4 +190,123 @@ public class KonfigurazioaController {
 
     @Data public static class ActiveFamiliakForm { private List<Long> aktiboIds; }
     @Data public static class SortuFamiliaForm { @NotBlank private String izena; }
+    
+    // ===== Ebaluazio Momentuak =====
+    // GET: zerrenda + formularioa
+    @GetMapping("/mailak/{mailaId}/ebaluazioak")
+    public String ebaluazioMomentuakPantaila(@PathVariable Long mailaId,
+                                             Model model,
+                                             RedirectAttributes redirectAttributes) {
+
+        Maila maila = mailaRepository.findById(mailaId).orElse(null);
+        if (maila == null) {
+            redirectAttributes.addFlashAttribute("error", "Maila ez da aurkitu.");
+            return "redirect:/kudeatzaile/konfigurazioa#mailak";
+        }
+
+        List<EbaluazioMomentua> momentuak =
+                ebaluazioMomentuaRepository.findByMailaAndAktiboTrueOrderByOrdenaAsc(maila);
+        // Oharra: hemen soilik aktiboak kargatzen ari gara; nahi baduzu "guztiak" erakutsi,
+        // egin beste metodo bat repository-n, edo aldatu hau.
+
+        model.addAttribute("maila", maila);
+        model.addAttribute("momentuak", momentuak);
+
+        return "kudeatzaile/konfigurazioa/mailak-ebaluazioak";
+    }
+
+    // POST: bulk update + berriak gehitu + aukeratutakoen ezabaketa
+    @PostMapping("/mailak/{mailaId}/ebaluazioak")
+    @Transactional
+    public String gordeEbaluazioMomentuak(@PathVariable Long mailaId,
+                                          HttpServletRequest request,
+                                          RedirectAttributes redirectAttributes) {
+
+        Maila maila = mailaRepository.findById(mailaId).orElse(null);
+        if (maila == null) {
+            redirectAttributes.addFlashAttribute("error", "Maila ez da aurkitu.");
+            return "redirect:/kudeatzaile/konfigurazioa#mailak";
+        }
+
+        // ======== EXISTENTEAK EGUNERATU / EZABATU =========
+        String[] idParamArray = request.getParameterValues("ids");
+        String[] deleteIdsArray = request.getParameterValues("deleteIds");
+
+        Set<Long> deleteIds = new HashSet<>();
+        if (deleteIdsArray != null) {
+            Arrays.stream(deleteIdsArray).forEach(s -> {
+                try { deleteIds.add(Long.valueOf(s)); } catch (NumberFormatException ignored) {}
+            });
+        }
+
+        if (idParamArray != null) {
+            for (String idStr : idParamArray) {
+                Long id;
+                try {
+                    id = Long.valueOf(idStr);
+                } catch (NumberFormatException ex) {
+                    continue;
+                }
+
+                EbaluazioMomentua em = ebaluazioMomentuaRepository.findById(id).orElse(null);
+                if (em == null) continue;
+
+                // Ezabatzeko markatuta badago → delete eta kitto
+                if (deleteIds.contains(id)) {
+                    ebaluazioMomentuaRepository.delete(em);
+                    continue;
+                }
+
+                String kodea = request.getParameter("kodea_" + id);
+                String izena = request.getParameter("izena_" + id);
+                String ordenaStr = request.getParameter("ordena_" + id);
+                boolean aktibo = request.getParameter("aktibo_" + id) != null;
+
+                em.setKodea(kodea != null ? kodea.trim() : null);
+                em.setIzena(izena != null ? izena.trim() : null);
+                em.setAktibo(aktibo);
+
+                Integer ordena = em.getOrdena();
+                if (ordenaStr != null && !ordenaStr.isBlank()) {
+                    try {
+                        ordena = Integer.valueOf(ordenaStr);
+                    } catch (NumberFormatException ignored) {}
+                }
+                em.setOrdena(ordena);
+
+                ebaluazioMomentuaRepository.save(em);
+            }
+        }
+
+        // ======== BERRIA SORTU (baldin eta kode/izena ez badaude hutsik) =========
+        String newKodea = request.getParameter("newKodea");
+        String newIzena = request.getParameter("newIzena");
+        String newOrdenaStr = request.getParameter("newOrdena");
+
+        if (newKodea != null) newKodea = newKodea.trim();
+        if (newIzena != null) newIzena = newIzena.trim();
+
+        if (newKodea != null && !newKodea.isEmpty() &&
+            newIzena != null && !newIzena.isEmpty()) {
+
+            EbaluazioMomentua berria = new EbaluazioMomentua();
+            berria.setMaila(maila);
+            berria.setKodea(newKodea);
+            berria.setIzena(newIzena);
+            berria.setAktibo(true);
+
+            Integer ordena = null;
+            if (newOrdenaStr != null && !newOrdenaStr.isBlank()) {
+                try {
+                    ordena = Integer.valueOf(newOrdenaStr);
+                } catch (NumberFormatException ignored) {}
+            }
+            berria.setOrdena(ordena);
+
+            ebaluazioMomentuaRepository.save(berria);
+        }
+
+        redirectAttributes.addFlashAttribute("success", "Ebaluazio momentuak eguneratu dira.");
+        return "redirect:/kudeatzaile/konfigurazioa/mailak/" + mailaId + "/ebaluazioak";
+    }
 }

@@ -4,6 +4,7 @@ package com.koadernoa.app.objektuak.modulua.entitateak;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioNota;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Asistentzia;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 
@@ -57,4 +58,7 @@ public class Matrikula {
     private MatrikulaEgoera egoera = MatrikulaEgoera.MATRIKULATUA;
     
     private String oharra; // arrazoia: “lanarekin uztartu ezina”, “zentrutik baja”...
+    
+    @OneToMany(mappedBy = "matrikula", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<EbaluazioNota> notak = new ArrayList<>();
 }

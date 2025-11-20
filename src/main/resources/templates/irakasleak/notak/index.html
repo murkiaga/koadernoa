@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <title>Notak</title>
+  <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    :root { --b:#e5e7eb; --bg:#fff; --t:#111827; --m:#2563eb; }
+    body { margin:0; font-family: system-ui, sans-serif; color:var(--t); background:var(--bg); }
+    main { max-width: 1100px; margin: 24px auto; padding: 0 16px 40px; }
+    h1 { font-size: 1.6rem; margin-bottom: .2rem; }
+    .muted { color:#6b7280; font-size:.9rem; }
+
+    table { border-collapse: collapse; width: 100%; margin-top: 16px; }
+    th, td { border-bottom: 1px solid var(--b); padding: 8px; font-size:.92rem; }
+    th { background:#f9fafb; text-align:left; position:sticky; top:0; z-index:1; }
+    tbody tr:nth-child(even) { background:#f9fafb40; }
+
+    input[type="number"] {
+      width: 70px;
+      padding: 4px 6px;
+      border: 1px solid var(--b);
+      border-radius: 6px;
+      font-size: .9rem;
+    }
+    .actions { margin-top: 16px; display:flex; gap:8px; }
+    button {
+      border:none;
+      border-radius:999px;
+      padding:8px 16px;
+      cursor:pointer;
+      font-size:.9rem;
+    }
+    .btn-primary { background:var(--m); color:white; }
+    .btn-secondary { background:#e5e7eb; }
+    .flash { padding: 8px 12px; border-radius:8px; margin-top: 12px; font-size:.9rem; }
+    .flash-success { background:#dcfce7; color:#166534; }
+    .flash-error { background:#fee2e2; color:#b91c1c; }
+  </style>
+</head>
+<body>
+<div th:replace="~{irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})}"></div>
+
+<main>
+  <h1>Notak</h1>
+  <p class="muted"
+     th:text="${koadernoAktiboa != null ? koadernoAktiboa.izena : '(koaderno aktiborik ez)'}">
+    Koadernoa
+  </p>
+
+  <!-- Flash mezuak -->
+  <div th:if="${success}" class="flash flash-success"
+       th:text="${success}">Success mezua</div>
+  <div th:if="${error}" class="flash flash-error"
+       th:text="${error}">Errore mezua</div>
+
+  <div th:if="${#lists.isEmpty(matrikulak)}">
+    <p>Ez dago ikaslerik koaderno honetan.</p>
+  </div>
+
+  <div th:if="${!#lists.isEmpty(matrikulak)}">
+    <form method="post" th:action="@{/irakasle/notak}">
+      <table>
+        <thead>
+        <tr>
+          <th>Ikaslea</th>
+          <th>OHARRA</th>
+          <th th:each="em : ${momentuak}"
+              th:text="${em.izena}">
+            1. ebaluazioa
+          </th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="mat : ${matrikulak}">
+          <td>
+            <!-- 1. abizena -->
+  			<span th:text="${mat.ikaslea != null ? mat.ikaslea.abizena1 : ''}">Abizena1</span>
+  
+  			<!-- 2. abizena, baldin badago -->
+  			<span th:if="${mat.ikaslea != null and mat.ikaslea.abizena2 != null}"
+        		th:text="${' ' + mat.ikaslea.abizena2}"> Abizena2</span>
+  			<!-- koma eta izena -->
+  			,
+            <span th:text="${mat.ikaslea.izena}">Izena</span>
+          </td>
+          <td th:text="${mat.oharra}">Oharra</td>
+
+          <!-- Nota input-ak dinamikoki, ebaluazio momentu bakoitzerako -->
+          <td th:each="em : ${momentuak}">
+            <input type="number" step="1" min="0" max="10"
+                   th:name="${'nota_' + mat.id + '_' + em.id}"
+                   th:value="${#maps.containsKey(notaMap, mat.id + '_' + em.id) ? notaMap[mat.id + '_' + em.id].nota : ''}">
+          </td>
+        </tr>
+        </tbody>
+      </table>
+
+      <div class="actions">
+        <button type="submit" class="btn-primary">Gorde notak</button>
+        <a th:href="@{/irakasle}" class="btn-secondary" style="text-decoration:none;display:inline-flex;align-items:center;">
+          Atzera
+        </a>
+      </div>
+    </form>
+  </div>
+</main>
+</body>
+</html>

@@ -84,7 +84,7 @@
 </head>
 <body>
   <div th:if="${koadernoAktiboa != null}"
-       th:replace="irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})"></div>
+       th:replace="~{irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})}"></div>
 
   <main class="container stack">
     <div class="card">
@@ -119,7 +119,7 @@
         <!-- EBALUAKETA -> UD -> JP -->
         <ul id="ebalList" class="ebal-list">
           <li th:each="eb, iter : ${ebaluaketak}"
-		        th:with="colorIdx=${(iter.index % 6) + 1}"
+		        th:with="colorIdx=${((iter.index) % 6) + 1}"
 		        class="ebal-item"
 		        th:attr="data-eb-id=${eb.id}"
 		        th:classappend="| color-${colorIdx}|">
@@ -212,7 +212,7 @@
       <button id="btnPreviewBulk" class="btn btn-primary"
               th:attr="data-koaderno-id=${koadernoAktiboa.id}"
               th:disabled="${!canBulk}">
-        Denboralizaziora bolkatu (aurreikusi)
+        Denboralizaziora bolkatu
       </button>
     </div>
     <div th:if="${!canBulk}" class="alert alert-warning mt-2">
@@ -326,26 +326,8 @@
     </form>
   </dialog>
   
-  <!-- Modal denboralizaziora bolkatu -->
-  <div id="bulkModal" class="modal" style="display:none">
-    <div class="modal-content">
-      <h3>Aurreikuspena</h3>
-      <table id="bulkTable" class="table">
-        <thead>
-          <tr><th>Data</th><th>Titulua</th><th>Orduak</th><th>Mota</th><th>Azalpena</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-      <div class="modal-actions">
-        <label><input type="checkbox" id="chkReplace" checked> Aurreko planifikatuak garbitu</label>
-        <button id="btnConfirmBulk" class="btn btn-success">Berretsi bolketa</button>
-        <button id="btnCloseBulk" class="btn">Itxi</button>
-      </div>
-    </div>
-  </div>
-
   <!-- Programazioa inportatzeko modala (fragment-a) -->
-  <div th:replace="irakasleak/programazioa/programazioa-inport-modala :: programazioa-inport-modal"></div>
+  <div th:replace="~{irakasleak/programazioa/programazioa-inport-modala :: programazioa-inport-modal}"></div>
 
   <!-- SCRIPT NAGUSIAK -->
   <script>
@@ -362,6 +344,70 @@
   const CSRF_TOKEN  = metaToken || cookieToken || '';
   const CSRF_HEADER = metaToken ? (metaHeader || 'X-CSRF-TOKEN')
                                 : (cookieToken ? 'X-XSRF-TOKEN' : '');
+
+  // ---------- Open state (ebal/UD irekiak gordetzeko) ----------
+  const OPEN_STATE_KEY = 'programazioaOpenState_' + (KOADERNO_ID || 'default');
+
+  function saveOpenState() {
+    const openEb = Array.from(document.querySelectorAll('.ebal-item.open'))
+      .map(li => li.getAttribute('data-eb-id'));
+
+    const openUd = Array.from(document.querySelectorAll('.ud-item.open'))
+      .map(li => li.getAttribute('data-ud-id'));
+
+    const state = { eb: openEb, ud: openUd };
+    try {
+      localStorage.setItem(OPEN_STATE_KEY, JSON.stringify(state));
+    } catch (e) {
+      console.warn('Ezin izan da openState gorde', e);
+    }
+  }
+
+  function restoreOpenState() {
+    let raw = null;
+    try {
+      raw = localStorage.getItem(OPEN_STATE_KEY);
+    } catch (e) {
+      console.warn('Ezin izan da openState irakurri', e);
+      return;
+    }
+    if (!raw) return;
+
+    let state;
+    try {
+      state = JSON.parse(raw);
+    } catch (e) {
+      console.warn('openState JSON hondatuta dago', e);
+      return;
+    }
+
+    if (state.eb && Array.isArray(state.eb)) {
+      state.eb.forEach(id => {
+        const li = document.querySelector(`.ebal-item[data-eb-id="${id}"]`);
+        if (!li) return;
+        li.classList.add('open');
+        const content = li.querySelector('.ebal-content');
+        if (content) content.style.display = 'block';
+      });
+    }
+
+    if (state.ud && Array.isArray(state.ud)) {
+      state.ud.forEach(id => {
+        const li = document.querySelector(`.ud-item[data-ud-id="${id}"]`);
+        if (!li) return;
+        li.classList.add('open');
+        const content = li.querySelector('.ud-content');
+        if (content) content.style.display = 'block';
+      });
+    }
+  }
+
+  function reloadKeepingState() {
+    saveOpenState();
+    window.location.reload();
+  }
+
+  document.addEventListener('DOMContentLoaded', restoreOpenState);
 
   const fjson = (url, method, body) => fetch(url, {
     method,
@@ -407,12 +453,16 @@
     item.classList.toggle('open');
     const content = item.querySelector('.ebal-content');
     content.style.display = content.style.display === 'none' ? 'block' : 'none';
+
+    saveOpenState();
   }
   function toggleUd(el){
     const item = el.closest('.ud-item');
     item.classList.toggle('open');
     const content = item.querySelector('.ud-content');
     content.style.display = content.style.display === 'none' ? 'block' : 'none';
+
+    saveOpenState();
   }
 
   // ---------- Ebaluaketa modal ----------
@@ -438,7 +488,7 @@
       ebalDeleteBtn.style.display = 'inline-flex';
       ebalDeleteBtn.onclick = () => {
         if (confirm('Ziur zaude ebaluaketa hau (eta bere UD guztiak) ezabatu nahi dituzula?')) {
-          fjson(`/irakasle/programazioa/api/ebal/${d.id}`, 'DELETE').then(()=>location.reload());
+          fjson(`/irakasle/programazioa/api/ebal/${d.id}`, 'DELETE').then(()=>reloadKeepingState());
         }
       };
       ebalModal.showModal();
@@ -456,7 +506,7 @@
     };
     const url = payload.id ? `/irakasle/programazioa/api/ebal/${payload.id}` : `/irakasle/programazioa/api/ebal`;
     const method = payload.id ? 'PUT' : 'POST';
-    fjson(url, method, payload).then(()=>location.reload());
+    fjson(url, method, payload).then(()=>reloadKeepingState());
   });
 
   // ---------- UD modal ----------
@@ -483,7 +533,7 @@
       udDeleteBtn.style.display = 'inline-flex';
       udDeleteBtn.onclick = () => {
         if (confirm('Ziur zaude UD hau (eta bere jarduera guztiak) ezabatu nahi dituzula?')) {
-          fjson(`/irakasle/programazioa/api/ud/${d.id}`, 'DELETE').then(()=>location.reload());
+          fjson(`/irakasle/programazioa/api/ud/${d.id}`, 'DELETE').then(()=>reloadKeepingState());
         }
       };
       udModal.showModal();
@@ -502,7 +552,7 @@
     };
     const url = payload.id ? `/irakasle/programazioa/api/ud/${payload.id}` : `/irakasle/programazioa/api/ud`;
     const method = payload.id ? 'PUT' : 'POST';
-    fjson(url, method, payload).then(()=>location.reload());
+    fjson(url, method, payload).then(()=>reloadKeepingState());
   });
 
   // ---------- JP modal ----------
@@ -528,7 +578,7 @@
       jpDeleteBtn.style.display = 'inline-flex';
       jpDeleteBtn.onclick = () => {
         if (confirm('Ziur zaude jarduera hau ezabatu nahi duzula?')) {
-          fjson(`/irakasle/programazioa/api/jp/${d.id}`, 'DELETE').then(()=>location.reload());
+          fjson(`/irakasle/programazioa/api/jp/${d.id}`, 'DELETE').then(()=>reloadKeepingState());
         }
       };
       jpModal.showModal();
@@ -546,7 +596,7 @@
     };
     const url = id ? `/irakasle/programazioa/api/jp/${id}` : `/irakasle/programazioa/api/jp`;
     const method = id ? 'PUT' : 'POST';
-    fjson(url, method, id ? payload : { ...payload }).then(()=>location.reload());
+    fjson(url, method, id ? payload : { ...payload }).then(()=>reloadKeepingState());
   });
 
   // ---------- d&d: UD ordena (ebaluazio barruan) + kross-ebaluaketa ----------
@@ -579,63 +629,30 @@
     });
   });
 
-  // ------- Programazioa --> Denboralizazioa:
+  // ------- Programazioa --> Denboralizazioa (aurreikuspenik gabe, zuzenean POST) -------
   (function(){
     const btn = document.getElementById('btnPreviewBulk');
     if(!btn) return;
 
-    const modal   = document.getElementById('bulkModal');
-    const tbody   = document.querySelector('#bulkTable tbody');
-    const chkRepl = document.getElementById('chkReplace');
-    const btnOk   = document.getElementById('btnConfirmBulk');
-    const btnClose= document.getElementById('btnCloseBulk');
-
     const csrfToken  = document.querySelector('meta[name="_csrf"]')?.content;
     const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
 
-    function openModal(){ modal.style.display='block'; }
-    function closeModal(){ modal.style.display='none'; }
-
     btn.addEventListener('click', async ()=>{
       const koadernoId = btn.dataset.koadernoId;
-      try {
-        const res = await fetch(`/irakasle/programazioa/preview?koadernoId=${koadernoId}`, {
-          headers: { 'Accept':'application/json' }
-        });
-        if(!res.ok){
-          const msg = await res.text();
-          alert(msg || 'Errorea aurreikustean');
-          return;
-        }
-        const data = await res.json(); // [{data, titulua, orduak, mota, azalpena}]
-        tbody.innerHTML = '';
-        if(!data.length){
-          tbody.innerHTML = '<tr><td colspan="5">Ez dago sortzeko jarduerarik.</td></tr>';
-        } else {
-          for(const item of data){
-            const tr = document.createElement('tr');
-            const d  = item.data; // ISO-8601
-            tr.innerHTML = `
-              <td>${d}</td>
-              <td>${item.titulua}</td>
-              <td>${item.orduak}</td>
-              <td>${item.mota}</td>
-              <td>${item.azalpena||''}</td>`;
-            tbody.appendChild(tr);
-          }
-        }
-        openModal();
-      } catch(e){
-        console.error(e);
-        alert('Ezin izan da aurreikuspena lortu.');
+      if(!koadernoId){
+        alert('Ezin da bolkatu: koadernoa ez dago zehaztuta.');
+        return;
       }
-    });
 
-    btnOk.addEventListener('click', async ()=>{
-      const koadernoId = btn.dataset.koadernoId;
+      const onartu = confirm(
+        'Ziur zaude programazioa denboralizaziora bolkatu nahi duzula?\n' +
+        'Aurreko planifikazioak gainidatzi daitezke.'
+      );
+      if(!onartu) return;
+
       const params = new URLSearchParams();
       params.set('koadernoId', koadernoId);
-      params.set('replaceExisting', chkRepl.checked ? 'true' : 'false');
+      params.set('replaceExisting', 'true'); // lehen checkbox-a checked zegoen bezala
 
       try{
         const res = await fetch('/irakasle/programazioa/bolkatu', {
@@ -646,8 +663,10 @@
           },
           body: params.toString()
         });
+
         if(res.redirected){
-          window.location = res.url; // flash mezuak ikusteko
+          // adib. /irakasle/denboralizazioa-ra edo /irakasle/programazioa-ra
+          window.location = res.url;
           return;
         }
         if(!res.ok){
@@ -655,13 +674,14 @@
           alert(txt || 'Errorea bolkatzean.');
           return;
         }
+
+        // Bestela, arrakastatsua bada baina ez badago redirect-ik, berriz kargatu:
+        reloadKeepingState();
       }catch(e){
         console.error(e);
         alert('Errore ezustekoa bolkatzean.');
       }
     });
-
-    btnClose.addEventListener('click', closeModal);
   })();
   </script>
 
