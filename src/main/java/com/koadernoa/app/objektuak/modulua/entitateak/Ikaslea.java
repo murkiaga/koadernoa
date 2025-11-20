@@ -45,4 +45,21 @@ public class Ikaslea {
 
     @OneToMany(mappedBy = "ikaslea")
     private List<Matrikula> matrikulak;
+    
+    
+    
+    
+    public String getIzenOsoa() {
+        StringBuilder sb = new StringBuilder();
+        if (abizena1 != null) sb.append(abizena1);
+        if (abizena2 != null && !abizena2.isBlank()) {
+            if (!sb.isEmpty()) sb.append(" ");
+            sb.append(abizena2);
+        }
+        if (izena != null) {
+            if (!sb.isEmpty()) sb.append(", ");
+            sb.append(izena);
+        }
+        return sb.toString();
+    }
 }

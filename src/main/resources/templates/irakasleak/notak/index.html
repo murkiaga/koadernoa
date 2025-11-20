@@ -75,17 +75,9 @@
         </thead>
         <tbody>
         <tr th:each="mat : ${matrikulak}">
-          <td>
-            <!-- 1. abizena -->
-  			<span th:text="${mat.ikaslea != null ? mat.ikaslea.abizena1 : ''}">Abizena1</span>
-  
-  			<!-- 2. abizena, baldin badago -->
-  			<span th:if="${mat.ikaslea != null and mat.ikaslea.abizena2 != null}"
-        		th:text="${' ' + mat.ikaslea.abizena2}"> Abizena2</span>
-  			<!-- koma eta izena -->
-  			,
-            <span th:text="${mat.ikaslea.izena}">Izena</span>
-          </td>
+          <td th:text="${mat.ikaslea != null ? mat.ikaslea.izenOsoa : ''}">
+		   Abizenak, Izena
+		  </td>
           <td th:text="${mat.oharra}">Oharra</td>
 
           <!-- Nota input-ak dinamikoki, ebaluazio momentu bakoitzerako -->
