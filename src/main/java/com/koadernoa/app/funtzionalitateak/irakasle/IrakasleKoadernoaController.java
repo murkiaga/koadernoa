@@ -84,10 +84,26 @@ public class IrakasleKoadernoaController {
 
 	@PostMapping("/koadernoa/berria")
 	public String submit(@ModelAttribute("koadernoaDto") KoadernoaSortuDto dto,
-						Authentication auth,
+	                     Authentication auth,
 	                     @RequestParam(name = "cells", required = false) List<String> cells) {
-		Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
-	    koadernoaService.sortuKoadernoa(dto, irakaslea, cells == null ? List.of() : cells);
+
+	    Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+
+	    // 1) Koadernoa sortu
+	    Koadernoa berria = koadernoaService.sortuKoadernoa(
+	            dto,
+	            irakaslea,
+	            cells == null ? List.of() : cells
+	    );
+
+	    // 2) Taldeko ikasleak automatikoki sinkronizatu (badagoenik balego)
+	    try {
+	        ikasleaService.syncKoadernoBakarra(berria.getId());
+	    } catch (Exception e) {
+	        // nahi baduzu, log-ean utzi; baina ez bota koadernoaren sorrera atzera
+	        // log.error("Ezin izan dira taldeko ikasleak inportatu automatikoki", e);
+	    }
+
 	    return "redirect:/irakasle";
 	}
 	
