@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioEgoera;
 import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioMomentua;
 import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioNota;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
@@ -17,4 +18,6 @@ public interface EbaluazioNotaRepository extends JpaRepository<EbaluazioNota, Lo
 
     // Koaderno bereko nota guztiak kargatzeko (hasierako pantailarako)
     List<EbaluazioNota> findByMatrikulaKoadernoa(Koadernoa koadernoa);
+    
+    boolean existsByEgoera(EbaluazioEgoera egoera);
 }

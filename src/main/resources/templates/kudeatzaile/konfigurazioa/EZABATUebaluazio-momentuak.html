@@ -1,0 +1,42 @@
+<table>
+  <thead>
+    <tr>
+      <th>Kodea</th>
+      <th>Izena</th>
+      <th>Aktibo</th>
+      <th>0-10 nota?</th>
+      <th>Egoera bereziak</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr th:each="momentu, it : ${maila.ebaluazioMomentuak}">
+      <td th:text="${momentu.kodea}"></td>
+      <td th:text="${momentu.izena}"></td>
+      <td>
+        <!-- aktibo checkbox-a jada baduzu, mantendu -->
+        <input type="checkbox"
+               th:field="*{momentuak[__${it.index}__].aktibo}" 
+               th:checked="${momentu.aktibo}">
+        <input type="hidden"
+               th:field="*{momentuak[__${it.index}__].id}"
+               th:value="${momentu.id}">
+      </td>
+      <td>
+        <input type="checkbox"
+               th:field="*{momentuak[__${it.index}__].onartuNotaZenbakizkoa}"
+               th:checked="${momentu.onartuNotaZenbakizkoa}">
+      </td>
+      <td>
+        <div th:each="egoera : ${egoeraGuztiak}">
+          <label>
+            <input type="checkbox"
+                   th:value="${egoera.id}"
+                   th:field="*{momentuak[__${it.index}__].egoeraIds}"
+                   th:checked="${momentu.egoeraOnartuak.contains(egoera)}" />
+            <span th:text="${egoera.izena}"></span>
+          </label>
+        </div>
+      </td>
+    </tr>
+  </tbody>
+</table>

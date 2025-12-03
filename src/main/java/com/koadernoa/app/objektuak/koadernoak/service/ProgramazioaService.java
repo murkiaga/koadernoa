@@ -17,6 +17,7 @@ import com.koadernoa.app.objektuak.egutegia.entitateak.EgunBerezi;
 import com.koadernoa.app.objektuak.egutegia.entitateak.EgunMota;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Ebaluaketa;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.Jarduera;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.JardueraPlanifikatua;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoOrdutegiBlokea;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
@@ -37,6 +38,7 @@ public class ProgramazioaService {
     private final UnitateDidaktikoaRepository udRepository;
     private final JardueraPlanifikatuaRepository jpRepository;
     private final EbaluaketaRepository ebaluaketaRepository;
+    private final DenboralizazioGeneratorService denboralizazioGeneratorService;
 
     // ========= Programazioa =========
     @Transactional
@@ -45,6 +47,50 @@ public class ProgramazioaService {
             .orElseGet(() -> programazioaRepository.save(
                 new Programazioa(koadernoa, "Programazioa " + koadernoa.getIzena())
             ));
+    }
+    
+    // Laguntzaile pribatua kontroladorean bertan (edo service batean, nahi baduzu)
+    public boolean isProgramazioaHutsik(Programazioa programazioa) {
+        if (programazioa == null || programazioa.getEbaluaketak() == null) {
+            // Ez dago programaziorik edo ebaluaketarik → hutsik
+            return true;
+        }
+
+        // EB guztiek 0 UD badute → hutsik
+        boolean badagoGutxienezUdBat = programazioa.getEbaluaketak().stream()
+                .anyMatch(eb -> eb.getUnitateak() != null && !eb.getUnitateak().isEmpty());
+
+        // Gutxienez UD bat egon ezean, hutsik
+        return !badagoGutxienezUdBat;
+    }
+    
+    /**
+     * EB bakar batetik sortu denboralizazioa.
+     * Aukerak:
+     *  - Servicean metodo berria sortu (generateFromEbaluaketa)
+     *  - Edo Programazioa "subprogramazio" bat eraiki EB bakar horrekin eta lehengo metodoa deitu.
+     */
+    public List<DenboralizazioGeneratorService.PreviewItem> bulkatuEbaluaketaBakarra(
+            Koadernoa k,
+            Programazioa p,
+            Long ebaluaketaId,
+            boolean replaceExisting
+    ) {
+        Ebaluaketa eb = p.getEbaluaketak().stream()
+                .filter(e -> e.getId().equals(ebaluaketaId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Ebaluaketa ez da aurkitu koaderno honetan."));
+
+        // Programazio "txiki" bat muntatu EB bakarrarekin
+        Programazioa sub = new Programazioa();
+        sub.setKoadernoa(p.getKoadernoa());
+        sub.setIzenburua(p.getIzenburua());
+        sub.setAzalpena(p.getAzalpena());
+        sub.setEbaluaketak(java.util.List.of(eb));
+
+        return denboralizazioGeneratorService.generateFromProgramazioa(
+                k, sub, /*preview*/ false, replaceExisting
+        );
     }
     
  // ======== EBALUAKETA ========

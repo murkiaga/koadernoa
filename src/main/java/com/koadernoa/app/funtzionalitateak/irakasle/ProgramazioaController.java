@@ -8,6 +8,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Ebaluaketa;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.Jarduera;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Programazioa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.UnitateDidaktikoa;
@@ -17,7 +18,6 @@ import com.koadernoa.app.objektuak.koadernoak.service.DenboralizazioGeneratorSer
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
 import com.koadernoa.app.objektuak.koadernoak.service.ProgramazioaService;
 
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 
@@ -99,9 +99,8 @@ public class ProgramazioaController {
       Programazioa prog = programazioaRepository
               .findByKoadernoa(koadernoAktiboa)
               .orElse(null);
-      boolean programazioaHutsik =
-              (prog == null) ||
-              (prog.getEbaluaketak() == null || prog.getEbaluaketak().isEmpty());
+      boolean programazioaHutsik = programazioaService.isProgramazioaHutsik(programazioa);
+      
       model.addAttribute("programazioaHutsik", programazioaHutsik);
 
       // HEMEN: inportatzekoKoadernoak beti sartu, nahiz eta hutsik egon.
@@ -250,49 +249,61 @@ public class ProgramazioaController {
     }
     
  // ---------- Programazioa -> Denboralizazioa ----------
-    @GetMapping("/preview")
-    @ResponseBody
-    public ResponseEntity<?> preview(@RequestParam Long koadernoId) {
+	
+    @PostMapping("/bolkatu")
+    public String bulkatu(@RequestParam Long koadernoId,
+                          @RequestParam(required = false) Long ebaluaketaId,
+                          @RequestParam(defaultValue = "true") boolean replaceExisting,
+                          RedirectAttributes ra) {
+
         Koadernoa k = koadernoaRepository.findById(koadernoId).orElse(null);
         Programazioa p = programazioaRepository.findByKoadernoaId(koadernoId).orElse(null);
-        if (!canBulk(k, p)) {
-            return ResponseEntity.badRequest().body("Ezin da aurreikusi: egutegia/ordutegia/programazioa falta da.");
-        }
-        List<DenboralizazioGeneratorService.PreviewItem> items =
-        		denboralizazioGeneratorService.generateFromProgramazioa(k, p, /*preview*/ true, /*replaceExisting*/ false);
-        return ResponseEntity.ok(items);
-    }
-	
-	@PostMapping("/bolkatu")
-	public String bulkatu(@RequestParam Long koadernoId,
-						            @RequestParam(defaultValue = "true") boolean replaceExisting,
-						            org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
-		Koadernoa k = koadernoaRepository.findById(koadernoId).orElse(null);
-        Programazioa p = programazioaRepository.findByKoadernoaId(koadernoId).orElse(null);
-        if (!canBulk(k, p)) {
-            ra.addFlashAttribute("error", "Ezin da bolkatu: egutegi/ordutegia/programazioa falta da.");
+        if (!canBulk(k, p, ebaluaketaId)) {
+            ra.addFlashAttribute("error",
+                    "Ezin da bolkatu: egutegi/ordutegia/programazioa falta da edo ebaluaketa honek ez du unitaterik.");
             return "redirect:/irakasle/programazioa?koadernoId=" + koadernoId;
         }
-        var items = denboralizazioGeneratorService.generateFromProgramazioa(k, p, /*preview*/ false, replaceExisting);
-        ra.addFlashAttribute("success", "Bolketa eginda: " + items.size() + " jarduera sortu dira.");
-        return "redirect:/irakasle/denboralizazioa"; // edo programaziora bueltatu nahi baduzu, alda ezazu
-	}
+
+        // HEMEN: PreviewItem erabili, ez Jarduera
+        List<DenboralizazioGeneratorService.PreviewItem> items =
+                (ebaluaketaId != null)
+                        ? programazioaService.bulkatuEbaluaketaBakarra(k, p, ebaluaketaId, replaceExisting)
+                        : denboralizazioGeneratorService.generateFromProgramazioa(
+                                k, p, /*preview*/ false, replaceExisting
+                          );
+
+        String mezua = (ebaluaketaId != null)
+                ? "Bolketa eginda: " + items.size() + " jarduera sortu dira ebaluaketa honetan."
+                : "Bolketa eginda: " + items.size() + " jarduera sortu dira.";
+
+        ra.addFlashAttribute("success", mezua);
+        return "redirect:/irakasle/denboralizazioa";
+    }
 	
-	/** Programazioa -> Denboralizazio baldintza azkarrak: egutegia + ordutegia + gutxienez UD bat */
-	private boolean canBulk(Koadernoa k, Programazioa p) {
-	    if (k == null || p == null) return false;
+    /** Programazioa -> Denboralizazio baldintza azkarrak:
+     *  egutegia + ordutegia + gutxienez UD bat (programazioan edo ebaluaketa horretan)
+     */
+    private boolean canBulk(Koadernoa k, Programazioa p, Long ebaluaketaId) {
+        if (k == null || p == null) return false;
 
-	    if (k.getEgutegia() == null ||
-	        k.getEgutegia().getHasieraData() == null ||
-	        k.getEgutegia().getBukaeraData() == null) {
-	        return false;
-	    }
-	    if (k.getOrdutegiak() == null || k.getOrdutegiak().isEmpty()) return false;
-	    
-	    boolean badagoUdBat = p.getEbaluaketak() != null &&
-	        p.getEbaluaketak().stream()
-	            .anyMatch(e -> e.getUnitateak() != null && !e.getUnitateak().isEmpty());
+        if (k.getEgutegia() == null ||
+            k.getEgutegia().getHasieraData() == null ||
+            k.getEgutegia().getBukaeraData() == null) {
+            return false;
+        }
+        if (k.getOrdutegiak() == null || k.getOrdutegiak().isEmpty()) return false;
 
-	    return badagoUdBat;
-	}
+        if (p.getEbaluaketak() == null || p.getEbaluaketak().isEmpty()) return false;
+
+        if (ebaluaketaId == null) {
+            // Programazio osoa: edozein EB-k badu UD bat
+            return p.getEbaluaketak().stream()
+                    .anyMatch(e -> e.getUnitateak() != null && !e.getUnitateak().isEmpty());
+        } else {
+            // EB bakarra: EB horrek berak izan behar du gutxienez UD bat
+            return p.getEbaluaketak().stream()
+                    .filter(e -> e.getId().equals(ebaluaketaId))
+                    .anyMatch(e -> e.getUnitateak() != null && !e.getUnitateak().isEmpty());
+        }
+    }
 }

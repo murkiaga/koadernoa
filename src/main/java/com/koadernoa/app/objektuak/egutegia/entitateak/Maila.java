@@ -11,6 +11,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -28,5 +29,6 @@ public class Maila {
     private Boolean aktibo = true;
     
     @OneToMany(mappedBy = "maila", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("ordena ASC, id ASC")
     private List<EbaluazioMomentua> ebaluazioMomentuak;
 }

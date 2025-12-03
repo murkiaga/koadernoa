@@ -18,13 +18,14 @@
     th { background:#f9fafb; text-align:left; position:sticky; top:0; z-index:1; }
     tbody tr:nth-child(even) { background:#f9fafb40; }
 
-    input[type="number"] {
-      width: 70px;
+    input[type="text"] {
+      width: 80px;
       padding: 4px 6px;
       border: 1px solid var(--b);
       border-radius: 6px;
       font-size: .9rem;
     }
+
     .actions { margin-top: 16px; display:flex; gap:8px; }
     button {
       border:none;
@@ -38,6 +39,48 @@
     .flash { padding: 8px 12px; border-radius:8px; margin-top: 12px; font-size:.9rem; }
     .flash-success { background:#dcfce7; color:#166534; }
     .flash-error { background:#fee2e2; color:#b91c1c; }
+
+    /* Nota + egoera UX berria */
+    .nota-wrap {
+      display:flex;
+      align-items:center;
+      gap:4px;
+      position:relative;
+    }
+    .nota-egoera-btn {
+      padding:4px 8px;
+      border-radius:999px;
+      background:#e5e7eb;
+      border:1px solid var(--b);
+      font-size:.85rem;
+      cursor:pointer;
+      line-height:1;
+    }
+    .nota-egoera-menu {
+      position:absolute;
+      top:110%;
+      left:0;
+      background:#fff;
+      border:1px solid var(--b);
+      border-radius:8px;
+      box-shadow:0 10px 25px rgba(0,0,0,.08);
+      padding:4px;
+      z-index:10;
+      min-width:120px;
+    }
+    .nota-egoera-op {
+      display:block;
+      width:100%;
+      text-align:left;
+      background:none;
+      border:none;
+      padding:4px 8px;
+      font-size:.85rem;
+      cursor:pointer;
+    }
+    .nota-egoera-op:hover {
+      background:#eff6ff;
+    }
   </style>
 </head>
 <body>
@@ -53,8 +96,12 @@
   <!-- Flash mezuak -->
   <div th:if="${success}" class="flash flash-success"
        th:text="${success}">Success mezua</div>
-  <div th:if="${error}" class="flash flash-error"
-       th:text="${error}">Errore mezua</div>
+  <div th:if="${error}"
+	     class="flash flash-error"
+	     th:text="${error}"
+	     style="white-space: pre-line;">
+	  Errore mezua
+	</div>
 
   <div th:if="${#lists.isEmpty(matrikulak)}">
     <p>Ez dago ikaslerik koaderno honetan.</p>
@@ -82,9 +129,38 @@
 
           <!-- Nota input-ak dinamikoki, ebaluazio momentu bakoitzerako -->
           <td th:each="em : ${momentuak}">
-            <input type="number" step="1" min="0" max="10"
-                   th:name="${'nota_' + mat.id + '_' + em.id}"
-                   th:value="${#maps.containsKey(notaMap, mat.id + '_' + em.id) ? notaMap[mat.id + '_' + em.id].nota : ''}">
+            <div class="nota-wrap">
+              <input type="text"
+                     th:name="${'nota_' + mat.id + '_' + em.id}"
+                     placeholder="nota"
+                     th:value="${
+                       #maps.containsKey(notaMap, mat.id + '_' + em.id)
+                         ? (
+                             notaMap[mat.id + '_' + em.id].egoera != null
+                               ? notaMap[mat.id + '_' + em.id].egoera.kodea
+                               : notaMap[mat.id + '_' + em.id].nota
+                           )
+                         : ''
+                     }"/>
+
+              <!-- '+' botoia: egoera berezien menu desplegablea -->
+              <button type="button"
+                      class="nota-egoera-btn"
+                      th:if="${!#lists.isEmpty(em.egoeraOnartuak)}">
+                +
+              </button>
+
+              <div class="nota-egoera-menu" style="display:none;"
+                   th:if="${!#lists.isEmpty(em.egoeraOnartuak)}">
+                <button type="button"
+                        class="nota-egoera-op"
+                        th:each="ego : ${em.egoeraOnartuak}"
+                        th:data-value="${ego.kodea}"
+                        th:text="${ego.kodea}">
+                  EZ_AURKEZTUA
+                </button>
+              </div>
+            </div>
           </td>
         </tr>
         </tbody>
@@ -92,12 +168,42 @@
 
       <div class="actions">
         <button type="submit" class="btn-primary">Gorde notak</button>
-        <a th:href="@{/irakasle}" class="btn-secondary" style="text-decoration:none;display:inline-flex;align-items:center;">
-          Atzera
-        </a>
       </div>
     </form>
   </div>
 </main>
+
+<script>
+  // '+' botoia → menu toggle eta aukeratutako egoera input-era kopiatzea
+  document.addEventListener('click', function(e) {
+    // '+' botoia
+    if (e.target.classList.contains('nota-egoera-btn')) {
+      const wrap = e.target.closest('.nota-wrap');
+      const menu = wrap.querySelector('.nota-egoera-menu');
+      if (!menu) return;
+      const isVisible = menu.style.display === 'block';
+      // beste guztiak ixteko, nahi baduzu:
+      document.querySelectorAll('.nota-egoera-menu').forEach(m => m.style.display = 'none');
+      menu.style.display = isVisible ? 'none' : 'block';
+    }
+
+    // Menu barruko aukerak
+    if (e.target.classList.contains('nota-egoera-op')) {
+      const wrap = e.target.closest('.nota-wrap');
+      const input = wrap.querySelector('input[type="text"]');
+      const menu = wrap.querySelector('.nota-egoera-menu');
+      if (input) {
+        input.value = e.target.dataset.value || e.target.textContent.trim();
+      }
+      if (menu) menu.style.display = 'none';
+    }
+
+    // Menuetatik kanpo klik eginez gero, itxi
+    if (!e.target.closest('.nota-wrap')) {
+      document.querySelectorAll('.nota-egoera-menu').forEach(m => m.style.display = 'none');
+    }
+  });
+</script>
+
 </body>
 </html>

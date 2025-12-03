@@ -16,6 +16,7 @@ import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
 import com.koadernoa.app.objektuak.egutegia.entitateak.EgunBerezi;
 import com.koadernoa.app.objektuak.egutegia.entitateak.EgunMota;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.Ebaluaketa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Jarduera;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoOrdutegiBlokea;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
@@ -48,54 +49,94 @@ public class DenboralizazioGeneratorService {
 	
 	@Transactional
 	public List<PreviewItem> generateFromProgramazioa(
-							Koadernoa koadernoa,
-							Programazioa programazioa,
-							boolean preview,
-							boolean replaceExisting) 
+	        Koadernoa koadernoa,
+	        Programazioa programazioa,
+	        boolean preview,
+	        boolean replaceExisting)
 	{
+	    Objects.requireNonNull(koadernoa, "koadernoa");
+	    Objects.requireNonNull(programazioa, "programazioa");
+	    Egutegia egutegia = Objects.requireNonNull(koadernoa.getEgutegia(), "Koadernoak ez du Egutegirik");
 
+	    // 1) Eraiki egutegi-ordutegi slotak
+	    List<SessionSlot> slots = buildSessionSlots(koadernoa);
+	    if (slots.isEmpty()) return List.of();
 
-		Objects.requireNonNull(koadernoa, "koadernoa");
-		Objects.requireNonNull(programazioa, "programazioa");
-		Egutegia egutegia = Objects.requireNonNull(koadernoa.getEgutegia(), "Koadernoak ez du Egutegirik");
-	
-		// 1) Eraiki egutegi-ordutegi slotak: data -> zenbat ordu (slot) dauden modulu honetarako
-		List<SessionSlot> slots = buildSessionSlots(koadernoa);
-		if (slots.isEmpty()) return List.of();
-	
-		LocalDate first = slots.get(0).date;
-		LocalDate last = slots.get(slots.size()-1).date;
-		
-		// 2) Programaziotik ordu sekuentzia bat egin (ordenatuta: UD -> Azpijarduera)
-		List<PlannedChunk> chunks = flattenProgramazioa(programazioa);
-		if (chunks.isEmpty()) return List.of();
+	    LocalDate globalFirst = slots.get(0).date;
+	    LocalDate globalLast  = slots.get(slots.size() - 1).date;
 
+	    // === EB BAKARRERAKO KASUA: tartea mugatu EB horren datetara ===
+	    LocalDate tmpFrom = globalFirst;
+	    LocalDate tmpTo   = globalLast;
 
-		// 3) (aukerazkoa) Ezabatu lehendik sortutako PLANIFIKATUA jarduerak tarte horretan
-		if (!preview && replaceExisting) {
-			jardueraRepository.deleteByKoadernoaAndDataBetweenAndMota(koadernoa, first, last, "planifikatua");
-		}
-		
-		// 4) Esleitu slots -> chunks (greedy)
-		List<PreviewItem> generated = allocate(chunks, slots).stream()
-		.map(a -> new PreviewItem(a.date, a.title, a.hours, "planifikatua", a.description))
-		.toList();
-		
-		// 5) Idatzi DB-an
-		if (!preview) {
-			List<Jarduera> entities = generated.stream().map(p -> {
-			Jarduera j = new Jarduera();
-			j.setKoadernoa(koadernoa);
-			j.setData(p.data());
-			j.setTitulua(p.titulua());
-			j.setDeskribapena(p.azalpena());
-			j.setOrduak(p.orduak());
-			j.setMota(p.mota()); // "planifikatua"
-			return j;
-			}).toList();
-			jardueraRepository.saveAll(entities);
-		}
-		return generated;
+	    if (programazioa.getEbaluaketak() != null
+	            && programazioa.getEbaluaketak().size() == 1) {
+
+	        Ebaluaketa eb = programazioa.getEbaluaketak().get(0);
+	        if (eb.getHasieraData() != null && eb.getBukaeraData() != null) {
+	            LocalDate ebFrom = eb.getHasieraData();
+	            LocalDate ebTo   = eb.getBukaeraData();
+	            if (ebFrom.isAfter(ebTo)) {
+	                LocalDate swap = ebFrom;
+	                ebFrom = ebTo;
+	                ebTo   = swap;
+	            }
+	            // Ikasturtearekin intersekzioa
+	            tmpFrom = ebFrom.isAfter(globalFirst) ? ebFrom : globalFirst;
+	            tmpTo   = ebTo.isBefore(globalLast)   ? ebTo   : globalLast;
+	        }
+	    }
+
+	    // Orain bai: lambda-rako aldagaiak FINAL
+	    final LocalDate rangeFrom = tmpFrom;
+	    final LocalDate rangeTo   = tmpTo;
+
+	    List<SessionSlot> effectiveSlots = slots.stream()
+	            .filter(s -> !s.date.isBefore(rangeFrom) && !s.date.isAfter(rangeTo))
+	            .toList();
+
+	    if (effectiveSlots.isEmpty()) {
+	        return List.of();
+	    }
+
+	    LocalDate first = effectiveSlots.get(0).date;
+	    LocalDate last  = effectiveSlots.get(effectiveSlots.size() - 1).date;
+
+	    // 2) Programaziotik chunk zerrenda
+	    List<PlannedChunk> chunks = flattenProgramazioa(programazioa);
+	    if (chunks.isEmpty()) return List.of();
+
+	    // 3) PLANIFIKATUA jarduerak ezabatu tarte horretan (EB bakarra bada, EB tartea; bestela ikasturte osoa)
+	    if (!preview && replaceExisting) {
+	        jardueraRepository.deleteByKoadernoaAndDataBetweenAndMota(
+	                koadernoa,
+	                first,
+	                last,
+	                "planifikatua"
+	        );
+	    }
+
+	    // 4) Slot -> chunk esleipena (effectiveSlots erabilita)
+	    List<PreviewItem> generated = allocate(chunks, effectiveSlots).stream()
+	            .map(a -> new PreviewItem(a.date, a.title, a.hours, "planifikatua", a.description))
+	            .toList();
+
+	    // 5) DB-an idatzi
+	    if (!preview) {
+	        List<Jarduera> entities = generated.stream().map(p -> {
+	            Jarduera j = new Jarduera();
+	            j.setKoadernoa(koadernoa);
+	            j.setData(p.data());
+	            j.setTitulua(p.titulua());
+	            j.setDeskribapena(p.azalpena());
+	            j.setOrduak(p.orduak());
+	            j.setMota(p.mota());
+	            return j;
+	        }).toList();
+	        jardueraRepository.saveAll(entities);
+	    }
+
+	    return generated;
 	}
 	
 	// ==== 1) Egutegi + Ordutegi -> session slot zerrenda ====

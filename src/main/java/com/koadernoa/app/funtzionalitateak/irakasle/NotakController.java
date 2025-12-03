@@ -18,6 +18,7 @@ import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioMomentua;
 import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioNota;
 import com.koadernoa.app.objektuak.ebaluazioa.repository.EbaluazioMomentuaRepository;
 import com.koadernoa.app.objektuak.ebaluazioa.repository.EbaluazioNotaRepository;
+import com.koadernoa.app.objektuak.ebaluazioa.service.EbaluazioNotaService;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.modulua.entitateak.Matrikula;
@@ -34,10 +35,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class NotakController {
 
-	private final MatrikulaRepository matrikulaRepository;
+    private final MatrikulaRepository matrikulaRepository;
     private final EbaluazioMomentuaRepository ebaluazioMomentuaRepository;
     private final EbaluazioNotaRepository ebaluazioNotaRepository;
-    
+    private final EbaluazioNotaService ebaluazioNotaService;
+
     @GetMapping
     public String notakPantaila(@ModelAttribute("koadernoAktiboa") Koadernoa koadernoa,
                                 Model model,
@@ -75,7 +77,6 @@ public class NotakController {
     }
 
     @PostMapping
-    @Transactional
     public String gordeNotak(@ModelAttribute("koadernoAktiboa") Koadernoa koadernoa,
                              HttpServletRequest request,
                              RedirectAttributes redirectAttributes) {
@@ -93,48 +94,14 @@ public class NotakController {
         List<Matrikula> matrikulak =
                 matrikulaRepository.findByKoadernoaIdAndEgoera(koadernoa.getId(), MatrikulaEgoera.MATRIKULATUA);
 
-        // Konbinazio guztien gainetik pasatu (ikasle x ebaluazio momentua)
-        for (Matrikula matrikula : matrikulak) {
-            for (EbaluazioMomentua momentua : momentuak) {
-                String paramName = "nota_" + matrikula.getId() + "_" + momentua.getId();
-                String value = request.getParameter(paramName);
+        String errorHtml = ebaluazioNotaService.gordeNotak(koadernoa, momentuak, matrikulak, request);
 
-                if (value == null) continue; // ez dago inputik
-
-                value = value.trim();
-                // Komak puntuz ordezkatu (eus-es daukazun formatuarengatik)
-                value = value.replace(',', '.');
-
-                // Bilatu aurreko nota bat badagoen
-                var existingOpt = ebaluazioNotaRepository
-                        .findByMatrikulaAndEbaluazioMomentua(matrikula, momentua);
-
-                if (value.isEmpty()) {
-                    // Hutsa → nota ezabatu
-                    existingOpt.ifPresent(ebaluazioNotaRepository::delete);
-                } else {
-                    Double notaZenbaki = null;
-                    try {
-                        notaZenbaki = Double.valueOf(value);
-                    } catch (NumberFormatException ex) {
-                        // Nota okerra: momentuz saltatu, nahi baduzu log bat idatzi
-                        continue;
-                    }
-
-                    EbaluazioNota nota = existingOpt.orElseGet(() -> {
-                        EbaluazioNota berria = new EbaluazioNota();
-                        berria.setMatrikula(matrikula);
-                        berria.setEbaluazioMomentua(momentua);
-                        return berria;
-                    });
-
-                    nota.setNota(notaZenbaki);
-                    ebaluazioNotaRepository.save(nota);
-                }
-            }
+        if (errorHtml != null && !errorHtml.isBlank()) {
+            redirectAttributes.addFlashAttribute("error", errorHtml);
+        } else {
+            redirectAttributes.addFlashAttribute("success", "Notak ondo gorde dira.");
         }
 
-        redirectAttributes.addFlashAttribute("success", "Notak ondo gorde dira.");
         return "redirect:/irakasle/notak";
     }
 

@@ -20,7 +20,6 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-
 public class Koadernoa {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -50,5 +49,11 @@ public class Koadernoa {
         if (moduloa == null || egutegia == null || egutegia.getIkasturtea() == null)
             return "(koaderno osatu gabea)";
         return moduloa.getIzena() + " - " + egutegia.getIkasturtea().getIzena();
+    }
+    
+    public String getKodea() {
+        if (moduloa == null || egutegia == null || egutegia.getIkasturtea() == null)
+            return "(koaderno osatu gabea)";
+        return moduloa.getKodea() + " - " + egutegia.getIkasturtea().getIzena();
     }
 }

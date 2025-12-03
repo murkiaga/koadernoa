@@ -42,6 +42,26 @@
     .flash-error { background:#fee2e2; color:#b91c1c; }
 
     .section { margin-top:24px; }
+
+    /* Egoera berezien zerrenda txukunago */
+    .egoera-list {
+      display:flex;
+      flex-wrap:wrap;
+      gap:4px;
+    }
+    .egoera-item {
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      padding:2px 6px;
+      border-radius:999px;
+      border:1px solid var(--b);
+      font-size:.8rem;
+      background:#f9fafb;
+    }
+    .egoera-item input[type="checkbox"] {
+      margin:0;
+    }
   </style>
 </head>
 <body>
@@ -72,12 +92,14 @@
           <th>Ordena</th>
           <th>Kodea</th>
           <th>Izena</th>
+          <th>0–10 nota?</th>
+          <th>Egoera berezi onartuak</th>
           <th>Ezabatu</th>
         </tr>
         </thead>
         <tbody>
         <tr th:if="${#lists.isEmpty(momentuak)}">
-          <td colspan="5" class="muted">
+          <td colspan="7" class="muted">
             Ez dago oraindik ebaluazio momenturik definituta maila honetan.
           </td>
         </tr>
@@ -107,6 +129,31 @@
                    th:value="${em.izena}"
                    placeholder="1. ebaluazioa">
           </td>
+
+          <!-- BERRIA: 0–10 nota onartzen den ala ez -->
+          <td>
+            <label style="display:inline-flex;align-items:center;gap:6px;font-size:.85rem;">
+              <input type="checkbox"
+                     th:name="${'onartuNotaZenbakizkoa_' + em.id}"
+                     th:checked="${em.onartuNotaZenbakizkoa}">
+              <span>0–10 onartuta</span>
+            </label>
+          </td>
+
+          <!-- BERRIA: egoera bereziak (checkbox multzoa) -->
+          <td>
+            <div class="egoera-list">
+              <label class="egoera-item"
+                     th:each="ego : ${egoeraGuztiak}">
+                <input type="checkbox"
+                       th:name="${'egoerak_' + em.id}"
+                       th:value="${ego.id}"
+                       th:checked="${em.egoeraOnartuak.contains(ego)}">
+                <span th:text="${ego.kodea}">EZ_AURKEZTUA</span>
+              </label>
+            </div>
+          </td>
+
           <td>
             <input type="checkbox"
                    name="deleteIds"
@@ -122,6 +169,8 @@
         editatu dezakezu.
       </p>
 
+      <!-- Momentu berria: (oraingoz 0–10 + egoerak gero editatuz; nahi baduzu,
+           beste pauso batean gehitu dezakegu hemen ere konfigurazioa) -->
       <table>
         <tbody>
         <tr>

@@ -2,6 +2,7 @@ package com.koadernoa.app.funtzionalitateak.kudeatzaile;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -12,8 +13,11 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioEgoera;
 import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioMomentua;
+import com.koadernoa.app.objektuak.ebaluazioa.repository.EbaluazioEgoeraRepository;
 import com.koadernoa.app.objektuak.ebaluazioa.repository.EbaluazioMomentuaRepository;
+import com.koadernoa.app.objektuak.ebaluazioa.repository.EbaluazioNotaRepository;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
 import com.koadernoa.app.objektuak.egutegia.repository.MailaRepository;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Familia;
@@ -34,6 +38,8 @@ public class KonfigurazioaController {
     private final MailaRepository mailaRepository;
     private final FamiliaRepository familiaRepository;
     private final EbaluazioMomentuaRepository ebaluazioMomentuaRepository;
+    private final EbaluazioEgoeraRepository ebaluazioEgoeraRepository;
+    private final EbaluazioNotaRepository ebaluazioNotaRepository;
 
     // ---- GET: orria ----
     @GetMapping
@@ -50,6 +56,9 @@ public class KonfigurazioaController {
         ActiveFamiliakForm familiaForm = new ActiveFamiliakForm();
         familiaForm.setAktiboIds(familiak.stream().filter(Familia::isAktibo).map(Familia::getId).toList());
 
+        // EBALUAZIO EGOERAK
+        List<EbaluazioEgoera> egoerak = ebaluazioEgoeraRepository.findAllByOrderByKodeaAsc();
+
         model.addAttribute("mailak", mailak);
         model.addAttribute("activeForm", mailaForm);
         model.addAttribute("sortuForm", new SortuMailaForm());
@@ -57,6 +66,9 @@ public class KonfigurazioaController {
         model.addAttribute("familiak", familiak);
         model.addAttribute("activeFamiliaForm", familiaForm);
         model.addAttribute("sortuFamiliaForm", new SortuFamiliaForm());
+
+        model.addAttribute("egoerak", egoerak);
+        model.addAttribute("sortuEgoeraForm", new SortuEbaluazioEgoeraForm());
 
         return "kudeatzaile/konfigurazioa/index";
     }
@@ -90,6 +102,11 @@ public class KonfigurazioaController {
             model.addAttribute("familiak", familiaRepository.findAll(Sort.by(Sort.Order.asc("izena"))));
             model.addAttribute("activeFamiliaForm", new ActiveFamiliakForm());
             model.addAttribute("sortuFamiliaForm", new SortuFamiliaForm());
+
+            // egoerak ere gehitu (bestela pestaña horrek petatuko du)
+            model.addAttribute("egoerak", ebaluazioEgoeraRepository.findAllByOrderByKodeaAsc());
+            model.addAttribute("sortuEgoeraForm", new SortuEbaluazioEgoeraForm());
+
             return "kudeatzaile/konfigurazioa/index";
         }
 
@@ -132,8 +149,14 @@ public class KonfigurazioaController {
                 Sort.by(Sort.Order.asc("ordena"), Sort.Order.asc("izena"))
             ));
             model.addAttribute("activeForm", new ActiveMailakForm());
+
             model.addAttribute("familiak", familiaRepository.findAll(Sort.by(Sort.Order.asc("izena"))));
             model.addAttribute("activeFamiliaForm", new ActiveFamiliakForm());
+
+            // egoerak ere gehitu
+            model.addAttribute("egoerak", ebaluazioEgoeraRepository.findAllByOrderByKodeaAsc());
+            model.addAttribute("sortuEgoeraForm", new SortuEbaluazioEgoeraForm());
+
             return "kudeatzaile/konfigurazioa/index";
         }
 
@@ -164,12 +187,9 @@ public class KonfigurazioaController {
     // Util txiki bat controller barruan edo Helper klase batean:
     private static String slugify(String input) {
         String s = input.toLowerCase().trim();
-        // azentu/diakritikoak kendu (oina sinplea; hobe Normalizer erabiliz)
         s = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD)
                 .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
-        // ez-alfanumerikoak '-' bihurtu
         s = s.replaceAll("[^a-z0-9]+", "-");
-        // hasiera/amaiera '-' kendu
         s = s.replaceAll("^-+|-+$", "");
         return s.isBlank() ? "item" : s;
     }
@@ -184,13 +204,6 @@ public class KonfigurazioaController {
         }
     }
 
-    // ===== DTO txikiak =====
-    @Data public static class ActiveMailakForm { private List<Long> aktiboIds; }
-    @Data public static class SortuMailaForm { @NotBlank private String kodea; private String izena; @NotNull private Integer ordena; }
-
-    @Data public static class ActiveFamiliakForm { private List<Long> aktiboIds; }
-    @Data public static class SortuFamiliaForm { @NotBlank private String izena; }
-    
     // ===== Ebaluazio Momentuak =====
     // GET: zerrenda + formularioa
     @GetMapping("/mailak/{mailaId}/ebaluazioak")
@@ -206,16 +219,19 @@ public class KonfigurazioaController {
 
         List<EbaluazioMomentua> momentuak =
                 ebaluazioMomentuaRepository.findByMailaAndAktiboTrueOrderByOrdenaAsc(maila);
-        // Oharra: hemen soilik aktiboak kargatzen ari gara; nahi baduzu "guztiak" erakutsi,
-        // egin beste metodo bat repository-n, edo aldatu hau.
+
+        // Egoera berezi guztiak (checkbox zerrendan erakusteko)
+        List<EbaluazioEgoera> egoeraGuztiak =
+                ebaluazioEgoeraRepository.findAllByOrderByKodeaAsc();
 
         model.addAttribute("maila", maila);
         model.addAttribute("momentuak", momentuak);
+        model.addAttribute("egoeraGuztiak", egoeraGuztiak);
 
         return "kudeatzaile/konfigurazioa/mailak-ebaluazioak";
     }
 
-    // POST: bulk update + berriak gehitu + aukeratutakoen ezabaketa
+    // POST: bulk update + aukeratutakoen ezabaketa (momentuak)
     @PostMapping("/mailak/{mailaId}/ebaluazioak")
     @Transactional
     public String gordeEbaluazioMomentuak(@PathVariable Long mailaId,
@@ -257,6 +273,7 @@ public class KonfigurazioaController {
                     continue;
                 }
 
+                // ====== Oinarrizko eremuak (zeneuzkanak) ======
                 String kodea = request.getParameter("kodea_" + id);
                 String izena = request.getParameter("izena_" + id);
                 String ordenaStr = request.getParameter("ordena_" + id);
@@ -274,39 +291,180 @@ public class KonfigurazioaController {
                 }
                 em.setOrdena(ordena);
 
+                // ====== 0-10 nota + Beste ebaluazio Egoerak onartu ======
+                boolean onartuNotaZenbakizkoa =
+                        request.getParameter("onartuNotaZenbakizkoa_" + id) != null;
+                em.setOnartuNotaZenbakizkoa(onartuNotaZenbakizkoa);
+
+                String[] egoeraIdArray = request.getParameterValues("egoerak_" + id);
+
+                Set<EbaluazioEgoera> egoeraOnartuak = new LinkedHashSet<>();
+                if (egoeraIdArray != null) {
+                    for (String egoeraIdStr : egoeraIdArray) {
+                        try {
+                            Long egoeraId = Long.valueOf(egoeraIdStr);
+                            ebaluazioEgoeraRepository.findById(egoeraId)
+                                    .ifPresent(egoeraOnartuak::add);
+                        } catch (NumberFormatException ignored) {}
+                    }
+                }
+
+                em.getEgoeraOnartuak().clear();
+                em.getEgoeraOnartuak().addAll(egoeraOnartuak);
+
                 ebaluazioMomentuaRepository.save(em);
             }
         }
 
-        // ======== BERRIA SORTU (baldin eta kode/izena ez badaude hutsik) =========
-        String newKodea = request.getParameter("newKodea");
-        String newIzena = request.getParameter("newIzena");
-        String newOrdenaStr = request.getParameter("newOrdena");
+        redirectAttributes.addFlashAttribute("success", "Ebaluazio momentuak gorde dira.");
+        return "redirect:/kudeatzaile/konfigurazioa/mailak/" + mailaId + "/ebaluazioak";
+    }
 
-        if (newKodea != null) newKodea = newKodea.trim();
-        if (newIzena != null) newIzena = newIzena.trim();
+    // ===== EBALUAZIO EGOERAK: existenteak eguneratu =====
+    @PostMapping("/egoerak/gorde")
+    @Transactional
+    public String gordeEbaluazioEgoerak(HttpServletRequest request,
+                                        RedirectAttributes redirectAttributes) {
 
-        if (newKodea != null && !newKodea.isEmpty() &&
-            newIzena != null && !newIzena.isEmpty()) {
+        String[] idArray = request.getParameterValues("ids");
+        String[] deleteIdsArray = request.getParameterValues("deleteIds");
 
-            EbaluazioMomentua berria = new EbaluazioMomentua();
-            berria.setMaila(maila);
-            berria.setKodea(newKodea);
-            berria.setIzena(newIzena);
-            berria.setAktibo(true);
-
-            Integer ordena = null;
-            if (newOrdenaStr != null && !newOrdenaStr.isBlank()) {
-                try {
-                    ordena = Integer.valueOf(newOrdenaStr);
-                } catch (NumberFormatException ignored) {}
-            }
-            berria.setOrdena(ordena);
-
-            ebaluazioMomentuaRepository.save(berria);
+        // Ezabaketarako set-a
+        Set<Long> deleteIds = new HashSet<>();
+        if (deleteIdsArray != null) {
+            Arrays.stream(deleteIdsArray).forEach(s -> {
+                try { deleteIds.add(Long.valueOf(s)); } catch (NumberFormatException ignored) {}
+            });
         }
 
-        redirectAttributes.addFlashAttribute("success", "Ebaluazio momentuak eguneratu dira.");
-        return "redirect:/kudeatzaile/konfigurazioa/mailak/" + mailaId + "/ebaluazioak";
+        if (idArray != null) {
+            for (String idStr : idArray) {
+                Long id;
+                try {
+                    id = Long.valueOf(idStr);
+                } catch (NumberFormatException ex) {
+                    continue;
+                }
+
+                EbaluazioEgoera egoera = ebaluazioEgoeraRepository.findById(id).orElse(null);
+                if (egoera == null) continue;
+
+                // 1) Lehenengo: ezabatu behar den ala ez
+                if (deleteIds.contains(id)) {
+
+                    // → KONTROLA: ezabatu aurretik begiratu ea erabiltzen den
+                    boolean erabiltzenDaMomentuetan =
+                            ebaluazioMomentuaRepository.existsByEgoeraOnartuakContains(egoera);
+                    boolean erabiltzenDaNotetan =
+                            ebaluazioNotaRepository.existsByEgoera(egoera);
+
+                    if (erabiltzenDaMomentuetan || erabiltzenDaNotetan) {
+                        redirectAttributes.addFlashAttribute("error",
+                                "Ezin da ezabatu egoera, erabilia dagoelako (kodea: " + egoera.getKodea() + ").");
+                        return "redirect:/kudeatzaile/konfigurazioa#egoerak";
+                    }
+
+                    ebaluazioEgoeraRepository.delete(egoera);
+                    continue;
+                }
+
+                // 2) Bestela: eguneratu kodea, izena eta notaBeharDu
+                String kodeaParam = request.getParameter("kodea_" + id);
+                String izenaParam = request.getParameter("izena_" + id);
+                boolean notaBeharDu = request.getParameter("notaBeharDu_" + id) != null;
+
+                if (kodeaParam == null || kodeaParam.isBlank()
+                        || izenaParam == null || izenaParam.isBlank()) {
+                    redirectAttributes.addFlashAttribute("error",
+                            "Kodea eta izena derrigorrezkoak dira (ID: " + id + ").");
+                    return "redirect:/kudeatzaile/konfigurazioa#egoerak";
+                }
+
+                String kodea = kodeaParam.trim();
+                String izena = izenaParam.trim();
+
+                // 3) Kodearen unikotasuna (lambda erabili gabe → 'final' arazoa desagertzen da)
+                EbaluazioEgoera existing =
+                        ebaluazioEgoeraRepository.findByKodea(kodea).orElse(null);
+
+                if (existing != null && !existing.getId().equals(id)) {
+                    redirectAttributes.addFlashAttribute("error",
+                            "Kode errepikatua: " + kodea);
+                    return "redirect:/kudeatzaile/konfigurazioa#egoerak";
+                }
+
+                egoera.setKodea(kodea);
+                egoera.setIzena(izena);
+                egoera.setNotaBeharDu(notaBeharDu);
+
+                ebaluazioEgoeraRepository.save(egoera);
+            }
+        }
+
+        redirectAttributes.addFlashAttribute("success", "Ebaluazio egoerak eguneratu dira.");
+        return "redirect:/kudeatzaile/konfigurazioa#egoerak";
+    }
+
+
+    // ===== EBALUAZIO EGOERAK: sortu berria =====
+    @PostMapping("/egoerak/sortu")
+    public String sortuEbaluazioEgoera(
+            @ModelAttribute("sortuEgoeraForm") SortuEbaluazioEgoeraForm form,
+            RedirectAttributes redirectAttributes) {
+
+        String kodea = form.getKodea() != null ? form.getKodea().trim() : null;
+        String izena = form.getIzena() != null ? form.getIzena().trim() : null;
+
+        if (kodea == null || kodea.isBlank() || izena == null || izena.isBlank()) {
+            redirectAttributes.addFlashAttribute("error",
+                    "Kodea eta izena derrigorrezkoak dira.");
+            return "redirect:/kudeatzaile/konfigurazioa#egoerak";
+        }
+
+        if (ebaluazioEgoeraRepository.existsByKodea(kodea)) {
+            redirectAttributes.addFlashAttribute("error",
+                    "Kode hori dagoeneko existitzen da: " + kodea);
+            return "redirect:/kudeatzaile/konfigurazioa#egoerak";
+        }
+
+        EbaluazioEgoera egoera = new EbaluazioEgoera();
+        egoera.setKodea(kodea);
+        egoera.setIzena(izena);
+        egoera.setNotaBeharDu(Boolean.TRUE.equals(form.getNotaBeharDu()));
+
+        ebaluazioEgoeraRepository.save(egoera);
+
+        redirectAttributes.addFlashAttribute("success", "Ebaluazio egoera berria sortu da.");
+        return "redirect:/kudeatzaile/konfigurazioa#egoerak";
+    }
+
+    // ===== DTO txikiak =====
+    @Data
+    public static class ActiveMailakForm {
+        private List<Long> aktiboIds;
+    }
+
+    @Data
+    public static class SortuMailaForm {
+        @NotBlank private String kodea;
+        private String izena;
+        @NotNull private Integer ordena;
+    }
+
+    @Data
+    public static class ActiveFamiliakForm {
+        private List<Long> aktiboIds;
+    }
+
+    @Data
+    public static class SortuFamiliaForm {
+        @NotBlank private String izena;
+    }
+
+    @Data
+    public static class SortuEbaluazioEgoeraForm {
+        @NotBlank private String kodea;
+        @NotBlank private String izena;
+        private Boolean notaBeharDu = false;
     }
 }

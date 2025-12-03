@@ -80,6 +80,45 @@
 	  .ebal-item.color-4 { border-color: #f9a8a8; }
 	  .ebal-item.color-5 { border-color: #c3b4ff; }
 	  .ebal-item.color-6 { border-color: #a7ecf0; }
+	  
+	  /* Bolkatu egunerokora botoiak */
+	  .btn-icon{
+		  padding: .3rem .4rem;
+		  border-radius: 5px;
+		  display:inline-flex;
+		  align-items:center;
+		  justify-content:center;
+		}
+		
+		.btn-icon:hover{
+		  background:#f3f4f6;
+		}
+		
+		.btn-icon .bulkatu-eb-ikonoa{
+		  width: 40px;
+		  height: 20px;
+		  display:block;
+		}
+
+	  /* END Bolkatu egunerokora botoiak */
+	  
+	  /* Beheko botoien lerroa, eskumara lerrokatuta */
+	.actions-bottom{
+	  display:flex;
+	  justify-content:flex-end;
+	  gap:.5rem;
+	  margin-top:1rem;
+	}
+	
+	/* Ebaluaketa bakoitzeko "Editatu" botoia lehenespenez ezkutuan */
+	.ebal-edit-btn{
+	  display:none;
+	}
+	
+	/* body.edit-mode egoeran, botoi horiek erakutsi */
+	.edit-mode .ebal-edit-btn{
+	  display:inline-flex;
+	}
   </style>
 </head>
 <body>
@@ -110,7 +149,7 @@
 
           <div th:if="${programazioaHutsik and #lists.isEmpty(inportatzekoKoadernoak)}"
                class="muted">
-            Ez dago EEI kode berdina duen beste koadernorik programazioa inportatzeko.
+            Ez dago beste koadernorik inportatzeko.
           </div>
         </div>
       </div>
@@ -118,103 +157,146 @@
       <div class="card-body">
         <!-- EBALUAKETA -> UD -> JP -->
         <ul id="ebalList" class="ebal-list">
-          <li th:each="eb, iter : ${ebaluaketak}"
-		        th:with="colorIdx=${((iter.index) % 6) + 1}"
-		        class="ebal-item"
-		        th:attr="data-eb-id=${eb.id}"
-		        th:classappend="| color-${colorIdx}|">
-            <div class="ebal-header" onclick="toggleEbal(this)">
-              <span class="caret">›</span>
-              <div>
-                <div class="title" th:text="${eb.izena}">1. Ebaluaketa</div>
-                <div class="badge">
-                  <!-- (planifikatuta / erabilgarri) -->
-                  <span th:with="planif=${ebalUdOrduak[eb.id] ?: 0},
-                                 dispo=${ebalDispon[eb.id] ?: 0}"
-                        th:classappend="${planif > dispo} ? ' hours-warn' : ''"
-                        th:text="|(${planif}h / ${dispo}h erabilgarri)|">
-                    (0h / 0h erabilgarri)
-                  </span>
-                  <!-- Aukeran, data-mugak ere -->
-                  <span class="badge"
-                        th:text="| — ${eb.hasieraData} → ${eb.bukaeraData}|">
-                    — 2025-09-10 → 2026-01-31
-                  </span>
-                </div>
-              </div>
-              <div class="actions" style="margin-left:auto" onclick="event.stopPropagation()">
-                <button class="btn" th:attr="data-eb-id=${eb.id}" onclick="openEbalEdit(this)">Editatu</button>
-              </div>
-            </div>
-
-            <div class="ebal-content" style="display:none; padding:.4rem 1rem 1rem;">
-              <!-- EB barruko UD-ak -->
-              <ul class="ud-list" th:attr="data-eb-id=${eb.id}">
-                <li class="ud-item"
-                    th:each="ud : ${eb.unitateak}"
-                    th:attr="data-ud-id=${ud.id}">
-                  <div class="ud-header" onclick="toggleUd(this)">
-                    <span class="handle" title="Arrastatu ordena aldatzeko">≡</span>
-                    <div>
-                      <span class="title"
-                            th:text="|${ud.kodea} — ${ud.izenburua}|">
-                        UD1 — Izenburua
-                      </span>
-                      <span class="badge"
-					        th:with="jp=${jpOrduakMap[ud.id] ?: 0}"
-					        th:text="|(${ud.orduak}h) (jardueretan ${jp}h)|">
-					       (0h) (jardueretan 0h)
-					      </span>
-                    </div>
-                    <div class="actions" style="margin-left:auto" onclick="event.stopPropagation()">
-                      <button class="btn" th:attr="data-ud-id=${ud.id}" onclick="openUdEdit(this)">Editatu</button>
-                    </div>
-                  </div>
-
-                  <div class="ud-content" style="display:none; padding:.4rem 1rem 1rem;">
-                    <ul class="jp-list" th:attr="data-ud-id=${ud.id}">
-                      <li class="jp-item"
-                          th:each="jp : ${ud.azpiJarduerak}"
-                          th:attr="data-jp-id=${jp.id}">
-                        <span class="handle" title="Arrastatu ordena aldatzeko">≡</span>
-                        <div>
-                          <span class="jp-title" th:text="${jp.izenburua}">Jarduera</span>
-                          <span class="jp-hours" th:text="|(${jp.orduak}h)|">(0h)</span>
-                        </div>
-                        <div class="actions">
-                          <button class="btn" th:attr="data-jp-id=${jp.id}" onclick="openJpEdit(this)">Editatu</button>
-                        </div>
-                      </li>
-                    </ul>
-
-                    <div class="add-row">
-                      <button class="btn btn-primary" th:attr="data-ud-id=${ud.id}" onclick="openJpAdd(this)">
-                        + Jarduera berria
-                      </button>
-                    </div>
-                  </div>
-                </li>
-              </ul>
-
-              <div class="add-row">
-                <button class="btn btn-primary" th:attr="data-eb-id=${eb.id}" onclick="openUdAdd(this)">
-                  + UD berria ebaluazio honetan
-                </button>
-              </div>
-            </div>
-          </li>
-        </ul>
+		  <li th:each="eb, iter : ${ebaluaketak}"
+		      th:with="colorIdx=${((iter.index) % 6) + 1}"
+		      class="ebal-item"
+		      th:attr="data-eb-id=${eb.id}"
+		      th:classappend="| color-${colorIdx}|">
+		
+		    <!-- HEADER: izena, orduak, datak, botoiak -->
+		    <div class="ebal-header" onclick="toggleEbal(this)">
+		      <span class="caret">›</span>
+		
+		      <div>
+		        <div class="title" th:text="${eb.izena}">1. Ebaluaketa</div>
+		        <div class="badge">
+		          <!-- (planifikatuta / erabilgarri) -->
+		          <span th:with="planif=${ebalUdOrduak[eb.id] ?: 0},
+		                         dispo=${ebalDispon[eb.id] ?: 0}"
+		                th:classappend="${planif > dispo} ? ' hours-warn' : ''"
+		                th:text="|(${planif}h / ${dispo}h erabilgarri)|">
+		            (0h / 0h erabilgarri)
+		          </span>
+		          <!-- Data-mugak -->
+		          <span class="badge"
+		                th:text="| — ${eb.hasieraData} → ${eb.bukaeraData}|">
+		            — 2025-09-10 → 2026-01-31
+		          </span>
+		        </div>
+		      </div>
+		
+		      <!-- EKINTZAK (eskuineko zutabea) -->
+		      <div class="actions" style="margin-left:auto" onclick="event.stopPropagation()">
+		
+		        <!-- EB hau denboralizaziora bolkatzeko ikono-botoia -->
+		        <button class="btn btn-icon"
+		                type="button"
+		                th:attr="data-eb-id=${eb.id}"
+		                title="Ebaluaketa hau denboralizaziora bolkatu"
+		                aria-label="Ebaluaketa hau denboralizaziora bolkatu"
+		                onclick="bulkatuEbaluaketa(this)">
+		          <img th:src="@{/img/eb-bolkatu.png}"
+		               alt="Ebaluaketa hau denboralizaziora bolkatu"
+		               class="bulkatu-eb-ikonoa">
+		        </button>
+		
+		        <!-- EB editatzeko botoia (edit-mode-n bakarrik ikusgai) -->
+		        <button class="btn ebal-edit-btn"
+		                type="button"
+		                th:attr="data-eb-id=${eb.id}"
+		                onclick="openEbalEdit(this)">
+		          Editatu
+		        </button>
+		      </div>
+		    </div>
+		
+		    <!-- EDUKIA: EB barruko UD-ak + "+UD berria" botoia -->
+		    <div class="ebal-content" style="display:none; padding:.4rem 1rem 1rem;">
+		      <!-- EB barruko UD-ak -->
+		      <ul class="ud-list" th:attr="data-eb-id=${eb.id}">
+		        <li class="ud-item"
+		            th:each="ud : ${eb.unitateak}"
+		            th:attr="data-ud-id=${ud.id}">
+		          <div class="ud-header" onclick="toggleUd(this)">
+		            <span class="handle" title="Arrastatu ordena aldatzeko">≡</span>
+		            <div>
+		              <span class="title"
+		                    th:text="|${ud.kodea} — ${ud.izenburua}|">
+		                UD1 — Izenburua
+		              </span>
+		              <span class="badge"
+		                    th:with="jp=${jpOrduakMap[ud.id] ?: 0}"
+		                    th:text="|(${ud.orduak}h) (jardueretan ${jp}h)|">
+		                (0h) (jardueretan 0h)
+		              </span>
+		            </div>
+		            <div class="actions" style="margin-left:auto" onclick="event.stopPropagation()">
+		              <button class="btn"
+		                      th:attr="data-ud-id=${ud.id}"
+		                      onclick="openUdEdit(this)">
+		                Editatu
+		              </button>
+		            </div>
+		          </div>
+		
+		          <div class="ud-content" style="display:none; padding:.4rem 1rem 1rem;">
+		            <ul class="jp-list" th:attr="data-ud-id=${ud.id}">
+		              <li class="jp-item"
+		                  th:each="jp : ${ud.azpiJarduerak}"
+		                  th:attr="data-jp-id=${jp.id}">
+		                <span class="handle" title="Arrastatu ordena aldatzeko">≡</span>
+		                <div>
+		                  <span class="jp-title" th:text="${jp.izenburua}">Jarduera</span>
+		                  <span class="jp-hours" th:text="|(${jp.orduak}h)|">(0h)</span>
+		                </div>
+		                <div class="actions">
+		                  <button class="btn"
+		                          th:attr="data-jp-id=${jp.id}"
+		                          onclick="openJpEdit(this)">
+		                    Editatu
+		                  </button>
+		                </div>
+		              </li>
+		            </ul>
+		
+		            <div class="add-row">
+		              <button class="btn btn-primary"
+		                      th:attr="data-ud-id=${ud.id}"
+		                      onclick="openJpAdd(this)">
+		                + Jarduera berria
+		              </button>
+		            </div>
+		          </div>
+		        </li>
+		      </ul>
+		
+		      <!-- EB honetan UD berria gehitzeko botoia -->
+		      <div class="add-row">
+		        <button class="btn btn-primary"
+		                th:attr="data-eb-id=${eb.id}"
+		                onclick="openUdAdd(this)">
+		          + UD berria ebaluazio honetan
+		        </button>
+		      </div>
+		    </div>
+		  </li>
+		</ul>
       </div>
     </div>
 
     <!-- Denboralizaziora bolkatu --> 
-    <div class="actions">
-      <button id="btnPreviewBulk" class="btn btn-primary"
-              th:attr="data-koaderno-id=${koadernoAktiboa.id}"
-              th:disabled="${!canBulk}">
-        Denboralizaziora bolkatu
-      </button>
-    </div>
+    <!-- Beheko botoiak: edit modu orokorra + bolkatzea -->
+	<div class="actions actions-bottom">
+	  <button id="toggleEbalEditBtn" class="btn" type="button">
+	    Ebaluazioak editatu
+	  </button>
+	
+	  <button id="btnPreviewBulk" class="btn btn-primary"
+	          th:attr="data-koaderno-id=${koadernoAktiboa.id}"
+	          th:disabled="${!canBulk}">
+	    Denboralizaziora bolkatu
+	  </button>
+	</div>
     <div th:if="${!canBulk}" class="alert alert-warning mt-2">
       Ezin da bolkatu: egutegia/ordutegia/programazioa osatu gabe.
     </div>
@@ -329,7 +411,7 @@
   <!-- Programazioa inportatzeko modala (fragment-a) -->
   <div th:replace="~{irakasleak/programazioa/programazioa-inport-modala :: programazioa-inport-modal}"></div>
 
-  <!-- SCRIPT NAGUSIAK -->
+    <!-- SCRIPT NAGUSIAK -->
   <script>
   // ---------- CSRF helpers ----------
   function getCookie(name){
@@ -402,12 +484,35 @@
     }
   }
 
+  // ---------- Edit mode toggle (ebaluaketen "Editatu" botoiak erakusteko) ----------
+  function initEbalEditToggle() {
+    const btn = document.getElementById('toggleEbalEditBtn');
+    if (!btn) return;
+
+    let editMode = false;
+
+    function refreshLabel() {
+      btn.textContent = editMode ? 'Edizioa amaitu' : 'Ebaluazioak editatu';
+    }
+    refreshLabel();
+
+    btn.addEventListener('click', () => {
+      editMode = !editMode;
+      document.body.classList.toggle('edit-mode', editMode);
+      refreshLabel();
+    });
+  }
+
   function reloadKeepingState() {
     saveOpenState();
     window.location.reload();
   }
 
-  document.addEventListener('DOMContentLoaded', restoreOpenState);
+  // DOM kargatzean: akordeoien egoera berreskuratu + edit-toggle prestatu
+  document.addEventListener('DOMContentLoaded', () => {
+    restoreOpenState();
+    initEbalEditToggle();
+  });
 
   const fjson = (url, method, body) => fetch(url, {
     method,
@@ -631,129 +736,91 @@
 
   // ------- Programazioa --> Denboralizazioa (aurreikuspenik gabe, zuzenean POST) -------
   (function(){
-    const btn = document.getElementById('btnPreviewBulk');
-    if(!btn) return;
-
     const csrfToken  = document.querySelector('meta[name="_csrf"]')?.content;
     const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
 
-    btn.addEventListener('click', async ()=>{
-      const koadernoId = btn.dataset.koadernoId;
-      if(!koadernoId){
-        alert('Ezin da bolkatu: koadernoa ez dago zehaztuta.');
+    async function sendBulkRequest({ koadernoId, ebaluaketaId, replaceExisting = true }) {
+      const params = new URLSearchParams();
+      params.set('koadernoId', koadernoId);
+      params.set('replaceExisting', String(replaceExisting));
+      if (ebaluaketaId) {
+        params.set('ebaluaketaId', ebaluaketaId);
+      }
+
+      const res = await fetch('/irakasle/programazioa/bolkatu', {
+        method: 'POST',
+        headers: {
+          'Content-Type':'application/x-www-form-urlencoded',
+          ...(csrfHeader && csrfToken ? { [csrfHeader]: csrfToken } : {})
+        },
+        body: params.toString()
+      });
+
+      if (res.redirected) {
+        window.location = res.url;
+        return;
+      }
+      if (!res.ok) {
+        const txt = await res.text();
+        alert(txt || 'Errorea bolkatzean.');
+        return;
+      }
+      // OK bada eta ez badago redirect-ik:
+      reloadKeepingState();
+    }
+
+    // --- Botoi nagusia: programazio osoa ---
+    const btnAll = document.getElementById('btnPreviewBulk');
+    if (btnAll) {
+      btnAll.addEventListener('click', async () => {
+        const koadernoId = btnAll.dataset.koadernoId;
+        if (!koadernoId) {
+          alert('Ezin da bolkatu: koadernoa ez dago zehaztuta.');
+          return;
+        }
+
+        const onartu = confirm(
+          'Ziur zaude programazio OSOA denboralizaziora bolkatu nahi duzula?\n' +
+          'Aurreko planifikazioak gainidatzi daitezke.'
+        );
+        if (!onartu) return;
+
+        try {
+          await sendBulkRequest({ koadernoId });
+        } catch (e) {
+          console.error(e);
+          alert('Errore ezustekoa bolkatzean.');
+        }
+      });
+    }
+
+    // --- EB bakarra bolkatzeko funtzio globala ---
+    window.bulkatuEbaluaketa = async function(btn) {
+      const koadernoId = document.querySelector('meta[name="koaderno-id"]')?.content;
+      const ebaluaketaId = btn.dataset.ebId;     // data-eb-id -> dataset.ebId
+
+      if (!koadernoId || !ebaluaketaId) {
+        alert('Datuak falta dira (koadernoId edo ebaluaketaId).');
         return;
       }
 
       const onartu = confirm(
-        'Ziur zaude programazioa denboralizaziora bolkatu nahi duzula?\n' +
-        'Aurreko planifikazioak gainidatzi daitezke.'
+        'Ziur zaude EBALUAKETA HAU BAKARRIK denboralizaziora bolkatu nahi duzula?\n' +
+        'Ebaluaketa honetako jardueren planifikazioa gainidatz daiteke.'
       );
-      if(!onartu) return;
+      if (!onartu) return;
 
-      const params = new URLSearchParams();
-      params.set('koadernoId', koadernoId);
-      params.set('replaceExisting', 'true'); // lehen checkbox-a checked zegoen bezala
-
-      try{
-        const res = await fetch('/irakasle/programazioa/bolkatu', {
-          method: 'POST',
-          headers: {
-            'Content-Type':'application/x-www-form-urlencoded',
-            ...(csrfHeader && csrfToken ? { [csrfHeader]: csrfToken } : {})
-          },
-          body: params.toString()
-        });
-
-        if(res.redirected){
-          // adib. /irakasle/denboralizazioa-ra edo /irakasle/programazioa-ra
-          window.location = res.url;
-          return;
-        }
-        if(!res.ok){
-          const txt = await res.text();
-          alert(txt || 'Errorea bolkatzean.');
-          return;
-        }
-
-        // Bestela, arrakastatsua bada baina ez badago redirect-ik, berriz kargatu:
-        reloadKeepingState();
-      }catch(e){
+      try {
+        await sendBulkRequest({ koadernoId, ebaluaketaId });
+      } catch (e) {
         console.error(e);
         alert('Errore ezustekoa bolkatzean.');
       }
-    });
+    };
   })();
   </script>
 
-  <!-- Programazioa inportatu MODALAREN script-a -->
-  <script>
-  // ---------- Programazioa inportatu modala ----------
-  (function() {
-    const modal = document.getElementById('programazioaImportModal');
-    const openBtn = document.getElementById('programazioaInportatuBtn');
-    const closeBtn = modal ? modal.querySelector('#modalCloseBtn') : null;
-    const aurreikuspenEdukia = modal ? modal.querySelector('#aurreikuspenEdukia') : null;
-    const inportatuForm = document.getElementById('inportatuForm');
-    const iturburuaInput = document.getElementById('iturburuaId');
 
-    // Botoia edo modala ez badago (adib. programazioa ez badago hutsik),
-    // ez da ezer egiten eta ez du errorea sortzen.
-    if (!modal || !openBtn) return;
-
-    function openModal() {
-      modal.classList.add('show');
-    }
-    function closeModal() {
-      modal.classList.remove('show');
-    }
-
-    openBtn.addEventListener('click', openModal);
-
-    if (closeBtn) {
-      closeBtn.addEventListener('click', closeModal);
-    }
-
-    modal.addEventListener('click', function(e) {
-      if (e.target === modal) {
-        closeModal();
-      }
-    });
-
-    // Modal barruko click-ak: aurreikusi + inportatu
-    modal.addEventListener('click', function(e) {
-      const aurreikusiBtn = e.target.closest('.aurreikusi-btn');
-      const inportatuBtn = e.target.closest('.inportatu-btn');
-
-      if (aurreikusiBtn && aurreikuspenEdukia) {
-        const id = aurreikusiBtn.getAttribute('data-id');
-        if (!id) return;
-        aurreikuspenEdukia.innerHTML =
-          '<p style="color:#6b7280;font-size:0.9rem;">Kargatzen...</p>';
-
-        fetch('/irakasle/programazioa/aurreikusi/' + id)
-          .then(r => r.text())
-          .then(html => {
-            aurreikuspenEdukia.innerHTML = html;
-          })
-          .catch(() => {
-            aurreikuspenEdukia.innerHTML =
-              '<p style="color:#b91c1c;font-size:0.9rem;">Errorea aurreikuspena kargatzean.</p>';
-          });
-      }
-
-      if (inportatuBtn && inportatuForm && iturburuaInput) {
-        const id = inportatuBtn.getAttribute('data-id');
-        if (!id) return;
-        if (!confirm('Ziur zaude programazio hau uneko koadernora inportatu nahi duzula? ' +
-                     'Oraingo programazioa gainidatzi daiteke.')) {
-          return;
-        }
-        iturburuaInput.value = id;
-        inportatuForm.submit();
-      }
-    });
-  })();
-  </script>
 
 </body>
 </html>

@@ -21,20 +21,20 @@
     .muted { color:#6b7280; font-size:.9rem; }
     .actions { margin-top:12px; }
     .section { margin: 24px 0; }
-    
+
     .inline-row {
-	  display: flex;
-	  gap: 12px;
-	  align-items: end;    /* botoia eta inputa oinarrian lerrokatuta */
-	  max-width: 520px;    /* zabalera txukunagoa */
-	}
-	.inline-row label { flex: 1; min-width: 240px; }
-	.inline-row button { flex: 0 0 auto; }
-	
-	@media (max-width: 520px) {
-	  .inline-row { flex-direction: column; align-items: stretch; }
-	  .inline-row button { width: 100%; }
-	}
+      display: flex;
+      gap: 12px;
+      align-items: end;
+      max-width: 520px;
+    }
+    .inline-row label { flex: 1; min-width: 240px; }
+    .inline-row button { flex: 0 0 auto; }
+
+    @media (max-width: 520px) {
+      .inline-row { flex-direction: column; align-items: stretch; }
+      .inline-row button { width: 100%; }
+    }
   </style>
 </head>
 <body>
@@ -42,56 +42,90 @@
 
 <h1>Konfigurazioa</h1>
 
+<!-- Flash mezu sinpleak (aukerakoa, baina lagungarria) -->
+<div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+<div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+
 <!-- Tab botoiak -->
 <div class="tabs" role="tablist" aria-label="Konfigurazio atalak">
-  <button class="tab-btn" role="tab" aria-selected="true" aria-controls="panel-mailak" id="tab-mailak">Mailak</button>
-  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-familiak" id="tab-familiak">Familiak</button>
-  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-bestek" id="tab-bestek">TBD</button>
+  <button type="button" class="tab-btn"
+          role="tab"
+          aria-selected="true"
+          aria-controls="panel-mailak"
+          id="tab-mailak">
+    Mailak
+  </button>
+
+  <button type="button" class="tab-btn"
+          role="tab"
+          aria-selected="false"
+          aria-controls="panel-egoerak"
+          id="tab-egoerak">
+    Ebaluazio egoerak
+  </button>
+
+  <button type="button" class="tab-btn"
+          role="tab"
+          aria-selected="false"
+          aria-controls="panel-familiak"
+          id="tab-familiak">
+    Familiak
+  </button>
+
+  <button type="button" class="tab-btn"
+          role="tab"
+          aria-selected="false"
+          aria-controls="panel-bestek"
+          id="tab-bestek">
+    TBD
+  </button>
 </div>
 
 <!-- Mailak PANELA -->
-<section id="panel-mailak" class="tab-panel active" role="tabpanel" aria-labelledby="tab-mailak" tabindex="0">
+<section id="panel-mailak" class="tab-panel active" role="tabpanel"
+         aria-labelledby="tab-mailak" tabindex="0">
   <h2>Mailak</h2>
   <p class="muted">Aktibatu/desaktibatu checkbox bidez. Azpian, maila berria sor dezakezu.</p>
 
   <!-- Aktibo/desaktibo bulk form -->
-  <form th:action="@{/kudeatzaile/konfigurazioa/mailak/aktiboak}" th:object="${activeForm}" method="post">
+  <form th:action="@{/kudeatzaile/konfigurazioa/mailak/aktiboak}"
+        th:object="${activeForm}" method="post">
     <table>
       <thead>
-		  <tr>
-		    <th>Aktibo</th>
-		    <th>Ordena</th>
-		    <th>Kodea</th>
-		    <th>Izena</th>
-		    <th>ID</th>
-		    <th>Ebaluazioak</th>
-		  </tr>
-		</thead>
-		<tbody>
-		<tr th:each="m : ${mailak}">
-		  <td>
-          	<input type="checkbox"
+      <tr>
+        <th>Aktibo</th>
+        <th>Ordena</th>
+        <th>Kodea</th>
+        <th>Izena</th>
+        <th>ID</th>
+        <th>Ebaluazioak</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:each="m : ${mailak}">
+        <td>
+          <input type="checkbox"
                  name="aktiboIds"
                  th:value="${m.id}"
                  th:checked="${m.aktibo}">
-          </td>
-		  <td th:text="${m.ordena}">1</td>
-		  <td th:text="${m.kodea}">LEHENENGOA</td>
-		  <td th:text="${m.izena}">1. maila</td>
-		  <td th:text="${m.id}">1</td>
-		  <td>
-		    <ul>
-		      <li th:each="em : ${m.ebaluazioMomentuak}"
-		          th:text="${em.izena}">
-		        1. ebaluazioa
-		      </li>
-		    </ul>
-		    <a th:href="@{|/kudeatzaile/konfigurazioa/mailak/${m.id}/ebaluazioak|}">
-		      Editatu
-		    </a>
-		  </td>
-		</tr>
-		</tbody>
+        </td>
+        <td th:text="${m.ordena}">1</td>
+        <td th:text="${m.kodea}">LEHENENGOA</td>
+        <td th:text="${m.izena}">1. maila</td>
+        <td th:text="${m.id}">1</td>
+        <td>
+          <ul>
+            <li th:each="em : ${m.ebaluazioMomentuak}"
+                th:text="${em.izena}">
+              1. ebaluazioa
+            </li>
+          </ul>
+          <a th:href="@{|/kudeatzaile/konfigurazioa/mailak/${m.id}/ebaluazioak|}">
+            Editatu
+          </a>
+        </td>
+      </tr>
+      </tbody>
     </table>
     <div class="actions">
       <button type="submit">Gorde aktiboak</button>
@@ -99,7 +133,8 @@
   </form>
 
   <h3 style="margin-top:24px;">Sortu maila berria</h3>
-  <form th:action="@{/kudeatzaile/konfigurazioa/mailak/sortu}" th:object="${sortuForm}" method="post">
+  <form th:action="@{/kudeatzaile/konfigurazioa/mailak/sortu}"
+        th:object="${sortuForm}" method="post">
     <div class="row">
       <label>
         <div class="muted">Kodea</div>
@@ -120,13 +155,98 @@
   </form>
 </section>
 
+<!-- Ebaluazio egoerak PANELA -->
+<section id="panel-egoerak" class="tab-panel" role="tabpanel"
+         aria-labelledby="tab-egoerak" tabindex="0" aria-hidden="true">
+  <h2>Ebaluazio egoerak</h2>
+  <p class="muted">
+    Ebaluazio egoera bereziak (adib. <code>EZ_AURKEZTUA</code>, <code>EZ_EBAL_FALTA</code>…) hemen definitzen dira.
+    Gero mailako ebaluazio momentuetan hautatuko dira.
+  </p>
+
+  <!-- Existenteen eguneratzea + ezabaketa -->
+  <form th:action="@{/kudeatzaile/konfigurazioa/egoerak/gorde}" method="post">
+    <table>
+      <thead>
+      <tr>
+        <th>Kodea</th>
+        <th>Izena</th>
+        <th>Nota behar du?</th>
+        <th>ID</th>
+        <th>Ezabatu</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:each="e : ${egoerak}">
+        <!-- ID-a mantentzeko -->
+        <td>
+          <input type="hidden" name="ids" th:value="${e.id}"/>
+          <input type="text"
+                 th:name="|kodea_${e.id}|"
+                 th:value="${e.kodea}"
+                 style="width:100%;">
+        </td>
+        <td>
+          <input type="text"
+                 th:name="|izena_${e.id}|"
+                 th:value="${e.izena}"
+                 style="width:100%;">
+        </td>
+        <td style="text-align:center;">
+          <input type="checkbox"
+                 th:name="|notaBeharDu_${e.id}|"
+                 th:checked="${e.notaBeharDu}">
+        </td>
+        <td th:text="${e.id}">1</td>
+        <td style="text-align:center;">
+          <input type="checkbox"
+                 name="deleteIds"
+                 th:value="${e.id}">
+        </td>
+      </tr>
+      </tbody>
+    </table>
+    <div class="actions">
+      <button type="submit">Gorde egoerak</button>
+    </div>
+  </form>
+
+  <h3 style="margin-top:24px;">Sortu egoera berria</h3>
+  <form th:action="@{/kudeatzaile/konfigurazioa/egoerak/sortu}"
+        th:object="${sortuEgoeraForm}" method="post">
+    <div class="row">
+      <label>
+        <div class="muted">Kodea</div>
+        <input type="text" th:field="*{kodea}" placeholder="EZ_AURKEZTUA" required>
+      </label>
+      <label>
+        <div class="muted">Izena</div>
+        <input type="text" th:field="*{izena}" placeholder="Ez aurkeztua" required>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" th:field="*{notaBeharDu}">
+        <span class="muted">Nota zenbakizkoa behar du?</span>
+      </label>
+      <div style="align-self:end;">
+        <button type="submit">Sortu</button>
+      </div>
+    </div>
+    <p class="muted" style="margin-top:8px;">
+      Ohikoena da egoera bereziek ez eskatzea nota zenbakizkorik
+      (adib. "EZ_AURKEZTUA" → nota = NULL).
+    </p>
+  </form>
+</section>
+
+
 <!-- Familiak PANELA -->
-<section id="panel-familiak" class="tab-panel" role="tabpanel" aria-labelledby="tab-familiak" tabindex="0" aria-hidden="true">
+<section id="panel-familiak" class="tab-panel" role="tabpanel"
+         aria-labelledby="tab-familiak" tabindex="0" aria-hidden="true">
   <h2>Familiak</h2>
   <p class="muted">Aktibatu/desaktibatu checkbox bidez. Azpian, familia berria sor dezakezu.</p>
 
-  <!-- Aktibo/desaktibo bulk form -->
-  <form th:action="@{/kudeatzaile/konfigurazioa/familiak/aktiboak}" th:object="${activeFamiliaForm}" method="post">
+  <form th:action="@{/kudeatzaile/konfigurazioa/familiak/aktiboak}"
+        th:object="${activeFamiliaForm}" method="post">
     <table>
       <thead>
       <tr>
@@ -156,53 +276,70 @@
   </form>
 
   <h3 style="margin-top:24px;">Sortu familia berria</h3>
-	<form th:action="@{/kudeatzaile/konfigurazioa/familiak/sortu}" 
-	      th:object="${sortuFamiliaForm}" method="post">
-	  <div class="inline-row">
-	    <label style="margin:0;">
-	      <div class="muted">Izena</div>
-	      <input type="text" th:field="*{izena}" placeholder="INFORMATIKA" required>
-	    </label>
-	    <button type="submit">Sortu</button>
-	  </div>
-	  <p class="muted">
-	    Slug-a automatikoki sortuko da izenetik 
-	    (adib. “Fabrikazio Mekanikoa” → “fabrikazio-mekanikoa”).
-	  </p>
-	</form>
+  <form th:action="@{/kudeatzaile/konfigurazioa/familiak/sortu}"
+        th:object="${sortuFamiliaForm}" method="post">
+    <div class="inline-row">
+      <label style="margin:0;">
+        <div class="muted">Izena</div>
+        <input type="text" th:field="*{izena}" placeholder="INFORMATIKA" required>
+      </label>
+      <button type="submit">Sortu</button>
+    </div>
+    <p class="muted">
+      Slug-a automatikoki sortuko da izenetik
+      (adib. “Fabrikazio Mekanikoa” → “fabrikazio-mekanikoa”).
+    </p>
+  </form>
 </section>
 
-<!-- Etorkizuneko panelak: -->
-<section id="panel-bestek" class="tab-panel" role="tabpanel" aria-labelledby="tab-bestek" tabindex="0" aria-hidden="true">
+<!-- Etorkizuneko panelak -->
+<section id="panel-bestek" class="tab-panel" role="tabpanel"
+         aria-labelledby="tab-bestek" tabindex="0" aria-hidden="true">
   <h2>Bestelako aukerak</h2>
   <p class="muted">Atal hau etorkizunean osatuko da.</p>
 </section>
 
 <script>
-  // Tabs JS minimoa
-  (function() {
+  // Tabs JS sinplea
+  document.addEventListener('DOMContentLoaded', function() {
     const tabs = document.querySelectorAll('.tab-btn');
     const panels = document.querySelectorAll('.tab-panel');
-    tabs.forEach(btn => btn.addEventListener('click', () => {
-      if (btn.disabled) return;
+
+    function activateTab(tab) {
+      const targetId = tab.getAttribute('aria-controls');
       tabs.forEach(b => b.setAttribute('aria-selected', 'false'));
-      panels.forEach(p => { p.classList.remove('active'); p.setAttribute('aria-hidden','true'); });
-      btn.setAttribute('aria-selected', 'true');
-      const panel = document.getElementById(btn.getAttribute('aria-controls'));
-      panel.classList.add('active');
-      panel.removeAttribute('aria-hidden');
-      panel.focus();
-      // hash-a eguneratu (nahi baduzu)
-      history.replaceState(null, '', '#' + btn.id.replace('tab-',''));
-    }));
-    // Hash bidez hasieratu (aukera)
+      panels.forEach(p => {
+        p.classList.remove('active');
+        p.setAttribute('aria-hidden', 'true');
+      });
+
+      tab.setAttribute('aria-selected', 'true');
+      const panel = document.getElementById(targetId);
+      if (panel) {
+        panel.classList.add('active');
+        panel.removeAttribute('aria-hidden');
+        panel.focus();
+      }
+
+      const hash = tab.id.replace('tab-', '');
+      if (window.history && window.history.replaceState) {
+        history.replaceState(null, '', '#' + hash);
+      }
+    }
+
+    tabs.forEach(btn => {
+      btn.addEventListener('click', () => activateTab(btn));
+    });
+
+    // Hash bidez hasieratu
     const hash = location.hash.replace('#','');
     if (hash) {
       const to = document.getElementById('tab-' + hash);
-      if (to && !to.disabled) to.click();
+      if (to) activateTab(to);
     }
-  })();
+  });
 </script>
+
 <script th:src="@{/js/kudeatzaile-nav.js}"></script>
 </body>
 </html>
