@@ -3,6 +3,7 @@ package com.koadernoa.app.funtzionalitateak.irakasle;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -37,9 +38,11 @@ import com.koadernoa.app.objektuak.modulua.repository.IkasleaRepository;
 import com.koadernoa.app.objektuak.modulua.repository.MatrikulaRepository;
 import com.koadernoa.app.objektuak.modulua.service.IkasleaService;
 
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -120,15 +123,7 @@ public class IrakasleKoadernoaController {
         return ResponseEntity.ok(Map.of("ok", true));
     }
 
-	
-	private void addBlock(Koadernoa k, int col, int start, int end) {
-        KoadernoOrdutegiBlokea b = new KoadernoOrdutegiBlokea();
-        b.setKoadernoa(k);
-        b.setAsteguna(ASTE_ORDENA.get(col - 1));
-        b.setHasieraSlot(start);
-        b.setIraupenaSlot(end - start + 1);
-        k.getOrdutegiak().add(b);
-    }
+
 	
 	@PostMapping("/koaderno/{id}/inportatu-taldetik")
 	public String inportatuTaldekoIkasleakKoadernoan(@PathVariable("id") Long koadernoaId,
@@ -297,28 +292,77 @@ public class IrakasleKoadernoaController {
 
 	
 	
-// ESATITSTIKAK ==================================================================================
+// ESTATISTIKAK ==================================================================================
 	@GetMapping("/estatistikak")
-	public String erakutsiEstatistikak(
-	        @SessionAttribute(value = "koadernoAktiboa", required = false) Koadernoa koadernoa,
-	        Model model) {
+    public String estatistikakPantaila(
+            @SessionAttribute(name = "koadernoAktiboa", required = false) Koadernoa koadernoAktiboa,
+            Model model) {
 
-	    if (koadernoa == null || koadernoa.getId() == null) {
-	        model.addAttribute("errorea", "Ez dago koaderno aktiborik aukeratuta.");
-	        return "error/404";
-	    }
+        if (koadernoAktiboa == null || koadernoAktiboa.getId() == null) {
+            model.addAttribute("koadernoAktiboDago", false);
+            return "irakasleak/estatistikak/index";
+        }
 
-	    List<EstatistikaEbaluazioan> estatistikak =
-	            estatistikaService.kalkulatuKoadernoarenEstatistikak(koadernoa);
+        List<EstatistikaEbaluazioan> estatistikak =
+                estatistikaService.lortuKoadernoarenEstatistikak(koadernoAktiboa);
 
-	    int matrikulatuak = estatistikaService.kalkulatuEbaluatuak(koadernoa);
+        model.addAttribute("koadernoAktiboDago", true);
+        model.addAttribute("koadernoAktiboa", koadernoAktiboa);
+        model.addAttribute("estatistikak", estatistikak);
 
-	    model.addAttribute("koadernoa", koadernoa);
-	    model.addAttribute("estatistikak", estatistikak);
-	    model.addAttribute("matrikulatuak", matrikulatuak);
-
-	    return "irakasleak/estatistikak/index";
-	}
+        return "irakasleak/estatistikak/index";
+    }
 	
+	@PostMapping("/estatistikak/{estatId}/berkalkulatu")
+    @ResponseBody
+    public Map<String, Object> berkalkulatuEstatistika(
+            @PathVariable Long estatId,
+            @SessionAttribute("koadernoAktiboa") Koadernoa koadernoAktiboa) {
 
+        estatistikaService.berkalkulatuEstatistika(koadernoAktiboa, estatId);
+
+        // fetch bidez deituko dugu; JSON txiki bat bueltatu
+        Map<String, Object> resp = new HashMap<>();
+        resp.put("ok", true);
+        return resp;
+    }
+	
+	@PostMapping("/estatistikak/eguneratu")
+    @Transactional
+    public String eguneratuEstatistikak(
+            @SessionAttribute("koadernoAktiboa") Koadernoa koadernoAktiboa,
+            HttpServletRequest request,
+            RedirectAttributes ra) {
+
+        if (koadernoAktiboa == null || koadernoAktiboa.getId() == null) {
+            ra.addFlashAttribute("error", "Ez dago koaderno aktiborik.");
+            return "redirect:/irakasle/estatistikak";
+        }
+
+        List<EstatistikaEbaluazioan> estatistikak =
+                estatistikaService.lortuKoadernoarenEstatistikak(koadernoAktiboa);
+
+        for (EstatistikaEbaluazioan est : estatistikak) {
+            Long id = est.getId();
+            String udEmandaStr   = request.getParameter("unitateakEmanda_" + id);
+            String orduEmandaStr = request.getParameter("orduakEmanda_" + id);
+
+            if (udEmandaStr != null && !udEmandaStr.isBlank()) {
+                try {
+                    est.setUnitateakEmanda(Integer.parseInt(udEmandaStr));
+                } catch (NumberFormatException ignored) {}
+            }
+            if (orduEmandaStr != null && !orduEmandaStr.isBlank()) {
+                try {
+                    est.setOrduakEmanda(Integer.parseInt(orduEmandaStr));
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+
+        // batch gordeta
+        // (estatRepo.saveAll(estatistikak) edo @Transactional + entity-managed nahikoa)
+        ra.addFlashAttribute("success", "Estatistikak eguneratu dira.");
+        return "redirect:/irakasle/estatistikak";
+    }
 }
+	

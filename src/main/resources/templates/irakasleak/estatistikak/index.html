@@ -2,289 +2,212 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="eu">
 <head>
   <meta charset="UTF-8">
-  <title>Estatistikak – [[${koadernoAktiboa != null ? koadernoAktiboa.izena : ''}]]</title>
+  <title>Estatistikak</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
   <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
-  <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}"/>
-  <script th:src="@{/js/irakasle-nav.js}"></script>
+  <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-XSRF-TOKEN'}"/>
 
   <style>
-    :root{
-      --b:#e5e7eb; --t:#111827; --mut:#6b7280;
-      --m:#2563eb; --m-soft:#eff6ff;
-      --ok:#16a34a; --warn:#a16207; --danger:#b91c1c;
-    }
+    body{background:#f3f4f6;color:#111827;font-family:system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;}
+    .page{max-width:1000px;margin:1.5rem auto;padding:0 1rem;}
+    .card{background:#fff;border-radius:12px;border:1px solid #e5e7eb;box-shadow:0 2px 8px rgba(0,0,0,.04);padding:1rem 1.2rem;}
+    h1{font-size:1.2rem;margin:0 0 .25rem 0;}
+    .muted{color:#6b7280;font-size:.9rem;}
 
-    body{ color:var(--t); background:#f8fafc; }
+    .table-wrap{overflow-x:auto;margin-top:1rem;}
+    table{width:100%;border-collapse:collapse;min-width:720px;}
+    th,td{border:1px solid #e5e7eb;padding:.45rem .55rem;font-size:.9rem;text-align:center;}
+    th{background:#f9fafb;font-weight:600;}
+    th span.sub{display:block;font-size:.75rem;color:#6b7280;margin-top:.15rem;}
+    td.label{font-weight:600;text-align:left;}
 
-    .page{
-      max-width:1000px;
-      margin:1.5rem auto 2.5rem;
-      padding:0 1rem;
-      display:flex;
-      justify-content:center;
-    }
-
-    .estat-card{
-      width:100%;
-      max-width:950px;
-      background:#fff;
-      border:1px solid var(--b);
-      border-radius:12px;
-      padding:20px 24px 22px;
-      box-shadow:0 2px 6px rgba(0,0,0,.06);
-    }
-
-    .head{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      gap:12px;
-      margin-bottom:16px;
-    }
-    .head-title{
-      display:flex;
-      flex-direction:column;
-      gap:4px;
-    }
-    .head-title h1{
-      margin:0;
-      font-size:1.4rem;
-      font-weight:700;
-    }
-    .head-title .meta{
-      font-size:.9rem;
-      color:var(--mut);
-    }
-
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      gap:.35rem;
-      background:var(--m-soft);
-      border-radius:999px;
-      padding:.25rem .75rem;
+    input[type="number"]{
+      width:70px;
+      padding:.25rem .35rem;
+      border-radius:8px;
+      border:1px solid #d1d5db;
       font-size:.85rem;
-      color:#1d4ed8;
-      border:1px solid #bfdbfe;
-      white-space:nowrap;
+      text-align:right;
     }
-
-    .pill .dot{
-      width:8px;
-      height:8px;
+    .btn{
+      display:inline-flex;align-items:center;justify-content:center;
       border-radius:999px;
-      background:#1d4ed8;
-    }
-
-    .table-wrap{
-      margin-top:.75rem;
-      border-radius:10px;
-      border:1px solid var(--b);
-      overflow:auto;
-    }
-
-    table.estat{
-      width:100%;
-      border-collapse:collapse;
-      font-size:.9rem;
-    }
-
-    .estat thead{
-      background:#f9fafb;
-    }
-    .estat th,
-    .estat td{
-      border-bottom:1px solid #e5e7eb;
-      padding:.55rem .7rem;
-      text-align:center;
-      white-space:nowrap;
-    }
-    .estat th:first-child,
-    .estat td:first-child{
-      text-align:left;
-    }
-    .estat tbody tr:last-child td{
-      border-bottom:none;
-    }
-
-    .estat tbody tr:nth-child(even){
-      background:#f9fafb;
-    }
-
-    .tag{
-      display:inline-flex;
-      padding:.12rem .5rem;
-      border-radius:999px;
-      font-size:.75rem;
-      background:#f3f4f6;
-      color:#374151;
-    }
-
-    .tag-ok{
-      background:#dcfce7;
-      color:#166534;
-    }
-    .tag-warn{
-      background:#fef9c3;
-      color:#854d0e;
-    }
-    .tag-danger{
-      background:#fee2e2;
-      color:#b91c1c;
-    }
-
-    .note{
-      margin-top:.7rem;
+      padding:.35rem .75rem;
+      border:1px solid #d1d5db;
+      background:#fff;
       font-size:.8rem;
-      color:var(--mut);
+      cursor:pointer;
     }
+    .btn-primary{
+      background:#2563eb;color:#fff;border-color:#2563eb;
+    }
+    .btn-primary:hover{background:#1d4ed8;}
+    .btn-sm{font-size:.75rem;padding:.25rem .6rem;}
 
-    @media (max-width:700px){
-      .head{flex-direction:column;align-items:flex-start;}
+    .actions-bar{display:flex;justify-content:flex-end;margin-top:.75rem;}
+    .tag{
+      display:inline-block;padding:.1rem .4rem;border-radius:999px;
+      background:#e5e7eb;font-size:.7rem;color:#374151;
     }
-    
-    .estatistika-taula-wrapper{
-	  max-width: 100%;
-	  overflow-x: auto; /* segurtasunagatik, baina ez luke behar izan beharko */
-	}
-	
-	.estatistika-taula{
-	  width: 100%;
-	  border-collapse: collapse;
-	  table-layout: fixed;       /* zutabeak automatikoki doituta */
-	}
-	
-	.estatistika-taula th,
-	.estatistika-taula td{
-	  padding: .45rem .3rem;
-	  font-size: .85rem;
-	  text-align: center;
-	  word-break: break-word;    /* testua behar denean apurtu */
-	}
-	
-	.estatistika-taula th{
-	  vertical-align: middle;
-	}
-	
-	.estatistika-taula th .th-main{
-	  display: block;
-	  font-weight: 600;
-	}
-	
-	.estatistika-taula th .th-sub{
-	  display: block;
-	  font-size: .75rem;
-	  color: #6b7280;
-	}
   </style>
 </head>
 <body>
 
-<!-- Navbar -->
 <div th:if="${koadernoAktiboa != null}"
-     th:replace="irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})">
+     th:replace="~{irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})}">
 </div>
 
 <div class="page">
-  <div class="estat-card">
 
-    <div class="head">
-      <div class="head-title">
-        <h1>Estatistikak</h1>
-        <div class="meta"
-             th:text="${koadernoAktiboa != null ? koadernoAktiboa.izena : '(koaderno aktiborik ez)'}">
-          ADAT – 1DAW 2025-2026
-        </div>
-      </div>
-
-      <div>
-        <div class="pill">
-          <span class="dot"></span>
-          <span th:text="${matrikulatuak} + ' ikasle matrikulatuta'">0 ikasle matrikulatuta</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="estatistika-taula-wrapper">
-	  <table class="estatistika-taula">
-	    <thead>
-	      <tr>
-	        <th>
-	          <span class="th-main">Ebaluazioa</span>
-	        </th>
-	        <th>
-	          <span class="th-main">UD</span>
-	          <span class="th-sub">(emanda / aurreikus.)</span>
-	        </th>
-	        <th>
-	          <span class="th-main">Orduak</span>
-	          <span class="th-sub">(emanda / aurreikus.)</span>
-	        </th>
-	        <th>
-	          <span class="th-main">Ikasleak</span>
-	          <span class="th-sub">ebaluatuak</span>
-	        </th>
-	        <th>
-	          <span class="th-main">Aprobatuak</span>
-	          <span class="th-sub">(≥ 5)</span>
-	        </th>
-	        <th>
-	          <span class="th-main">Hutsegiteak</span>
-	          <span class="th-sub">ordu kopurua</span>
-	        </th>
-	      </tr>
-	    </thead>
-	    <tbody>
-	      <tr th:each="e : ${estatistikak}">
-	        <!-- Ebaluazioaren izena (EbaluazioMomentua.izena) -->
-	        <td th:text="${e.ebaluazioMomentua != null ? e.ebaluazioMomentua.izena : '—'}">
-	          1. ebaluazioa
-	        </td>
-	
-	        <!-- UD (emanda / aurreikus.) -->
-	        <td th:text="|${e.unitateakEmanda} / ${e.unitateakAurreikusiak}|">
-	          0 / 0
-	        </td>
-	
-	        <!-- Orduak (emanda / aurreikus.) -->
-	        <td th:text="|${e.orduakEmanda} / ${e.orduakAurreikusiak}|">
-	          0 / 0
-	        </td>
-	
-	        <!-- Ebaluatuak -->
-	        <td th:text="${e.ebaluatuak}">
-	          0
-	        </td>
-	
-	        <!-- Aprobatuak -->
-	        <td th:text="${e.aprobatuak}">
-	          0
-	        </td>
-	
-	        <!-- Hutsegite orduak -->
-	        <td th:text="${e.hutsegiteOrduak}">
-	          0
-	        </td>
-	      </tr>
-	    </tbody>
-	  </table>
-	</div>
-
-
-    <div th:if="${estatistikak == null or #lists.isEmpty(estatistikak)}"
-         style="margin-top:.75rem;color:#6b7280;font-size:.9rem;">
-      Oraindik ez dago estatistikarik kalkulatuta koaderno honetarako.
-    </div>
-
-    <p class="note">
-      * <strong>Ebaluatuak</strong>: modulu honetan MATRIKULATUA egoeran dauden ikasle guztiak (EZ_AURKEZTUA barne).<br/>
-      * <strong>Aprobatuak</strong>: azken notan ≥ 5 duten ikasleak (edo zure logikan “gainditua” bezala markatuak).
-    </p>
-
+  <div th:if="${!koadernoAktiboDago}">
+    <p>Ez dago koaderno aktiborik. Aukeratu koaderno bat hasiera orritik.</p>
   </div>
+
+  <div th:if="${koadernoAktiboDago}" class="card">
+    <div>
+      <h1>Estatistikak</h1>
+      <div class="muted"
+           th:text="'Koadernoa: ' + ${koadernoAktiboa != null ? koadernoAktiboa.izena : '—'}">
+        Koadernoa
+      </div>
+    </div>
+
+    <div class="table-wrap" th:if="${estatistikak != null and !estatistikak.isEmpty()}">
+      <form th:action="@{/irakasle/estatistikak/eguneratu}" method="post">
+        <input type="hidden"
+               th:if="${_csrf != null}"
+               th:name="${_csrf.parameterName}"
+               th:value="${_csrf.token}"/>
+
+        <table>
+          <thead>
+          <tr>
+            <th>Ebaluazioa</th>
+            <th>
+              UD-ak
+              <span class="sub">emanda / aurreikusita</span>
+            </th>
+            <th>
+              Orduak
+              <span class="sub">emanda / aurreikusita</span>
+            </th>
+            <th>
+              Aprobatuak
+              <span class="sub">gainditu / ebaluatu</span>
+            </th>
+            <th>
+              Hutsegite orduak
+              <span class="sub">(HUTS + JUSTIFIKATUA)</span>
+            </th>
+            <th>Ekintzak</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="e : ${estatistikak}">
+            <!-- Ebaluazio momentuaren izena -->
+            <td class="label">
+              <span th:text="${e.ebaluazioMomentua != null ? e.ebaluazioMomentua.izena : '—'}">
+                1. Ebaluazioa
+              </span>
+            </td>
+
+            <!-- UD: emanda (input) / aurreikusita (readonly) -->
+            <td>
+              <input type="number" min="0"
+                     th:name="|unitateakEmanda_${e.id}|"
+                     th:value="${e.unitateakEmanda}">
+              /
+              <span th:text="${e.unitateakAurreikusiak}">0</span>
+            </td>
+
+            <!-- Orduak: emanda (input) / aurreikusita (readonly) -->
+            <td>
+              <input type="number" min="0"
+                     th:name="|orduakEmanda_${e.id}|"
+                     th:value="${e.orduakEmanda}">
+              /
+              <span th:text="${e.orduakAurreikusiak}">0</span>
+            </td>
+
+            <!-- Aprobatuak: gainditu / ebaluatu -->
+            <td th:text="|${e.aprobatuak} / ${e.ebaluatuak}|">
+              0 / 0
+            </td>
+
+            <!-- Hutsegite orduak -->
+            <td th:text="${e.hutsegiteOrduak}">
+              0
+            </td>
+
+            <!-- Ekintzak: Berkalkulatu botoia -->
+            <td>
+              <button type="button"
+                      class="btn btn-sm"
+                      th:attr="data-est-id=${e.id}"
+                      onclick="berkalkulatuEstatistika(this)">
+                Berkalkulatu
+              </button>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+
+        <div class="actions-bar">
+          <button type="submit" class="btn btn-primary">
+            Aldaketak gorde
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div th:if="${estatistikak == null or #lists.isEmpty(estatistikak)}" style="margin-top:1rem;">
+      Oraindik ez dago estatistika-erregistrorik koaderno honetarako.
+      (Normalean, koaderno berria sortzean automatikoki sortzen dira.)
+    </div>
+  </div>
+
 </div>
+
+<script>
+  (function(){
+    const metaToken  = document.querySelector('meta[name="_csrf"]')?.content || '';
+    const metaHeader = document.querySelector('meta[name="_csrf_header"]')?.content || '';
+
+    window.berkalkulatuEstatistika = async function(btn){
+      const id = btn.getAttribute('data-est-id');
+      if (!id) return;
+
+      if (!confirm('Ziur zaude ebaluazio momentu honetako estatistikak berriz kalkulatu nahi dituzula?\\n' +
+                   'Eskuz jarritako \"emandako\" balioak gainidatz daitezke.')) {
+        return;
+      }
+
+      try {
+        const res = await fetch(`/irakasle/estatistikak/${id}/berkalkulatu`, {
+          method: 'POST',
+          headers: Object.assign(
+            { 'Content-Type': 'application/json' },
+            metaToken ? { [metaHeader || 'X-CSRF-TOKEN']: metaToken } : {}
+          ),
+          body: '{}'
+        });
+
+        if (!res.ok) {
+          const txt = await res.text();
+          alert(txt || 'Errorea berkalkulatzean.');
+          return;
+        }
+        // ondo: berriz kargatu pantaila
+        window.location.reload();
+      } catch (e) {
+        console.error(e);
+        alert('Errore ezustekoa berkalkulatzean.');
+      }
+    };
+  })();
+</script>
 
 </body>
 </html>

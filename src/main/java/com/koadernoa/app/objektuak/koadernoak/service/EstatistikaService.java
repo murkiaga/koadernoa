@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioMomentua;
 import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioNota;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
-import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Asistentzia;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Asistentzia.AsistentziaEgoera;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Ebaluaketa;
@@ -22,6 +21,7 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Programazioa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Saioa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Saioa.SaioEgoera;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.UnitateDidaktikoa;
 import com.koadernoa.app.objektuak.koadernoak.repository.AsistentziaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.EstatistikaEbaluazioanRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.JardueraRepository;
@@ -44,13 +44,37 @@ public class EstatistikaService {
     private final MatrikulaRepository matrikulaRepository;
     private final AsistentziaRepository asistentziaRepository; // hutsegiteetarako, aurrerago
 
- // Tarte txiki bat adierazteko record eroso bat
+ // Tarte bat adierazteko record txiki bat
     private record DateRange(LocalDate from, LocalDate to) {}
 
+    // ============================================================
+    //  PUBLIKOAK: pantailarako eta berrkalkulurako
+    // ============================================================
+
+    /** Estatistika guztiak bueltatzen ditu koaderno honetarako (EZ du kalkulurik egiten). */
     @Transactional(readOnly = true)
     public List<EstatistikaEbaluazioan> kalkulatuKoadernoarenEstatistikak(Koadernoa koadernoa) {
         if (koadernoa == null || koadernoa.getId() == null) {
             return List.of();
+        }
+        return estatRepo.findByKoadernoaIdOrderByEbaluazioMomentua_OrdenaAscIdAsc(koadernoa.getId());
+    }
+
+    /**
+     * Ebaluazio momentu bakar baten estatistika berriz kalkulatu (Berkalkulatu botoia).
+     * - Aurreikusiak programazioaren arabera
+     * - "emandako" balio batzuk kalkulu automatikoarekin (orduak) eta beste batzuk 0-ra (UDak)
+     */
+    @Transactional
+    public void berkalkulatuEstatistika(Koadernoa koadernoa, Long estatistikaId) {
+        if (koadernoa == null || koadernoa.getId() == null || estatistikaId == null) {
+            return;
+        }
+
+        EstatistikaEbaluazioan est = estatRepo.findById(estatistikaId).orElse(null);
+        if (est == null || est.getKoadernoa() == null ||
+            !Objects.equals(est.getKoadernoa().getId(), koadernoa.getId())) {
+            return; // ez dator bat koaderno honekin
         }
 
         Egutegia egutegia = koadernoa.getEgutegia();
@@ -58,61 +82,98 @@ public class EstatistikaService {
                 .findByKoadernoaId(koadernoa.getId())
                 .orElse(null);
 
-        // DB-n dauden estatistika-erregistroak (Koadernoa sortzean sortu zenituen)
-        List<EstatistikaEbaluazioan> estatistikak =
-                estatRepo.findByKoadernoaIdOrderByEbaluazioMomentua_OrdenaAscIdAsc(koadernoa.getId());
+        EbaluazioMomentua em = est.getEbaluazioMomentua();
+        DateRange tartea = tarteaEbaluazioMomentua(egutegia, em);
 
-        for (EstatistikaEbaluazioan est : estatistikak) {
+        // ---------- UNITATEAK ----------
+        if (programazioa != null) {
+            int aurreikusUd = kalkulatuUnitateakAurreikusiak(programazioa, tartea);
+            est.setUnitateakAurreikusiak(aurreikusUd);
 
-            EbaluazioMomentua momentua = est.getEbaluazioMomentua();
-
-            // Ebaluazio momentuaren araberako data-tartea
-            DateRange tartea = tarteaEstatistiketarako(egutegia, est.getEbaluazioMomentua());
-            
-            // ---- UNITATEAK ----
-            if (programazioa != null) {
-                est.setUnitateakAurreikusiak(
-                        kalkulatuUnitateakAurreikusiak(programazioa, tartea)
-                );
-                est.setUnitateakEmanda(
-                        kalkulatuUnitateakEmanda(koadernoa, tartea)
-                );
-            } else {
-                est.setUnitateakAurreikusiak(0);
-                est.setUnitateakEmanda(0);
-            }
-
-            // ---- ORDUAK ----
-            est.setOrduakAurreikusiak(
-                    kalkulatuOrduakAurreikusiak(koadernoa, tartea)
-            );
-            est.setOrduakEmanda(
-                    kalkulatuOrduakEmanda(koadernoa, tartea)
-            );
-
-            // ---- IKASLEAK ----
-            est.setEbaluatuak(kalkulatuEbaluatuak(koadernoa));
-
-            // ---- APROBATUAK ----
-            est.setAprobatuak(
-                    kalkulatuAprobatuak(koadernoa, tartea)
-            );
-
-            // ---- HUTSEGITE ORDUAK ----
-            est.setHutsegiteOrduak(
-                kalkulatuHutsegiteOrduak(koadernoa, tartea)
-            );
+            // Oraingoz: emandako UD = 0 (irakasleak eskuz jarriko du pantailan)
+            int emandakoUd = kalkulatuUnitateakEmanda(programazioa, tartea);
+            est.setUnitateakEmanda(emandakoUd);
+        } else {
+            est.setUnitateakAurreikusiak(0);
+            est.setUnitateakEmanda(0);
         }
 
-        return estatistikak;
+        // ---------- ORDUAK ----------
+        int aurreikusOrdu = (programazioa != null)
+                ? kalkulatuOrduakAurreikusiak(programazioa, tartea)
+                : 0;
+        est.setOrduakAurreikusiak(aurreikusOrdu);
+
+        int emandakoOrdu = kalkulatuOrduakEmanda(koadernoa, tartea);
+        est.setOrduakEmanda(emandakoOrdu);
+
+        // ---------- IKASLEAK ----------
+        int ebaluatuak = kalkulatuEbaluatuak(koadernoa);
+        est.setEbaluatuak(ebaluatuak);
+
+        int aprobatuak = kalkulatuAprobatuak(koadernoa, tartea);
+        est.setAprobatuak(aprobatuak);
+
+        // ---------- HUTSEGITE ORDUAK ----------
+        int hutsOrdu = kalkulatuHutsegiteOrduak(koadernoa, tartea);
+        est.setHutsegiteOrduak(hutsOrdu);
+
+        estatRepo.save(est);
     }
 
     // ============================================================
-    //  LAGUNTZAILEAK
+    //  TARTEAK: EbaluazioMomentua -> DateRange
     // ============================================================
 
+    private DateRange tarteaEbaluazioMomentua(Egutegia eg, EbaluazioMomentua em) {
+        if (eg == null || em == null) {
+            return new DateRange(LocalDate.MIN, LocalDate.MAX);
+        }
 
-    /** Ebaluaketa baten tartea Estatistika-tartearekin gainjartzen den ala ez. */
+        LocalDate ikasHas = eg.getHasieraData();
+        LocalDate ikasAma = eg.getBukaeraData();
+        LocalDate lehenBuk = eg.getLehenEbalBukaera();
+        LocalDate bigarrenBuk = eg.getBigarrenEbalBukaera();
+
+        if (ikasHas == null || ikasAma == null) {
+            return new DateRange(LocalDate.MIN, LocalDate.MAX);
+        }
+
+        // Checkbox berria: "urte osoko datuak?"
+        if (Boolean.TRUE.equals(em.getUrteOsoa())) {
+            return new DateRange(ikasHas, ikasAma);
+        }
+
+        String kodea = em.getKodea();
+
+        if ("1_EBAL".equalsIgnoreCase(kodea)) {
+            LocalDate to = (lehenBuk != null ? lehenBuk : ikasAma);
+            return new DateRange(ikasHas, to);
+        }
+
+        if ("2_EBAL".equalsIgnoreCase(kodea)) {
+            LocalDate from = (lehenBuk != null ? lehenBuk.plusDays(1) : ikasHas);
+            LocalDate to = (bigarrenBuk != null ? bigarrenBuk : ikasAma);
+            return new DateRange(from, to);
+        }
+
+        if ("3_EBAL".equalsIgnoreCase(kodea)) {
+            LocalDate from;
+            if (bigarrenBuk != null) {
+                from = bigarrenBuk.plusDays(1);
+            } else if (lehenBuk != null) {
+                from = lehenBuk.plusDays(1);
+            } else {
+                from = ikasHas;
+            }
+            return new DateRange(from, ikasAma);
+        }
+
+        // Default: ikasturte osoa
+        return new DateRange(ikasHas, ikasAma);
+    }
+
+    /** Ebaluaketa baten tartea DateRangearekin gainjartzen den ala ez. */
     private boolean ebTarteanDago(Ebaluaketa eb, DateRange tartea) {
         if (eb == null || tartea == null) return false;
 
@@ -120,92 +181,67 @@ public class EstatistikaService {
         LocalDate end   = eb.getBukaeraData();
 
         if (start == null && end == null) return true;
+
         if (start == null) start = tartea.from();
-        if (end == null)   end   = tartea.to();
+        if (end   == null) end   = tartea.to();
 
         return !end.isBefore(tartea.from()) && !start.isAfter(tartea.to());
     }
 
-    /** Programazioan aurreikusitako UD kopurua EB tarte horretan. */
+    // ============================================================
+    //  UNITATEAK
+    // ============================================================
+
+    /** Programazioan aurreikusitako UD kopurua tarte honetan. */
     private int kalkulatuUnitateakAurreikusiak(Programazioa p, DateRange tartea) {
-        if (p == null || p.getEbaluaketak() == null) return 0;
+        if (p == null || tartea == null || p.getEbaluaketak() == null) return 0;
 
         return (int) p.getEbaluaketak().stream()
                 .filter(eb -> ebTarteanDago(eb, tartea))
                 .flatMap(eb -> eb.getUnitateak().stream())
+                .map(UnitateDidaktikoa::getId) // ID bidez distinct
                 .distinct()
                 .count();
     }
 
     /**
-     * Unitate “emanda” kopurua kalkulatu.
+     * Unitate “emanda” kopurua.
      *
-     * Logika sinplea:
-     *  - Tarte horretan Programazioan aurreikusitako UD kopurua hartzen dugu.
-     *  - Tarte berean aurreikusitako orduak (saioak) eta benetan emandako orduak (jarduerak, planifikatua EZ direnak) hartzen ditugu.
-     *  - emandakoPortzentaia = orduakEmanda / orduakAurreikusiak
-     *  - unitateakEmanda = round(unitateakAurreikusiak * emandakoPortzentaia)
-     *
-     * Horrela, ez dugu UD bakoitza banaka jarraitu behar, baina emaitza nahiko
-     * intuitiboa da: orduen zati bat emanda badago, unitateen zati proportzionala
-     * "emanda" bezala zenbatzen dugu.
+     * Oraingo bertsio sinplean:
+     *  - 0 jarri → irakasleak eskuz jarriko du pantailan.
+     *  - Horrela, ez dugu kontraesanik: 0 ordu emanda → 0 UD emanda.
      */
-    private int kalkulatuUnitateakEmanda(Koadernoa k, DateRange tartea) {
-        if (k == null || k.getId() == null || tartea == null) return 0;
-
-        // Programazioa berriz kargatu behar dugu, hemen ez baitugu param gisa
-        Programazioa p = programazioaRepository
-                .findByKoadernoaId(k.getId())
-                .orElse(null);
-
-        if (p == null) {
-            return 0;
-        }
-
-        // Tarte horretan AURREIKUSITAKO UD kopurua
-        int unitateakAurreikusiak = kalkulatuUnitateakAurreikusiak(p, tartea);
-        if (unitateakAurreikusiak <= 0) {
-            return 0;
-        }
-
-        // Tarte horretan AURREIKUSITAKO / EMANDAKO orduak
-        int orduakAurreikusiak = kalkulatuOrduakAurreikusiak(k, tartea);
-        int orduakEmanda       = kalkulatuOrduakEmanda(k, tartea);
-
-        if (orduakAurreikusiak <= 0 || orduakEmanda <= 0) {
-            return 0;
-        }
-
-        double ratio = (double) orduakEmanda / (double) orduakAurreikusiak;
-        if (ratio <= 0) return 0;
-
-        // Proportzionalki kalkulatu UD “emanda” kopurua
-        double estim = unitateakAurreikusiak * ratio;
-        int result = (int) Math.round(estim);
-
-        // Ez dadila inoiz aurreikusitako kopurua baino handiagoa izan
-        if (result > unitateakAurreikusiak) {
-            result = unitateakAurreikusiak;
-        }
-        if (result < 0) {
-            result = 0;
-        }
-        return result;
+    private int kalkulatuUnitateakEmanda(Programazioa p, DateRange tartea) {
+        return 0;
     }
 
-    /** Ebaluazio tarte horretan aurreikusitako ordu kopurua (Saioak -> iraupenaSlot). */
-    private int kalkulatuOrduakAurreikusiak(Koadernoa k, DateRange tartea) {
-        if (k == null || k.getId() == null || tartea == null) return 0;
+    // ============================================================
+    //  ORDUAK
+    // ============================================================
 
-        return saioaRepository
-                .findByKoadernoaIdAndDataBetweenOrderByDataAscHasieraSlotAsc(k.getId(), tartea.from(), tartea.to())
-                .stream()
-                .filter(s -> s.getEgoera() == null || s.getEgoera() == SaioEgoera.AKTIBOA)
-                .mapToInt(Saioa::getIraupenaSlot)
+    /**
+     * Orduak aurreikusiak:
+     *  - Programaziotik (UD-en orduen batura) tarte horretan.
+     *  - `urteOsoa = true` bada → programazio osoaren orduen batura.
+     */
+    private int kalkulatuOrduakAurreikusiak(Programazioa p, DateRange tartea) {
+        if (p == null || tartea == null || p.getEbaluaketak() == null) return 0;
+
+        return p.getEbaluaketak().stream()
+                .filter(eb -> ebTarteanDago(eb, tartea))
+                .flatMap(eb -> eb.getUnitateak().stream())
+                .mapToInt(ud -> {
+                    Integer orduak = ud.getOrduak(); // Integer dela suposatuz
+                    return (orduak != null ? orduak : 0);
+                })
                 .sum();
     }
 
-    /** Ebaluazio tarte horretan benetan emandako orduak (planifikatua EZ diren jarduerak). */
+    /**
+     * Orduak emanda:
+     *  - Jardueretatik hartzen dira, tarte horretan,
+     *  - `mota != 'planifikatua'` (edo null) diren jardueren orduen batura.
+     */
     private int kalkulatuOrduakEmanda(Koadernoa k, DateRange tartea) {
         if (k == null || k.getId() == null || tartea == null) return 0;
 
@@ -221,11 +257,11 @@ public class EstatistikaService {
         return (int) Math.round(total);
     }
 
-    /**
-     * Ebaluatuak:
-     *  - KOADERNO HONETAN MATRIKULATUTA dauden ikasle kopurua (MatrikulaEgoera.MATRIKULATUA)
-     *  - tartea ez da erabiltzen (ebaluazio guztietan berdina agertuko da).
-     */
+    // ============================================================
+    //  IKASLE KOPURUAK
+    // ============================================================
+
+    /** Ebaluatuak = koaderno honetako MATRIKULATUA egoeran dauden matrikulak. */
     public int kalkulatuEbaluatuak(Koadernoa k) {
         if (k == null || k.getId() == null) {
             return 0;
@@ -239,10 +275,9 @@ public class EstatistikaService {
 
     /**
      * Aprobatu kopurua:
-     *  - Koaderno honetako MATRIKULATUA egoeran dauden matrikulak hartu
-     *  - Ikasle bat "aprobatutzat" hartzen da bere noten artean
-     *    gutxienez 5.0 (edo gehiago) duen nota bat badu.
-     *  - Oraingoz tartea ez dugu erabiltzen.
+     *  - Koaderno honetako MATRIKULATUA egoeran dauden matrikulak hartu.
+     *  - Ikaslea "aprobatua" da bere noten artean >= 5.0 duen NOTA ZENBAKIZKOREN bat badu.
+     *  - Oraingoz ez dugu tartea zorrotz erabiltzen; nahi baduzu gero filtro hori findu daiteke.
      */
     private int kalkulatuAprobatuak(Koadernoa k, DateRange tartea) {
         if (k == null || k.getId() == null) return 0;
@@ -254,7 +289,7 @@ public class EstatistikaService {
 
         for (Matrikula m : matrikulak) {
             boolean ikasleAprobatua = m.getNotak().stream()
-                    .map(EbaluazioNota::getNota)
+                    .map(EbaluazioNota::getNota) // Number / BigDecimal / Float...
                     .filter(Objects::nonNull)
                     .anyMatch(n -> n.doubleValue() >= 5.0);
 
@@ -265,26 +300,29 @@ public class EstatistikaService {
         return aprobatuak;
     }
 
+    // ============================================================
+    //  HUTSEGITE ORDUAK
+    // ============================================================
+
     /**
      * Hutsegite orduak:
-     *  - Tarte horretan dauden saio AKTIBO guztietan,
-     *  - egoera HUTS edo JUSTIFIKATUA duten asistentzien orduak batu.
-     *
-     *  contribution = iraupenaSlot * HUTS/JUSTIFIKATUA kopurua saio horretan
+     *  - Tarte horretako saio AKTIBO guztietan,
+     *  - egoera HUTS edo JUSTIFIKATUA duten asistentziak,
+     *  - Saio bakoitzean: iraupenaSlot * huts asistentzia kopurua.
      */
     private int kalkulatuHutsegiteOrduak(Koadernoa k, DateRange tartea) {
         if (k == null || k.getId() == null || tartea == null) return 0;
 
-        // 1) Tarte horretako saio AKTIBO guztiak
         List<Saioa> saioak = saioaRepository
-                .findByKoadernoaIdAndDataBetweenOrderByDataAscHasieraSlotAsc(k.getId(), tartea.from(), tartea.to())
-                .stream()
-                .filter(s -> s.getEgoera() == null || s.getEgoera() == SaioEgoera.AKTIBOA)
-                .toList();
+                .findByKoadernoa_IdAndDataBetweenAndEgoera(
+                        k.getId(),
+                        tartea.from(),
+                        tartea.to(),
+                        SaioEgoera.AKTIBOA
+                );
 
         if (saioak.isEmpty()) return 0;
 
-        // 2) Saio-id -> iraupenaSlot
         Map<Long, Integer> iraupenaBySaioaId = saioak.stream()
                 .collect(Collectors.toMap(
                         Saioa::getId,
@@ -295,14 +333,12 @@ public class EstatistikaService {
                 .map(Saioa::getId)
                 .toList();
 
-        // 3) Saio horietako HUTS / JUSTIFIKATUA asistentziak
         List<Asistentzia> hutsak = asistentziaRepository
                 .findBySaioa_IdInAndEgoeraIn(
                         saioaIds,
                         List.of(AsistentziaEgoera.HUTS, AsistentziaEgoera.JUSTIFIKATUA)
                 );
 
-        // 4) Guztizko hutsegite orduak
         int totalHutsegiteOrduak = 0;
         for (Asistentzia a : hutsak) {
             Long saioaId = a.getSaioa().getId();
@@ -315,54 +351,12 @@ public class EstatistikaService {
         return totalHutsegiteOrduak;
     }
     
-    private DateRange tarteaEstatistiketarako(Egutegia eg, EbaluazioMomentua em) {
-        if (eg == null) {
-            return new DateRange(LocalDate.MIN, LocalDate.MAX);
-        }
-
-        LocalDate has = eg.getHasieraData();
-        LocalDate ama = eg.getBukaeraData();
-        LocalDate lehen = eg.getLehenEbalBukaera();
-        LocalDate bigarren = eg.getBigarrenEbalBukaera();
-
-        // Segurtasun txiki bat (null kasuetarako fallback)
-        has = (has != null) ? has : LocalDate.MIN;
-        ama = (ama != null) ? ama : LocalDate.MAX;
-
-        // 1) Checkbox-a markatuta badago → URTE OSOA
-        if (em != null && Boolean.TRUE.equals(em.getUrteOsoa())) {
-            return new DateRange(has, ama);
-        }
-
-        // 2) Bestela, kodearen arabera tartea
-        String kodea = (em != null && em.getKodea() != null)
-                ? em.getKodea().toUpperCase()
-                : "";
-
-        switch (kodea) {
-            case "1_EBAL":
-                return new DateRange(
-                        has,
-                        (lehen != null ? lehen : ama)
-                );
-
-            case "2_EBAL": {
-                LocalDate from = (lehen != null ? lehen.plusDays(1) : has);
-                LocalDate to   = (bigarren != null ? bigarren : ama);
-                return new DateRange(from, to);
-            }
-
-            case "1_FINAL":
-            case "2_FINAL": {
-                // Finaletarako, checkbox-a markatu gabe badago ere:
-                // bigarren ebaluaziotik bukaerara
-                LocalDate from = (bigarren != null ? bigarren.plusDays(1) : has);
-                return new DateRange(from, ama);
-            }
-
-            default:
-                // Ezezaguna bada, defektuz ikasturte osoa
-                return new DateRange(has, ama);
-        }
-    }
+	 // Koaderno honetako estatistika-lerro GUZTIAK lortzeko metodo sinplea.
+	 // Controllerrek erabiltzen du bai GET pantailarako, bai POST eguneratzeko.
+	 public List<EstatistikaEbaluazioan> lortuKoadernoarenEstatistikak(Koadernoa koadernoa) {
+	     if (koadernoa == null || koadernoa.getId() == null) {
+	         return List.of();
+	     }
+	     return estatRepo.findByKoadernoaIdOrderByEbaluazioMomentua_OrdenaAscIdAsc(koadernoa.getId());
+	 }
 }
