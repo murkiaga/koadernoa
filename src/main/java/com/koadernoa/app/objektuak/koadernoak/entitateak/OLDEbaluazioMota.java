@@ -1,6 +1,6 @@
 package com.koadernoa.app.objektuak.koadernoak.entitateak;
 
-public enum EbaluazioMota {
+public enum OLDEbaluazioMota {
 	LEHENENGO_EBALUAZIOA,
     BIGARREN_EBALUAZIOA,
     LEHENENGO_FINALA,

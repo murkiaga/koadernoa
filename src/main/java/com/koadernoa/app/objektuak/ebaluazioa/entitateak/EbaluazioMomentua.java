@@ -41,6 +41,9 @@ public class EbaluazioMomentua {
     private String izena;   // erakusteko izena: "1. ebaluazioa", "2. finala"...
 
     private Integer ordena; // pantailan ordenatzeko
+    
+    @Column(nullable = false)
+    private Boolean urteOsoa = false; //1. finala eta 2. finalerako
 
     private Boolean aktibo = true;
     

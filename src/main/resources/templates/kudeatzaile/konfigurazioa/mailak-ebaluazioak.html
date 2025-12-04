@@ -62,6 +62,19 @@
     .egoera-item input[type="checkbox"] {
       margin:0;
     }
+    
+    .top-actions{
+	  display:flex;
+	  justify-content:flex-end;
+	  margin-bottom:0.5rem;
+	}
+	
+	.bottom-actions{
+	  margin-top:0.75rem;
+	  display:flex;
+	  justify-content:flex-end;
+	}
+
   </style>
 </head>
 <body>
@@ -83,127 +96,112 @@
 
   <div class="section">
     <form th:action="@{|/kudeatzaile/konfigurazioa/mailak/${maila.id}/ebaluazioak|}"
-          method="post">
+	      method="post"
+	      style="margin-top:1rem;">
+	
+	  <!-- CSRF -->
+	  <input type="hidden"
+	         th:if="${_csrf != null}"
+	         th:name="${_csrf.parameterName}"
+	         th:value="${_csrf.token}"/>
+	
+	  <!-- GOIKO ESKUMA: GORDE -->
+	  <div class="top-actions">
+	    <button type="submit" class="btn btn-primary">
+	      Gorde
+	    </button>
+	  </div>
+	
+	  <table class="table-ebal">
+	    <thead>
+	      <tr>
+	        <th>Aktibo</th>
+	        <th>Kodea</th>
+	        <th>Izena</th>
+	        <th>Ordena</th>
+	        <th>0–10 nota?</th>
+	        <th>Urte osoko datuak?</th>
+	        <th>Egoera bereziak</th>
+	        <th>Ezabatu</th>
+	      </tr>
+	    </thead>
+	    <tbody>
+	      <tr th:each="em : ${momentuak}">
+	        <!-- hidden: id zerrenda -->
+	        <td>
+	          <input type="hidden" name="ids" th:value="${em.id}"/>
+	          <input type="checkbox"
+	                 th:name="|aktibo_${em.id}|"
+	                 th:checked="${em.aktibo}"/>
+	        </td>
+	
+	        <td>
+	          <input type="text"
+	                 th:name="|kodea_${em.id}|"
+	                 th:value="${em.kodea}"
+	                 style="width:7rem;"/>
+	        </td>
+	
+	        <td>
+	          <input type="text"
+	                 th:name="|izena_${em.id}|"
+	                 th:value="${em.izena}"
+	                 style="width:100%;"/>
+	        </td>
+	
+	        <td>
+	          <input type="number"
+	                 th:name="|ordena_${em.id}|"
+	                 th:value="${em.ordena}"
+	                 style="width:4rem;"/>
+	        </td>
+	
+	        <td style="text-align:center;">
+	          <input type="checkbox"
+	                 th:name="|onartuNotaZenbakizkoa_${em.id}|"
+	                 th:checked="${em.onartuNotaZenbakizkoa}"/>
+	        </td>
+	
+	        <td style="text-align:center;">
+	          <input type="checkbox"
+	                 th:name="|urteOsoa_${em.id}|"
+	                 th:checked="${em.urteOsoa}"/>
+	        </td>
+	
+	        <td>
+	          <div class="egoera-grid">
+	            <label class="egoera-item"
+	                   th:each="egoera : ${egoeraGuztiak}">
+	              <input type="checkbox"
+	                     th:name="|egoerak_${em.id}|"
+	                     th:value="${egoera.id}"
+	                     th:checked="${em.egoeraOnartuak.contains(egoera)}"/>
+	              <span th:text="${egoera.kodea}">EZ_AURKEZTUA</span>
+	            </label>
+	          </div>
+	        </td>
+	
+	        <td style="text-align:center;">
+	          <input type="checkbox"
+	                 name="deleteIds"
+	                 th:value="${em.id}"/>
+	        </td>
+	      </tr>
+	    </tbody>
+	  </table>
+	</form>
 
-      <table>
-        <thead>
-        <tr>
-          <th>Aktibo</th>
-          <th>Ordena</th>
-          <th>Kodea</th>
-          <th>Izena</th>
-          <th>0–10 nota?</th>
-          <th>Egoera berezi onartuak</th>
-          <th>Ezabatu</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:if="${#lists.isEmpty(momentuak)}">
-          <td colspan="7" class="muted">
-            Ez dago oraindik ebaluazio momenturik definituta maila honetan.
-          </td>
-        </tr>
-        <tr th:each="em : ${momentuak}">
-          <!-- IDa mantentzeko -->
-          <input type="hidden" name="ids" th:value="${em.id}"/>
+	<div class="bottom-actions">
+	  <button type="button"
+	          id="btnNewMomentu"
+	          class="btn btn-secondary">
+	    + Berria
+	  </button>
+	</div>
 
-          <td>
-            <input type="checkbox"
-                   th:name="${'aktibo_' + em.id}"
-                   th:checked="${em.aktibo}">
-          </td>
-          <td>
-            <input type="number" min="0"
-                   th:name="${'ordena_' + em.id}"
-                   th:value="${em.ordena}">
-          </td>
-          <td>
-            <input type="text"
-                   th:name="${'kodea_' + em.id}"
-                   th:value="${em.kodea}"
-                   placeholder="1_EBAL">
-          </td>
-          <td>
-            <input type="text"
-                   th:name="${'izena_' + em.id}"
-                   th:value="${em.izena}"
-                   placeholder="1. ebaluazioa">
-          </td>
-
-          <!-- BERRIA: 0–10 nota onartzen den ala ez -->
-          <td>
-            <label style="display:inline-flex;align-items:center;gap:6px;font-size:.85rem;">
-              <input type="checkbox"
-                     th:name="${'onartuNotaZenbakizkoa_' + em.id}"
-                     th:checked="${em.onartuNotaZenbakizkoa}">
-              <span>0–10 onartuta</span>
-            </label>
-          </td>
-
-          <!-- BERRIA: egoera bereziak (checkbox multzoa) -->
-          <td>
-            <div class="egoera-list">
-              <label class="egoera-item"
-                     th:each="ego : ${egoeraGuztiak}">
-                <input type="checkbox"
-                       th:name="${'egoerak_' + em.id}"
-                       th:value="${ego.id}"
-                       th:checked="${em.egoeraOnartuak.contains(ego)}">
-                <span th:text="${ego.kodea}">EZ_AURKEZTUA</span>
-              </label>
-            </div>
-          </td>
-
-          <td>
-            <input type="checkbox"
-                   name="deleteIds"
-                   th:value="${em.id}">
-          </td>
-        </tr>
-        </tbody>
-      </table>
-
-      <h2 class="section" style="font-size:1.1rem;">Gehitu ebaluazio momentu berria</h2>
-      <p class="muted">
-        Kodea eta izena derrigorrezkoak dira. Ordena hutsik utziz gero, geroago
-        editatu dezakezu.
-      </p>
-
-      <!-- Momentu berria: (oraingoz 0–10 + egoerak gero editatuz; nahi baduzu,
-           beste pauso batean gehitu dezakegu hemen ere konfigurazioa) -->
-      <table>
-        <tbody>
-        <tr>
-          <td style="width:20%;">Kodea</td>
-          <td style="width:30%;">
-            <input type="text" name="newKodea" placeholder="1_EBAL">
-          </td>
-        </tr>
-        <tr>
-          <td>Izena</td>
-          <td>
-            <input type="text" name="newIzena" placeholder="1. ebaluazioa">
-          </td>
-        </tr>
-        <tr>
-          <td>Ordena</td>
-          <td>
-            <input type="number" name="newOrdena" min="0" placeholder="1">
-          </td>
-        </tr>
-        </tbody>
-      </table>
-
-      <div class="actions">
-        <button type="submit" class="btn-primary">Gorde aldaketak</button>
-        <a th:href="@{/kudeatzaile/konfigurazioa#mailak}"
-           class="btn-secondary"
-           style="text-decoration:none;display:inline-flex;align-items:center;">
-          Itzuli mailen konfiguraziora
-        </a>
-      </div>
-    </form>
   </div>
+  <div th:replace="~{kudeatzaile/konfigurazioa/ebaluazio-momentu-berria :: ebaluazio-momentu-berria-modal}"></div>
+
 </main>
 </body>
 </html>

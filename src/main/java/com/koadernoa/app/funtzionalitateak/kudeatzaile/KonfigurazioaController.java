@@ -205,7 +205,7 @@ public class KonfigurazioaController {
     }
 
     // ===== Ebaluazio Momentuak =====
-    // GET: zerrenda + formularioa
+ // GET: zerrenda + formularioa
     @GetMapping("/mailak/{mailaId}/ebaluazioak")
     public String ebaluazioMomentuakPantaila(@PathVariable Long mailaId,
                                              Model model,
@@ -217,8 +217,9 @@ public class KonfigurazioaController {
             return "redirect:/kudeatzaile/konfigurazioa#mailak";
         }
 
+        // HEMEN ALDAKETA: aktibo == true ez dugu filtratzen pantaila honetan
         List<EbaluazioMomentua> momentuak =
-                ebaluazioMomentuaRepository.findByMailaAndAktiboTrueOrderByOrdenaAsc(maila);
+                ebaluazioMomentuaRepository.findByMailaOrderByOrdenaAsc(maila);
 
         // Egoera berezi guztiak (checkbox zerrendan erakusteko)
         List<EbaluazioEgoera> egoeraGuztiak =
@@ -231,7 +232,6 @@ public class KonfigurazioaController {
         return "kudeatzaile/konfigurazioa/mailak-ebaluazioak";
     }
 
-    // POST: bulk update + aukeratutakoen ezabaketa (momentuak)
     @PostMapping("/mailak/{mailaId}/ebaluazioak")
     @Transactional
     public String gordeEbaluazioMomentuak(@PathVariable Long mailaId,
@@ -267,35 +267,62 @@ public class KonfigurazioaController {
                 EbaluazioMomentua em = ebaluazioMomentuaRepository.findById(id).orElse(null);
                 if (em == null) continue;
 
-                // Ezabatzeko markatuta badago → delete eta kitto
+                // Ezabatzeko markatuta badago → delete
                 if (deleteIds.contains(id)) {
                     ebaluazioMomentuaRepository.delete(em);
                     continue;
                 }
 
-                // ====== Oinarrizko eremuak (zeneuzkanak) ======
-                String kodea = request.getParameter("kodea_" + id);
-                String izena = request.getParameter("izena_" + id);
-                String ordenaStr = request.getParameter("ordena_" + id);
+                // ====== Oinarrizko eremuak ======
+                String kodeaParam  = request.getParameter("kodea_" + id);
+                String izenaParam  = request.getParameter("izena_" + id);
+                String ordenaStr   = request.getParameter("ordena_" + id);
+
                 boolean aktibo = request.getParameter("aktibo_" + id) != null;
+                boolean onartuNotaZenbakizkoa =
+                        request.getParameter("onartuNotaZenbakizkoa_" + id) != null;
+                boolean urteOsoa =
+                        request.getParameter("urteOsoa_" + id) != null;
 
-                em.setKodea(kodea != null ? kodea.trim() : null);
-                em.setIzena(izena != null ? izena.trim() : null);
+                // KODEA
+                if (kodeaParam != null) {
+                    em.setKodea(kodeaParam.trim());
+                }
+
+                // IZENA: inoiz ez utzi null/hutsik (nullable=false)
+                if (izenaParam != null) {
+                    String iTrim = izenaParam.trim();
+                    if (!iTrim.isEmpty()) {
+                        em.setIzena(iTrim);
+                    } else if (em.getKodea() != null && !em.getKodea().isBlank()) {
+                        em.setIzena(em.getKodea());
+                    } else {
+                        em.setIzena("EB_" + id);
+                    }
+                }
+                if (em.getIzena() == null || em.getIzena().isBlank()) {
+                    em.setIzena(
+                        (em.getKodea() != null && !em.getKodea().isBlank())
+                            ? em.getKodea()
+                            : ("EB_" + id)
+                    );
+                }
+
+                // BOOLEARRAK
                 em.setAktibo(aktibo);
+                em.setOnartuNotaZenbakizkoa(onartuNotaZenbakizkoa);
+                em.setUrteOsoa(urteOsoa);
 
+                // Ordena
                 Integer ordena = em.getOrdena();
                 if (ordenaStr != null && !ordenaStr.isBlank()) {
                     try {
-                        ordena = Integer.valueOf(ordenaStr);
+                        ordena = Integer.valueOf(ordenaStr.trim());
                     } catch (NumberFormatException ignored) {}
                 }
                 em.setOrdena(ordena);
 
-                // ====== 0-10 nota + Beste ebaluazio Egoerak onartu ======
-                boolean onartuNotaZenbakizkoa =
-                        request.getParameter("onartuNotaZenbakizkoa_" + id) != null;
-                em.setOnartuNotaZenbakizkoa(onartuNotaZenbakizkoa);
-
+                // ===== Egoera onartuak =====
                 String[] egoeraIdArray = request.getParameterValues("egoerak_" + id);
 
                 Set<EbaluazioEgoera> egoeraOnartuak = new LinkedHashSet<>();
@@ -319,6 +346,61 @@ public class KonfigurazioaController {
         redirectAttributes.addFlashAttribute("success", "Ebaluazio momentuak gorde dira.");
         return "redirect:/kudeatzaile/konfigurazioa/mailak/" + mailaId + "/ebaluazioak";
     }
+
+    @PostMapping("/mailak/{mailaId}/ebaluazioak/berria")
+    @Transactional
+    public String sortuEbaluazioMomentua(@PathVariable Long mailaId,
+                                         HttpServletRequest request,
+                                         RedirectAttributes redirectAttributes) {
+
+        Maila maila = mailaRepository.findById(mailaId).orElse(null);
+        if (maila == null) {
+            redirectAttributes.addFlashAttribute("error", "Maila ez da aurkitu.");
+            return "redirect:/kudeatzaile/konfigurazioa#mailak";
+        }
+
+        String kodea     = request.getParameter("kodea");
+        String izena     = request.getParameter("izena");
+        String ordenaStr = request.getParameter("ordena");
+        boolean aktibo   = request.getParameter("aktibo") != null;
+        boolean onartu   = request.getParameter("onartuNotaZenbakizkoa") != null;
+        boolean urteOsoa = request.getParameter("urteOsoa") != null;
+
+        EbaluazioMomentua em = new EbaluazioMomentua();
+        em.setMaila(maila);
+        em.setKodea(kodea != null ? kodea.trim() : null);
+        em.setIzena(izena != null ? izena.trim() : null);
+        em.setAktibo(aktibo);
+        em.setOnartuNotaZenbakizkoa(onartu);
+        em.setUrteOsoa(urteOsoa);
+
+        if (ordenaStr != null && !ordenaStr.isBlank()) {
+            try {
+                em.setOrdena(Integer.valueOf(ordenaStr));
+            } catch (NumberFormatException ignored) {}
+        }
+
+        String[] egoeraIdArray = request.getParameterValues("egoerak");
+        if (egoeraIdArray != null) {
+            Set<EbaluazioEgoera> egoeraOnartuak = new LinkedHashSet<>();
+            for (String egoeraIdStr : egoeraIdArray) {
+                try {
+                    Long egoeraId = Long.valueOf(egoeraIdStr);
+                    ebaluazioEgoeraRepository.findById(egoeraId)
+                            .ifPresent(egoeraOnartuak::add);
+                } catch (NumberFormatException ignored) {}
+            }
+            em.setEgoeraOnartuak(egoeraOnartuak);
+        }
+
+        ebaluazioMomentuaRepository.save(em);
+
+        redirectAttributes.addFlashAttribute("success", "Ebaluazio momentu berria gorde da.");
+        return "redirect:/kudeatzaile/konfigurazioa/mailak/" + mailaId + "/ebaluazioak";
+    }
+
+
+
 
     // ===== EBALUAZIO EGOERAK: existenteak eguneratu =====
     @PostMapping("/egoerak/gorde")

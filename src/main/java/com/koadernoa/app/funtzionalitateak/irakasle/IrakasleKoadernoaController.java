@@ -22,6 +22,7 @@ import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
 import com.koadernoa.app.objektuak.egutegia.service.EgutegiaService;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.EstatistikaEbaluazioan;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Jarduera;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.JardueraEditDto;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.JardueraSortuDto;
@@ -30,6 +31,7 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoaSortuDto;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoOrdutegiBlokeaRepository;
 import com.koadernoa.app.objektuak.koadernoak.service.AsistentziaService;
+import com.koadernoa.app.objektuak.koadernoak.service.EstatistikaService;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
 import com.koadernoa.app.objektuak.modulua.repository.IkasleaRepository;
 import com.koadernoa.app.objektuak.modulua.repository.MatrikulaRepository;
@@ -59,6 +61,7 @@ public class IrakasleKoadernoaController {
 	private final IkasleaService ikasleaService;
 	private final AsistentziaService asistentziaService;
 	private final KoadernoOrdutegiBlokeaRepository koadernoOrdutegiBlokeaRepository;
+	private final EstatistikaService estatistikaService;
 
 	private static final List<Astegunak> ASTE_ORDENA = List.of(
 	        Astegunak.ASTELEHENA,
@@ -67,7 +70,7 @@ public class IrakasleKoadernoaController {
 	        Astegunak.OSTEGUNA,
 	        Astegunak.OSTIRALA
 	    );
-
+// KOADERNOA ==================================================================================
 	@GetMapping("/koadernoa/berria")
 	public String erakutsiFormularioa(Authentication auth, Model model) {
 		Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
@@ -127,6 +130,22 @@ public class IrakasleKoadernoaController {
         k.getOrdutegiak().add(b);
     }
 	
+	@PostMapping("/koaderno/{id}/inportatu-taldetik")
+	public String inportatuTaldekoIkasleakKoadernoan(@PathVariable("id") Long koadernoaId,
+	                                                 RedirectAttributes ra) {
+	    var res = ikasleaService.syncKoadernoBakarra(koadernoaId); 
+
+	    if (res.ohartarazpena() != null) {
+	        ra.addFlashAttribute("errorea", res.ohartarazpena());
+	    } else if (res.sortuak() > 0) {
+	        ra.addFlashAttribute("msg", res.sortuak() + " ikasle matrikulatu dira koaderno honetan (sinkronizatuta).");
+	    } else {
+	        ra.addFlashAttribute("msg", "Koadernoa sinkronizatuta: ez zegoen aldaketarik.");
+	    }
+	    return "redirect:/irakasle/ikasleak";
+	}
+	
+// DENBORALIZAZIOA ==================================================================================	
 	@GetMapping("/denboralizazioa")
 	public String erakutsiHilabetekoDenboralizazioa(
 	    @SessionAttribute(value = "koadernoAktiboa", required = false) Koadernoa koadernoa,
@@ -275,20 +294,30 @@ public class IrakasleKoadernoaController {
 	    return "redirect:/irakasle/denboralizazioa?urtea=" + urtea + "&hilabetea=" + hilabetea;
 	}
 	
-	
-	@PostMapping("/koaderno/{id}/inportatu-taldetik")
-	public String inportatuTaldekoIkasleakKoadernoan(@PathVariable("id") Long koadernoaId,
-	                                                 RedirectAttributes ra) {
-	    var res = ikasleaService.syncKoadernoBakarra(koadernoaId); 
 
-	    if (res.ohartarazpena() != null) {
-	        ra.addFlashAttribute("errorea", res.ohartarazpena());
-	    } else if (res.sortuak() > 0) {
-	        ra.addFlashAttribute("msg", res.sortuak() + " ikasle matrikulatu dira koaderno honetan (sinkronizatuta).");
-	    } else {
-	        ra.addFlashAttribute("msg", "Koadernoa sinkronizatuta: ez zegoen aldaketarik.");
+	
+	
+// ESATITSTIKAK ==================================================================================
+	@GetMapping("/estatistikak")
+	public String erakutsiEstatistikak(
+	        @SessionAttribute(value = "koadernoAktiboa", required = false) Koadernoa koadernoa,
+	        Model model) {
+
+	    if (koadernoa == null || koadernoa.getId() == null) {
+	        model.addAttribute("errorea", "Ez dago koaderno aktiborik aukeratuta.");
+	        return "error/404";
 	    }
-	    return "redirect:/irakasle/ikasleak";
+
+	    List<EstatistikaEbaluazioan> estatistikak =
+	            estatistikaService.kalkulatuKoadernoarenEstatistikak(koadernoa);
+
+	    int matrikulatuak = estatistikaService.kalkulatuEbaluatuak(koadernoa);
+
+	    model.addAttribute("koadernoa", koadernoa);
+	    model.addAttribute("estatistikak", estatistikak);
+	    model.addAttribute("matrikulatuak", matrikulatuak);
+
+	    return "irakasleak/estatistikak/index";
 	}
 	
 

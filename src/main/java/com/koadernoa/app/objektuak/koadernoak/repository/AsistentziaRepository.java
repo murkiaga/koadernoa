@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Asistentzia;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.Asistentzia.AsistentziaEgoera;
 
 
 public interface AsistentziaRepository extends JpaRepository<Asistentzia, Long> {
@@ -22,4 +23,10 @@ public interface AsistentziaRepository extends JpaRepository<Asistentzia, Long> 
 	    where a.matrikula.id in :matrikulaIds
 	  """)
 	  void deleteByMatrikulaIdIn(@Param("matrikulaIds") List<Long> ids);
+	  
+	  // Estatistiketarako: saio multzo bateko HUTS egoerako asistentziak
+	  List<Asistentzia> findBySaioa_IdInAndEgoeraIn(
+		        List<Long> saioaIds,
+		        List<AsistentziaEgoera> egoerak
+		);
 }

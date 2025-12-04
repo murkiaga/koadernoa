@@ -21,8 +21,8 @@ public class NotaFitxategia {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Enumerated(EnumType.STRING)
-    private EbaluazioMota ebaluazioMota;
+    //@Enumerated(EnumType.STRING)
+    //private EbaluazioMota ebaluazioMota;
 
     private String fitxategiaUrl;
 

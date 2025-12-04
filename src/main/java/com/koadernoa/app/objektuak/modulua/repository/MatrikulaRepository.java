@@ -20,6 +20,11 @@ public interface MatrikulaRepository extends JpaRepository<Matrikula, Long> {
 			""")
 	List<Matrikula> findAllByKoadernoaFetchIkasleaOrderByIzena(Long koadernoId);
 	
+	// Estatistiketarako: koaderno honetako MATRIKULATUA dauden matrikulak lortzeko
+	List<Matrikula> findByKoadernoa_IdAndEgoera(Long koadernoaId, MatrikulaEgoera egoera);
+	
+	// Estatistiketarako: KOADERNO HONETAKO matrikulatuak bakarrik
+	long countByKoadernoa_IdAndEgoera(Long koadernoaId, MatrikulaEgoera egoera);
 	
 	List<Matrikula> findByKoadernoaIdAndEgoera(Long koadernoaId, MatrikulaEgoera egoera);
 	

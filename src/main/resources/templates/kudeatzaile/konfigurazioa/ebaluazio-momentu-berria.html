@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <title>Ebaluazio momentu berria (fragment)</title>
+</head>
+<body>
+
+<div th:fragment="ebaluazio-momentu-berria-modal">
+
+  <!-- MODAL-AREN CSS ESPEZIFIKOA -->
+  <style>
+    dialog.modal{
+      border:none;
+      border-radius:12px;
+      padding:0;
+      width:min(480px, 95vw);
+      box-shadow:0 20px 50px rgba(0,0,0,.3);
+    }
+
+    .modal-header{
+      padding:0.8rem 1rem;
+      border-bottom:1px solid #e5e7eb;
+      font-weight:600;
+    }
+
+    .modal-content{
+      padding:0.9rem 1rem;
+      display:grid;
+      gap:0.6rem;
+    }
+
+    .modal-actions{
+      padding:0.8rem 1rem;
+      border-top:1px solid #e5e7eb;
+      display:flex;
+      justify-content:flex-end;
+      gap:0.5rem;
+    }
+
+    .field{
+      display:grid;
+      gap:0.25rem;
+    }
+    .field label{
+      font-size:0.85rem;
+    }
+    .field input[type="text"],
+    .field input[type="number"]{
+      border:1px solid #e5e7eb;
+      border-radius:8px;
+      padding:0.35rem 0.5rem;
+      font-size:0.9rem;
+      width:100%;
+      box-sizing:border-box;
+    }
+
+    /* Egoera bereziak checkbox zerrenda polita */
+    .egoera-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem 0.75rem;
+    }
+    .egoera-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+    .egoera-item input {
+      margin: 0;
+    }
+  </style>
+
+  <!-- MODAL-A BERA -->
+  <dialog id="ebMomentuModal" class="modal">
+    <form th:action="@{|/kudeatzaile/konfigurazioa/mailak/${maila.id}/ebaluazioak/berria|}"
+          method="post"
+          id="ebMomentuForm">
+
+      <!-- CSRF -->
+      <input type="hidden"
+             th:if="${_csrf != null}"
+             th:name="${_csrf.parameterName}"
+             th:value="${_csrf.token}"/>
+
+      <header class="modal-header">
+        Ebaluazio momentu berria
+      </header>
+
+      <div class="modal-content">
+        <div class="field">
+          <label for="kodeaNew">Kodea</label>
+          <input id="kodeaNew"
+                 name="kodea"
+                 type="text"
+                 required
+                 placeholder="1_EBAL"/>
+        </div>
+
+        <div class="field">
+          <label for="izenaNew">Izena</label>
+          <input id="izenaNew"
+                 name="izena"
+                 type="text"
+                 required
+                 placeholder="1. ebaluazioa"/>
+        </div>
+
+        <div class="field">
+          <label for="ordenaNew">Ordena</label>
+          <input id="ordenaNew"
+                 name="ordena"
+                 type="number"
+                 min="0"
+                 step="1"
+                 placeholder="1"/>
+        </div>
+
+        <div class="field">
+          <label>
+            <input type="checkbox" name="aktibo" checked/>
+            Aktibo
+          </label>
+        </div>
+
+        <div class="field">
+          <label>
+            <input type="checkbox" name="onartuNotaZenbakizkoa" checked/>
+            0–10 nota zenbakizkoa onartu
+          </label>
+        </div>
+
+        <div class="field">
+          <label>
+            <input type="checkbox" name="urteOsoa"/>
+            Urte osoko datuak erabili (estatistiketan)
+          </label>
+        </div>
+
+        <div class="field">
+          <span>Egoera bereziak</span>
+          <div class="egoera-grid">
+            <label class="egoera-item"
+                   th:each="egoera : ${egoeraGuztiak}">
+              <input type="checkbox"
+                     name="egoerak"
+                     th:value="${egoera.id}"/>
+              <span th:text="${egoera.kodea}">EZ_AURKEZTUA</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button"
+                class="btn"
+                onclick="document.getElementById('ebMomentuModal').close()">
+          Utzi
+        </button>
+        <button type="submit" class="btn btn-primary">
+          Gorde
+        </button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- JS: botoia (btnNewMomentu) → modal ireki -->
+  <script>
+    (function(){
+      document.addEventListener('DOMContentLoaded', function(){
+        const btnNew = document.getElementById('btnNewMomentu');
+        const modal  = document.getElementById('ebMomentuModal');
+        const form   = document.getElementById('ebMomentuForm');
+
+        if (!modal) return;
+
+        if (btnNew) {
+          btnNew.addEventListener('click', function(){
+            if (form) {
+              form.reset();
+            }
+            // Lehenespenez aktibo + 0-10 onartua markatu
+            const aktibo = modal.querySelector('input[name="aktibo"]');
+            const onartu = modal.querySelector('input[name="onartuNotaZenbakizkoa"]');
+            if (aktibo) aktibo.checked = true;
+            if (onartu) onartu.checked = true;
+
+            modal.showModal();
+          });
+        }
+      });
+    })();
+  </script>
+
+</div>
+
+</body>
+</html>

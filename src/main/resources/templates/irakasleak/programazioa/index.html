@@ -704,35 +704,38 @@
     fjson(url, method, id ? payload : { ...payload }).then(()=>reloadKeepingState());
   });
 
-  // ---------- d&d: UD ordena (ebaluazio barruan) + kross-ebaluaketa ----------
-  document.querySelectorAll('.ud-list').forEach(list=>{
-    new Sortable(list, {
-      group: { name:'ud', pull:true, put:true },
-      handle: '.handle',
-      animation: 150,
-      onEnd: (evt)=>{
-        const udId = parseInt(evt.item.getAttribute('data-ud-id'));
-        const toEbalId = parseInt(evt.to.getAttribute('data-eb-id'));
-        const newIndex = evt.newIndex;
-        fjson('/irakasle/programazioa/api/ud/mugitu', 'POST', { udId, toEbaluaketaId: toEbalId, newIndex });
-      }
+  // ---------- d&d: UD & JP (SortableJS badagoen bitartean) ----------
+  if (window.Sortable) {
+    document.querySelectorAll('.ud-list').forEach(list=>{
+      new Sortable(list, {
+        group: { name:'ud', pull:true, put:true },
+        handle: '.handle',
+        animation: 150,
+        onEnd: (evt)=>{
+          const udId = parseInt(evt.item.getAttribute('data-ud-id'));
+          const toEbalId = parseInt(evt.to.getAttribute('data-eb-id'));
+          const newIndex = evt.newIndex;
+          fjson('/irakasle/programazioa/api/ud/mugitu', 'POST', { udId, toEbaluaketaId: toEbalId, newIndex });
+        }
+      });
     });
-  });
 
-  // ---------- d&d: JP (kross-UD mugimendua ere bai) ----------
-  document.querySelectorAll('.jp-list').forEach(list=>{
-    new Sortable(list, {
-      group: 'jp',
-      handle: '.handle',
-      animation: 150,
-      onEnd: (evt)=>{
-        const jpId = parseInt(evt.item.getAttribute('data-jp-id'));
-        const toUdId = parseInt(evt.to.getAttribute('data-ud-id'));
-        const newIndex = evt.newIndex;
-        fjson('/irakasle/programazioa/api/jp/mugitu', 'POST', { jpId, toUdId, newIndex });
-      }
+    document.querySelectorAll('.jp-list').forEach(list=>{
+      new Sortable(list, {
+        group: 'jp',
+        handle: '.handle',
+        animation: 150,
+        onEnd: (evt)=>{
+          const jpId = parseInt(evt.item.getAttribute('data-jp-id'));
+          const toUdId = parseInt(evt.to.getAttribute('data-ud-id'));
+          const newIndex = evt.newIndex;
+          fjson('/irakasle/programazioa/api/jp/mugitu', 'POST', { jpId, toUdId, newIndex });
+        }
+      });
     });
-  });
+  } else {
+    console.warn('SortableJS ez dago kargatuta; d&d ezgaituta.');
+  }
 
   // ------- Programazioa --> Denboralizazioa (aurreikuspenik gabe, zuzenean POST) -------
   (function(){
@@ -817,6 +820,71 @@
         alert('Errore ezustekoa bolkatzean.');
       }
     };
+  })();
+
+  // ------- "Programazioa inportatu" modala -------
+  (function(){
+    const openBtn   = document.getElementById('programazioaInportatuBtn');
+    const overlay   = document.getElementById('programazioaImportModal');
+    if (!openBtn || !overlay) {
+      // Botoia ez badago (programazioa ez bada hutsik, adib.), ez dugu ezer egiten
+      return;
+    }
+
+    const closeBtn   = overlay.querySelector('#modalCloseBtn');
+    const previewBox = document.getElementById('aurreikuspenEdukia');
+    const inportForm = document.getElementById('inportatuForm');
+    const iturburuaInput = document.getElementById('iturburuaId');
+
+    function openModal() {
+      overlay.classList.add('show');
+    }
+    function closeModal() {
+      overlay.classList.remove('show');
+    }
+
+    openBtn.addEventListener('click', openModal);
+    closeBtn?.addEventListener('click', closeModal);
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeModal();
+    });
+
+    // Aurreikusi botoiak
+    overlay.querySelectorAll('.aurreikusi-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        if (!id || !previewBox) return;
+
+        try {
+          const res = await fetch(`/irakasle/programazioa/aurreikusi/${id}`, {
+            headers: { 'X-Requested-With':'XMLHttpRequest' }
+          });
+          const html = await res.text();
+          previewBox.innerHTML = html;
+        } catch (err) {
+          console.error(err);
+          previewBox.innerHTML =
+            '<p style="color:#b91c1c;font-size:0.9rem;">Errorea aurreikuspena kargatzean.</p>';
+        }
+      });
+    });
+
+    // Inportatu botoiak
+    overlay.querySelectorAll('.inportatu-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.id;
+        if (!id || !inportForm || !iturburuaInput) return;
+
+        const onartu = confirm(
+          'Ziur zaude koaderno honen programazioa inportatu nahi duzula?\n' +
+          'Oraingo programazioa gainidatzi daiteke.'
+        );
+        if (!onartu) return;
+
+        iturburuaInput.value = id;
+        inportForm.submit(); // HTML form-ak berak eramango du CSRF barne
+      });
+    });
   })();
   </script>
 

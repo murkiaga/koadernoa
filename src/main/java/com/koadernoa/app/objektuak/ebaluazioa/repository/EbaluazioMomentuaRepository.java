@@ -13,4 +13,6 @@ public interface EbaluazioMomentuaRepository extends JpaRepository<EbaluazioMome
     List<EbaluazioMomentua> findByMailaAndAktiboTrueOrderByOrdenaAsc(Maila maila);
     
     boolean existsByEgoeraOnartuakContains(EbaluazioEgoera egoera);
+    
+    List<EbaluazioMomentua> findByMailaOrderByOrdenaAsc(Maila maila);
 }

@@ -1,6 +1,8 @@
 package com.koadernoa.app.objektuak.koadernoak.entitateak;
 
 
+import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioMomentua;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -12,8 +14,8 @@ public class EstatistikaEbaluazioan {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Enumerated(EnumType.STRING)
-    private EbaluazioMota ebaluazioMota;
+    @ManyToOne(optional = false)
+    private EbaluazioMomentua ebaluazioMomentua;
 
     private int unitateakEmanda;
     private int unitateakAurreikusiak;

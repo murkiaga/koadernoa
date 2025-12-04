@@ -18,6 +18,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.koadernoa.app.objektuak.ebaluazioa.repository.EbaluazioMomentuaRepository;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
@@ -26,7 +27,6 @@ import com.koadernoa.app.objektuak.egutegia.repository.EgutegiaRepository;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Ebaluaketa;
-import com.koadernoa.app.objektuak.koadernoak.entitateak.EbaluazioMota;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.EstatistikaEbaluazioan;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Jarduera;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.JardueraPlanifikatua;
@@ -53,7 +53,7 @@ public class KoadernoaService {
     private final IrakasleaRepository irakasleaRepository;
     private final KoadernoaRepository koadernoaRepository;
     private final JardueraRepository jardueraRepository;
-    private final ProgramazioaRepository programazioaRepository;
+    private final EbaluazioMomentuaRepository ebaluazioMomentuaRepository;
     
     //Aste-orden estandarra (astelehen-ostiral)
     private static final List<Astegunak> ASTE_ORDENA = List.of(
@@ -144,24 +144,17 @@ public class KoadernoaService {
 
     @Transactional
     private List<EstatistikaEbaluazioan> sortuEstatistikak(Koadernoa koadernoa) {
-    	Egutegia eg = koadernoa.getEgutegia();
-
-        List<EbaluazioMota> ebaluazioMotak = new ArrayList<>();
-        // Beti 1. ebaluazioa
-        ebaluazioMotak.add(EbaluazioMota.LEHENENGO_EBALUAZIOA);
-
-        // 2. ebaluazioa definituta badago egutegian, gehitu
-        if (eg.getBigarrenEbalBukaera() != null) {
-            ebaluazioMotak.add(EbaluazioMota.BIGARREN_EBALUAZIOA);
+        Egutegia eg = koadernoa.getEgutegia();
+        if (eg == null || eg.getMaila() == null) {
+            return List.of();
         }
 
-        // Bi finalak beti
-        ebaluazioMotak.add(EbaluazioMota.LEHENENGO_FINALA);
-        ebaluazioMotak.add(EbaluazioMota.BIGARREN_FINALA);
+        var momentuak = ebaluazioMomentuaRepository
+                .findByMailaAndAktiboTrueOrderByOrdenaAsc(eg.getMaila());
 
-        return ebaluazioMotak.stream().map(mota -> {
+        return momentuak.stream().map(m -> {
             EstatistikaEbaluazioan e = new EstatistikaEbaluazioan();
-            e.setEbaluazioMota(mota);
+            e.setEbaluazioMomentua(m);
             e.setKoadernoa(koadernoa);
             return e;
         }).toList();
