@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Taldea;
+import com.koadernoa.app.objektuak.zikloak.entitateak.Zikloa;
 
 public interface TaldeaRepository extends JpaRepository<Taldea, Long> {
 	Optional<Taldea> findByTutorea(Irakaslea tutorea);
@@ -15,4 +16,6 @@ public interface TaldeaRepository extends JpaRepository<Taldea, Long> {
     
     //zikloaren arabera taldeak
     List<Taldea> findByZikloa_Id(Long zikloaId);
+    
+    Optional<Taldea> findByIzenaIgnoreCaseAndZikloa(String izena, Zikloa zikloa);
 }

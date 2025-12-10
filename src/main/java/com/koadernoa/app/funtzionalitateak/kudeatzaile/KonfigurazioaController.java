@@ -15,9 +15,11 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioEgoera;
 import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioMomentua;
+import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EzadostasunKonfig;
 import com.koadernoa.app.objektuak.ebaluazioa.repository.EbaluazioEgoeraRepository;
 import com.koadernoa.app.objektuak.ebaluazioa.repository.EbaluazioMomentuaRepository;
 import com.koadernoa.app.objektuak.ebaluazioa.repository.EbaluazioNotaRepository;
+import com.koadernoa.app.objektuak.ebaluazioa.repository.EzadostasunKonfigRepository;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
 import com.koadernoa.app.objektuak.egutegia.repository.MailaRepository;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Familia;
@@ -40,6 +42,7 @@ public class KonfigurazioaController {
     private final EbaluazioMomentuaRepository ebaluazioMomentuaRepository;
     private final EbaluazioEgoeraRepository ebaluazioEgoeraRepository;
     private final EbaluazioNotaRepository ebaluazioNotaRepository;
+    private final EzadostasunKonfigRepository ezadostasunKonfigRepository;
 
     // ---- GET: orria ----
     @GetMapping
@@ -58,6 +61,10 @@ public class KonfigurazioaController {
 
         // EBALUAZIO EGOERAK
         List<EbaluazioEgoera> egoerak = ebaluazioEgoeraRepository.findAllByOrderByKodeaAsc();
+        
+        // EZADOSTASUN KONFIGURAZIOAK ====
+        List<EzadostasunKonfig> ezadKonfigList =
+                ezadostasunKonfigRepository.findAll(org.springframework.data.domain.Sort.by("kodea").ascending());
 
         model.addAttribute("mailak", mailak);
         model.addAttribute("activeForm", mailaForm);
@@ -69,6 +76,8 @@ public class KonfigurazioaController {
 
         model.addAttribute("egoerak", egoerak);
         model.addAttribute("sortuEgoeraForm", new SortuEbaluazioEgoeraForm());
+        
+        model.addAttribute("ezadostasunKonfigList", ezadKonfigList);
 
         return "kudeatzaile/konfigurazioa/index";
     }
@@ -224,10 +233,14 @@ public class KonfigurazioaController {
         // Egoera berezi guztiak (checkbox zerrendan erakusteko)
         List<EbaluazioEgoera> egoeraGuztiak =
                 ebaluazioEgoeraRepository.findAllByOrderByKodeaAsc();
+        
+        List<EzadostasunKonfig> ezadostasunKonfigurazioak =
+                ezadostasunKonfigRepository.findAllByOrderByKodeaAsc();
 
         model.addAttribute("maila", maila);
         model.addAttribute("momentuak", momentuak);
         model.addAttribute("egoeraGuztiak", egoeraGuztiak);
+        model.addAttribute("ezadostasunKonfigurazioak", ezadostasunKonfigurazioak);
 
         return "kudeatzaile/konfigurazioa/mailak-ebaluazioak";
     }
@@ -245,7 +258,7 @@ public class KonfigurazioaController {
         }
 
         // ======== EXISTENTEAK EGUNERATU / EZABATU =========
-        String[] idParamArray = request.getParameterValues("ids");
+        String[] idParamArray   = request.getParameterValues("ids");
         String[] deleteIdsArray = request.getParameterValues("deleteIds");
 
         Set<Long> deleteIds = new HashSet<>();
@@ -273,8 +286,7 @@ public class KonfigurazioaController {
                     continue;
                 }
 
-                // ====== Oinarrizko eremuak ======
-                String kodeaParam  = request.getParameter("kodea_" + id);
+                // ====== Oinarrizko eremuak (kodea EZ ukitu) ======
                 String izenaParam  = request.getParameter("izena_" + id);
                 String ordenaStr   = request.getParameter("ordena_" + id);
 
@@ -284,10 +296,8 @@ public class KonfigurazioaController {
                 boolean urteOsoa =
                         request.getParameter("urteOsoa_" + id) != null;
 
-                // KODEA
-                if (kodeaParam != null) {
-                    em.setKodea(kodeaParam.trim());
-                }
+                // KODEA EZ DA EGUNERATZEN
+                // (em.getKodea() DBtik dator eta hor mantentzen da)
 
                 // IZENA: inoiz ez utzi null/hutsik (nullable=false)
                 if (izenaParam != null) {
@@ -338,6 +348,21 @@ public class KonfigurazioaController {
 
                 em.getEgoeraOnartuak().clear();
                 em.getEgoeraOnartuak().addAll(egoeraOnartuak);
+                
+                // === Ezadostasun konfigurazioa ===
+                String ezadCfgIdStr = request.getParameter("ezadostasunKonfigId_" + id);
+                if (ezadCfgIdStr == null || ezadCfgIdStr.isBlank()) {
+                    em.setEzadostasunKonfig(null); // (defektuzko logika erabiliko duzu gero)
+                } else {
+                    try {
+                        Long cfgId = Long.valueOf(ezadCfgIdStr);
+                        EzadostasunKonfig cfg = ezadostasunKonfigRepository
+                                .findById(cfgId).orElse(null);
+                        em.setEzadostasunKonfig(cfg);
+                    } catch (NumberFormatException ignored) {
+                        // ez aldatu
+                    }
+                }
 
                 ebaluazioMomentuaRepository.save(em);
             }
@@ -518,6 +543,133 @@ public class KonfigurazioaController {
 
         redirectAttributes.addFlashAttribute("success", "Ebaluazio egoera berria sortu da.");
         return "redirect:/kudeatzaile/konfigurazioa#egoerak";
+    }
+    
+    // ===== Ezadostasunak =====
+    @PostMapping("/ezadostasunak/sortu")
+    @Transactional
+    public String sortuEzadostasunKonfig(HttpServletRequest request,
+                                         RedirectAttributes ra) {
+
+        String kodea = request.getParameter("kodea");
+        String minBlokeStr       = request.getParameter("minBlokePortzentaia");
+        String minOrduStr        = request.getParameter("minOrduPortzentaia");
+        String minBertaratzeStr  = request.getParameter("minBertaratzePortzentaia");
+        String minGaindituStr    = request.getParameter("minGaindituPortzentaia");
+
+        if (kodea == null || kodea.trim().isEmpty()) {
+            ra.addFlashAttribute("error", "Kodea beharrezkoa da.");
+            return "redirect:/kudeatzaile/konfigurazioa#ezadostasunak";
+        }
+
+        // Kode bakarra dela bermatu nahi baduzu:
+        if (ezadostasunKonfigRepository.existsByKodeaIgnoreCase(kodea.trim())) {
+            ra.addFlashAttribute("error", "Kode hori jada existitzen da: " + kodea.trim());
+            return "redirect:/kudeatzaile/konfigurazioa#ezadostasunak";
+        }
+
+        EzadostasunKonfig cfg = new EzadostasunKonfig();
+        cfg.setKodea(kodea.trim());
+
+        // Laguntzailea
+        java.util.function.BiFunction<String,Integer,Integer> parseOrDefault =
+                (str, def) -> {
+                    if (str == null || str.isBlank()) return def;
+                    try {
+                        int v = Integer.parseInt(str.trim());
+                        if (v < 0)   v = 0;
+                        if (v > 100) v = 100;
+                        return v;
+                    } catch (NumberFormatException e) {
+                        return def;
+                    }
+                };
+
+        // Entitateko default-ak hartu eta gainidatzi POST-etik
+        cfg.setMinBlokePortzentaia(parseOrDefault.apply(minBlokeStr, cfg.getMinBlokePortzentaia()));
+        cfg.setMinOrduPortzentaia(parseOrDefault.apply(minOrduStr, cfg.getMinOrduPortzentaia()));
+        cfg.setMinBertaratzePortzentaia(parseOrDefault.apply(minBertaratzeStr, cfg.getMinBertaratzePortzentaia()));
+        cfg.setMinGaindituPortzentaia(parseOrDefault.apply(minGaindituStr, cfg.getMinGaindituPortzentaia()));
+
+        ezadostasunKonfigRepository.save(cfg);
+
+        ra.addFlashAttribute("success", "Ezadostasun konfigurazio berria sortu da.");
+        return "redirect:/kudeatzaile/konfigurazioa#ezadostasunak";
+    }
+    
+    @PostMapping("/ezadostasunak/gorde")
+    @Transactional
+    public String gordeEzadostasunKonfigurazioak(HttpServletRequest request,
+                                                 RedirectAttributes ra) {
+
+        String[] idParams = request.getParameterValues("ids");
+        String[] deleteIdsParams = request.getParameterValues("deleteIds");
+
+        // Ezabatzeko markatutakoak
+        Set<Long> deleteIds = new HashSet<>();
+        if (deleteIdsParams != null) {
+            for (String s : deleteIdsParams) {
+                try {
+                    deleteIds.add(Long.valueOf(s));
+                } catch (NumberFormatException ignored) {}
+            }
+        }
+
+        if (idParams != null) {
+            for (String idStr : idParams) {
+                Long id;
+                try {
+                    id = Long.valueOf(idStr);
+                } catch (NumberFormatException ex) {
+                    continue;
+                }
+
+                EzadostasunKonfig cfg = ezadostasunKonfigRepository.findById(id).orElse(null);
+                if (cfg == null) continue;
+
+                // Ezabatzeko markatuta badago
+                if (deleteIds.contains(id)) {
+                    ezadostasunKonfigRepository.delete(cfg);
+                    continue;
+                }
+
+                // ---- Eremu numerikoak irakurri ----
+                String minBlokeStr      = request.getParameter("minBlokeak_" + id);
+                String minOrduStr       = request.getParameter("minOrduak_" + id);
+                String minBertaratzeStr = request.getParameter("minBertaratzea_" + id);
+                String minGaindituStr   = request.getParameter("minGaindituak_" + id);
+
+                cfg.setMinBlokePortzentaia(parseIntOrDefault(minBlokeStr, cfg.getMinBlokePortzentaia()));
+                cfg.setMinOrduPortzentaia(parseIntOrDefault(minOrduStr, cfg.getMinOrduPortzentaia()));
+                cfg.setMinBertaratzePortzentaia(parseIntOrDefault(minBertaratzeStr, cfg.getMinBertaratzePortzentaia()));
+                cfg.setMinGaindituPortzentaia(parseIntOrDefault(minGaindituStr, cfg.getMinGaindituPortzentaia()));
+
+                ezadostasunKonfigRepository.save(cfg);
+            }
+        }
+
+        ra.addFlashAttribute("success", "Ezadostasun konfigurazioak gorde dira.");
+        return "redirect:/kudeatzaile/konfigurazioa#ezadostasunak";
+    }
+
+    private int parseIntOrDefault(String val, Integer current) {
+        if (val == null || val.isBlank()) {
+            return current != null ? current : 0;
+        }
+        try {
+            return Integer.parseInt(val.trim());
+        } catch (NumberFormatException e) {
+            return current != null ? current : 0;
+        }
+    }
+
+    /** 0–100 tartera mugatu, null bada default erabili. */
+    private int clampPercent(Integer value, int defaultValue) {
+        if (value == null) return defaultValue;
+        int v = value;
+        if (v < 0)   v = 0;
+        if (v > 100) v = 100;
+        return v;
     }
 
     // ===== DTO txikiak =====

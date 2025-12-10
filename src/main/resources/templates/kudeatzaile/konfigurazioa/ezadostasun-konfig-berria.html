@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <title>Ezadostasun konfigurazio berria (fragment)</title>
+</head>
+<body>
+
+<div th:fragment="ezadostasun-konfig-berria-modal">
+
+  <style>
+    .ezadostasun-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.35);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 60;
+    }
+    .ezadostasun-modal-overlay.show {
+      display: flex;
+    }
+    .ezadostasun-modal-card {
+      background: #fff;
+      max-width: 460px;
+      width: 95%;
+      border-radius: 12px;
+      padding: 1.2rem 1.4rem;
+      box-shadow: 0 15px 40px rgba(0,0,0,.25);
+    }
+    .ezadostasun-modal-header {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:0.75rem;
+    }
+    .ezadostasun-modal-header h2 {
+      margin:0;
+      font-size:1.1rem;
+    }
+    .ezadostasun-modal-close {
+      background:none;
+      border:none;
+      font-size:1.2rem;
+      cursor:pointer;
+    }
+    .ezadostasun-modal-body {
+      display:grid;
+      gap:0.65rem;
+      margin-top:0.25rem;
+    }
+    .ez-field {
+      display:grid;
+      gap:0.25rem;
+      font-size:0.9rem;
+    }
+    .ez-field input[type="text"],
+    .ez-field input[type="number"] {
+      width:100%;
+      padding:0.35rem 0.5rem;
+      border:1px solid #e5e7eb;
+      border-radius:8px;
+      font-size:0.9rem;
+    }
+    .ezadostasun-modal-actions {
+      margin-top:0.9rem;
+      display:flex;
+      justify-content:flex-end;
+      gap:0.5rem;
+    }
+    .btn {
+      border-radius:999px;
+      border:1px solid #e5e7eb;
+      padding:0.4rem 0.9rem;
+      cursor:pointer;
+      font-size:0.9rem;
+      background:#f9fafb;
+    }
+    .btn-primary {
+      background:#2563eb;
+      border-color:#2563eb;
+      color:#fff;
+    }
+  </style>
+
+  <div id="ezadostasunKonfigModal" class="ezadostasun-modal-overlay">
+    <div class="ezadostasun-modal-card">
+      <div class="ezadostasun-modal-header">
+        <h2>Ezadostasun konfigurazio berria</h2>
+        <button type="button"
+                id="ezadostasunKonfigClose"
+                class="ezadostasun-modal-close"
+                aria-label="Itxi">
+          ✕
+        </button>
+      </div>
+
+      <form th:action="@{/kudeatzaile/konfigurazioa/ezadostasunak/sortu}"
+            method="post">
+        <input type="hidden"
+               th:if="${_csrf != null}"
+               th:name="${_csrf.parameterName}"
+               th:value="${_csrf.token}"/>
+
+        <div class="ezadostasun-modal-body">
+          <div class="ez-field">
+            <label for="ez-kodea">Kodea (logikoa, bakarra)</label>
+            <input id="ez-kodea" name="kodea"
+                   type="text"
+                   placeholder="adib. DEFAULT, 1_FINAL, 2_FINAL"
+                   required>
+          </div>
+
+          <div class="ez-field">
+            <label for="ez-minBloke">Emandako blokeak (&ge; %)</label>
+            <input id="ez-minBloke" name="minBlokePortzentaia"
+                   type="number" min="0" max="100" value="100">
+          </div>
+
+          <div class="ez-field">
+            <label for="ez-minOrdu">Emandako orduak (&ge; %)</label>
+            <input id="ez-minOrdu" name="minOrduPortzentaia"
+                   type="number" min="0" max="100" value="90">
+          </div>
+
+          <div class="ez-field">
+            <label for="ez-minBert">Ikasleen bertaratzea (&ge; %)</label>
+            <input id="ez-minBert" name="minBertaratzePortzentaia"
+                   type="number" min="0" max="100" value="80">
+          </div>
+
+          <div class="ez-field">
+            <label for="ez-minGain">Gaindituak (&ge; %)</label>
+            <input id="ez-minGain" name="minGaindituPortzentaia"
+                   type="number" min="0" max="100" value="50">
+          </div>
+        </div>
+
+        <div class="ezadostasun-modal-actions">
+          <button type="button" class="btn" id="ezadostasunKonfigCancel">Utzi</button>
+          <button type="submit" class="btn btn-primary">Gorde</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const modal   = document.getElementById('ezadostasunKonfigModal');
+      const btnOpen = document.getElementById('btn-open-ezadostasun-modal');
+      const btnClose = document.getElementById('ezadostasunKonfigClose');
+      const btnCancel = document.getElementById('ezadostasunKonfigCancel');
+
+      if (!modal) return;
+
+      const openModal = () => {
+        modal.classList.add('show');
+      };
+      const closeModal = () => {
+        modal.classList.remove('show');
+      };
+
+      if (btnOpen) {
+        btnOpen.addEventListener('click', openModal);
+      }
+      if (btnClose) {
+        btnClose.addEventListener('click', closeModal);
+      }
+      if (btnCancel) {
+        btnCancel.addEventListener('click', closeModal);
+      }
+
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          closeModal();
+        }
+      });
+    });
+  </script>
+
+</div>
+
+</body>
+</html>

@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
@@ -108,10 +109,10 @@ public class EstatistikaService {
         est.setOrduakEmanda(emandakoOrdu);
 
         // ---------- IKASLEAK ----------
-        int ebaluatuak = kalkulatuEbaluatuak(koadernoa);
+        int ebaluatuak = kalkulatuEbaluatuak(koadernoa, em);
         est.setEbaluatuak(ebaluatuak);
 
-        int aprobatuak = kalkulatuAprobatuak(koadernoa, tartea);
+        int aprobatuak = kalkulatuAprobatuak(koadernoa, em);
         est.setAprobatuak(aprobatuak);
 
         // ---------- HUTSEGITE ORDUAK ----------
@@ -207,12 +208,86 @@ public class EstatistikaService {
     /**
      * Unitate “emanda” kopurua.
      *
-     * Oraingo bertsio sinplean:
-     *  - 0 jarri → irakasleak eskuz jarriko du pantailan.
-     *  - Horrela, ez dugu kontraesanik: 0 ordu emanda → 0 UD emanda.
+     * Hurbilpen berria (kontserbadoreagoa):
+     *  - Tarte horretako jarduera NO-PLANIFIKATUAK hartzen ditugu.
+     *  - Jarduera bakoitzean, deskribapenaren hasierako zatiak hartzen ditugu
+     *    (lehen "—" arte): "2UD — (UD orokorra)" -> "2UD".
+     *  - UD bat emanda kontsideratzen da bere kodea (ud.getKodea())
+     *    jardueretatik ateratako kode horien multzoan badago.
      */
     private int kalkulatuUnitateakEmanda(Programazioa p, DateRange tartea) {
-        return 0;
+        if (p == null || tartea == null || p.getEbaluaketak() == null) {
+            return 0;
+        }
+
+        Koadernoa k = p.getKoadernoa();
+        if (k == null || k.getId() == null) {
+            return 0;
+        }
+
+        // Tarte horretako jarduera NO-PLANIFIKATUAK
+        List<Jarduera> jarduerakNoPlan = jardueraRepository
+                .findByKoadernoaIdAndDataBetweenOrderByDataAscIdAsc(
+                        k.getId(),
+                        tartea.from(),
+                        tartea.to()
+                ).stream()
+                .filter(j -> j.getMota() == null ||
+                             !"planifikatua".equalsIgnoreCase(j.getMota()))
+                .toList();
+
+        if (jarduerakNoPlan.isEmpty()) {
+            return 0;
+        }
+
+        // Jardueretatik ateratako "UD kode" multzoa (deskribapenaren lehenengo zatia, "—" arte)
+        Set<String> jardueraUdKodeak = jarduerakNoPlan.stream()
+                .map(j -> {
+                    String base = j.getDeskribapena();
+                    if (base == null || base.isBlank()) {
+                        base = j.getTitulua();
+                    }
+                    if (base == null || base.isBlank()) {
+                        return null;
+                    }
+                    String[] parts = base.split("—", 2);
+                    String first = parts[0].trim();   // adib. "2UD"
+                    if (first.isEmpty()) return null;
+                    return first.toLowerCase();
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        if (jardueraUdKodeak.isEmpty()) {
+            return 0;
+        }
+
+        // Ebaluazio tarte honetan dauden UD-etatik, zenbat daude jarduera-kode multzo horretan
+        Set<Long> emandakoUdIds = new java.util.HashSet<>();
+
+        for (Ebaluaketa eb : p.getEbaluaketak()) {
+            if (!ebTarteanDago(eb, tartea)) {
+                continue;
+            }
+
+            for (UnitateDidaktikoa ud : eb.getUnitateak()) {
+                if (ud == null || ud.getId() == null) continue;
+                if (emandakoUdIds.contains(ud.getId())) continue;
+
+                String kodea = ud.getKodea();
+                if (kodea == null || kodea.isBlank()) {
+                    continue; // kode barik -> ez dugu detektatzen heuristikan
+                }
+
+                String kodeLower = kodea.toLowerCase();
+
+                if (jardueraUdKodeak.contains(kodeLower)) {
+                    emandakoUdIds.add(ud.getId());
+                }
+            }
+        }
+
+        return emandakoUdIds.size();
     }
 
     // ============================================================
@@ -261,26 +336,77 @@ public class EstatistikaService {
     //  IKASLE KOPURUAK
     // ============================================================
 
-    /** Ebaluatuak = koaderno honetako MATRIKULATUA egoeran dauden matrikulak. */
-    public int kalkulatuEbaluatuak(Koadernoa k) {
+    /**
+     * Ebaluatuak kalkulatu:
+     *
+     *  - em.getUrteOsoa() == true:
+     *      Koaderno honetako MATRIKULATUA egoeran dauden matrikulak (orain arte bezala).
+     *
+     *  - em.getUrteOsoa() == false:
+     *      Ebaluazio momentu HONETAN nota zenbakizkoa (nota != null) duten matrikulak bakarrik.
+     *      EZ dira zenbatzen "EZ_AURKEZTUA", "EZ_EBALUATUA_FALTAK" eta abar,
+     *      normalean nota = null dutelako.
+     */
+    public int kalkulatuEbaluatuak(Koadernoa k, EbaluazioMomentua em) {
         if (k == null || k.getId() == null) {
             return 0;
         }
-        long cnt = matrikulaRepository.countByKoadernoa_IdAndEgoera(
-                k.getId(),
-                MatrikulaEgoera.MATRIKULATUA
-        );
-        return (int) cnt;
+
+        // Ebaluazio momentua falta bada → fallback: guztira matrikulatuak
+        if (em == null || em.getId() == null) {
+            long cnt = matrikulaRepository.countByKoadernoa_IdAndEgoera(
+                    k.getId(),
+                    MatrikulaEgoera.MATRIKULATUA
+            );
+            return (int) cnt;
+        }
+
+        // URTE OSOKO momentua → logika zaharra: MATRIKULATUTA dauden guztiak
+        if (Boolean.TRUE.equals(em.getUrteOsoa())) {
+            long cnt = matrikulaRepository.countByKoadernoa_IdAndEgoera(
+                    k.getId(),
+                    MatrikulaEgoera.MATRIKULATUA
+            );
+            return (int) cnt;
+        }
+
+        // Bestela: ebaluazio momentu honetarako nota zenbakizkoa dutenak bakarrik
+        List<Matrikula> matrikulak = matrikulaRepository
+                .findByKoadernoa_IdAndEgoera(k.getId(), MatrikulaEgoera.MATRIKULATUA);
+
+        int ebaluatuak = 0;
+
+        for (Matrikula m : matrikulak) {
+            if (m.getNotak() == null || m.getNotak().isEmpty()) {
+                continue;
+            }
+
+            boolean duNotaZenbakizkoaMomentuHonetan = m.getNotak().stream()
+                    .filter(n -> n.getEbaluazioMomentua() != null &&
+                                 Objects.equals(n.getEbaluazioMomentua().getId(), em.getId()))
+                    .map(EbaluazioNota::getNota)
+                    .anyMatch(Objects::nonNull); // nota != null → zenbakizkoa
+
+            if (duNotaZenbakizkoaMomentuHonetan) {
+                ebaluatuak++;
+            }
+        }
+
+        return ebaluatuak;
     }
 
     /**
-     * Aprobatu kopurua:
-     *  - Koaderno honetako MATRIKULATUA egoeran dauden matrikulak hartu.
-     *  - Ikaslea "aprobatua" da bere noten artean >= 5.0 duen NOTA ZENBAKIZKOREN bat badu.
-     *  - Oraingoz ez dugu tartea zorrotz erabiltzen; nahi baduzu gero filtro hori findu daiteke.
+     * Aprobatu kopurua ebaluazio momentu zehatz baterako.
+     *
+     * - Koaderno honetako MATRIKULATUA egoeran dauden matrikulak hartzen ditu.
+     * - Ikasle bat "aprobatua" da EBALUAZIO MOMENTU HONETAN
+     *   bere noten artean (momentu horretakoetan) >= 5.0 duen nota zenbakizkorik badu.
+     * - Beste ebaluazio momentuetako notak EZ dira kontuan hartzen.
      */
-    private int kalkulatuAprobatuak(Koadernoa k, DateRange tartea) {
-        if (k == null || k.getId() == null) return 0;
+    private int kalkulatuAprobatuak(Koadernoa k, EbaluazioMomentua em) {
+        if (k == null || k.getId() == null || em == null || em.getId() == null) {
+            return 0;
+        }
 
         List<Matrikula> matrikulak = matrikulaRepository
                 .findByKoadernoa_IdAndEgoera(k.getId(), MatrikulaEgoera.MATRIKULATUA);
@@ -289,7 +415,11 @@ public class EstatistikaService {
 
         for (Matrikula m : matrikulak) {
             boolean ikasleAprobatua = m.getNotak().stream()
-                    .map(EbaluazioNota::getNota) // Number / BigDecimal / Float...
+                    // Ebaluazio momentu HAU bakarrik
+                    .filter(n -> n.getEbaluazioMomentua() != null &&
+                                 Objects.equals(n.getEbaluazioMomentua().getId(), em.getId()))
+                    // Nota zenbakizkoak bakarrik (EZ_AURKEZTUA -> nota null, beraz ez da sartzen)
+                    .map(EbaluazioNota::getNota)
                     .filter(Objects::nonNull)
                     .anyMatch(n -> n.doubleValue() >= 5.0);
 
@@ -297,6 +427,7 @@ public class EstatistikaService {
                 aprobatuak++;
             }
         }
+
         return aprobatuak;
     }
 

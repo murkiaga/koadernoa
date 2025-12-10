@@ -66,4 +66,7 @@ public class EbaluazioMomentua {
     )
     @OrderBy("kodea ASC")
     private java.util.Set<EbaluazioEgoera> egoeraOnartuak = new java.util.LinkedHashSet<>();
+    
+    @ManyToOne
+    private EzadostasunKonfig ezadostasunKonfig; 
 }

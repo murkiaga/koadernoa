@@ -1,4 +1,4 @@
-package com.koadernoa.app.objektuak.zikloak.config;
+package com.koadernoa.app.common.seedconfig;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;

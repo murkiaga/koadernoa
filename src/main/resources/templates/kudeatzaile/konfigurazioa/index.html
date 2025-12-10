@@ -8,14 +8,18 @@
   <style>
     :root { --b: #e5e7eb; --t: #111827; --m: #2563eb; --bg: #fff; }
     body { color: var(--t); background: var(--bg); }
+
     .tabs { display:flex; gap:.5rem; border-bottom:1px solid var(--b); margin:16px 0; }
     .tab-btn { border:none; background:none; padding:10px 14px; cursor:pointer; border-bottom:3px solid transparent; }
     .tab-btn[aria-selected="true"] { border-color: var(--m); font-weight:600; }
+
     .tab-panel { display:none; padding-top:16px; }
     .tab-panel.active { display:block; }
+
     table { border-collapse: collapse; width:100%; }
     th, td { border-bottom:1px solid var(--b); padding:8px; text-align:left; }
     th { background:#f9fafb; }
+
     .row { display:grid; gap:12px; grid-template-columns: 1fr 1fr 1fr auto; align-items:center; }
     .row > * { width:100%; }
     .muted { color:#6b7280; font-size:.9rem; }
@@ -34,6 +38,29 @@
     @media (max-width: 520px) {
       .inline-row { flex-direction: column; align-items: stretch; }
       .inline-row button { width: 100%; }
+      .row { grid-template-columns: 1fr; }
+    }
+
+    .alert.alert-success {
+      background:#dcfce7;
+      color:#166534;
+      padding:8px 12px;
+      border-radius:8px;
+      font-size:.9rem;
+      margin:8px 0;
+    }
+    .alert.alert-error {
+      background:#fee2e2;
+      color:#b91c1c;
+      padding:8px 12px;
+      border-radius:8px;
+      font-size:.9rem;
+      margin:8px 0;
+    }
+
+    /* Ezadostasun taularako apur bat */
+    .percent-input {
+      width:4rem;
     }
   </style>
 </head>
@@ -72,12 +99,13 @@
     Familiak
   </button>
 
+  <!-- Lehen "TBD" zena → orain Ezadostasunak etiketa, baina id bera mantendu (hash #ezadostasunak) -->
   <button type="button" class="tab-btn"
           role="tab"
           aria-selected="false"
-          aria-controls="panel-bestek"
-          id="tab-bestek">
-    TBD
+          aria-controls="panel-ezadostasunak"
+          id="tab-ezadostasunak">
+    Ezadostasunak
   </button>
 </div>
 
@@ -292,12 +320,87 @@
   </form>
 </section>
 
-<!-- Etorkizuneko panelak -->
-<section id="panel-bestek" class="tab-panel" role="tabpanel"
-         aria-labelledby="tab-bestek" tabindex="0" aria-hidden="true">
-  <h2>Bestelako aukerak</h2>
-  <p class="muted">Atal hau etorkizunean osatuko da.</p>
+<!-- Ezadostasunak PANELA -->
+<section id="panel-ezadostasunak" class="tab-panel" role="tabpanel"
+         aria-labelledby="tab-ezadostasunak" tabindex="0" aria-hidden="true">
+  <h2>Ezadostasunak</h2>
+
+  <!-- Existenteak eguneratzeko / ezabatzeko -->
+  <form th:action="@{/kudeatzaile/konfigurazioa/ezadostasunak/gorde}" method="post">
+    <input type="hidden"
+           th:if="${_csrf != null}"
+           th:name="${_csrf.parameterName}"
+           th:value="${_csrf.token}"/>
+
+    <table>
+      <thead>
+      <tr>
+        <th>Kodea</th>
+        <th>Emandako blokeak (&ge; %)</th>
+        <th>Emandako orduak (&ge; %)</th>
+        <th>Ikasleen bertaratzea (&ge; %)</th>
+        <th>Gaindituak (&ge; %)</th>
+        <th>Ezabatu</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:each="cfg : ${ezadostasunKonfigList}">
+        <!-- ID ezkutuan, bulk update egiteko -->
+        <td>
+          <input type="hidden" name="ids" th:value="${cfg.id}"/>
+          <span th:text="${cfg.kodea}">DEFAULT</span>
+        </td>
+
+        <td>
+          <input type="number" min="0" max="100"
+                 th:name="|minBlokeak_${cfg.id}|"
+                 th:value="${cfg.minBlokePortzentaia}">
+        </td>
+        <td>
+          <input type="number" min="0" max="100"
+                 th:name="|minOrduak_${cfg.id}|"
+                 th:value="${cfg.minOrduPortzentaia}">
+        </td>
+        <td>
+          <input type="number" min="0" max="100"
+                 th:name="|minBertaratzea_${cfg.id}|"
+                 th:value="${cfg.minBertaratzePortzentaia}">
+        </td>
+        <td>
+          <input type="number" min="0" max="100"
+                 th:name="|minGaindituak_${cfg.id}|"
+                 th:value="${cfg.minGaindituPortzentaia}">
+        </td>
+
+        <td style="text-align:center;">
+          <input type="checkbox"
+                 name="deleteIds"
+                 th:value="${cfg.id}">
+        </td>
+      </tr>
+      </tbody>
+    </table>
+
+    <div class="actions" style="margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
+      <span class="muted">Aldaketak gordetzeko: "Gorde aldaketak". Ezabatzeko, lerroa markatu "Ezabatu" zutabean.</span>
+      <button type="submit">Gorde aldaketak</button>
+    </div>
+  </form>
+
+  <!-- Beheko eskuineko botoia: konfigurazio berria sortu -->
+  <div style="margin-top:16px; display:flex; justify-content:flex-end;">
+    <button type="button" id="btn-open-ezadostasun-modal">
+      Konfigurazio berria
+    </button>
+  </div>
+
+  <!-- Modal fragment-a -->
+  <div th:replace="~{kudeatzaile/konfigurazioa/ezadostasun-konfig-berria :: ezadostasun-konfig-berria-modal}"></div>
 </section>
+
+
+<!-- MODALA: Ezadostasun konfigurazio berria (fragment gisa) -->
+<div th:replace="~{kudeatzaile/konfigurazioa/ezadostasun-konfig-berria :: ezadostasun-konfig-berria-modal}"></div>
 
 <script>
   // Tabs JS sinplea

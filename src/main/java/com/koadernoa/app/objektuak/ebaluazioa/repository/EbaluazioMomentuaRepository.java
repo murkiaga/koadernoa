@@ -5,6 +5,8 @@ import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioEgoera;
 import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioMomentua;
 
 import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 
 
@@ -15,4 +17,8 @@ public interface EbaluazioMomentuaRepository extends JpaRepository<EbaluazioMome
     boolean existsByEgoeraOnartuakContains(EbaluazioEgoera egoera);
     
     List<EbaluazioMomentua> findByMailaOrderByOrdenaAsc(Maila maila);
+    
+    boolean existsByMailaAndKodea(Maila maila, String kodea);
+    
+    Optional<EbaluazioMomentua> findByMailaAndKodea(Maila maila, String kodea);
 }
