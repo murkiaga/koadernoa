@@ -27,4 +27,8 @@ public interface SaioaRepository extends JpaRepository<Saioa, Long>{
             LocalDate to,
             SaioEgoera egoera
     );
+    
+    List<Saioa> findByKoadernoa_Id(Long koadernoId);
+    
+    void deleteByKoadernoa_Id(Long koadernoId);
 }

@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.koadernoa.app.objektuak.ebaluazioa.repository.EbaluazioMomentuaRepository;
+import com.koadernoa.app.objektuak.ebaluazioa.repository.EbaluazioNotaRepository;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
@@ -31,9 +32,17 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.JardueraSortuDto;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoOrdutegiBlokea;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoaSortuDto;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.Saioa;
+import com.koadernoa.app.objektuak.koadernoak.repository.AsistentziaRepository;
+import com.koadernoa.app.objektuak.koadernoak.repository.EstatistikaEbaluazioanRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.JardueraRepository;
+import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoOrdutegiBlokeaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
+import com.koadernoa.app.objektuak.koadernoak.repository.NotaFitxategiaRepository;
+import com.koadernoa.app.objektuak.koadernoak.repository.ProgramazioaRepository;
+import com.koadernoa.app.objektuak.koadernoak.repository.SaioaRepository;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
+import com.koadernoa.app.objektuak.modulua.repository.MatrikulaRepository;
 import com.koadernoa.app.objektuak.modulua.repository.ModuloaRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -48,6 +57,14 @@ public class KoadernoaService {
     private final KoadernoaRepository koadernoaRepository;
     private final JardueraRepository jardueraRepository;
     private final EbaluazioMomentuaRepository ebaluazioMomentuaRepository;
+    private final ProgramazioaRepository programazioaRepository;
+    private final EstatistikaEbaluazioanRepository estatistikaRepository;
+    private final SaioaRepository saioaRepository;
+    private final MatrikulaRepository matrikulaRepository;
+    private final NotaFitxategiaRepository notaFitxategiaRepository;
+    private final AsistentziaRepository asistentziaRepository;
+    private final EbaluazioNotaRepository ebaluazioNotaRepository;
+    private final KoadernoOrdutegiBlokeaRepository koadernoOrdutegiBlokeaRepository;
     
     //Aste-orden estandarra (astelehen-ostiral)
     private static final List<Astegunak> ASTE_ORDENA = List.of(
@@ -391,6 +408,50 @@ public class KoadernoaService {
             return List.of(); // ez dago loturarik
         }
         return koadernoaRepository.findByModuloa_EeiKodeaAndIdNot(eei, koadernoAktiboa.getId());
+    }
+    
+    @Transactional
+    public void ezabatuKoadernoa(Koadernoa koadernoa) {
+        if (koadernoa == null || koadernoa.getId() == null) return;
+        Long id = koadernoa.getId();
+
+        // 1) SAIOAK + ASISTENTZIAK (KoadernoOrdutegiBlokea-ren lotura)
+        List<Saioa> saioak = saioaRepository.findByKoadernoa_Id(id);
+        if (!saioak.isEmpty()) {
+            List<Long> saioaIds = saioak.stream()
+                    .map(Saioa::getId)
+                    .toList();
+
+            // Lehenengo asistentziak
+            asistentziaRepository.deleteBySaioa_IdIn(saioaIds);
+            // Ondoren saioak (hemendik aurrera inork ez du apuntatzen KoadernoOrdutegiBlokea-ra)
+            saioaRepository.deleteAll(saioak);
+        }
+
+        // 2) Ebaluazio notak (matrikulen bidez)
+        ebaluazioNotaRepository.deleteByMatrikula_Koadernoa_Id(id);
+
+        // 3) Matrikulak
+        matrikulaRepository.deleteByKoadernoa_Id(id);
+
+        // 4) Jarduerak
+        jardueraRepository.deleteByKoadernoa_Id(id);
+
+        // 5) Estatistikak
+        estatistikaRepository.deleteByKoadernoa_Id(id);
+
+        // 6) Nota fitxategiak
+        notaFitxategiaRepository.deleteByKoadernoa_Id(id);
+
+        // 7) Ordutegiko blokeak
+        koadernoOrdutegiBlokeaRepository.deleteByKoadernoa_Id(id);
+        // (edo soilik cascade-ri utzi, baina horrela esplizitu doa)
+
+        // 8) Programazioa
+        programazioaRepository.deleteByKoadernoaId(id);
+
+        // 9) Koadernoa bera
+        koadernoaRepository.delete(koadernoa);
     }
     
 }

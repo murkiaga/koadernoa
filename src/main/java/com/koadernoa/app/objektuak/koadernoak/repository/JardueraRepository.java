@@ -24,4 +24,8 @@ public interface JardueraRepository extends JpaRepository<Jarduera, Long>{
 
 	// (aukerakoa, erabilgarria izan daiteke aurreikuspenetarako)
 	List<Jarduera> findByKoadernoaAndMotaAndDataBetween(Koadernoa koadernoa, String mota, LocalDate from, LocalDate to);
+	
+    void deleteByKoadernoa_Id(Long koadernoId);
+    
+    
 }

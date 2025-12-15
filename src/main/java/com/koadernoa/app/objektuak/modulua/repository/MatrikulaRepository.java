@@ -51,4 +51,7 @@ public interface MatrikulaRepository extends JpaRepository<Matrikula, Long> {
 	    List<Matrikula> findToRemoveByKoadernoAndNotInHnas(@Param("koadernoaId") Long koadernoaId,
 	                                                       @Param("hnasExcel") List<String> hnasExcel);
     
+	List<Matrikula> findByKoadernoa_Id(Long koadernoId);
+	
+	void deleteByKoadernoa_Id(Long koadernoId);
 }

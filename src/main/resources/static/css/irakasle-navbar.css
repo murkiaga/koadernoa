@@ -1,58 +1,193 @@
-/* ===== Orokorra ===== */
-.t-nav { border-bottom: 1px solid #2c3e50; background:#2c3e50; padding-top: max(8px, env(safe-area-inset-top));}
-.t-nav * { box-sizing: border-box; }
+/* ===== OINARRIZKO ESTILO OROKORRAK (irakasle atala) ===== */
 
-.t-nav .t-navbar{
-  display:flex; align-items:center; justify-content:space-between;
-  gap:.5rem; width:100%; margin:0; padding: .75rem 1rem;
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f9fafb;   /* orrialde bakoitzean gainidatz daiteke nahi baduzu */
+  color: #111827;
 }
-.t-left { display:flex; align-items:center; gap:1rem; flex-wrap:wrap; }
 
-.koaderno-izena { color:#fff; font-weight:700; }
-.koaderno-hautapena label { color:#fff; margin-right:.5rem; }
-.koaderno-hautapena select { padding:.25rem; border-radius:6px; border:none; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
-.t-desktop ul { list-style:none; display:flex; gap:1rem; margin:0; padding:0; }
-.t-desktop a { color:#fff; text-decoration:none; padding:.45rem .8rem; border-radius:6px; }
-.t-desktop a:hover { background:#34495e; }
-.t-desktop a.active { background:#1abc9c; }
+/* ===== NAVBAR OROKORRA ===== */
+
+.t-nav {
+  border-bottom: 1px solid #2c3e50;
+  background: #2c3e50;
+  padding-top: max(8px, env(safe-area-inset-top));
+}
+
+/* (orain jada globala da, baina uzten baduzu ez du minik egiten) */
+.t-nav * {
+  box-sizing: border-box;
+}
+
+.t-nav .t-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  width: 100%;
+  margin: 0;
+  padding: .75rem 1rem;
+}
+
+.t-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.koaderno-izena {
+  color: #fff;
+  font-weight: 700;
+}
+
+.koaderno-hautapena label {
+  color: #fff;
+  margin-right: .5rem;
+}
+
+.koaderno-hautapena select {
+  padding: .25rem;
+  border-radius: 6px;
+  border: none;
+}
+
+/* ===== DESKTOP NABIGAZIOA ===== */
+
+.t-desktop ul {
+  list-style: none;
+  display: flex;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+}
+
+.t-desktop a {
+  color: #fff;
+  text-decoration: none;
+  padding: .45rem .8rem;
+  border-radius: 6px;
+}
+
+.t-desktop a:hover {
+  background: #34495e;
+}
+
+.t-desktop a.active {
+  background: #1abc9c;
+}
 
 .logout-btn {
-  background:#e74c3c; color:#fff; border:none; padding:.4rem .8rem; border-radius:6px; cursor:pointer;
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+  padding: .4rem .8rem;
+  border-radius: 6px;
+  cursor: pointer;
 }
-.logout-btn:hover { background:#c0392b; }
 
-.t-hamb { display:none; align-items:center; gap:.4rem; border:1px solid #e5e7eb;
-  background:#fff; color:#111827; border-radius:.5rem; padding:.4rem .6rem; }
+.logout-btn:hover {
+  background: #c0392b;
+}
+
+.t-hamb {
+  display: none;
+  align-items: center;
+  gap: .4rem;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #111827;
+  border-radius: .5rem;
+  padding: .4rem .6rem;
+}
 
 /* Panel (lehenetsita itxita) */
-.t-panel { display:none; }
+.t-panel {
+  display: none;
+}
 
-/* ===== Mugikorra ===== */
+/* ===== MUGIKORRA ===== */
+
 @media (max-width: 640px) {
-  .t-desktop { display:none; }
-  .t-hamb { display:inline-flex; }
+  .t-desktop {
+    display: none;
+  }
+
+  .t-hamb {
+    display: inline-flex;
+  }
 
   .t-panel {
-    display:none; position:fixed; inset:0; z-index:100; background:#fff;
-    height:100vh; overflow:auto; white-space:normal;
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: #fff;
+    height: 100vh;
+    overflow: auto;
+    white-space: normal;
   }
-  .t-panel.t-open { display:block; }
+
+  .t-panel.t-open {
+    display: block;
+  }
 
   .t-panel-header {
-    position:sticky; top:0; z-index:1; background:#fff;
-    padding:.5rem; border-bottom:1px solid #e5e7eb; display:flex; justify-content:flex-end;
-  }
-  .t-panel-header button {
-    padding:.45rem .7rem; border:1px solid #e5e7eb; border-radius:.5rem; background:#fff;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #fff;
+    padding: .5rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
   }
 
-  .t-panel-content { padding:.75rem; }
-  .t-list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:.4rem; }
-  .t-list a, .t-list button {
-    display:block; width:100%; text-align:left; padding:.7rem .9rem;
-    border:1px solid #e5e7eb; border-radius:.5rem; background:#fff; color:#111827; text-decoration:none;
-    line-height:1.25;
+  .t-panel-header button {
+    padding: .45rem .7rem;
+    border: 1px solid #e5e7eb;
+    border-radius: .5rem;
+    background: #fff;
   }
-  .t-list a.active { border-color:#1abc9c; background:#ecfdf5; }
+
+  .t-panel-content {
+    padding: .75rem;
+  }
+
+  .t-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+  }
+
+  .t-list a,
+  .t-list button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: .7rem .9rem;
+    border: 1px solid #e5e7eb;
+    border-radius: .5rem;
+    background: #fff;
+    color: #111827;
+    text-decoration: none;
+    line-height: 1.25;
+  }
+
+  .t-list a.active {
+    border-color: #1abc9c;
+    background: #ecfdf5;
+  }
 }

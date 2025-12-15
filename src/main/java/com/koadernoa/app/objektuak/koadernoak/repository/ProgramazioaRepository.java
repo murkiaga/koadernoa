@@ -46,4 +46,5 @@ public interface ProgramazioaRepository extends JpaRepository<Programazioa, Long
 	  """)
 	  Optional<Programazioa> findByKoadernoaIdFetchEbaluaketakUdetajp(@Param("koadernoId") Long koadernoId);
 
+    void deleteByKoadernoaId(Long koadernoId);
 }

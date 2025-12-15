@@ -20,4 +20,6 @@ public interface EbaluazioNotaRepository extends JpaRepository<EbaluazioNota, Lo
     List<EbaluazioNota> findByMatrikulaKoadernoa(Koadernoa koadernoa);
     
     boolean existsByEgoera(EbaluazioEgoera egoera);
+    
+    void deleteByMatrikula_Koadernoa_Id(Long koadernoId);
 }

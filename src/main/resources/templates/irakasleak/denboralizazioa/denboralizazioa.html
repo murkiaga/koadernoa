@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+    <meta charset="UTF-8">
+    <title>Denboralizazioa</title>
+    <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
+    <link rel="stylesheet" th:href="@{/css/jarduera-modal.css}">
+    <style>
+
+        h2, h3 { text-transform: capitalize; }
+        .hilabetea { margin-bottom: 2rem; }
+
+        .taula-egutegia {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .taula-egutegia th,
+        .taula-egutegia td {
+            border: 1px solid #ccc;
+            vertical-align: top;
+            width: 20%;
+            height: 90px;
+            position: relative;
+        }
+        .taula-egutegia th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+            text-align: center;
+            padding: 3px;
+            height: 24px;
+            font-size: 0.9rem;
+        }
+
+        .egun-zenbakia {
+            position: absolute;
+            top: 4px;
+            right: 6px;
+            font-size: 0.75rem;
+            color: #333;
+        }
+
+        .blank { background-color: #f0f0f0; }
+
+        .lektibo1 { background-color: #b3d9ff; }
+        .lektibo2 { background-color: #ffd699; }
+        .lektibo3 { background-color: #b2f2bb; }
+        .jaieguna { background-color: #ffe6e6; color: red; font-weight: bold; }
+        .ezlektiboa { background-color: black; color: white; }
+        .ordezkatua { background-color: yellow; }
+        .egun-zenbakia.testu-zuria { color: white !important; }
+
+        .jarduerak{
+            list-style:none;margin:22px 4px 4px;padding:0;
+            display:flex;flex-direction:column;gap:4px;
+        }
+        .jarduera-item{
+            font-size:.8rem;line-height:1.2;border-radius:6px;
+            padding:2px 6px;border:1px solid #e5e7eb;cursor:pointer;
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+        }
+        .jarduera-item:hover{background:#f3f4f6;}
+
+        .btn.danger {
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .btn.danger:hover { filter: brightness(0.95); }
+
+        .modal-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+        .modal-actions .btn.danger {
+            margin-right: auto;
+            background: #dc2626;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .modal-actions .btn.danger:hover { filter: brightness(0.95); }
+
+        .btn-asistentzia{
+          position:absolute; left:6px; top:4px;
+          font-size:.85rem; text-decoration:none;
+          padding:2px 6px; border:1px solid #ddd; border-radius:6px;
+          background:#fff; cursor:pointer;
+        }
+        .btn-asistentzia:hover{ background:#f3f4f6; }
+
+        /* Bista tabs-ak */
+        .bista-tabs {
+		    display: flex;
+		    gap: .5rem;
+		    margin: 1rem 0;
+		    border-bottom: 1px solid #e5e7eb;
+		    justify-content: center;   /* ← HAU GEHITU */
+		}
+        .bista-tabs a {
+            padding: .35rem .9rem;
+            text-decoration: none;
+            color: #374151;
+            border-radius: .75rem .75rem 0 0;
+            border: 1px solid transparent;
+            border-bottom: none;
+            font-size: .9rem;
+        }
+        .bista-tabs a.active {
+            border-color: #e5e7eb;
+            background: #f9fafb;
+            font-weight: 600;
+        }
+
+        /* Falten taula */
+        .faltak-taula {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .9rem;
+        }
+        .faltak-taula th,
+        .faltak-taula td {
+            border: 1px solid #e5e7eb;
+            padding: 4px 6px;
+            text-align: center;
+            vertical-align: middle;
+        }
+        .faltak-taula thead th {
+            background: #f3f4f6;
+            font-weight: 600;
+        }
+        .faltak-taula td.ikasle-izena {
+            text-align: left;
+            white-space: nowrap;
+        }
+        .faltak-taula tbody tr:nth-child(odd) {
+            background: #f9fafb;
+        }
+        .faltak-taula tbody tr:hover {
+            background: #e5e7eb;
+        }
+        
+		/* >=10% >20% koen kudeaketa */
+        .falta-pct-altua { background: #fecaca; }
+        .falta-pct-ertaina { background: #fef9c3; }
+
+        .programa-orduak-label {
+            font-size: .7rem;
+            color: #6b7280;
+            display: block;
+        }
+        
+        /* Falten taularen wrapper-a: scroll horizontala */
+		.faltak-wrapper {
+		    width: 100%;
+		    overflow-x: auto;
+		}
+		
+		/* Taula zabaltzeko */
+		.faltak-taula {
+		    border-collapse: separate;
+		    border-spacing: 0;
+		    min-width: max-content;
+		}
+		
+		/* Ehun barruko testua ez hausteko (egunak, % ...) */
+		.faltak-taula th,
+		.faltak-taula td {
+		    white-space: nowrap;
+		}
+		
+		/* Lehen zutabe finkoa (ikasle izena) */
+		.faltak-taula th.sticky-col,
+		.faltak-taula td.sticky-col {
+		    position: sticky;
+		    left: 0;
+		    z-index: 2;
+		}
+		
+		/* Header kolorea */
+		.faltak-taula th.sticky-col {
+		    background: #f3f4f6;
+		}
+		
+		/* Gorputzeko lehen zutabearen atzeko planoa, zebra efektua ez galtzeko
+		   nahi baduzu konbinazio gehiago egin daiteke, baina hasierako hau nahiko duzu */
+		.faltak-taula td.sticky-col {
+		    background: #ffffff;
+		    z-index: 1;
+		}
+		
+		
+
+    </style>
+    
+    <script th:src="@{/js/jarduera-modal.js}"></script>
+</head>
+<body>
+
+<!-- Navbar -->
+<div th:if="${koadernoAktiboa != null}"
+     th:replace="irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})"></div>
+
+<!-- Bista aukeraketa: egutegia vs faltak -->
+<div class="bista-tabs">
+    <a th:href="@{/irakasle/denboralizazioa(
+                    hilabetea=${hilabetea},
+                    urtea=${urtea},
+                    bista='egutegia')}"
+       th:classappend="${bista == null or bista == 'egutegia'} ? ' active'">
+        🗓 Egutegi bista
+    </a>
+
+    <a th:href="@{/irakasle/denboralizazioa(
+                    hilabetea=${hilabetea},
+                    urtea=${urtea},
+                    bista='faltak')}"
+       th:classappend="${bista == 'faltak'} ? ' active'">
+        📋 Falten bista
+    </a>
+</div>
+
+<!-- HEMEN TXERTATZEN DIRA FRAGMENTAK BAKARRIK -->
+
+<div th:if="${bista == null or bista == 'egutegia'}"
+     th:insert="irakasleak/denboralizazioa/egutegi-bista-fragment :: egutegiBista">
+</div>
+
+<div th:if="${bista == 'faltak'}"
+     th:insert="irakasleak/denboralizazioa/falten-bista-fragment :: faltakBista">
+</div>
+
+<!-- Egutegiaren JS (egutegi fragmentoa dagoenean soilik aurkituko du taula) -->
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+  const table = document.querySelector('.taula-egutegia');
+  if(!table) return;
+
+  table.addEventListener('click', function(e){
+    if (e.target.closest('a.btn-asistentzia')) return;
+
+    const td = e.target.closest('td[data-date]');
+    if (!td) return;
+
+    if (typeof irekiJardueraModala === 'function') {
+      irekiJardueraModala(td);
+    }
+  });
+});
+</script>
+
+</body>
+</html>

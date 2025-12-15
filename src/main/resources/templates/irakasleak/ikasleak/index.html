@@ -166,7 +166,7 @@
 	  </p>
 	
 	  <form th:if="${taldeIkasleKop != null and taldeIkasleKop > 0}"
-	        th:action="@{/irakasle/koaderno/{id}/inportatu-taldetik(id=${koadernoa.id})}"
+	        th:action="@{/irakasle/koadernoa/{id}/inportatu-taldetik(id=${koadernoa.id})}"
 	        method="post"
 	        style="margin-top:.5rem"
 	        onsubmit="return confirm('Taldeko ikasle guztiak matrikulatu koaderno honetan?');">

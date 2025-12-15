@@ -1,6 +1,5 @@
 package com.koadernoa.app.funtzionalitateak.irakasle;
 
-import java.security.Principal;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.List;
@@ -10,17 +9,14 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
 import com.koadernoa.app.objektuak.egutegia.entitateak.EgunBerezi;
@@ -31,12 +27,7 @@ import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoOrdutegiBlokea;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
-import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
-import com.koadernoa.app.objektuak.modulua.service.ModuloaService;
-import com.koadernoa.app.objektuak.zikloak.service.TaldeaService;
-import com.koadernoa.app.objektuak.zikloak.service.ZikloaService;
 
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
 @Controller
@@ -46,106 +37,103 @@ import lombok.RequiredArgsConstructor;
 public class IrakasleController {
 
 	private final IrakasleaService irakasleaService;
-	private final KoadernoaService koadernoaService;
 	private final KoadernoaRepository koadernoaRepository;
 	private final EgutegiaService egutegiaService;
+	private final IrakasleModelAttributes irakasleModelAttributes;
 	
 	private static final List<Astegunak> ASTE_ORDENA = List.of(
             Astegunak.ASTELEHENA, Astegunak.ASTEARTEA, Astegunak.ASTEAZKENA,
             Astegunak.OSTEGUNA, Astegunak.OSTIRALA
     );
-	
-	
-	@GetMapping("/koaderno/{id}")
-	public String hautatuKoadernoa(
-	        @PathVariable Long id,
-	        @RequestParam(value = "next", required = false) String nextEncoded,
-	        Authentication auth,
-	        Model model,
-	        RedirectAttributes ra) {
 
-	    Koadernoa koadernoa = koadernoaService.findById(id);
-	    if (koadernoa == null) {
-	        ra.addFlashAttribute("error", "Koadernoa ez da existitzen.");
-	        return "redirect:/irakasle";
+
+	@GetMapping({"/", ""})
+	public String index(Model model,
+	                    Authentication auth,
+	                    @SessionAttribute(name = "koadernoAktiboa", required = false)
+	                    Koadernoa koadernoAktiboa) {
+
+	    // 1) Irakaslearen emaila lortu
+	    String emaila;
+	    if (auth.getPrincipal() instanceof OAuth2User oAuth2User) {
+	        emaila = oAuth2User.getAttribute("email");
+	    } else {
+	        emaila = auth.getName();
 	    }
 
-	    // (Aukerakoa) Egiaztatu irakasleak koaderno honetarako sarbidea duela
-	    Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
-	    if (!koadernoaService.irakasleakBadaukaSarbidea(irakaslea, koadernoa)) {
-	        ra.addFlashAttribute("error", "Ez duzu koaderno honetarako sarbiderik.");
-	        return "redirect:/irakasle";
+	    // 2) Irakaslea eta bere koaderno-zerrenda
+	    Irakaslea irakaslea = irakasleaService.findByEmaila(emaila);
+	    model.addAttribute("irakaslea", irakaslea);
+
+	    // ⇒ HAU EGOKITU ZURE SERVICERA:
+	    // navbarreko select-ean erakusten dituzun koaderno berdinak
+	    List<Koadernoa> koadernoZerrenda =
+	    		irakasleModelAttributes.getKoadernoAktiboak(auth);
+	    model.addAttribute("irakasleKoadernoAktiboak", koadernoZerrenda);
+
+	    // 3) Ez badago koaderno aktiborik, baina badago gutxienez bat zerrendan → lehenengora redirect
+	    boolean sesioanDago = (koadernoAktiboa != null && koadernoAktiboa.getId() != null);
+
+	    if (!sesioanDago) {
+	        if (!koadernoZerrenda.isEmpty()) {
+	            Long lehenId = koadernoZerrenda.get(0).getId();
+	            // KoadernoaController-ek sartuko du sesioan, eta gero berriz etorriko gara /irakasle-ra
+	            return "redirect:/irakasle/koadernoa/" + lehenId + "?next=/irakasle";
+	        } else {
+	            // benetan ez dauka koadernorik
+	            model.addAttribute("koadernoAktiboDago", false);
+	            model.addAttribute("koadernoAktiboa", null);
+	            return "irakasleak/index";
+	        }
 	    }
 
-	    // Sesioan gorde (@SessionAttributes("koadernoAktiboa") dela eta)
+	    // 4) Sesioan badago ID bat → DBtik kargatu ordutegiarekin
+	    boolean koadernoAktiboDago = true;
+
+	    var optKoaderno = koadernoaRepository.findWithOrdutegiaById(koadernoAktiboa.getId());
+	    if (optKoaderno.isEmpty()) {
+	        // Baliteke koaderno hau ezabatuta egotea; saiatu berriz lehenengora joaten
+	        if (!koadernoZerrenda.isEmpty()) {
+	            Long lehenId = koadernoZerrenda.get(0).getId();
+	            return "redirect:/irakasle/koadernoa/" + lehenId + "?next=/irakasle";
+	        } else {
+	            koadernoAktiboDago = false;
+	            model.addAttribute("koadernoAktiboa", null);
+	            model.addAttribute("koadernoAktiboDago", false);
+	            return "irakasleak/index";
+	        }
+	    }
+
+	    Koadernoa koadernoa = optKoaderno.get();
 	    model.addAttribute("koadernoAktiboa", koadernoa);
 
-	    // 'next' DEKODETU eta modu seguruan balidatu
-	    String next = null;
-	    if (nextEncoded != null && !nextEncoded.isBlank()) {
-	        next = java.net.URLDecoder.decode(nextEncoded, java.nio.charset.StandardCharsets.UTF_8);
+	    // 5) Ikasturtearen izena
+	    String ikasturteaIzena =
+	            (koadernoa.getEgutegia() != null &&
+	             koadernoa.getEgutegia().getIkasturtea() != null)
+	                    ? koadernoa.getEgutegia().getIkasturtea().getIzena()
+	                    : "(ikasturterik ez)";
+	    model.addAttribute("ikasturteaIzena", ikasturteaIzena);
+
+	    // 6) Ordutegia (rows/cols/selected) — zure jatorrizko logika
+	    model.addAttribute("rows", IntStream.rangeClosed(1, 12).boxed().toList());
+	    model.addAttribute("cols", ASTE_ORDENA);
+
+	    Set<String> selected = new HashSet<>();
+	    if (koadernoa.getOrdutegiak() != null) {
+	        for (KoadernoOrdutegiBlokea b : koadernoa.getOrdutegiak()) {
+	            int col = ASTE_ORDENA.indexOf(b.getAsteguna()) + 1;
+	            for (int s = b.getHasieraSlot(); s <= b.bukaeraSlot(); s++) {
+	                selected.add(col + "-" + s);
+	            }
+	        }
 	    }
+	    model.addAttribute("selected", selected);
+	    model.addAttribute("editable", false); // defektuz blokeatuta
 
-	    if (isSafeInternal(next)) {
-	        return "redirect:" + next;
-	    }
-	    return "redirect:/irakasle";
+	    model.addAttribute("koadernoAktiboDago", koadernoAktiboDago);
+	    return "irakasleak/index";
 	}
-	
-	private boolean isSafeInternal(String next) {
-	    if (next == null) return false;
-	    // injekzio saiakerak/kanpoko URL-ak baztertu
-	    if (next.contains("\r") || next.contains("\n")) return false;
-	    if (next.startsWith("http://") || next.startsWith("https://")) return false;
-	    if (!next.startsWith("/")) return false;
-
-	    // loopak saihestu eta bide zentzudunak onartu
-	    if (next.startsWith("/irakasle/koaderno/")) return false;
-	    // Nahi baduzu, hemen murriztu: /irakasle... soilik
-	    if (!next.startsWith("/irakasle")) return false;
-
-	    return true;
-	}
-
-
-    @GetMapping({"/", ""})
-    public String index(Model model, Authentication auth, @ModelAttribute("koadernoAktiboa") Koadernoa koadernoAktiboa) {
-    	String emaila = null;
-
-        if (auth.getPrincipal() instanceof OAuth2User oAuth2User) {
-            emaila = oAuth2User.getAttribute("email");
-        } else {
-            emaila = auth.getName(); // fallback, adib. test lokaletan
-        }
-
-        Koadernoa koadernoa = koadernoaRepository.findWithOrdutegiaById(koadernoAktiboa.getId()).orElseThrow();
-        
-        model.addAttribute("ikasturteaIzena",
-        		koadernoa.getEgutegia()!=null && koadernoa.getEgutegia().getIkasturtea()!=null
-                        ? koadernoa.getEgutegia().getIkasturtea().getIzena() : "(ikasturterik ez)");
-        
-        model.addAttribute("rows", IntStream.rangeClosed(1, 12).boxed().toList());
-        model.addAttribute("cols", ASTE_ORDENA);
-        // hautatutako slot-ak set batean
-        Set<String> selected = new HashSet<>();
-        if (koadernoa.getOrdutegiak() != null) {
-            for (KoadernoOrdutegiBlokea b : koadernoa.getOrdutegiak()) {
-                int col = ASTE_ORDENA.indexOf(b.getAsteguna()) + 1;
-                for (int s = b.getHasieraSlot(); s <= b.bukaeraSlot(); s++) {
-                    selected.add(col + "-" + s);
-                }
-            }
-        }
-        model.addAttribute("selected", selected);
-        model.addAttribute("editable", false); // defektuz blokeatuta
-
-        
-        Irakaslea irakaslea = irakasleaService.findByEmaila(emaila);
-        model.addAttribute("irakaslea", irakaslea);
-        model.addAttribute("koadernoAktiboDago", koadernoAktiboa != null);
-
-        return "irakasleak/index";
-    }
     
     @GetMapping("/egutegia")
     public String koadernoarenEgutegia(@ModelAttribute("koadernoAktiboa") Koadernoa koadernoa, Model model) {

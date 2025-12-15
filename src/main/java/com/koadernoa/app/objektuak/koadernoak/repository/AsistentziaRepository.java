@@ -10,6 +10,8 @@ import org.springframework.data.repository.query.Param;
 
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Asistentzia;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Asistentzia.AsistentziaEgoera;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.Saioa;
+import com.koadernoa.app.objektuak.modulua.entitateak.Matrikula;
 
 
 public interface AsistentziaRepository extends JpaRepository<Asistentzia, Long> {
@@ -29,4 +31,12 @@ public interface AsistentziaRepository extends JpaRepository<Asistentzia, Long> 
 		        List<Long> saioaIds,
 		        List<AsistentziaEgoera> egoerak
 		);
+	  
+	// Hilabete jakin bateko saio + matrikulen gurutzaketa
+    List<Asistentzia> findBySaioaInAndMatrikulaIn(
+            List<Saioa> saioak,
+            List<Matrikula> matrikulak
+    );
+	  
+	  void deleteBySaioa_IdIn(List<Long> saioaIds);
 }

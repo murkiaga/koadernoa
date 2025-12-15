@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <title>Koadernoa ezabatu fragment</title>
+</head>
+<body>
+<div th:fragment="koadernoa-ezabatu-fragment(koaderno)">
+
+  <style>
+    .koaderno-delete-wrapper{
+      position:fixed;
+      bottom:30px;
+      left:24px;
+      z-index:95;
+    }
+    .koaderno-delete-btn{
+      background:#ef4444;
+      color:#fff;
+      padding:.6rem 1.2rem;
+      border-radius:10px;
+      font-weight:600;
+      border:none;
+      cursor:pointer;
+      box-shadow:0 3px 8px rgba(0,0,0,0.15);
+      font-size:.85rem;
+    }
+    .koaderno-delete-btn:hover{
+      background:#dc2626;
+    }
+
+    .koaderno-delete-backdrop{
+      position:fixed;
+      inset:0;
+      background:rgba(15,23,42,0.55);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:200;
+    }
+    .koaderno-delete-backdrop.show{
+      display:flex;
+    }
+    .koaderno-delete-modal{
+      background:#fff;
+      border-radius:12px;
+      padding:1.4rem 1.6rem;
+      max-width:480px;
+      width:100%;
+      box-shadow:0 10px 25px rgba(0,0,0,0.2);
+      border:1px solid #e5e7eb;
+      font-size:.9rem;
+    }
+    .koaderno-delete-modal h2{
+      margin-top:0;
+      font-size:1.05rem;
+      margin-bottom:.4rem;
+    }
+    .koaderno-delete-modal p{
+      margin:.3rem 0;
+    }
+    .koaderno-delete-modal code{
+      background:#f3f4f6;
+      padding:.1rem .3rem;
+      border-radius:4px;
+      font-size:.85rem;
+    }
+    .koaderno-delete-field{
+      margin-top:.6rem;
+      display:flex;
+      flex-direction:column;
+      gap:.2rem;
+    }
+    .koaderno-delete-field label{
+      font-size:.8rem;
+      color:#4b5563;
+    }
+    .koaderno-delete-field input[type="text"]{
+      padding:.35rem .45rem;
+      border-radius:8px;
+      border:1px solid #d1d5db;
+      font-size:.85rem;
+    }
+    .koaderno-delete-actions{
+      margin-top:1rem;
+      display:flex;
+      justify-content:flex-end;
+      gap:.5rem;
+    }
+    .btn-cancel{
+      background:#f3f4f6;
+      color:#374151;
+      border-radius:999px;
+      padding:.45rem .9rem;
+      border:1px solid #d1d5db;
+      cursor:pointer;
+      font-size:.85rem;
+    }
+    .btn-cancel:hover{
+      background:#e5e7eb;
+    }
+    .btn-danger{
+      background:#ef4444;
+      color:#fff;
+      border-radius:999px;
+      padding:.45rem .9rem;
+      border:1px solid #b91c1c;
+      cursor:pointer;
+      font-size:.85rem;
+    }
+    .btn-danger:hover{
+      background:#dc2626;
+    }
+  </style>
+
+  <!-- Beheko ezkerrean: koadernoa ezabatzeko botoia -->
+  <div class="koaderno-delete-wrapper">
+    <button type="button"
+            id="btnKoadernoDelete"
+            class="koaderno-delete-btn">
+      Koadernoa ezabatu
+    </button>
+  </div>
+
+  <!-- Modal + backdrop -->
+  <div id="koadernoDeleteBackdrop" class="koaderno-delete-backdrop">
+    <div class="koaderno-delete-modal">
+      <h2>Koadernoa ezabatu</h2>
+      <p>
+        <strong>Kontuz!</strong> Ekintza hau atzeraezina da.
+      </p>
+      <p>
+        Koaderno hau ezabatzera zoaz:
+      </p>
+      <p>
+        Koadernoa:
+        <code th:text="${koaderno.izena}">Programazioa</code><br>
+        Ikasturtea:
+        <code th:text="${koaderno.egutegia != null && koaderno.egutegia.ikasturtea != null ? koaderno.egutegia.ikasturtea.izena : '(ikasturterik ez)'}">
+          2025-2026
+        </code>
+      </p>
+      <p style="margin-top:.4rem;">
+        Mesedez, baieztapen gisa, idatzi berriro <strong>koadernoaren izena</strong> eta
+        <strong>ikasturtearen izena</strong>. Biak zehazki berdinak izan behar dira.
+      </p>
+
+      <form th:action="@{|/irakasle/koadernoa/${koaderno.id}/ezabatu|}"
+            method="post"
+            id="koadernoDeleteForm">
+        <input type="hidden"
+               th:if="${_csrf != null}"
+               th:name="${_csrf.parameterName}"
+               th:value="${_csrf.token}"/>
+
+        <div class="koaderno-delete-field">
+          <label for="confirmIzena">Koadernoaren izena</label>
+          <input type="text" id="confirmIzena" name="confirmIzena"
+                 placeholder="Idatzi koadernoaren izena zehazki...">
+        </div>
+
+        <div class="koaderno-delete-field">
+          <label for="confirmIkasturtea">Ikasturtearen izena</label>
+          <input type="text" id="confirmIkasturtea" name="confirmIkasturtea"
+                 placeholder="Adib. 2025-2026">
+        </div>
+
+        <div class="koaderno-delete-actions">
+          <button type="button"
+                  id="btnKoadernoDeleteCancel"
+                  class="btn-cancel">
+            Utzi
+          </button>
+          <button type="submit"
+                  class="btn-danger">
+            Bai, ezabatu koadernoa
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const btnOpen   = document.getElementById('btnKoadernoDelete');
+      const backdrop  = document.getElementById('koadernoDeleteBackdrop');
+      const btnCancel = document.getElementById('btnKoadernoDeleteCancel');
+      const form      = document.getElementById('koadernoDeleteForm');
+      const inputIzena = document.getElementById('confirmIzena');
+      const inputIk   = document.getElementById('confirmIkasturtea');
+
+      if (!btnOpen || !backdrop || !btnCancel || !form) return;
+
+      function openModal(){
+        backdrop.classList.add('show');
+        if (inputIzena) inputIzena.focus();
+      }
+      function closeModal(){
+        backdrop.classList.remove('show');
+        if (inputIzena) inputIzena.value = '';
+        if (inputIk)    inputIk.value = '';
+      }
+
+      btnOpen.addEventListener('click', openModal);
+      btnCancel.addEventListener('click', closeModal);
+
+      // backdrop grisean klik eginez ixteko
+      backdrop.addEventListener('click', function(e){
+        if (e.target === backdrop) {
+          closeModal();
+        }
+      });
+
+      // Submit baino lehen, gutxienez bi eremuak beteta egon daitezela
+      form.addEventListener('submit', function(e){
+        const iz = (inputIzena && inputIzena.value.trim()) || '';
+        const ik = (inputIk && inputIk.value.trim()) || '';
+
+        if (!iz || !ik) {
+          e.preventDefault();
+          alert('Mesedez, bete bi eremuak: koadernoaren izena eta ikasturtearen izena.');
+        }
+        // Balioak zuzenak diren ala ez, serverrean egiaztatuko da
+      });
+    })();
+  </script>
+
+</div>
+</body>
+</html>

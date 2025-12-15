@@ -38,7 +38,6 @@ public class AsistentziaController {
 	  private final AsistentziaService asistentziaService;
 	  private final AsistentziaRepository asistentziaRepository;
 	  private final SaioaRepository saioaRepository;
-	  private final KoadernoOrdutegiBlokeaRepository koadernoOrdutegiBlokeaRepository;
 	  private final MatrikulaRepository matrikulaRepository;
 
 	  /** GET: Eguneko taula (Saioa-ren lazy-create. Behar denean sortu) */

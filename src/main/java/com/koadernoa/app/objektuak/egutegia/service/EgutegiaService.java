@@ -79,7 +79,7 @@ public class EgutegiaService {
 	        }
 
 	        // Hilabetearen izena euskaraz
-	        String hilabeteIzena = hil.getMonth().getDisplayName(TextStyle.FULL, new Locale("eu"));
+	        String hilabeteIzena = hil.getMonth().getDisplayName(TextStyle.FULL_STANDALONE, new Locale("eu"));
 	        emaitza.put(hilabeteIzena, asteak);
 	    }
 

@@ -4,78 +4,197 @@
   <meta charset="UTF-8">
   <title>Irakaslearen orrialdea</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
-  <meta name="_csrf" th:content="${_csrf.token}"/>
-	<meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+  <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
+  <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}"/>
+
   <script th:src="@{/js/irakasle-nav.js}"></script>
+
   <style>
     /* Orrialdeko edukia (navbarra ez ukitzeko, scoping klaserik) */
-    .hasiera-container{display:flex;justify-content:center;align-items:flex-start;min-height:calc(100vh - 120px);padding:2rem 1rem;background:#f8fafc}
-    .hasiera-koad{width:100%;max-width:900px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px 24px;box-shadow:0 2px 6px rgba(0,0,0,.06)}
-    .head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
-    .tit{font-weight:700;font-size:1.1rem}
-    .meta{color:#475569}
+    .hasiera-container{
+      display:flex;
+      justify-content:center;
+      align-items:flex-start;
+      min-height:calc(100vh - 120px);
+      padding:2rem 1rem;
+      background:#f8fafc;
+    }
+    .hasiera-koad{
+      width:100%;
+      max-width:900px;
+      background:#fff;
+      border:1px solid #e5e7eb;
+      border-radius:12px;
+      padding:20px 24px;
+      box-shadow:0 2px 6px rgba(0,0,0,.06);
+    }
+    .head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-bottom:12px;
+    }
+    .tit{
+      font-weight:700;
+      font-size:1.1rem;
+    }
+    .meta{
+      color:#475569;
+    }
 
     /* Toggle lock/unlock */
-    .btn-toggle{display:flex;border-radius:9999px;overflow:hidden;border:1px solid #cbd5e1}
-    .btn-toggle .btn-toggle-option{padding:.35rem .8rem;cursor:pointer;user-select:none;display:flex;align-items:center;gap:.4rem}
-    .btn-toggle .btn-toggle-option.selected{font-weight:600}
-    .btn-toggle .dark.selected{background:#e5e7eb}
-    .btn-toggle .primary.selected{background:#22c55e;color:#fff}
-    .icon{width:14px;height:14px;border-radius:2px;display:inline-block}
-    .icon.locked{background:#64748b}
-    .icon.unlocked{background:#16a34a}
+    .btn-toggle{
+      display:flex;
+      border-radius:9999px;
+      overflow:hidden;
+      border:1px solid #cbd5e1;
+    }
+    .btn-toggle .btn-toggle-option{
+      padding:.35rem .8rem;
+      cursor:pointer;
+      user-select:none;
+      display:flex;
+      align-items:center;
+      gap:.4rem;
+      font-size:.85rem;
+    }
+    .btn-toggle .btn-toggle-option.selected{
+      font-weight:600;
+    }
+    .btn-toggle .dark.selected{
+      background:#e5e7eb;
+    }
+    .btn-toggle .primary.selected{
+      background:#22c55e;
+      color:#fff;
+    }
+    .icon{
+      width:14px;
+      height:14px;
+      border-radius:2px;
+      display:inline-block;
+    }
+    .icon.locked{
+      background:#64748b;
+    }
+    .icon.unlocked{
+      background:#16a34a;
+    }
 
     /* Ordutegia (grid) */
-    .grid-viewport{border:1px solid #e5e7eb;border-radius:12px;overflow:auto;margin-top:10px;background:#fff;max-height:520px}
-    table.grid{width:100%;border-collapse:collapse;table-layout:fixed}
-    .grid col:first-child{width:60px}
-    .grid th,.grid td{border:1px solid #eee;height:48px;box-sizing:border-box}
-    .grid thead th{background:#fafafa;font-weight:600;text-align:center;padding:.6rem;white-space:nowrap;position:sticky;top:0;z-index:2}
-    .grid thead th:first-child{padding:0}
-    .grid tbody th{background:#fcfcfc;text-align:center;font-weight:500}
-    .grid td{cursor:default}
-    .grid td.editable{cursor:pointer}
-    .grid td.selected{background:#dcdcdc}
+    .grid-viewport{
+      border:1px solid #e5e7eb;
+      border-radius:12px;
+      overflow:auto;
+      margin-top:10px;
+      background:#fff;
+      max-height:520px;
+    }
+    table.grid{
+      width:100%;
+      border-collapse:collapse;
+      table-layout:fixed;
+    }
+    .grid col:first-child{
+      width:60px;
+    }
+    .grid th,
+    .grid td{
+      border:1px solid #eee;
+      height:48px;
+      box-sizing:border-box;
+    }
+    .grid thead th{
+      background:#fafafa;
+      font-weight:600;
+      text-align:center;
+      padding:.6rem;
+      white-space:nowrap;
+      position:sticky;
+      top:0;
+      z-index:2;
+    }
+    .grid thead th:first-child{
+      padding:0;
+    }
+    .grid tbody th{
+      background:#fcfcfc;
+      text-align:center;
+      font-weight:500;
+    }
+    .grid td{
+      cursor:default;
+    }
+    .grid td.editable{
+      cursor:pointer;
+    }
+    .grid td.selected{
+      background:#dcdcdc;
+    }
 
-    /* Botoiak (edit moduan) */
-    .actions{margin-top:14px;display:none;justify-content:space-between}
-    .actions.show{display:flex}
-    .btn{padding:.6rem 1.2rem;border-radius:10px;border:1px solid transparent;cursor:pointer;font-weight:600}
-    .btn.cancel{background:#f3f4f6;color:#444;border:1px solid #d1d5db}
-    .btn.cancel:hover{background:#e5e7eb}
-    .btn.primary{background:#3b82f6;color:#fff}
-    .btn.primary:hover{background:#2563eb}
+    /* Botoiak (edit moduan) – momentuz ez ditugu asko erabiltzen */
+    .actions{
+      margin-top:14px;
+      display:none;
+      justify-content:space-between;
+    }
+    .actions.show{
+      display:flex;
+    }
+    .btn{
+      padding:.6rem 1.2rem;
+      border-radius:10px;
+      border:1px solid transparent;
+      cursor:pointer;
+      font-weight:600;
+    }
+    .btn.cancel{
+      background:#f3f4f6;
+      color:#444;
+      border:1px solid #d1d5db;
+    }
+    .btn.cancel:hover{
+      background:#e5e7eb;
+    }
+    .btn.primary{
+      background:#3b82f6;
+      color:#fff;
+    }
+    .btn.primary:hover{
+      background:#2563eb;
+    }
 
-    /* “Koaderno berria sortu” botoia */
-    .btn-create{margin-top:1rem;display:inline-block;padding:.6rem 1.2rem;border-radius:10px;background:#3b82f6;color:#fff;text-decoration:none}
-    .btn-create:hover{background:#2563eb}
-    
+    /* “Koaderno berria sortu” botoia (floating) */
     .berria-sortu {
-	  position: fixed;            /* pantailan finkatuta */
-	  bottom: 30px;               /* 30px behetik */
-	  left: 0;
-	  right: 0;
-	  display: flex;
-	  justify-content: center;    /* erdian horizontalki */
-	  z-index: 100;               /* navbar baino gorago */
-	}
-	
-	.btn-create {
-	  background: #3b82f6;
-	  color: white;
-	  padding: 0.8rem 1.6rem;
-	  border-radius: 12px;
-	  font-weight: 600;
-	  box-shadow: 0 3px 8px rgba(0,0,0,0.15);
-	  text-decoration: none;
-	  transition: background 0.2s, transform 0.2s;
-	}
-	
-	.btn-create:hover {
-	  background: #2563eb;
-	  transform: translateY(-1px);
-	}
+      position: fixed;
+      bottom: 30px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      z-index: 90;
+      pointer-events:none; /* barruko botoiak bai, honek ez */
+    }
+    .berria-sortu .btn-create {
+      pointer-events:auto;
+    }
+    .btn-create{
+      background:#3b82f6;
+      color:white;
+      padding:0.8rem 1.6rem;
+      border-radius:12px;
+      font-weight:600;
+      box-shadow:0 3px 8px rgba(0,0,0,0.15);
+      text-decoration:none;
+      transition:background 0.2s, transform 0.2s;
+    }
+    .btn-create:hover{
+      background:#2563eb;
+      transform:translateY(-1px);
+    }
   </style>
 </head>
 <body>
@@ -87,58 +206,83 @@
 
 <h1 th:text="'Kaixo, ' + ${irakaslea.izena} + '!'">Kaixo!</h1>
 
+<!-- Koaderno aktiborik EZ badago -->
 <div th:if="${!koadernoAktiboDago}">
   <p>Ez duzu koadernorik aukeratuta edo sortuta. Hasi koaderno berria sortzen!</p>
   <a th:href="@{/irakasle/koadernoa/berria}" class="btn-create">Koaderno berria sortu</a>
 </div>
 
+<!-- Koaderno aktiboa badago -->
 <div th:if="${koadernoAktiboDago}" class="hasiera-container">
   <div class="hasiera-koad">
 
     <div class="head">
       <div>
-        <div class="tit" th:text="${koadernoAktiboa.moduloa != null ? koadernoAktiboa.moduloa.izena : '(modulurik ez)'}">Moduloa</div>
-        <div class="meta" th:text="${koadernoAktiboa.egutegia != null && koadernoAktiboa.egutegia.ikasturtea != null ? koadernoAktiboa.egutegia.ikasturtea.izena : '(ikasturterik ez)'}">2025-2026</div>
+        <div class="tit"
+             th:text="${koadernoAktiboa.moduloa != null ? koadernoAktiboa.moduloa.izena : '(modulurik ez)'}">
+          Moduloa
+        </div>
+        <div class="meta"
+             th:text="${koadernoAktiboa.egutegia != null && koadernoAktiboa.egutegia.ikasturtea != null ? koadernoAktiboa.egutegia.ikasturtea.izena : '(ikasturterik ez)'}">
+          2025-2026
+        </div>
       </div>
 
       <!-- Toggle: lock/unlock (defektuz lock) -->
-      <div id="KoadernoakConfigPortadaContentButton" data-selected_action="lock" class="btn-toggle">
-        <div class="btn-toggle-option dark selected" data-action="lock"><i class="icon locked"></i><span>Blokeatuta</span></div>
-        <div class="btn-toggle-option primary" data-action="unlock"><i class="icon unlocked"></i><span>Desblokeatu</span></div>
+      <div id="KoadernoakConfigPortadaContentButton"
+           data-selected_action="lock"
+           class="btn-toggle">
+        <div class="btn-toggle-option dark selected" data-action="lock">
+          <i class="icon locked"></i><span>Blokeatuta</span>
+        </div>
+        <div class="btn-toggle-option primary" data-action="unlock">
+          <i class="icon unlocked"></i><span>Desblokeatu</span>
+        </div>
       </div>
     </div>
 
-    <!-- Ordutegia (irakurtzeko moduan; desblokeatzean editagarri) -->
+    <!-- Ordutegia -->
     <div class="grid-viewport">
-      <form th:action="@{/irakasle/koadernoa/${koadernoAktiboa.id}/ordutegia|}" method="post" id="ordutegiForm">
-        <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <form th:action="@{|/irakasle/koadernoa/${koadernoAktiboa.id}/ordutegia|}"
+            method="post"
+            id="ordutegiForm">
+        <input type="hidden"
+               th:if="${_csrf != null}"
+               th:name="${_csrf.parameterName}"
+               th:value="${_csrf.token}"/>
 
-        <table class="grid" id="ordutegiTaula" th:attr="data-koaderno-id=${koadernoAktiboa.id}">
+        <table class="grid"
+               id="ordutegiTaula"
+               th:attr="data-koaderno-id=${koadernoAktiboa.id}">
           <colgroup>
             <col>
             <col span="5">
           </colgroup>
 
           <thead>
-            <tr>
-              <th></th>
-              <th th:each="c : ${cols}" th:text="${#strings.capitalize(c.name().toLowerCase())}"></th>
-            </tr>
+          <tr>
+            <th></th>
+            <th th:each="c : ${cols}"
+                th:text="${#strings.capitalize(c.name().toLowerCase())}">
+              Astelehena
+            </th>
+          </tr>
           </thead>
 
           <tbody id="gridBody">
-            <tr th:each="r : ${rows}">
-              <th th:text="${r}"></th>
-              <td th:each="c, stat : ${cols}"
-                  th:attr="data-col=${stat.index + 1}, data-row=${r}"
-                  th:classappend="${selected.contains((stat.index + 1) + '-' + r)} ? 'selected' : ''"></td>
-            </tr>
+          <tr th:each="r : ${rows}">
+            <th th:text="${r}">1</th>
+            <td th:each="c, stat : ${cols}"
+                th:attr="data-col=${stat.index + 1}, data-row=${r}"
+                th:classappend="${selected.contains((stat.index + 1) + '-' + r)} ? 'selected' : ''">
+            </td>
+          </tr>
           </tbody>
         </table>
 
-        <!-- input ezkutuak (edit moduan eguneratzen dira) -->
+        <!-- input ezkutuak (behar izanez gero) -->
         <div id="hiddenInputs">
-          <template id="tpl"><input type="hidden" name="cells" /></template>
+          <template id="tpl"><input type="hidden" name="cells"/></template>
           <span th:each="k : ${selected}">
             <input type="hidden" name="cells" th:value="${k}">
           </span>
@@ -150,8 +294,14 @@
   </div>
 </div>
 
+<!-- Beheko “Koaderno berria sortu” botoia (beti ikusgai) -->
 <div class="berria-sortu">
-	<a th:href="@{/irakasle/koadernoa/berria}" class="btn-create">Koaderno berria sortu</a>
+  <a th:href="@{/irakasle/koadernoa/berria}" class="btn-create">Koaderno berria sortu</a>
+</div>
+
+<!-- Koadernoa EZABATZEKO fragment-a (botoia + modala, behean ezkerrean) -->
+<div th:if="${koadernoAktiboDago}"
+     th:replace="~{irakasleak/fragments/koadernoa-ezabatu :: koadernoa-ezabatu-fragment(${koadernoAktiboa})}">
 </div>
 
 <script>
@@ -159,7 +309,6 @@
   const table = document.getElementById('ordutegiTaula');
   if (!table) return; // nothing to wire
 
-  // Optional toggle (lock/unlock). If missing, we keep it editable by default.
   const toggle = document.getElementById('KoadernoakConfigPortadaContentButton');
 
   // CSRF from Spring Security
@@ -168,8 +317,8 @@
   const CSRF_TOKEN  = metaToken  ? metaToken.content  : null;
   const CSRF_HEADER = metaHeader ? metaHeader.content : "X-CSRF-TOKEN";
 
-  // If you want it locked by default when toggle exists, set false; otherwise true
-  setEditable(!toggle); // editable if no toggle present
+  // Hasieran: toggle badago → blokeatuta; bestela → editagarri.
+  setEditable(!toggle); // toggle ez badago, true; badago → false
 
   if (toggle) {
     toggle.addEventListener('click', (e) => {
@@ -177,7 +326,6 @@
       if (!opt) return;
       const action = opt.dataset.action;
 
-      // visual state
       toggle.querySelectorAll('.btn-toggle-option').forEach(o => o.classList.remove('selected'));
       opt.classList.add('selected');
 
@@ -196,22 +344,22 @@
     const td = ev.currentTarget;
     const wasSelected = td.classList.contains('selected');
 
-    // Optimistic UI toggle
+    // Optimistic UI
     td.classList.toggle('selected');
     const nowSelected = !wasSelected;
 
     const col = td.dataset.col;
     const row = td.dataset.row;
-    const koadernoId = table.dataset.koadernoId; // make sure the <table> has data-koaderno-id
+    const koadernoId = table.dataset.koadernoId;
 
     try {
       const params = new URLSearchParams({ col, row, selected: String(nowSelected) });
       const res = await fetch(`/irakasle/koadernoa/${koadernoId}/ordutegia/cell`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-          ...(CSRF_TOKEN ? { [CSRF_HEADER]: CSRF_TOKEN } : {})
-        },
+        headers: Object.assign(
+          { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+          CSRF_TOKEN ? { [CSRF_HEADER]: CSRF_TOKEN } : {}
+        ),
         body: params
       });
 
@@ -220,7 +368,7 @@
       if (!json.ok) throw new Error(json.error || 'Errorea gordetzean');
 
     } catch (err) {
-      // Revert optimistic change on failure
+      // Revert optimistic change
       td.classList.toggle('selected');
       console.error('Ezin izan da gorde slot-a:', err);
       alert('Ezin izan da gorde. Saiatu berriro, mesedez.');
@@ -228,7 +376,6 @@
   }
 })();
 </script>
-
 
 </body>
 </html>

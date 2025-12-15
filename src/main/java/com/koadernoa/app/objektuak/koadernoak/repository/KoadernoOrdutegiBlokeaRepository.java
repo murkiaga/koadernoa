@@ -14,4 +14,9 @@ public interface KoadernoOrdutegiBlokeaRepository extends JpaRepository<Koaderno
 	
 	@Query("select b.asteguna from KoadernoOrdutegiBlokea b where b.koadernoa.id = :koadernoaId")
 	List<Astegunak> findAstegunakByKoadernoaId(@Param("koadernoaId") Long koadernoaId);
+	
+	void deleteByKoadernoa_Id(Long koadernoId);
+	
+	// Falten bistako kalkuluetarako:
+    List<KoadernoOrdutegiBlokea> findByKoadernoa_Id(Long koadernoaId);
 }

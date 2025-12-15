@@ -1,0 +1,132 @@
+<!-- ===================== EGUTEGI BISTA FRAGMENT ===================== -->
+<div th:fragment="egutegiBista">
+
+    <!-- Hilabetea + botoiak -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <a th:href="@{/irakasle/denboralizazioa(
+                        hilabetea=${hilabetea == 1 ? 12 : hilabetea - 1},
+                        urtea=${hilabetea == 1 ? urtea - 1 : urtea},
+                        bista='egutegia')}">
+            ⬅ Aurrekoa
+        </a>
+
+        <h2 th:text="${hilabeteUrtea}" style="margin: 0; text-align: center; flex: 1;">Hilabetea</h2>
+
+        <a th:href="@{/irakasle/denboralizazioa(
+                        hilabetea=${hilabetea == 12 ? 1 : hilabetea + 1},
+                        urtea=${hilabetea == 12 ? urtea + 1 : urtea},
+                        bista='egutegia')}">
+            Hurrengoa ➡
+        </a>
+    </div>
+
+    <!-- Egutegi taula -->
+    <table class="taula-egutegia">
+        <thead>
+            <tr>
+                <th>Astelehena</th>
+                <th>Asteartea</th>
+                <th>Asteazkena</th>
+                <th>Osteguna</th>
+                <th>Ostirala</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="astea : ${asteak}">
+    		    <td th:each="egunaBista : ${astea}"
+    			    th:class="${egunaBista.data == null} ? 'blank' : ''"
+    			    th:classappend="${egunaBista.data != null} ? ${egunMap[egunaBista.data.toString()]} : ''"
+    			    th:title="${egunaBista.data != null} ? ${deskribapenaMap[egunaBista.data.toString()]} : ''"
+    			    th:attr="data-date=${egunaBista.data != null ? egunaBista.data : null}"
+    			    style="cursor: pointer;">
+    			    <div class="egun-zenbakia"
+    			         th:text="${egunaBista.data != null ? egunaBista.data.dayOfMonth : ''}"
+    			         th:classappend="${egunMap[egunaBista.data.toString()] == 'ezlektiboa'} ? ' testu-zuria' : ''"
+    			         th:style="${egunaBista.data != null && !egunaBista.hilabeteAktibokoa} ? 'color: #ccc;' : 'color: black;'">
+    			    </div>
+    			    <!-- Asistentzia botoia (lektiboa bada soilik) -->
+    				<a th:if="${egunaBista.data != null 
+              					and (asistentziaEgunMap[egunaBista.data.toString()] == true)}"
+    				   th:href="@{/irakasle/asistentzia(data=${egunaBista.data})}"
+    				   class="btn-asistentzia"
+    				   title="Egun honetako asistentzia">
+    				  👤✔
+    				</a>
+    			    <!-- Egun honetako jarduerak -->
+    				  <ul class="jarduerak" th:if="${egunaBista.data != null and jardueraMap[egunaBista.data] != null}">
+    				    <li class="jarduera-item"
+    					    th:each="j : ${jardueraMap[egunaBista.data]}"
+    					    th:text="${ j.titulua + ' - ' + ( #strings.isEmpty(j.mota) ? 'planifikatua' : j.mota ) }"
+    					    th:attr="data-id=${j.id}"
+    					    onclick="editatuJarduera(event, this)">
+    					</li>
+    				  </ul>
+    			</td>
+    		</tr>
+        </tbody>
+    </table>
+
+    <!-- MODALA -->
+    <div id="jardueraModal" class="modal" style="display:none">
+      <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <h3 id="jardueraModalTitle">Jarduera berria</h3>
+          <button type="button" class="close" onclick="itxiJardueraModala()">×</button>
+        </div>
+
+        <!-- FORM nagusia (sortu/eguneratu) -->
+        <form th:action="@{/irakasle/denboralizazioa/jarduera}" method="post" id="jardueraForm">
+          <input type="hidden" name="id" id="jardueraId">
+          <input type="hidden" name="urtea" th:value="${urtea}">
+          <input type="hidden" name="hilabetea" th:value="${hilabetea}">
+          <input type="hidden" name="data" id="jardueraData">
+          <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+          <div class="form-row">
+            <label>Titulua</label>
+            <input name="titulua" id="jardueraTitulua" type="text" required>
+          </div>
+
+          <div class="form-row">
+            <label>Deskribapena</label>
+            <textarea name="deskribapena" id="jardueraDeskribapena" rows="3"></textarea>
+          </div>
+
+          <div class="form-row">
+            <label>Orduak</label>
+            <input name="orduak" id="jardueraOrduak" type="number" min="0" step="0.25" value="1">
+          </div>
+
+          <div class="form-row">
+            <label>Mota</label>
+            <select name="mota" id="jardueraMota">
+              <option value="planifikatua">Planifikatua</option>
+              <option value="eginda">Eginda</option>
+              <option value="ebaluazioa">Ebaluazioa</option>
+            </select>
+          </div>
+
+          <div class="modal-actions" style="display:flex; align-items:center; gap:.5rem; justify-content:flex-end;">
+            <button type="button"
+                    id="jardueraEzabatuBtn"
+                    class="btn danger"
+                    style="display:none; margin-right:auto;"
+                    onclick="berretsiEtaEzabatu()">Ezabatu</button>
+
+            <button type="button" class="btn secondary" onclick="itxiJardueraModala()">Ezeztatu</button>
+            <button type="submit" class="btn primary">Gorde</button>
+          </div>
+        </form>
+
+        <form id="jardueraEzabatuForm"
+              th:action="@{'/irakasle/denboralizazioa/jarduera/' + 0 + '/ezabatu'}"
+              method="post"
+              style="display:none;">
+          <input type="hidden" name="urtea" th:value="${urtea}">
+          <input type="hidden" name="hilabetea" th:value="${hilabetea}">
+          <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        </form>
+      </div>
+    </div>
+
+</div>

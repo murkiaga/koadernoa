@@ -5,43 +5,133 @@
     <title>Egutegia</title>
     <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
     <style>
+        :root {
+            --b: #e5e7eb;
+            --bg: #f9fafb;
+            --card-bg: #ffffff;
+            --text: #111827;
+        }
+
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .page {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5rem 1rem 2rem;
+        }
+
+        h2 {
+            margin: 0 0 1.25rem;
+            font-size: 1.3rem;
+        }
+
+        /* GRID: hilabeteak 3 zutabetan */
+        .egutegi-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1.5rem;
+            align-items: flex-start;
+        }
+
+        /* pantaila txikiagoetan erantzunkorra */
+        @media (max-width: 1024px) {
+            .egutegi-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 700px) {
+            .egutegi-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .hilabete-card {
+            background: var(--card-bg);
+            border-radius: 0.75rem;
+            border: 1px solid var(--b);
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+            padding: 0.75rem 0.75rem 1rem;
+        }
+
+        .hilabete-card h3 {
+            margin: 0 0 .5rem;
+            font-size: .95rem;
+            text-align: center;
+            text-transform: capitalize;
+        }
+
+        .hilabete-card table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .75rem;
+        }
+
+        .hilabete-card thead th {
+            background: #f3f4f6;
+            font-weight: 600;
+        }
+
+        .hilabete-card th,
+        .hilabete-card td {
+            border: 1px solid #d1d5db;
+            padding: 3px;
+            text-align: center;
+            width: 26px;
+            height: 26px;
+        }
+
+        .blank      { background-color: #f3f4f6; }
         .lektibo1   { background-color: #b3d9ff; }
         .lektibo2   { background-color: #ffd699; }
         .lektibo3   { background-color: #b2f2bb; }
-        .jaieguna   { color: red; font-weight: bold; }
-        .ezlektiboa { background-color: black; color: white; }
-        .ordezkatua { background-color: yellow; }
-        .blank      { background-color: #f0f0f0; }
-        table       { border-collapse: collapse; margin-bottom: 2rem; }
-        th, td      { border: 1px solid #ccc; padding: 4px; text-align: center; width: 30px; height: 30px; }
+        .jaieguna   { background-color: rgb(255, 255, 255); color: #b91c1c; font-weight: 600; }
+        .ezlektiboa { background-color: #111827; color: white; }
+        .ordezkatua { background-color: #fef3c7; }
+
+        /* zenbakiak pixka bat txikiago eta finago */
+        .hilabete-card td {
+            font-size: .7rem;
+        }
     </style>
 </head>
 <body>
     <!-- Irakaslearen navbarra -->
     <div th:if="${koadernoAktiboa != null}"
-     th:replace="irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})"></div>
-	
-    <h2 th:text="${ikasturtea.izena}">Ikasturtea</h2>
+         th:replace="irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})"></div>
 
-    <div th:each="entry : ${hilabeteka}">
-        <h3 th:text="${entry.key}">Hilabetea</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Al</th><th>Ar</th><th>Az</th><th>Og</th><th>Or</th><th>Lr</th><th>Ig</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr th:each="astea : ${entry.value}">
-                    <td th:each="egun : ${astea}"
-                        th:class="${egun == null} ? 'blank' : ''"
-                        th:classappend="${egun != null} ? ${klaseMap[egun.toString()]} : ''"
-                        th:title="${egun != null} ? ${deskribapenaMap[egun.toString()]} : ''"
-                        th:text="${egun != null ? egun.dayOfMonth : ''}">
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+    <div class="page">
+        <h2 th:text="${ikasturtea.izena}">Ikasturtea</h2>
+
+        <div class="egutegi-grid">
+            <!-- hilabete bakoitza "txartel" batean -->
+            <section th:each="entry : ${hilabeteka}" class="hilabete-card">
+                <h3 th:text="${entry.key}">Hilabetea</h3>
+
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Al</th><th>Ar</th><th>Az</th><th>Og</th><th>Or</th><th>Lr</th><th>Ig</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="astea : ${entry.value}">
+                        <td th:each="egun : ${astea}"
+                            th:class="${egun} == null ? 'blank' : ''"
+                            th:classappend="${egun} != null ? ${klaseMap[egun.toString()]} : ''"
+                            th:title="${egun} != null ? ${deskribapenaMap[egun.toString()]} : ''"
+                            th:text="${egun != null ? egun.dayOfMonth : ''}">
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </section>
+        </div>
     </div>
 </body>
 </html>

@@ -10,4 +10,6 @@ public interface EstatistikaEbaluazioanRepository extends JpaRepository<Estatist
 
 	List<EstatistikaEbaluazioan> findByKoadernoaIdOrderByEbaluazioMomentua_OrdenaAscIdAsc(Long koadernoId);
 	
+	void deleteByKoadernoa_Id(Long koadernoId);
+	
 }

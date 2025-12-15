@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<body>
+<!-- ===================== FALTEN BISTA FRAGMENT ===================== -->
+<div th:fragment="faltakBista">
+
+    <!-- Hilabetea + botoiak (faltak bistari eutsiz) -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <a th:href="@{/irakasle/denboralizazioa(
+                        hilabetea=${hilabetea == 1 ? 12 : hilabetea - 1},
+                        urtea=${hilabetea == 1 ? urtea - 1 : urtea},
+                        bista='faltak')}">
+            ⬅ Aurrekoa
+        </a>
+
+        <h2 th:text="${hilabeteUrtea}" style="margin: 0; text-align: center; flex: 1;">Hilabetea</h2>
+
+        <a th:href="@{/irakasle/denboralizazioa(
+                        hilabetea=${hilabetea == 12 ? 1 : hilabetea + 1},
+                        urtea=${hilabetea == 12 ? urtea + 1 : urtea},
+                        bista='faltak')}">
+            Hurrengoa ➡
+        </a>
+    </div>
+
+    <h3>Falten jarraipena</h3>
+
+    <div class="faltak-wrapper">
+      <table class="faltak-taula">
+          <thead>
+          <tr>
+              <th rowspan="2" class="sticky-col">Ikaslea</th>
+
+              <th rowspan="2">
+                  Guztira faltak (orduetan)
+                  <span class="programa-orduak-label">
+                      / programatutako orduak:
+                      <span th:text="${programaOrduak}">0</span>
+                  </span>
+              </th>
+
+              <th rowspan="2">Falten %</th>
+
+              <!-- Klase egun bakoitza -->
+              <th th:each="egun : ${faltaEgunak}"
+                  th:text="${#temporals.format(egun, 'yyyy-MM-dd')}">
+                  2025-09-08
+              </th>
+          </tr>
+          <tr>
+              <!-- Bigarren lerroan: egun bakoitzeko klase orduak -->
+              <th th:each="egun : ${faltaEgunak}"
+                  th:text="${faltaEgunOrduak[egun]}">
+                  2
+              </th>
+          </tr>
+          </thead>
+
+          <tbody>
+          <tr th:each="row : ${faltakIkasleak}">
+              <td class="ikasle-izena sticky-col"
+                  th:text="${row.ikasleIzenOsoa}">
+                  Abizena1 Abizena2, Izena
+              </td>
+
+              <td th:text="${row.faltaOrduak}">0</td>
+
+              <td th:text="${#numbers.formatDecimal(row.faltaPortzentaia, 1, 2)} + '%'"
+			    th:classappend="${row.faltaPortzentaia} > 20 ? ' falta-pct-altua' :
+			                    (${row.faltaPortzentaia} >= 10 ? ' falta-pct-ertaina' : '')">
+			    0%
+			</td>
+
+              <td th:each="egun : ${faltaEgunak}"
+                  th:text="${row.balioa(egun)}">
+                  <!-- adib: 2 edo b -->
+              </td>
+          </tr>
+          </tbody>
+      </table>
+    </div>
+
+</div>
+
+</body>
+</html>

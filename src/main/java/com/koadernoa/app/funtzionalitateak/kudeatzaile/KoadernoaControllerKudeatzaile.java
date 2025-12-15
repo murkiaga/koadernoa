@@ -8,16 +8,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
 import com.koadernoa.app.objektuak.egutegia.service.IkasturteaService;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
-import com.koadernoa.app.objektuak.modulua.service.ModuloaService;
-import com.koadernoa.app.objektuak.zikloak.service.TaldeaService;
-import com.koadernoa.app.objektuak.zikloak.service.ZikloaService;
 
 import lombok.RequiredArgsConstructor;
 
 @Controller
 @RequestMapping("/kudeatzaile/koadernoa")
 @RequiredArgsConstructor
-public class KoadernoaController {
+public class KoadernoaControllerKudeatzaile {
 
 	private final IkasturteaService ikasturteaService;
 	private final KoadernoaService koadernoaService;
