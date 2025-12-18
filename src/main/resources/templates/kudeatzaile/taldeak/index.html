@@ -74,7 +74,7 @@
             <option th:each="ira : ${irakasleak}"
                     th:value="${ira.id}"
                     th:selected="${taldea.tutorea != null and ira.id == taldea.tutorea.id}"
-                    th:text="${ira.mintegia != null ? ira.izena + ' (' + ira.mintegia + ')' : ira.izena}">
+                    th:text="${ira.mintegia != null ? ira.izena + ' (' + ira.mintegia.izena + ')' : ira.izena}">
             </option>
           </select>
           <button type="submit">Gorde</button>
