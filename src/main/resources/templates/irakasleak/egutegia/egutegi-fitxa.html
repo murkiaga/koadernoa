@@ -4,32 +4,8 @@
     <meta charset="UTF-8">
     <title>Egutegia</title>
     <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
+    <link rel="stylesheet" th:href="@{/css/irakasle-common.css}">
     <style>
-        :root {
-            --b: #e5e7eb;
-            --bg: #f9fafb;
-            --card-bg: #ffffff;
-            --text: #111827;
-        }
-
-        body {
-            margin: 0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background: var(--bg);
-            color: var(--text);
-        }
-
-        .page {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 1.5rem 1rem 2rem;
-        }
-
-        h2 {
-            margin: 0 0 1.25rem;
-            font-size: 1.3rem;
-        }
-
         /* GRID: hilabeteak 3 zutabetan */
         .egutegi-grid {
             display: grid;
@@ -38,7 +14,6 @@
             align-items: flex-start;
         }
 
-        /* pantaila txikiagoetan erantzunkorra */
         @media (max-width: 1024px) {
             .egutegi-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -52,7 +27,7 @@
         }
 
         .hilabete-card {
-            background: var(--card-bg);
+            background: var(--bg-card);
             border-radius: 0.75rem;
             border: 1px solid var(--b);
             box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
@@ -86,15 +61,19 @@
             height: 26px;
         }
 
+        /* Globaleko zebra efektua kendu egutegi honetatik */
+        .hilabete-card tbody tr:nth-child(even) {
+            background: transparent;
+        }
+
         .blank      { background-color: #f3f4f6; }
-        .lektibo1   { background-color: #b3d9ff; }
-        .lektibo2   { background-color: #ffd699; }
-        .lektibo3   { background-color: #b2f2bb; }
-        .jaieguna   { background-color: rgb(255, 255, 255); color: #b91c1c; font-weight: 600; }
+		.lektibo1   { background-color: var(--ebal1-color); }
+		.lektibo2   { background-color: var(--ebal2-color); }
+		.lektibo3   { background-color: var(--ebal3-color); }
+        .jaieguna   { background-color: #ffffff; color: #b91c1c; font-weight: 600; }
         .ezlektiboa { background-color: #111827; color: white; }
         .ordezkatua { background-color: #fef3c7; }
 
-        /* zenbakiak pixka bat txikiago eta finago */
         .hilabete-card td {
             font-size: .7rem;
         }

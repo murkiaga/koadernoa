@@ -30,13 +30,5 @@ public class EbaluazioEgoera {
     @Column(nullable = false)
     private String izena; // "Ez aurkeztua", "Ez ebaluatua faltengatik"...
 
-    /**
-     * TRUE → egoera honekin nota zenbakizkoa BEREZIK ere jarri nahi duzu
-     *      (adib. "EBALUATUA" edo antzeko etorkizuneko kasuak).
-     * FALSE → nota zenbakizkoa ez du eskatzen (ohiko kasua: EZ_AURKEZTUA, eta nota NULL)
-     */
-    @Column(nullable = false)
-    private Boolean notaBeharDu = false;
-
     // Etorkizunerako beste flag batzuk jar zenezake (agerian/notetan kontatu, etab.)
 }

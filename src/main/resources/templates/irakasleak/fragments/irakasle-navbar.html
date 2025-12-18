@@ -1,4 +1,14 @@
 <div th:fragment="navbar (koadernoAktiboa, irakasleKoadernoak)">
+	
+  <!-- EBAL kolore globalak (DB-tik) -->
+  <style th:inline="text">
+    :root {
+      --ebal1-color: [[${ebal1Kolore} ?: '#b3d9ff']];
+      --ebal2-color: [[${ebal2Kolore} ?: '#ffd699']];
+      --ebal3-color: [[${ebal3Kolore} ?: '#b2f2bb']];
+    }
+  </style>
+  
   <div class="t-nav">
     <!-- Goiko barra (desktop menu + hamburger) -->
     <div class="t-navbar">

@@ -1,6 +1,7 @@
 package com.koadernoa.app.objektuak.irakasleak.service;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -41,6 +42,39 @@ public class IrakasleaService {
         }
         return findByEmaila(emaila);
     }
+    
+// PARTEKATZE ATALA 
+    /**
+     * ident = email (badauka '@') edo bestela erabiltzaile izena
+     */
+    public Optional<Irakaslea> bilatuIdent(String ident) {
+        if (ident == null || ident.isBlank()) {
+            return Optional.empty();
+        }
+        ident = ident.trim();
+
+        if (ident.contains("@")) {
+            return irakasleaRepository.findByEmailaIgnoreCase(ident);
+        } else {
+            return irakasleaRepository.findByIzenaIgnoreCase(ident);
+        }
+    }
+    
+    /**
+     * Autocomplete: 3 karaktere edo gehiago → gehienez 10 irakasle
+     */
+    public List<Irakaslea> bilatuAukerak(String term) {
+        if (term == null) return List.of();
+        term = term.trim();
+        if (term.length() < 3) {
+            return List.of();
+        }
+        return irakasleaRepository
+                .findTop10ByIzenaContainingIgnoreCaseOrEmailaContainingIgnoreCaseOrderByIzenaAsc(
+                        term, term
+                );
+    }
+// FIN PARTEKATZE ATALA
     
     
 // TUTORE ATALA --------------------------------------------------------

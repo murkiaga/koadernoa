@@ -62,6 +62,15 @@
     .percent-input {
       width:4rem;
     }
+    
+    /* Ebaluazio momentuen estiloa */
+    .ebal-momentu-aktibo {
+      font-weight: 600;         /* negritan */
+    }
+    .ebal-momentu-inaktibo {
+      color: #9ca3af;           /* grisago */
+      text-decoration: line-through;  /* tatxatuta (nahi ez baduzu, kendu lerro hau) */
+    }
   </style>
 </head>
 <body>
@@ -142,16 +151,17 @@
         <td th:text="${m.izena}">1. maila</td>
         <td th:text="${m.id}">1</td>
         <td>
-          <ul>
-            <li th:each="em : ${m.ebaluazioMomentuak}"
-                th:text="${em.izena}">
-              1. ebaluazioa
-            </li>
-          </ul>
-          <a th:href="@{|/kudeatzaile/konfigurazioa/mailak/${m.id}/ebaluazioak|}">
-            Editatu
-          </a>
-        </td>
+		  <ul>
+		    <li th:each="em : ${m.ebaluazioMomentuak}"
+		        th:text="${em.izena}"
+		        th:classappend="${em.aktibo} ? ' ebal-momentu-aktibo' : ' ebal-momentu-inaktibo'">
+		      1. ebaluazioa
+		    </li>
+		  </ul>
+		  <a th:href="@{|/kudeatzaile/konfigurazioa/mailak/${m.id}/ebaluazioak|}">
+		    Editatu
+		  </a>
+		</td>
       </tr>
       </tbody>
     </table>
@@ -199,7 +209,6 @@
       <tr>
         <th>Kodea</th>
         <th>Izena</th>
-        <th>Nota behar du?</th>
         <th>ID</th>
         <th>Ezabatu</th>
       </tr>
@@ -219,11 +228,6 @@
                  th:name="|izena_${e.id}|"
                  th:value="${e.izena}"
                  style="width:100%;">
-        </td>
-        <td style="text-align:center;">
-          <input type="checkbox"
-                 th:name="|notaBeharDu_${e.id}|"
-                 th:checked="${e.notaBeharDu}">
         </td>
         <td th:text="${e.id}">1</td>
         <td style="text-align:center;">
@@ -250,10 +254,6 @@
       <label>
         <div class="muted">Izena</div>
         <input type="text" th:field="*{izena}" placeholder="Ez aurkeztua" required>
-      </label>
-      <label style="display:flex;align-items:center;gap:8px;">
-        <input type="checkbox" th:field="*{notaBeharDu}">
-        <span class="muted">Nota zenbakizkoa behar du?</span>
       </label>
       <div style="align-self:end;">
         <button type="submit">Sortu</button>

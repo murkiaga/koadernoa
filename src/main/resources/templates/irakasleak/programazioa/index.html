@@ -4,82 +4,148 @@
   <meta charset="UTF-8">
   <title>Programazioa</title>
   <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/irakasle-common.css}">
   
   <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
   <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-XSRF-TOKEN'}"/>
   <meta name="koaderno-id" th:content="${koadernoAktiboa != null ? koadernoAktiboa.id : ''}">
    
-  <!-- SortableJS (d&d) -->
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
   
   <style>
     :root{
-      --bg:#f6f7fb; --card:#fff; --muted:#6b7280; --text:#111827; --line:#e5e7eb;
-      --primary:#2563eb; --primary-600:#1d4ed8;
+      --bg:#f6f7fb;
     }
-    body{background:var(--bg); color:var(--text);}
+    body{ background:var(--bg); }
+
+    .container{
+      max-width:1200px;
+      width:80%;
+      margin:1rem auto;
+      padding:0 1rem 2rem;
+    }
+
     .stack{display:grid; gap:1rem;}
-    .container{max-width:1000px; margin:1rem auto; padding:0 1rem;}
-    .card{background:var(--card); border:1px solid var(--line); border-radius:14px; box-shadow:0 2px 10px rgba(0,0,0,.04);}
-    .card-header{display:flex; align-items:center; gap:.75rem; padding:1rem 1rem; border-bottom:1px solid var(--line);}
-    .card-body{padding:.75rem 1rem 1rem;}
+
+    /* .card oinarria commons-etik, hemen gainidaztuta header/body */
+    .card{
+      border-radius:14px;
+      box-shadow:0 2px 10px rgba(0,0,0,.04);
+    }
+    .card-header{
+      display:flex;
+      align-items:center;
+      gap:.75rem;
+      padding:1rem 1rem;
+      border-bottom:1px solid var(--b);
+    }
+    .card-body{
+      padding:.75rem 1rem 1rem;
+    }
+
     .muted{color:var(--muted); font-size:.95rem;}
 
-    /* Ebaluaketa/UD/Jarduera akordeoia */
-    .ebal-list, .ud-list, .jp-list{display:grid; gap:.5rem; list-style:none; padding:0; margin:0;}
-    .ebal-item, .ud-item{background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden;}
-    .ebal-header, .ud-header{display:grid; grid-template-columns: 24px 1fr auto; align-items:center; gap:.5rem; padding:.8rem 1rem; cursor:pointer;}
+    .ebal-list, .ud-list, .jp-list{
+      display:grid;
+      gap:.5rem;
+      list-style:none;
+      padding:0;
+      margin:0;
+    }
+    .ebal-item, .ud-item{
+      background:#fff;
+      border:1px solid var(--b);
+      border-radius:12px;
+      overflow:hidden;
+    }
+    .ebal-header, .ud-header{
+      display:grid;
+      grid-template-columns: 24px 1fr auto;
+      align-items:center;
+      gap:.5rem;
+      padding:.8rem 1rem;
+      cursor:pointer;
+    }
     .caret{transition:transform .2s ease;}
     .ebal-item.open > .ebal-header .caret,
     .ud-item.open   > .ud-header   .caret{transform:rotate(90deg);}
     .handle{cursor:grab; opacity:.7;}
     .title{font-weight:700;}
     .badge{font-size:.85rem; color:var(--muted)}
-    .hours-warn{color:#b91c1c; font-weight:600;} /* planifikatua > erabilgarri */
+    .hours-warn{color:#b91c1c; font-weight:600;}
 
     .actions{display:flex; gap:.5rem;}
-    .btn{display:inline-flex; align-items:center; gap:.4rem; padding:.45rem .7rem; border-radius:10px; border:1px solid var(--line); background:#fff; cursor:pointer;}
-    .btn:hover{background:#f9fafb;}
-    .btn-primary{background:var(--primary); color:#fff; border-color:var(--primary);}
-    .btn-primary:hover{background:var(--primary-600);}
-    .btn-primary:focus{outline:2px solid #93c5fd;outline-offset:2px;}
+
     .btn-ghost{background:transparent;}
-    .btn-danger{ background:#dc2626; color:#fff; border-color:#dc2626; }
-    .btn-danger:hover{ background:#b91c1c; }
 
-    .add-row{display:flex; justify-content:center; padding:.8rem;}
+    .add-row{
+      display:flex;
+      justify-content:center;
+      padding:.8rem;
+    }
 
-    /* Jarduera zerrenda */
     .jp-list{gap:.4rem; margin:0; padding:.5rem 0 0 0;}
-    .jp-item{background:#fff; border:1px dashed var(--line); border-radius:10px; padding:.55rem .7rem; display:grid; grid-template-columns:24px 1fr auto; align-items:center; gap:.5rem;}
+    .jp-item{
+      background:#fff;
+      border:1px dashed var(--b);
+      border-radius:10px;
+      padding:.55rem .7rem;
+      display:grid;
+      grid-template-columns:24px 1fr auto;
+      align-items:center;
+      gap:.5rem;
+    }
     .jp-title{font-weight:500;}
     .jp-hours{color:var(--muted); margin-left:.5rem;}
 
-    /* Modal (native <dialog>) */
-    dialog.modal{border:none; border-radius:16px; width:min(560px, 92vw); padding:0; box-shadow:0 20px 60px rgba(0,0,0,.25);}
-    .modal header{padding:1rem 1.2rem; border-bottom:1px solid var(--line); font-weight:700;}
-    .modal .content{padding:1rem 1.2rem; display:grid; gap:.8rem;}
-    .modal .actions{padding:1rem 1.2rem; display:flex; gap:.6rem; justify-content:flex-end; border-top:1px solid var(--line);}
+    /* Modal <dialog> */
+    dialog.modal{
+      border:none;
+      border-radius:16px;
+      width:min(560px, 92vw);
+      padding:0;
+      box-shadow:0 20px 60px rgba(0,0,0,.25);
+    }
+    .modal header{
+      padding:1rem 1.2rem;
+      border-bottom:1px solid var(--b);
+      font-weight:700;
+    }
+    .modal .content{
+      padding:1rem 1.2rem;
+      display:grid;
+      gap:.8rem;
+    }
+    .modal .actions{
+      padding:1rem 1.2rem;
+      display:flex;
+      gap:.6rem;
+      justify-content:flex-end;
+      border-top:1px solid var(--b);
+    }
     .field{display:grid; gap:.3rem;}
     .field label{font-size:.9rem; color:var(--muted);}
-    .field input[type="text"], .field input[type="number"], .field input[type="date"]{padding:.55rem .7rem; border:1px solid var(--line); border-radius:10px; width:100%;}
+    .field input[type="text"],
+    .field input[type="number"],
+    .field input[type="date"]{
+      padding:.55rem .7rem;
+      border:1px solid var(--b);
+      border-radius:10px;
+      width:100%;
+    }
 
-  	/* Ebaluaketa koloreak (pastel bigunak) */
-	  .ebal-item.color-1 { background-color: #e8f0fe; }  /* urdinxka */
-	  .ebal-item.color-2 { background-color: #e7f9ed; }  /* berde argia */
-	  .ebal-item.color-3 { background-color: #fff3cd; }  /* horixka */
-	  .ebal-item.color-4 { background-color: #fce8e6; }  /* arrosa */
-	  .ebal-item.color-5 { background-color: #f0e7ff; }  /* more argia */
-	  .ebal-item.color-6 { background-color: #e0f7fa; }  /* turkesa leuna */
+  	/* Ebaluaketa koloreak */
+	  /* Ebaluaketa koloreak: ebaluazio beraren “kolorea” erabili */
+	.ebal-item.color-1 {background-color: var(--ebal1-color);border-left: 6px solid var(--ebal1-color);}
+	.ebal-item.color-2 {background-color: var(--ebal2-color);border-left: 6px solid var(--ebal2-color);}
+	.ebal-item.color-3 {background-color: var(--ebal3-color);border-left: 6px solid var(--ebal3-color);}
 	
-	  /* kolorea ez dadin disolbatu mugen eta zerrenden artean */
-	  .ebal-item { border-left: 6px solid transparent; }
-	  .ebal-item.color-1 { border-color: #a4c2fa; }
-	  .ebal-item.color-2 { border-color: #9ee3b3; }
-	  .ebal-item.color-3 { border-color: #ffe58a; }
-	  .ebal-item.color-4 { border-color: #f9a8a8; }
-	  .ebal-item.color-5 { border-color: #c3b4ff; }
-	  .ebal-item.color-6 { border-color: #a7ecf0; }
+	/* 4,5,6 erabiliz gero, nahi duzun logika:
+	   - errepikatu patroia edo
+	   - beste kolore “sekundario” batzuk eskuz */
+	.ebal-item.color-4 {background-color: var(--ebal1-color);border-left: 6px solid var(--ebal1-color);}
+	.ebal-item.color-5 {background-color: var(--ebal2-color);border-left: 6px solid var(--ebal2-color);}
+	.ebal-item.color-6 {background-color: var(--ebal3-color);border-left: 6px solid var(--ebal3-color);}
 	  
 	  /* Bolkatu egunerokora botoiak */
 	  .btn-icon{
@@ -100,27 +166,22 @@
 		  display:block;
 		}
 
-	  /* END Bolkatu egunerokora botoiak */
-	  
-	  /* Beheko botoien lerroa, eskumara lerrokatuta */
-	.actions-bottom{
-	  display:flex;
-	  justify-content:flex-end;
-	  gap:.5rem;
-	  margin-top:1rem;
-	}
+	  .actions-bottom{
+	    display:flex;
+	    justify-content:flex-end;
+	    gap:.5rem;
+	    margin-top:1rem;
+	  }
 	
-	/* Ebaluaketa bakoitzeko "Editatu" botoia lehenespenez ezkutuan */
-	.ebal-edit-btn{
-	  display:none;
-	}
-	
-	/* body.edit-mode egoeran, botoi horiek erakutsi */
-	.edit-mode .ebal-edit-btn{
-	  display:inline-flex;
-	}
+	  .ebal-edit-btn{
+	    display:none;
+	  }
+	  .edit-mode .ebal-edit-btn{
+	    display:inline-flex;
+	  }
   </style>
 </head>
+
 <body>
   <div th:if="${koadernoAktiboa != null}"
        th:replace="~{irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})}"></div>

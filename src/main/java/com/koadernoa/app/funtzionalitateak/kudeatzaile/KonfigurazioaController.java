@@ -502,7 +502,6 @@ public class KonfigurazioaController {
 
                 egoera.setKodea(kodea);
                 egoera.setIzena(izena);
-                egoera.setNotaBeharDu(notaBeharDu);
 
                 ebaluazioEgoeraRepository.save(egoera);
             }
@@ -537,7 +536,6 @@ public class KonfigurazioaController {
         EbaluazioEgoera egoera = new EbaluazioEgoera();
         egoera.setKodea(kodea);
         egoera.setIzena(izena);
-        egoera.setNotaBeharDu(Boolean.TRUE.equals(form.getNotaBeharDu()));
 
         ebaluazioEgoeraRepository.save(egoera);
 

@@ -15,4 +15,14 @@ public interface IrakasleaRepository extends JpaRepository<Irakaslea, Long> {
 	Optional<Irakaslea> findByEmaila(String emaila);
 	
 	List<Irakaslea> findByMintegia(Familia familia);
+	
+	Optional<Irakaslea> findByEmailaIgnoreCase(String email);
+
+    Optional<Irakaslea> findByIzenaIgnoreCase(String erabiltzaileIzena);
+    
+    // AUTOCOMPLETE-rako (izena edo emaila barne hartzen dutenak)
+    List<Irakaslea> findTop10ByIzenaContainingIgnoreCaseOrEmailaContainingIgnoreCaseOrderByIzenaAsc(
+            String izenZatia,
+            String emailZatia
+    );
 }

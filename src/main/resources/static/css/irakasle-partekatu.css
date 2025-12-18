@@ -1,0 +1,236 @@
+/* ==== Irakasle zerrenda / partekatze atala ==== */
+
+.teacher-section{
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.teacher-header h2{
+  margin:0;
+  font-size:1rem;
+}
+
+.teacher-header .muted{
+  margin:.15rem 0 0;
+  font-size:.85rem;
+}
+
+.teacher-list {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+}
+
+.teacher-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  padding: .35rem .6rem;
+  border: 1px solid var(--b, #e5e7eb);
+  border-radius: .5rem;
+  background: #fff;
+}
+
+.teacher-list li{
+  font-size:.9rem;
+}
+
+.teacher-name{
+  font-weight:500;
+}
+
+.you-pill{
+  margin-left:.25rem;
+  font-size:.8rem;
+  color:#16a34a;
+}
+
+.teacher-share-form label{
+  display:block;
+  font-size:.85rem;
+  margin-bottom:.25rem;
+  color:#374151;
+}
+
+.teacher-share-row{
+  display:flex;
+  gap:.5rem;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+.teacher-share-row input[type="text"]{
+  flex:1 1 200px;
+  padding:.45rem .6rem;
+  border-radius:8px;
+  border:1px solid #d1d5db;
+  font-size:.9rem;
+}
+
+.teacher-share-form .small{
+  margin-top:.35rem;
+  font-size:.8rem;
+}
+
+/* === Irakaslea partekatzeko autocomplete === */
+
+.teacher-share-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 240px;
+}
+
+.teacher-share-wrap input[type="text"] {
+  width: 100%;
+  padding: .35rem .5rem;
+  border-radius: .5rem;
+  border: 1px solid #e5e7eb;
+  font-size: .85rem;
+}
+
+/* Dropdown kutxa */
+.teacher-suggestions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  margin-top: .25rem;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: .5rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,.12);
+  z-index: 40;
+  max-height: 220px;
+  overflow-y: auto;
+  display: none;          /* JS-ak 'block' jarriko du */
+}
+
+/* Aukera bakoitza */
+.teacher-suggestion {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: .35rem .6rem;
+  border: none;
+  background: #ffffff;
+  font-size: .85rem;
+  cursor: pointer;
+  color: #111827;
+}
+
+.teacher-suggestion:hover {
+  background: #eff6ff;
+}
+
+/* Tamaina txikiko botoiak */
+.btn-xs {
+  font-size: .78rem;
+  padding: .25rem .6rem;
+}
+
+/* Ghost botoia (outline gabe, gris argia hoverrean) */
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: #374151;
+}
+.btn-ghost:hover {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+}
+
+/* Ezkerreko blokea: izena + emaila + "zu" */
+.teacher-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .25rem .75rem;
+}
+
+.teacher-name {
+  font-weight: 600;
+}
+
+.teacher-email {
+  font-size: .85rem;
+  color: #6b7280;
+}
+
+/* "zu" txapila */
+.tag-self {
+  font-size: .7rem;
+  padding: .1rem .45rem;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+/* X ikono botoia */
+.btn-icon {
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 999px;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: .9rem;
+  color: #6b7280;
+}
+
+.btn-icon:hover {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+/* Partekatze formularen wrapper apur bat */
+.teacher-share-form {
+  margin-top: .75rem;
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.teacher-share-wrap {
+  position: relative;
+  flex: 1 1 260px;
+}
+
+.teacher-share-wrap input[type="text"] {
+  width: 100%;
+}
+
+/* Iradokizunen dropdown-a (AJAX) */
+.teacher-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: .5rem;
+  margin-top: 2px;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, .12);
+  max-height: 220px;
+  overflow-y: auto;
+  display: none; /* JS-ek display:block jarriko du */
+}
+.teacher-suggestions-item {
+  padding: .35rem .6rem;
+  font-size: .85rem;
+  cursor: pointer;
+}
+.teacher-suggestions-item:hover {
+  background: #eff6ff;
+}
+

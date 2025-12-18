@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<body>
+
+<div th:fragment="irakasleZerrenda(koadernoa, irakaslea)">
+
+  <section class="teacher-section">
+    <header class="teacher-section-header">
+      <h2>Irakasleak</h2>
+      <p class="muted">Koaderno hau partekatzen duten irakasleen zerrenda.</p>
+    </header>
+
+    <!-- IRASAKLE ZERRENDA -->
+    <ul class="teacher-list" th:if="${koadernoa != null}">
+      <!-- HEMEN dago gakoa: li bakoitza irakasle bat da -->
+      <li th:each="ir : ${koadernoa.irakasleak}"
+          class="teacher-row"
+          th:classappend="${ir.id == irakaslea.id} ? ' is-self'">
+
+        <!-- Ezkerra: izena + emaila + 'zu' -->
+        <div class="teacher-main">
+          <span class="teacher-name"
+                th:text="${ir.izena}">
+            Irakasle Izena
+          </span>
+
+          <span class="teacher-email"
+                th:text="${ir.emaila}">
+            irakaslea@eskola.eus
+          </span>
+
+          <span class="tag-self"
+                th:if="${ir.id == irakaslea.id}">
+            zu
+          </span>
+        </div>
+
+        <!-- Eskuina: X botoia (norbera denean BAKARRIK,
+             eta gutxienez 2 irakasle badaude koadernoan) -->
+        <form th:if="${ir.id == irakaslea.id and #lists.size(koadernoa.irakasleak) > 1}"
+              th:action="@{|/irakasle/koadernoa/${koadernoa.id}/irten|}"
+              method="post"
+              class="teacher-leave-form"
+              onsubmit="return confirm('Ziur zaude koaderno hau uzteko? Ez zara gehiago irakasle gisa agertuko.');">
+
+          <input type="hidden"
+                 th:if="${_csrf != null}"
+                 th:name="${_csrf.parameterName}"
+                 th:value="${_csrf.token}"/>
+
+          <button type="submit"
+                  class="btn-icon"
+                  title="Koadernoa utzi"
+                  aria-label="Koadernoa utzi">
+            ✕
+          </button>
+        </form>
+
+      </li>
+    </ul>
+
+    <!-- PARTEKATZE FORM-A -->
+    <form th:if="${koadernoa != null}"
+          th:action="@{|/irakasle/koadernoa/${koadernoa.id}/partekatu|}"
+          method="post"
+          class="teacher-share-form">
+
+      <input type="hidden"
+             th:if="${_csrf != null}"
+             th:name="${_csrf.parameterName}"
+             th:value="${_csrf.token}"/>
+
+      <div class="teacher-share-wrap">
+        <input type="text"
+               name="ident"
+               id="shareIdentInput"
+               placeholder="Emaila edo erabiltzaile-izena"
+               autocomplete="off">
+        <div id="teacherSuggestions" class="teacher-suggestions"></div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-xs">
+        Partekatu koadernoa
+      </button>
+    </form>
+
+  </section>
+
+</div>
+
+</body>
+</html>

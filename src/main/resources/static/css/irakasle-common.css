@@ -1,0 +1,192 @@
+/* ===== OINARRIZKO ALDAGAIK ===== */
+:root {
+  --b: #e5e7eb;
+  --bg-body: #f9fafb;
+  --bg-card: #ffffff;
+  --t: #111827;
+  --muted: #6b7280;
+
+  --primary: #2563eb;
+  --primary-600: #1d4ed8;
+
+  --danger: #dc2626;
+  --ok: #047857;
+  --warn: #a16207;
+
+  /* Ebaluazio kolore lehenetsiak (DBk gainidatziko ditu) */
+  --ebal1-color: #b3d9ff;
+  --ebal2-color: #ffd699;
+  --ebal3-color: #b2f2bb;
+}
+
+/* ===== OINARRIZKO LAYOUT-A ===== */
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg-body);
+  color: var(--t);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Orri gehienen "shell"-a (egutegia, ikasleak, notak, estatistikak…) */
+.page {
+  max-width: 1200px;
+  width: 80%;
+  margin: 1.5rem auto;
+  padding: 0 1rem 2rem;
+}
+
+/* Titulu eta testu orokorrak */
+h1 {
+  font-size: 1.6rem;
+  margin: .5rem 0 1rem;
+}
+
+h2 {
+  font-size: 1.3rem;
+  margin: 0 0 1.25rem;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: .9rem;
+}
+
+/* ===== CARD GENERIKOA ===== */
+
+.card {
+  background: var(--bg-card);
+  border-radius: 12px;
+  border: 1px solid var(--b);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .04);
+}
+
+/* Card barneko header/body patroi arrunta, behar den tokian erabiltzeko */
+.card-header {
+  padding: 1rem 1rem;
+  border-bottom: 1px solid var(--b);
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+}
+
+.card-body {
+  padding: .75rem 1rem 1rem;
+}
+
+/* ===== TAULA OROKORRAK ===== */
+
+.table-wrap {
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+/* Testu-taula "arruntentzako" estilazioa.
+   (Egutegi bereziak eta denboralizazioko egutegia bere CSSekin gainidatziko dira) */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+th,
+td {
+  border: 1px solid var(--b);
+  padding: .45rem .55rem;
+  font-size: .9rem;
+  vertical-align: middle;
+}
+
+thead th {
+  background: #f9fafb;
+  font-weight: 600;
+}
+
+tbody tr:nth-child(even) {
+  background: #f9fafb40;
+}
+
+/* ===== BOTOI PATROI OROKORRA ===== */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: .4rem .9rem;
+  border: 1px solid var(--b);
+  background: #fff;
+  font-size: .85rem;
+  cursor: pointer;
+}
+
+/* Primary (bi moduak: .btn primary eta .btn-primary) */
+.btn.primary,
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.btn.primary:hover,
+.btn-primary:hover {
+  background: var(--primary-600);
+}
+
+/* Secondary */
+.btn.secondary,
+.btn-secondary {
+  background: #e5e7eb;
+  border-color: #e5e7eb;
+}
+
+.btn.secondary:hover,
+.btn-secondary:hover {
+  background: #d1d5db;
+}
+
+/* Danger */
+.btn.danger,
+.btn-danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.btn.danger:hover,
+.btn-danger:hover {
+  background: #b91c1c;
+}
+
+/* Txikiagoa (estatistiketan, etab.) */
+.btn-sm {
+  font-size: .75rem;
+  padding: .25rem .6rem;
+}
+
+/* ===== FLASH MEZUAK (notak, etab.) ===== */
+
+.flash {
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-top: 12px;
+  font-size: .9rem;
+}
+
+.flash-success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.flash-error {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+
+

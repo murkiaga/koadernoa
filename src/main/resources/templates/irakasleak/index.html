@@ -5,24 +5,34 @@
   <title>Irakaslearen orrialdea</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+  <!-- Navbar + estilo komunak -->
   <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/irakasle-common.css}">
+  <link rel="stylesheet" th:href="@{/css/irakasle-partekatu.css}">
+
   <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
   <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}"/>
 
   <script th:src="@{/js/irakasle-nav.js}"></script>
 
+
   <style>
-    /* Orrialdeko edukia (navbarra ez ukitzeko, scoping klaserik) */
+    /* Orrialde honetako layout berezia */
+    body{
+      margin:0;
+      background:#f8fafc;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
     .hasiera-container{
       display:flex;
       justify-content:center;
       align-items:flex-start;
       min-height:calc(100vh - 120px);
-      padding:2rem 1rem;
-      background:#f8fafc;
+      padding:2rem 1rem 4rem;
     }
     .hasiera-koad{
-      width:100%;
+      width:80%;
       max-width:900px;
       background:#fff;
       border:1px solid #e5e7eb;
@@ -43,6 +53,7 @@
     }
     .meta{
       color:#475569;
+      font-size:.9rem;
     }
 
     /* Toggle lock/unlock */
@@ -135,7 +146,6 @@
       background:#dcdcdc;
     }
 
-    /* Botoiak (edit moduan) – momentuz ez ditugu asko erabiltzen */
     .actions{
       margin-top:14px;
       display:none;
@@ -144,30 +154,19 @@
     .actions.show{
       display:flex;
     }
-    .btn{
-      padding:.6rem 1.2rem;
-      border-radius:10px;
-      border:1px solid transparent;
-      cursor:pointer;
-      font-weight:600;
-    }
+
+    /* .btn basea irakasle-common.css-n dago;
+       hemen bakarrik cancel estilo berezia gainidaztea */
     .btn.cancel{
       background:#f3f4f6;
       color:#444;
-      border:1px solid #d1d5db;
+      border-color:#d1d5db;
     }
     .btn.cancel:hover{
       background:#e5e7eb;
     }
-    .btn.primary{
-      background:#3b82f6;
-      color:#fff;
-    }
-    .btn.primary:hover{
-      background:#2563eb;
-    }
 
-    /* “Koaderno berria sortu” botoia (floating) */
+    /* “Koaderno berria sortu” botoia (floating, beti ikusgai) */
     .berria-sortu {
       position: fixed;
       bottom: 30px;
@@ -176,7 +175,7 @@
       display: flex;
       justify-content: center;
       z-index: 90;
-      pointer-events:none; /* barruko botoiak bai, honek ez */
+      pointer-events:none;
     }
     .berria-sortu .btn-create {
       pointer-events:auto;
@@ -204,99 +203,104 @@
      th:replace="irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})">
 </div>
 
-<h1 th:text="'Kaixo, ' + ${irakaslea.izena} + '!'">Kaixo!</h1>
+<div class="page">
+  <h1 th:text="'Kaixo, ' + ${irakaslea.izena} + '!'">Kaixo!</h1>
 
-<!-- Koaderno aktiborik EZ badago -->
-<div th:if="${!koadernoAktiboDago}">
-  <p>Ez duzu koadernorik aukeratuta edo sortuta. Hasi koaderno berria sortzen!</p>
-  <a th:href="@{/irakasle/koadernoa/berria}" class="btn-create">Koaderno berria sortu</a>
-</div>
+  <!-- Koaderno aktiborik EZ badago -->
+	<div th:if="${koadernoAktiboa == null}">
+	  <p>Ez duzu koadernorik aukeratuta edo sortuta. Hasi koaderno berria sortzen!</p>
+	  <a th:href="@{/irakasle/koadernoa/berria}" class="btn-create">Koaderno berria sortu</a>
+	</div>
 
-<!-- Koaderno aktiboa badago -->
-<div th:if="${koadernoAktiboDago}" class="hasiera-container">
-  <div class="hasiera-koad">
+  <!-- Koaderno aktiboa badago -->
+  <div th:if="${koadernoAktiboDago}" class="hasiera-container">
+    <div class="hasiera-koad">
 
-    <div class="head">
-      <div>
-        <div class="tit"
-             th:text="${koadernoAktiboa.moduloa != null ? koadernoAktiboa.moduloa.izena : '(modulurik ez)'}">
-          Moduloa
+      <div class="head">
+        <div>
+          <div class="tit"
+               th:text="${koadernoAktiboa.moduloa != null ? koadernoAktiboa.moduloa.izena : '(modulurik ez)'}">
+            Moduloa
+          </div>
+          <div class="meta"
+               th:text="${koadernoAktiboa.egutegia != null && koadernoAktiboa.egutegia.ikasturtea != null ? koadernoAktiboa.egutegia.ikasturtea.izena : '(ikasturterik ez)'}">
+            2025-2026
+          </div>
         </div>
-        <div class="meta"
-             th:text="${koadernoAktiboa.egutegia != null && koadernoAktiboa.egutegia.ikasturtea != null ? koadernoAktiboa.egutegia.ikasturtea.izena : '(ikasturterik ez)'}">
-          2025-2026
+
+        <!-- Toggle: lock/unlock (defektuz lock) -->
+        <div id="KoadernoakConfigPortadaContentButton"
+             data-selected_action="lock"
+             class="btn-toggle">
+          <div class="btn-toggle-option dark selected" data-action="lock">
+            <i class="icon locked"></i><span>Blokeatuta</span>
+          </div>
+          <div class="btn-toggle-option primary" data-action="unlock">
+            <i class="icon unlocked"></i><span>Desblokeatu</span>
+          </div>
         </div>
       </div>
 
-      <!-- Toggle: lock/unlock (defektuz lock) -->
-      <div id="KoadernoakConfigPortadaContentButton"
-           data-selected_action="lock"
-           class="btn-toggle">
-        <div class="btn-toggle-option dark selected" data-action="lock">
-          <i class="icon locked"></i><span>Blokeatuta</span>
-        </div>
-        <div class="btn-toggle-option primary" data-action="unlock">
-          <i class="icon unlocked"></i><span>Desblokeatu</span>
-        </div>
+      <!-- Ordutegia -->
+      <div class="grid-viewport">
+        <form th:action="@{|/irakasle/koadernoa/${koadernoAktiboa.id}/ordutegia|}"
+              method="post"
+              id="ordutegiForm">
+          <input type="hidden"
+                 th:if="${_csrf != null}"
+                 th:name="${_csrf.parameterName}"
+                 th:value="${_csrf.token}"/>
+
+          <table class="grid"
+                 id="ordutegiTaula"
+                 th:attr="data-koaderno-id=${koadernoAktiboa.id}">
+            <colgroup>
+              <col>
+              <col span="5">
+            </colgroup>
+
+            <thead>
+            <tr>
+              <th></th>
+              <th th:each="c : ${cols}"
+                  th:text="${#strings.capitalize(c.name().toLowerCase())}">
+                Astelehena
+              </th>
+            </tr>
+            </thead>
+
+            <tbody id="gridBody">
+            <tr th:each="r : ${rows}">
+              <th th:text="${r}">1</th>
+              <td th:each="c, stat : ${cols}"
+                  th:attr="data-col=${stat.index + 1}, data-row=${r}"
+                  th:classappend="${selected.contains((stat.index + 1) + '-' + r)} ? 'selected' : ''">
+              </td>
+            </tr>
+            </tbody>
+          </table>
+
+          <!-- input ezkutuak (behar izanez gero) -->
+          <div id="hiddenInputs">
+            <template id="tpl"><input type="hidden" name="cells"/></template>
+            <span th:each="k : ${selected}">
+              <input type="hidden" name="cells" th:value="${k}">
+            </span>
+          </div>
+
+        </form>
       </div>
+
+      <!-- Irakasle zerrenda + partekatu atala (fragment berria) -->
+      <div th:replace="~{irakasleak/fragments/irakasle-zerrenda-atala :: irakasleZerrenda(${koadernoAktiboa}, ${irakaslea})}"></div>
+
     </div>
-
-    <!-- Ordutegia -->
-    <div class="grid-viewport">
-      <form th:action="@{|/irakasle/koadernoa/${koadernoAktiboa.id}/ordutegia|}"
-            method="post"
-            id="ordutegiForm">
-        <input type="hidden"
-               th:if="${_csrf != null}"
-               th:name="${_csrf.parameterName}"
-               th:value="${_csrf.token}"/>
-
-        <table class="grid"
-               id="ordutegiTaula"
-               th:attr="data-koaderno-id=${koadernoAktiboa.id}">
-          <colgroup>
-            <col>
-            <col span="5">
-          </colgroup>
-
-          <thead>
-          <tr>
-            <th></th>
-            <th th:each="c : ${cols}"
-                th:text="${#strings.capitalize(c.name().toLowerCase())}">
-              Astelehena
-            </th>
-          </tr>
-          </thead>
-
-          <tbody id="gridBody">
-          <tr th:each="r : ${rows}">
-            <th th:text="${r}">1</th>
-            <td th:each="c, stat : ${cols}"
-                th:attr="data-col=${stat.index + 1}, data-row=${r}"
-                th:classappend="${selected.contains((stat.index + 1) + '-' + r)} ? 'selected' : ''">
-            </td>
-          </tr>
-          </tbody>
-        </table>
-
-        <!-- input ezkutuak (behar izanez gero) -->
-        <div id="hiddenInputs">
-          <template id="tpl"><input type="hidden" name="cells"/></template>
-          <span th:each="k : ${selected}">
-            <input type="hidden" name="cells" th:value="${k}">
-          </span>
-        </div>
-
-      </form>
-    </div>
-
   </div>
-</div>
 
-<!-- Beheko “Koaderno berria sortu” botoia (beti ikusgai) -->
-<div class="berria-sortu">
-  <a th:href="@{/irakasle/koadernoa/berria}" class="btn-create">Koaderno berria sortu</a>
+  <!-- Beheko “Koaderno berria sortu” botoia (beti ikusgai) -->
+  <div class="berria-sortu">
+    <a th:href="@{/irakasle/koadernoa/berria}" class="btn-create">Koaderno berria sortu</a>
+  </div>
 </div>
 
 <!-- Koadernoa EZABATZEKO fragment-a (botoia + modala, behean ezkerrean) -->
@@ -376,6 +380,6 @@
   }
 })();
 </script>
-
+<script th:src="@{/js/irakasle-partekatu.js}"></script>
 </body>
 </html>

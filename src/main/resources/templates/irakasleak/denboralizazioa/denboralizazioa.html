@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <title>Denboralizazioa</title>
     <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
+    <link rel="stylesheet" th:href="@{/css/irakasle-common.css}">
     <link rel="stylesheet" th:href="@{/css/jarduera-modal.css}">
     <style>
-
         h2, h3 { text-transform: capitalize; }
         .hilabetea { margin-bottom: 2rem; }
 
@@ -41,10 +41,25 @@
 
         .blank { background-color: #f0f0f0; }
 
-        .lektibo1 { background-color: #b3d9ff; }
-        .lektibo2 { background-color: #ffd699; }
-        .lektibo3 { background-color: #b2f2bb; }
-        .jaieguna { background-color: #ffe6e6; color: red; font-weight: bold; }
+        .lektibo1 { background-color: var(--ebal1-color); }
+		.lektibo2 { background-color: var(--ebal2-color); }
+		.lektibo3 { background-color: var(--ebal3-color); }
+
+        /* Jai-egunak: fondo zuria, zenbakia gorriz */
+        .jaieguna {
+            background-color: #ffffff;
+        }
+        .jaieguna .egun-zenbakia {
+            color: #b91c1c;
+            font-weight: 700;
+        }
+        
+        /* Jai-egunen zenbakiari lehentasuna eman (inline style-a gainditzeko) */
+		.taula-egutegia td.jaieguna .egun-zenbakia {
+		    color: #b91c1c !important;
+		    font-weight: 700;
+		}
+
         .ezlektiboa { background-color: black; color: white; }
         .ordezkatua { background-color: yellow; }
         .egun-zenbakia.testu-zuria { color: white !important; }
@@ -60,16 +75,7 @@
         }
         .jarduera-item:hover{background:#f3f4f6;}
 
-        .btn.danger {
-            background: #dc2626;
-            color: white;
-            border: none;
-            padding: 6px 10px;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-        .btn.danger:hover { filter: brightness(0.95); }
-
+        /* .btn.danger kolorea globaletik dator, hemen margin auto bakarrik */
         .modal-actions {
             display: flex;
             align-items: center;
@@ -78,14 +84,7 @@
         }
         .modal-actions .btn.danger {
             margin-right: auto;
-            background: #dc2626;
-            color: white;
-            border: none;
-            padding: 6px 10px;
-            border-radius: 6px;
-            cursor: pointer;
         }
-        .modal-actions .btn.danger:hover { filter: brightness(0.95); }
 
         .btn-asistentzia{
           position:absolute; left:6px; top:4px;
@@ -95,13 +94,12 @@
         }
         .btn-asistentzia:hover{ background:#f3f4f6; }
 
-        /* Bista tabs-ak */
         .bista-tabs {
 		    display: flex;
 		    gap: .5rem;
 		    margin: 1rem 0;
 		    border-bottom: 1px solid #e5e7eb;
-		    justify-content: center;   /* ← HAU GEHITU */
+		    justify-content: center;
 		}
         .bista-tabs a {
             padding: .35rem .9rem;
@@ -118,7 +116,6 @@
             font-weight: 600;
         }
 
-        /* Falten taula */
         .faltak-taula {
             width: 100%;
             border-collapse: collapse;
@@ -130,6 +127,7 @@
             padding: 4px 6px;
             text-align: center;
             vertical-align: middle;
+            white-space: nowrap;
         }
         .faltak-taula thead th {
             background: #f3f4f6;
@@ -146,8 +144,7 @@
             background: #e5e7eb;
         }
         
-		/* >=10% >20% koen kudeaketa */
-        .falta-pct-altua { background: #fecaca; }
+		.falta-pct-altua { background: #fecaca; }
         .falta-pct-ertaina { background: #fef9c3; }
 
         .programa-orduak-label {
@@ -156,51 +153,33 @@
             display: block;
         }
         
-        /* Falten taularen wrapper-a: scroll horizontala */
 		.faltak-wrapper {
 		    width: 100%;
 		    overflow-x: auto;
 		}
-		
-		/* Taula zabaltzeko */
 		.faltak-taula {
 		    border-collapse: separate;
 		    border-spacing: 0;
 		    min-width: max-content;
 		}
-		
-		/* Ehun barruko testua ez hausteko (egunak, % ...) */
-		.faltak-taula th,
-		.faltak-taula td {
-		    white-space: nowrap;
-		}
-		
-		/* Lehen zutabe finkoa (ikasle izena) */
 		.faltak-taula th.sticky-col,
 		.faltak-taula td.sticky-col {
 		    position: sticky;
 		    left: 0;
 		    z-index: 2;
 		}
-		
-		/* Header kolorea */
 		.faltak-taula th.sticky-col {
 		    background: #f3f4f6;
 		}
-		
-		/* Gorputzeko lehen zutabearen atzeko planoa, zebra efektua ez galtzeko
-		   nahi baduzu konbinazio gehiago egin daiteke, baina hasierako hau nahiko duzu */
 		.faltak-taula td.sticky-col {
 		    background: #ffffff;
 		    z-index: 1;
 		}
-		
-		
-
     </style>
     
     <script th:src="@{/js/jarduera-modal.js}"></script>
 </head>
+
 <body>
 
 <!-- Navbar -->
@@ -226,12 +205,12 @@
     </a>
 </div>
 
-<!-- HEMEN TXERTATZEN DIRA FRAGMENTAK BAKARRIK -->
-
+<!-- FRAGMENT Egutegi Bista -->
 <div th:if="${bista == null or bista == 'egutegia'}"
      th:insert="irakasleak/denboralizazioa/egutegi-bista-fragment :: egutegiBista">
 </div>
 
+<!-- FRAGMENT Falten Bista -->
 <div th:if="${bista == 'faltak'}"
      th:insert="irakasleak/denboralizazioa/falten-bista-fragment :: faltakBista">
 </div>

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <title>Ebaluazio koloreak</title>
+  <link rel="stylesheet" th:href="@{/css/navbar.css}">
+</head>
+<body>
+<div th:replace="/kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+
+<div class="page">
+  <h1>Ebaluazioen koloreak</h1>
+
+  <form method="post" th:action="@{/admin/ebalu-koloreak}">
+    <label>1. Ebaluazioa:
+      <input type="color" name="ebal1Kolore" th:value="${ebal1Kolore}">
+    </label><br><br>
+
+    <label>2. Ebaluazioa:
+      <input type="color" name="ebal2Kolore" th:value="${ebal2Kolore}">
+    </label><br><br>
+
+    <label>3. Ebaluazioa:
+      <input type="color" name="ebal3Kolore" th:value="${ebal3Kolore}">
+    </label><br><br>
+
+    <button type="submit" class="btn btn-primary">Gorde</button>
+  </form>
+</div>
+
+</body>
+</html>

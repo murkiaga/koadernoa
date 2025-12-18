@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -19,10 +20,13 @@ import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoaSortuDto;
+import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
 import com.koadernoa.app.objektuak.modulua.service.IkasleaService;
 
+import jakarta.transaction.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,6 +43,7 @@ public class KoadernoaController {
 	private final IrakasleaService irakasleaService;
 	private final KoadernoaService koadernoaService;
 	private final IkasleaService ikasleaService;
+	private final KoadernoaRepository koadernoaRepository;
 	
 	private static final List<Astegunak> ASTE_ORDENA = List.of(
 	        Astegunak.ASTELEHENA,
@@ -165,6 +170,115 @@ public class KoadernoaController {
 	    }
 	    return "redirect:/irakasle/ikasleak";
 	}
+	
+	@PostMapping("/{id}/partekatu")
+    public String partekatuKoadernoa(
+            @PathVariable Long id,
+            @RequestParam("ident") String ident,
+            Authentication auth,
+            RedirectAttributes ra) {
+
+        // 1) Uneko irakaslea (zure service-ak dagoeneko OAuth2 / username bideratzen du)
+        Irakaslea uneKoIrakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+
+        // 2) Koadernoa ekarri
+        Koadernoa koadernoa = koadernoaRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Koadernoa ez da aurkitu"));
+
+        if (koadernoa.getIrakasleak() == null) {
+            koadernoa.setIrakasleak(new ArrayList<>());
+        }
+
+        // 3) Egiaztatu une-ko irakaslea koadernoaren irakasle-zerrendan dagoela
+        boolean uneanBadago = koadernoa.getIrakasleak().stream()
+                .anyMatch(i -> i.getId().equals(uneKoIrakaslea.getId()));
+
+        if (!uneanBadago) {
+            ra.addFlashAttribute("error", "Ez duzu koaderno hau partekatzeko baimenik.");
+            return "redirect:/irakasle";
+        }
+
+        // 4) Bilatu gehitu nahi duzun irakaslea (email edo izenaren arabera)
+        var targetOpt = irakasleaService.bilatuIdent(ident);
+        if (targetOpt.isEmpty()) {
+            ra.addFlashAttribute("error", "Ez da irakaslerik aurkitu: \"" + ident + "\".");
+            return "redirect:/irakasle";
+        }
+        Irakaslea target = targetOpt.get();
+
+        // 5) Dagoeneko badago?
+        boolean already = koadernoa.getIrakasleak().stream()
+                .anyMatch(i -> i.getId().equals(target.getId()));
+
+        if (already) {
+            ra.addFlashAttribute("success", "Irakaslea jada badago koaderno honetan.");
+            return "redirect:/irakasle";
+        }
+
+        // 6) Gehitu eta gorde
+        koadernoa.getIrakasleak().add(target);
+        koadernoaRepository.save(koadernoa);
+
+        String izenOsoa = target.getIzena(); // edo target.getIzenaOsoa(), zuk daukazunaren arabera
+        ra.addFlashAttribute("success",
+                "Koadernoa partekatu da irakasle honekin: " + izenOsoa + ".");
+
+        return "redirect:/irakasle";
+    }
+	
+	@PostMapping("/{id}/irten")
+	public String utziKoadernoa(@PathVariable Long id,
+	                            Authentication auth,
+	                            Model model,
+	                            RedirectAttributes ra) {
+
+	    // 1) Nor dago logeatuta?
+	    Irakaslea ni = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+
+	    // 2) Koadernoa hartu
+	    Koadernoa k = koadernoaService.findById(id);
+	    if (k == null) {
+	        ra.addFlashAttribute("error", "Koadernoa ez da existitzen.");
+	        return "redirect:/irakasle";
+	    }
+
+	    // 3) Egiaztatu ni koaderno honetako irakaslea naizela
+	    boolean nireKoadernoaDa = k.getIrakasleak().stream()
+	            .anyMatch(ir -> ir.getId().equals(ni.getId()));
+
+	    if (!nireKoadernoaDa) {
+	        ra.addFlashAttribute("error", "Koaderno honetako irakasle ez zara.");
+	        return "redirect:/irakasle";
+	    }
+
+	    // 4) Ez utzi azken irakaslea izaten
+	    if (k.getIrakasleak().size() <= 1) {
+	        ra.addFlashAttribute("error",
+	                "Ezin duzu koaderno hau utzi; bestela irakaslerik gabe geratuko litzateke.");
+	        return "redirect:/irakasle";
+	    }
+
+	    // 5) Nire burua zerrendatik kendu eta gorde
+	    k.getIrakasleak().removeIf(ir -> ir.getId().equals(ni.getId()));
+	    koadernoaRepository.save(k); 
+
+	    // 6) Nire beste koadernoak bilatu
+	    List<Koadernoa> nireKoadernoak = koadernoaRepository.findAllByIrakasleak_Id(ni.getId());
+
+	    if (nireKoadernoak.isEmpty()) {
+	        // koaderno aktiborik EZ → sesioan null jartzen dugu
+	        model.addAttribute("koadernoAktiboa", null);
+	        return "redirect:/login?logout";
+	    } else {
+	        // beste bat badago → lehenengoa aktibo jarri (edo zuk nahi duzuna)
+	        model.addAttribute("koadernoAktiboa", nireKoadernoak.get(0));
+	    }
+
+	    ra.addFlashAttribute("success", "Koaderno hau utzi duzu.");
+	    return "redirect:/irakasle";
+	}
+
+
 	
 	@PostMapping("/{id}/ezabatu")
 	public String ezabatuKoadernoa(@PathVariable Long id,

@@ -191,3 +191,9 @@ body {
     background: #ecfdf5;
   }
 }
+/* com.koadernoa.app.common.advice.KoloreakAdvice */
+:root {
+  --ebal1-color: [[${ebal1Kolore}]];
+  --ebal2-color: [[${ebal2Kolore}]];
+  --ebal3-color: [[${ebal3Kolore}]];
+}
