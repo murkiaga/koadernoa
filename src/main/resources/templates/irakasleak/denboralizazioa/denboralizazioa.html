@@ -6,6 +6,9 @@
     <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
     <link rel="stylesheet" th:href="@{/css/irakasle-common.css}">
     <link rel="stylesheet" th:href="@{/css/jarduera-modal.css}">
+     <!-- CSRF meta tag-ak AJAX-erako -->
+    <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}"/>
     <style>
         h2, h3 { text-transform: capitalize; }
         .hilabetea { margin-bottom: 2rem; }
@@ -175,6 +178,16 @@
 		    background: #ffffff;
 		    z-index: 1;
 		}
+		/* Jarduerak Drag & Drop */
+		.jarduera-item{
+            font-size:.8rem;line-height:1.2;border-radius:6px;
+            padding:2px 6px;border:1px solid #e5e7eb;cursor:pointer;
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+            cursor: grab;          /* drag UX politago */
+        }
+        .jarduera-item:active{
+            cursor: grabbing;
+        }
     </style>
     
     <script th:src="@{/js/jarduera-modal.js}"></script>
@@ -233,6 +246,120 @@ document.addEventListener('DOMContentLoaded', function(){
   });
 });
 </script>
+
+<script>
+	//Jardueren drag&drop
+document.addEventListener('DOMContentLoaded', function(){
+  const table = document.querySelector('.taula-egutegia');
+  if (!table) return;
+
+  // CSRF datuak meta-etiketatik
+  const metaToken  = document.querySelector('meta[name="_csrf"]');
+  const metaHeader = document.querySelector('meta[name="_csrf_header"]');
+  const CSRF_TOKEN  = metaToken  ? metaToken.content  : null;
+  const CSRF_HEADER = metaHeader && metaHeader.content
+        ? metaHeader.content
+        : 'X-CSRF-TOKEN';
+
+  let draggedItem = null;
+  let draggedFromDate = null;
+
+  // DRAG HASIERA
+  table.addEventListener('dragstart', function(e){
+    const li = e.target.closest('.jarduera-item');
+    if (!li) return;
+
+    draggedItem = li;
+    const td = li.closest('td[data-date]');
+    draggedFromDate = td ? td.getAttribute('data-date') : null;
+
+    e.dataTransfer.effectAllowed = 'move';
+  });
+
+  table.addEventListener('dragend', function(){
+    draggedItem = null;
+    draggedFromDate = null;
+  });
+
+  // DROP HELBURUAK: td[data-date]
+  table.querySelectorAll('td[data-date]').forEach(td => {
+
+    td.addEventListener('dragover', function(e){
+      if (!draggedItem) return;
+      e.preventDefault(); // beharrezkoa drop egiteko
+      e.dataTransfer.dropEffect = 'move';
+    });
+
+    td.addEventListener('drop', async function(e){
+      if (!draggedItem) return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      const targetTd = e.currentTarget;
+      const newDate = targetTd.getAttribute('data-date');
+      if (!newDate) return;
+
+      if (newDate === draggedFromDate) {
+        // Egun berean uzten badu, ez dugu ezer egiten
+        return;
+      }
+
+      const jardueraId = draggedItem.getAttribute('data-id');
+      if (!jardueraId) {
+        console.warn('[DND] jardueraId falta da');
+        return;
+      }
+
+      // -------- BACKENDera deia --------
+      try {
+        const params = new URLSearchParams();
+        params.append('data', newDate);
+
+        const headers = {
+          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+        };
+        if (CSRF_TOKEN) {
+          headers[CSRF_HEADER] = CSRF_TOKEN;
+        }
+
+        const res = await fetch(`/irakasle/denboralizazioa/jarduera/${jardueraId}/mugitu`, {
+          method: 'POST',
+          headers,
+          body: params.toString()
+        });
+
+        if (!res.ok) {
+          alert('Ezin izan da jarduera mugitu (HTTP ' + res.status + ').');
+          return;
+        }
+
+        let json = {};
+        try {
+          json = await res.json();
+        } catch (e2) {
+          json = { ok: true }; // kasu arraro batean JSON ez badator
+        }
+
+        if (json.error) {
+          alert('Ezin izan da jarduera mugitu: ' + json.error);
+          return;
+        }
+
+        // -------- HEMEN: dena ondo → orria birkargatu --------
+        window.location.reload();
+
+      } catch (err) {
+        console.error('[DND] Fetch errorea:', err);
+        alert('Ezin izan da jarduera mugitu. Saiatu berriro, mesedez.');
+        return;
+      }
+    });
+  });
+});
+</script>
+
+
+
 
 </body>
 </html>

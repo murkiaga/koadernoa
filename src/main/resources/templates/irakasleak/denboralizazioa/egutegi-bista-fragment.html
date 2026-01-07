@@ -54,13 +54,14 @@
     				</a>
     			    <!-- Egun honetako jarduerak -->
     				  <ul class="jarduerak" th:if="${egunaBista.data != null and jardueraMap[egunaBista.data] != null}">
-    				    <li class="jarduera-item"
-    					    th:each="j : ${jardueraMap[egunaBista.data]}"
-    					    th:text="${ j.titulua + ' - ' + ( #strings.isEmpty(j.mota) ? 'planifikatua' : j.mota ) }"
-    					    th:attr="data-id=${j.id}"
-    					    onclick="editatuJarduera(event, this)">
-    					</li>
-    				  </ul>
+						  <li class="jarduera-item"
+						    draggable="true"
+						    th:each="j : ${jardueraMap[egunaBista.data]}"
+						    th:text="${ j.titulua + ' - ' + ( #strings.isEmpty(j.mota) ? 'planifikatua' : j.mota ) }"
+						    th:attr="data-id=${j.id}"
+						    onclick="editatuJarduera(event, this)">
+						  </li>
+					  </ul>
     			</td>
     		</tr>
         </tbody>

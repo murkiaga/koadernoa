@@ -8,6 +8,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -194,6 +197,28 @@ public class DenboralizazioaController {
 	            .body(java.util.Map.of("error","Not found"));
 	    }
 	    return org.springframework.http.ResponseEntity.ok(JardueraEditDto.from(j));
+	}
+	
+	@PostMapping("/jarduera/{id}/mugitu")
+	@ResponseBody
+	public ResponseEntity<?> mugituJarduera(
+	        @SessionAttribute(value = "koadernoAktiboa", required = false) Koadernoa koadernoa,
+	        @PathVariable("id") Long id,
+	        @RequestParam("data")
+	        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataBerria) {
+
+	    if (koadernoa == null || koadernoa.getId() == null) {
+	        return ResponseEntity.status(HttpStatus.CONFLICT)
+	                .body(Map.of("error", "Koaderno aktiboa falta da"));
+	    }
+
+	    try {
+	        koadernoaService.aldatuJardueraData(koadernoa, id, dataBerria);
+	        return ResponseEntity.ok(Map.of("ok", true));
+	    } catch (IllegalArgumentException ex) {
+	        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	                .body(Map.of("error", ex.getMessage()));
+	    }
 	}
 	
 	

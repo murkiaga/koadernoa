@@ -486,4 +486,16 @@ public class KoadernoaService {
         koadernoaRepository.delete(koadernoa);
     }
     
+    @Transactional
+    public void aldatuJardueraData(Koadernoa koadernoa, Long jardueraId, LocalDate dataBerria) {
+        Jarduera j = lortuJardueraKoadernoan(koadernoa, jardueraId);
+        if (j == null) {
+            throw new IllegalArgumentException("Jarduera ez da aurkitu edo ez dagokio koaderno honi.");
+        }
+        j.setData(dataBerria);
+        // Normalean jardueraRepository.save(j) egingo zenuke;
+        // baina zure service-ak jada kudeatzen badu, bertan
+        // dagoen mekanismoa erabili.
+    }
+    
 }
