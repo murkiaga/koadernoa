@@ -14,6 +14,8 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -86,6 +88,10 @@ public class KoadernoaService {
 
     public Koadernoa findById(Long id) {
         return koadernoaRepository.findById(id).orElseThrow();
+    }
+    
+    public List<Koadernoa> findAll() {
+        return koadernoaRepository.findAll();
     }
 
     public List<Koadernoa> findByIrakaslea(Irakaslea irakaslea) {
@@ -242,15 +248,41 @@ public class KoadernoaService {
     
     @Transactional(readOnly = true)
     public boolean irakasleakBadaukaSarbidea(Irakaslea irakaslea, Koadernoa koadernoa) {
-        if (irakaslea == null || irakaslea.getId() == null) return false;
+
         if (koadernoa == null || koadernoa.getId() == null) return false;
-        return koadernoaRepository.existsByIdAndIrakasleak_Id(koadernoa.getId(), irakaslea.getId());
+
+        // 1) ADMIN / KUDEATZAILEA → sarbidea beti
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getAuthorities().stream().anyMatch(a ->
+                "ROLE_ADMIN".equals(a.getAuthority()) ||
+                "ROLE_KUDEATZAILEA".equals(a.getAuthority())
+        )) {
+            return true;
+        }
+
+        // 2) Bestela, irakaslea koadernoaren irakasleen artean dagoen ala ez
+        if (irakaslea == null || irakaslea.getId() == null) return false;
+
+        return koadernoaRepository.existsByIdAndIrakasleak_Id(
+                koadernoa.getId(),
+                irakaslea.getId()
+        );
     }
     
     @Transactional(readOnly = true)
     public boolean irakasleakBadaukaSarbidea(Irakaslea irakaslea, Long koadernoId) {
         if (irakaslea == null || irakaslea.getId() == null) return false;
         if (koadernoId == null) return false;
+        
+        // 1) ADMIN / KUDEATZAILEA → sarbidea beti
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getAuthorities().stream().anyMatch(a ->
+                "ROLE_ADMIN".equals(a.getAuthority()) ||
+                "ROLE_KUDEATZAILEA".equals(a.getAuthority())
+        )) {
+            return true;
+        }
+        
         return koadernoaRepository.existsByIdAndIrakasleak_Id(koadernoId, irakaslea.getId());
     }
     

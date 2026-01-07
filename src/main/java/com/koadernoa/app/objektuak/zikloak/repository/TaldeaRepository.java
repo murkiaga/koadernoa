@@ -18,4 +18,8 @@ public interface TaldeaRepository extends JpaRepository<Taldea, Long> {
     List<Taldea> findByZikloa_Id(Long zikloaId);
     
     Optional<Taldea> findByIzenaIgnoreCaseAndZikloa(String izena, Zikloa zikloa);
+    
+    List<Taldea> findAllByOrderByIzenaAsc();
+    
+    List<Taldea> findByZikloa_Familia_IdOrderByIzenaAsc(Long familiaId);
 }

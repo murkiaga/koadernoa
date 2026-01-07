@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
+import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -20,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 public class IrakasleModelAttributes {
 
     private final IrakasleaService irakasleaService;
+    private final KoadernoaService koadernoaService;
 
     // Lehenetsi: sesioan badago koadernoAktiboa, hura erabili; bestela lehen aktiboa
     @ModelAttribute("koadernoAktiboa")
@@ -66,5 +68,31 @@ public class IrakasleModelAttributes {
                           && k.getEgutegia().getIkasturtea() != null
                           && k.getEgutegia().getIkasturtea().isAktiboa())
                 .toList();
+    }
+    
+    @ModelAttribute("navbarKontsultaModua")
+    public boolean navbarKontsultaModua(
+            @SessionAttribute(name = "koadernoAktiboa", required = false)
+            Koadernoa koadernoAktiboa,
+            Authentication auth) {
+
+        // Koaderno aktiborik edo autentifikaziorik ez → ez gaude kontsulta moduan
+        if (auth == null || koadernoAktiboa == null || koadernoAktiboa.getId() == null) {
+            return false;
+        }
+
+        // Lehendik daukazun metodoa berrerabili, ez service berriro deitu:
+        List<Koadernoa> aktiboak = getKoadernoAktiboak(auth);
+
+        if (aktiboak == null || aktiboak.isEmpty()) {
+            // Irakasle honek ez dauka ikasturte aktiboko koadernorik → 
+            // kasu honetan, edozein koaderno "kanpokoa" izango litzateke → kontsulta modua = true
+            return true;
+        }
+
+        Long currentId = koadernoAktiboa.getId();
+
+        // true → koadernoAktiboa irakaslearen koaderno aktiboen artean EZ badago
+        return aktiboak.stream().noneMatch(k -> currentId.equals(k.getId()));
     }
 }

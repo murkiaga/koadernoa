@@ -57,6 +57,13 @@ public class SecurityConfig {
             	    .defaultSuccessUrl("/aukeratu-mintegia", true)
             	    .failureUrl("/login?error")
             )
+            .logout(logout -> logout
+                    .logoutUrl("/logout")                 // endpoint real de logout (POST)
+                    .logoutSuccessUrl("/login?logout")    // a dónde se redirige después
+                    .invalidateHttpSession(true)
+                    .deleteCookies("JSESSIONID")
+                    .permitAll()
+             )
             .exceptionHandling(ex -> ex
             	    .authenticationEntryPoint((request, response, authException) -> {
             	        System.out.println("🚨 EXCEPTION: " + authException.getMessage());

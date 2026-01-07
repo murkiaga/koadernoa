@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <title>Koadernoak – Kudeatzailea</title>
+  <link rel="stylesheet" th:href="@{/css/navbar.css}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    :root {
+      --b: #e5e7eb;
+      --t: #111827;
+      --m: #2563eb;
+      --bg: #ffffff;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--t);
+      background: var(--bg);
+    }
+
+    .page {
+      max-width: 1100px;
+      margin: 16px auto 32px;
+      padding: 0 16px;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      margin: 0 0 .25rem;
+    }
+
+    .muted {
+      color: #6b7280;
+      font-size: .9rem;
+      margin: 0 0 1rem;
+    }
+
+    /* Filtro barra */
+    .filters {
+      margin: 16px 0 12px;
+    }
+
+    .filters-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: flex-end;
+    }
+
+    .filters-row label {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: .85rem;
+      color: #374151;
+      min-width: 180px;
+    }
+
+    .filters-row select {
+      padding: 4px 8px;
+      border-radius: 8px;
+      border: 1px solid var(--b);
+      font-size: .9rem;
+      background: #fff;
+    }
+
+    .filters-row button {
+      border-radius: 999px;
+      border: 1px solid var(--m);
+      background: var(--m);
+      color: #fff;
+      padding: 6px 14px;
+      cursor: pointer;
+      font-size: .85rem;
+    }
+
+    .filters-row button:hover {
+      background: #1d4ed8;
+    }
+
+    @media (max-width: 640px) {
+      .filters-row {
+        align-items: stretch;
+      }
+      .filters-row label {
+        flex: 1 1 100%;
+      }
+    }
+
+    /* Taula wrap + taula estiloak */
+    .table-wrap {
+      border-radius: 12px;
+      border: 1px solid var(--b);
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, .06);
+      overflow-x: auto;
+    }
+
+    table.koaderno-taula {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 820px;
+      font-size: .9rem;
+    }
+
+    .koaderno-taula th,
+    .koaderno-taula td {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--b);
+      vertical-align: middle;
+    }
+
+    .koaderno-taula th {
+      background: #f9fafb;
+      text-align: left;
+      white-space: nowrap;
+      font-weight: 600;
+    }
+
+    .koaderno-taula tbody tr:nth-child(even) {
+      background: #f9fafb40;
+    }
+
+    .col-irakasleak {
+      max-width: 220px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .col-mod-kodea {
+      white-space: nowrap;
+    }
+
+    .actions-cell {
+      white-space: nowrap;
+      text-align: right;
+    }
+
+    /* Botoi generikoak */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 6px 12px;
+      border: 1px solid var(--b);
+      background: #fff;
+      font-size: .8rem;
+      text-decoration: none;
+      color: var(--t);
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background: #f9fafb;
+    }
+
+    .btn-primary {
+      border-color: var(--m);
+      background: var(--m);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: #1d4ed8;
+    }
+
+    .empty-msg {
+      margin-top: 16px;
+      font-size: .9rem;
+      color: #6b7280;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Kudeatzaile navbarra -->
+<div th:replace="/kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+
+<main class="page">
+  <h1>Koadernoak</h1>
+  <p class="muted">
+    Familiaren eta taldearen arabera iragazi, eta koadernoa irakasle ikuspegian kontsultatu.
+  </p>
+
+  <!-- Filtroak -->
+  <form class="filters" method="get" th:action="@{/kudeatzaile/koadernoak}">
+    <div class="filters-row">
+      <label>
+        <span>Familia</span>
+        <select name="familiaId">
+          <option value=""
+                  th:selected="${familiaId == null}">
+            (Familia guztiak)
+          </option>
+          <option th:each="f : ${familiak}"
+                  th:value="${f.id}"
+                  th:text="${f.izena}"
+                  th:selected="${familiaId != null and familiaId == f.id}">
+            INFORMATIKA
+          </option>
+        </select>
+      </label>
+
+      <label>
+        <span>Taldea</span>
+        <select name="taldeaId">
+          <option value=""
+                  th:selected="${taldeaId == null}">
+            (Talde guztiak)
+          </option>
+          <option th:each="t : ${taldeak}"
+                  th:value="${t.id}"
+                  th:text="${t.izena}"
+                  th:selected="${taldeaId != null and taldeaId == t.id}">
+            1SMA
+          </option>
+        </select>
+      </label>
+
+      <button type="submit">Filtratu</button>
+    </div>
+  </form>
+
+  <!-- Koaderno zerrenda hutsa -->
+  <div th:if="${#lists.isEmpty(koadernoak)}" class="empty-msg">
+    Ez da aurkitu koadernorik hautatutako filtroekin.
+  </div>
+
+  <!-- Koaderno zerrenda -->
+  <div th:if="${!#lists.isEmpty(koadernoak)}" class="table-wrap">
+    <table class="koaderno-taula">
+      <thead>
+      <tr>
+        <th>Familia</th>
+        <th>Taldea</th>
+        <th>Maila</th>
+        <th>Mod. kodea</th>
+        <th>Modulua</th>
+        <th>Ikasturtea</th>
+        <th>Irakasleak</th>
+        <th style="text-align:right;">Ekintzak</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:each="k : ${koadernoak}">
+        <!-- Familia -->
+        <td th:text="${
+              k.moduloa != null
+              && k.moduloa.taldea != null
+              && k.moduloa.taldea.zikloa != null
+              && k.moduloa.taldea.zikloa.familia != null
+                ? k.moduloa.taldea.zikloa.familia.izena
+                : '-'
+            }">
+          INFORMATIKA
+        </td>
+
+        <!-- Taldea -->
+        <td th:text="${
+              k.moduloa != null && k.moduloa.taldea != null
+                ? k.moduloa.taldea.izena
+                : '-'
+            }">
+          1SMA
+        </td>
+
+        <!-- Maila (ikasturte maila, ez ebaluazio maila) -->
+        <td th:text="${
+              k.moduloa != null && k.moduloa.maila != null
+                ? k.moduloa.maila.izena
+                : '-'
+            }">
+          1. maila
+        </td>
+
+        <!-- Modulo kodea -->
+        <td class="col-mod-kodea"
+            th:text="${k.moduloa != null ? k.moduloa.kodea : '-'}">
+          RELO
+        </td>
+
+        <!-- Modulo izena -->
+        <td th:text="${k.moduloa != null ? k.moduloa.izena : '-'}">
+          Sistema eragileak
+        </td>
+
+        <!-- Ikasturtea -->
+        <td th:text="${
+              k.egutegia != null && k.egutegia.ikasturtea != null
+                ? k.egutegia.ikasturtea.izena
+                : '-'
+            }">
+          2025-2026
+        </td>
+
+        <!-- Irakasleen zerrenda laburtua -->
+        <td class="col-irakasleak"
+            th:text="${
+              #lists.isEmpty(k.irakasleak)
+                ? '-'
+                : #strings.listJoin(k.irakasleak.?[true].![izena], ', ')
+            }">
+          Irakaslea1, Irakaslea2
+        </td>
+
+        <!-- Ekintzak -->
+        <td class="actions-cell">
+          <!--
+            Oharra: hau /irakasle/koadernoa/{id} endpoint-era doa,
+            eta hark @SessionAttributes bidez 'koadernoAktiboa' ezarriko du.
+            Ziurtatu controller horretan KUDEATZAILE rola ere onartzen dela,
+            bestela "Ez duzu sarbiderik" jasoko duzu.
+          -->
+          <a th:href="@{|/irakasle/koadernoa/${k.id}?next=/irakasle|}"
+             class="btn btn-primary">
+            Ikusi irakasle ikuspegian
+          </a>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<script th:src="@{/js/kudeatzaile-nav.js}"></script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 <div th:fragment="navbar (koadernoAktiboa, irakasleKoadernoak)">
-	
+
   <!-- EBAL kolore globalak (DB-tik) -->
   <style th:inline="text">
     :root {
@@ -8,7 +8,7 @@
       --ebal3-color: [[${ebal3Kolore} ?: '#b2f2bb']];
     }
   </style>
-  
+
   <div class="t-nav">
     <!-- Goiko barra (desktop menu + hamburger) -->
     <div class="t-navbar">
@@ -21,10 +21,22 @@
         <div class="koaderno-hautapena">
           <label for="koadernoSelect">Koadernoak:</label>
           <select id="koadernoSelect" onchange="aldatuKoadernoa(this.value)">
+
+            <!-- 1) Koaderno aktiboa IRakaslearen zerrendan EZ badago → kontsulta modua -->
+            <option th:if="${koadernoAktiboa != null and navbarKontsultaModua}"
+                    th:value="${koadernoAktiboa.id}"
+                    th:text="${koadernoAktiboa.kodea + ' (kontsulta)'}"
+                    selected="selected">
+              Pertsonalizatua
+            </option>
+
+            <!-- 2) Irakaslearen “ohiko” koadernoak -->
             <option th:each="k : ${irakasleKoadernoak}"
                     th:value="${k.id}"
                     th:text="${k.izena}"
-                    th:selected="${koadernoAktiboa != null and k.id == koadernoAktiboa.id}">
+                    th:selected="${koadernoAktiboa != null
+                                  and !navbarKontsultaModua
+                                  and k.id == koadernoAktiboa.id}">
             </option>
           </select>
         </div>
@@ -47,7 +59,7 @@
                  th:classappend="${currentPath.startsWith('/irakasle/notak')} ? 'active'">Notak</a></li>
           <li><a th:href="@{/irakasle/estatistikak}"
                  th:classappend="${currentPath.startsWith('/irakasle/estatistikak')} ? 'active'">Estatistikak</a></li>
-          <li th:if="${#authorization.expression('hasRole(''KUDEATZAILEA'')')}">
+          <li th:if="${#authorization.expression('hasAnyRole(''KUDEATZAILEA'',''ADMIN'')')}">
             <a th:href="@{/kudeatzaile}">Kudeaketa</a>
           </li>
           <li>
@@ -86,7 +98,7 @@
                  th:classappend="${currentPath.startsWith('/irakasle/notak')} ? 'active'">Notak</a></li>
           <li><a th:href="@{/irakasle/estatistikak}"
                  th:classappend="${currentPath.startsWith('/irakasle/estatistikak')} ? 'active'">Estatistikak</a></li>
-          <li th:if="${#authorization.expression('hasRole(''KUDEATZAILEA'')')}">
+          <li th:if="${#authorization.expression('hasAnyRole(''KUDEATZAILEA'',''ADMIN'')')}">
             <a th:href="@{/kudeatzaile}">Kudeaketa</a>
           </li>
           <li>

@@ -56,4 +56,20 @@ public interface KoadernoaRepository extends JpaRepository<Koadernoa, Long>{
     
     //Programazioa inportatzerako
     List<Koadernoa> findByModuloa_EeiKodeaAndIdNot(String eeiKodea, Long excludeId);
+    
+    
+    //Kudeatzaileak koadernoak kontsultatzeko
+    @Query("""
+    		  select distinct k
+    		  from Koadernoa k
+    		  left join fetch k.moduloa m
+    		  left join fetch m.taldea t
+    		  left join fetch t.zikloa z
+    		  left join fetch z.familia f
+    		  left join fetch k.egutegia e
+    		  left join fetch e.ikasturtea i
+    		  left join fetch k.irakasleak ir
+    		  order by f.izena, t.izena, m.izena
+    		  """)
+    		List<Koadernoa> findAllWithRelations();
 }

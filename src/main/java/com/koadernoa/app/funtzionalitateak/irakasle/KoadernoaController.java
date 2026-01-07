@@ -68,9 +68,17 @@ public class KoadernoaController {
 	        return "redirect:/irakasle";
 	    }
 
-	    // (Aukerakoa) Egiaztatu irakasleak koaderno honetarako sarbidea duela
+	    // Nor dago logeatuta?
 	    Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
-	    if (!koadernoaService.irakasleakBadaukaSarbidea(irakaslea, koadernoa)) {
+
+	    // ADMIN / KUDEATZAILEA bada, beti onartu
+	    boolean adminEdoKude = auth != null && auth.getAuthorities().stream()
+	            .anyMatch(a ->
+	                    "ROLE_ADMIN".equals(a.getAuthority()) ||
+	                    "ROLE_KUDEATZAILEA".equals(a.getAuthority())
+	            );
+
+	    if (!adminEdoKude && !koadernoaService.irakasleakBadaukaSarbidea(irakaslea, koadernoa)) {
 	        ra.addFlashAttribute("error", "Ez duzu koaderno honetarako sarbiderik.");
 	        return "redirect:/irakasle";
 	    }
@@ -89,6 +97,7 @@ public class KoadernoaController {
 	    }
 	    return "redirect:/irakasle";
 	}
+
 	
 	private boolean isSafeInternal(String next) {
 	    if (next == null) return false;
