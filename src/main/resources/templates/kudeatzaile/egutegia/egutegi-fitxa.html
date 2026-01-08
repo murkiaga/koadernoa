@@ -15,6 +15,7 @@
         .blank      { background-color: #f0f0f0; }
         table       { border-collapse: collapse; margin-bottom: 2rem; }
         th, td      { border: 1px solid #ccc; padding: 4px; text-align: center; width: 30px; height: 30px; }
+        .oharra { box-shadow: inset 0 0 0 2px #444; }
     </style>
 </head>
 <body>
@@ -33,11 +34,16 @@
 	    <tbody>
 	        <tr th:each="astea : ${entry.value}">
 	            <td th:each="egun : ${astea}"
-				    th:class="${egun == null} ? 'blank' : ''"
-				    th:data-eguna="${egun}"
-				    th:classappend="${egun != null} ? ${klaseMap[egun.toString()]} : ''"
+				    th:attr="data-eguna=${egun},
+				             data-mota=${egun != null ? motaMap[egun.toString()] : ''},
+				             data-ordezkatua=${egun != null ? ordezkatuaMap[egun.toString()] : ''},
+				             data-oharra=${egun != null ? oharraMap[egun.toString()] : ''}"
+				    th:class="${egun == null ? 'blank' :
+				              ((klaseMap[egun.toString()] != null ? klaseMap[egun.toString()] : '') +
+				               (oharraMap[egun.toString()] != null ? ' oharra' : ''))}"
 				    th:text="${egun != null ? egun.dayOfMonth : ''}"
-				    th:title="${egun != null} ? ${deskribapenaMap[egun.toString()]} : ''">
+				    th:title="${egun != null ?
+				              (deskribapenaMap[egun.toString()] != null ? deskribapenaMap[egun.toString()] : '') : ''}">
 				</td>
 	        </tr>
 	    </tbody>
@@ -47,83 +53,126 @@
 
 
 <!-- Popup formularioa -->
-<div id="egunAldaketaForm" style="display:none; position:absolute; background:#fff; border:1px solid #ccc; padding:1rem; z-index:1000;">
-    <p id="egunDataText"></p>
-    <form id="egunForm" method="post" th:action="@{/kudeatzaile/egutegia/aldatu}">
-        <input type="hidden" name="data" id="egunDataInput" />
-        <input type="hidden" name="egutegiaId" th:value="${egutegia.id}" />
-        <select name="mota">
-            <option th:each="m : ${T(com.koadernoa.app.objektuak.egutegia.entitateak.EgunMota).values()}"
-		        th:value="${m}" th:text="${m}">
-			</option>
-        </select>
-        <select name="ordezkatua" style="display:none">
-		    <option value="">-- Hautatu ordezkatzen duen eguna --</option>
-		    <option value="ASTELEHENA">Astelehena</option>
-		    <option value="ASTEARTEA">Asteartea</option>
-		    <option value="ASTEAZKENA">Asteazkena</option>
-		    <option value="OSTEGUNA">Osteguna</option>
-		    <option value="OSTIRALA">Ostirala</option>
-		</select>
-        <button type="submit">Eguneratu</button>
-    </form>
+<div id="egunAldaketaForm"
+     style="display:none; position:absolute; background:#fff; border:1px solid #ccc; padding:1rem; z-index:1000; border-radius:10px; box-shadow:0 6px 20px rgba(0,0,0,.15);">
+  <p id="egunDataText" style="margin:0 0 .5rem 0; font-weight:600;"></p>
+
+  <form id="egunForm" method="post" th:action="@{/kudeatzaile/egutegia/aldatu}">
+    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+    <input type="hidden" name="data" id="egunDataInput" />
+    <input type="hidden" name="egutegiaId" th:value="${egutegia.id}" />
+
+    <div style="display:flex; gap:.5rem; align-items:center; flex-wrap:wrap;">
+      <label style="font-size:.85rem;">Mota:</label>
+      <select name="mota" style="padding:4px 6px;">
+        <option th:each="m : ${T(com.koadernoa.app.objektuak.egutegia.entitateak.EgunMota).values()}"
+                th:value="${m}" th:text="${m}">
+        </option>
+      </select>
+
+      <label style="font-size:.85rem;">Ordezkatua:</label>
+      <select name="ordezkatua" style="display:none; padding:4px 6px;">
+        <option value="">-- Hautatu ordezkatzen duen eguna --</option>
+        <option value="ASTELEHENA">Astelehena</option>
+        <option value="ASTEARTEA">Asteartea</option>
+        <option value="ASTEAZKENA">Asteazkena</option>
+        <option value="OSTEGUNA">Osteguna</option>
+        <option value="OSTIRALA">Ostirala</option>
+      </select>
+    </div>
+
+    <div style="margin-top:.6rem;">
+      <label for="egunOharraInput" style="font-size:.85rem;">Oharra:</label><br/>
+      <input type="text" name="oharra" id="egunOharraInput"
+             placeholder="Oharra (aukerakoa)"
+             style="width:260px; max-width:100%; padding:4px 6px; margin-top:4px;" />
+    </div>
+
+    <div style="display:flex; gap:.5rem; margin-top:.8rem;">
+      <button type="submit">Eguneratu</button>
+      <button type="button" id="popupItxiBtn">Itxi</button>
+    </div>
+  </form>
 </div>
 
+
 <script>
-	(function(){
-	  const popup = document.getElementById("egunAldaketaForm");
-	  const txt   = document.getElementById("egunDataText");
-	  const input = document.getElementById("egunDataInput");
-	  const motaSelect = document.querySelector('select[name="mota"]');
-	  const ordezkatuaSelect = document.querySelector('select[name="ordezkatua"]');
-	
-	  function toggleOrdezkatua() {
-	    ordezkatuaSelect.style.display = (motaSelect.value === 'ORDEZKATUA') ? 'inline-block' : 'none';
-	  }
-	  // Handler bakarra, ez bikoizteko
-	  if (!motaSelect.dataset.bound) {
-	    motaSelect.addEventListener('change', toggleOrdezkatua);
-	    motaSelect.dataset.bound = '1';
-	  }
-	
-	  function irekituPopup(td, ev){
-	    const data = td.getAttribute('data-eguna');
-	    if (!data || data === 'null') return;
-	
-	    txt.textContent = "Eguna: " + data;
-	    input.value = data;
-	
-	    toggleOrdezkatua();
-	
-	    popup.style.left = ev.pageX + "px";
-	    popup.style.top  = ev.pageY + "px";
-	    popup.style.display = "block";
-	  }
-	
-	  // Delegazioa: TD[data-eguna] klik egitean ireki
-	  document.addEventListener('click', function(e){
-	    const td = e.target.closest('td[data-eguna]');
-	    if (!td) return;
-	    if (popup.contains(e.target)) return; // popup barruko klikek ez ireki berriro
-	
-	    irekituPopup(td, e);
-	
-	    // 🔑 Gakoa: ez utzi klik hau gorantz igarotzen (bestela berehala itxiko da)
-	    e.stopPropagation();
-	    // e.preventDefault(); // nahi izanez gero
-	  });
-	
-	  // Popup barruan klik egitean ez propagatu
-	  popup.addEventListener('click', function(e){ e.stopPropagation(); });
-	
-	  // Popup kanpoan klik eginez itxi
-	  window.addEventListener('click', function(e){
-	    if (popup.style.display === "block" && !popup.contains(e.target)) {
-	      popup.style.display = 'none';
-	    }
-	  });
-	})();
+(function(){
+  const popup = document.getElementById("egunAldaketaForm");
+  const txt   = document.getElementById("egunDataText");
+  const input = document.getElementById("egunDataInput");
+  const oharraInput = document.getElementById("egunOharraInput");
+
+  const motaSelect = document.querySelector('#egunAldaketaForm select[name="mota"]');
+  const ordezkatuaSelect = document.querySelector('#egunAldaketaForm select[name="ordezkatua"]');
+  const itxiBtn = document.getElementById("popupItxiBtn");
+
+  function itxiPopup(){
+    popup.style.display = "none";
+  }
+
+  function toggleOrdezkatua() {
+    const show = (motaSelect.value === 'ORDEZKATUA');
+    ordezkatuaSelect.style.display = show ? 'inline-block' : 'none';
+    if (!show) ordezkatuaSelect.value = "";
+  }
+
+  motaSelect.addEventListener('change', toggleOrdezkatua);
+
+  if (itxiBtn) {
+    itxiBtn.addEventListener("click", function(e){
+      e.preventDefault();
+      itxiPopup();
+    });
+  }
+
+  function irekituPopup(td, ev){
+    const data = td.dataset.eguna;
+    if (!data) return;
+
+    const mota = td.dataset.mota || 'LEKTIBOA';
+    const ordez = td.dataset.ordezkatua || '';
+    const oharra = td.dataset.oharra || '';
+
+    txt.textContent = "Eguna: " + data;
+    input.value = data;
+
+    motaSelect.value = mota;
+    toggleOrdezkatua();
+    ordezkatuaSelect.value = ordez;
+    oharraInput.value = oharra;
+
+    popup.style.left = (ev.pageX + 10) + "px";
+    popup.style.top  = (ev.pageY + 10) + "px";
+    popup.style.display = "block";
+  }
+
+  // Klik bakarra kudeatzeko: TD klik -> ireki, bestela (kanpoan) -> itxi
+  document.addEventListener('click', function(e){
+    const td = e.target.closest('td[data-eguna]');
+
+    // 1) Egun batean klik egin bada: ireki eta KITTO (ez itxi)
+    if (td && td.dataset.eguna && td.dataset.eguna !== 'null') {
+      irekituPopup(td, e);
+      return;
+    }
+
+    // 2) Popup kanpoan klik egin bada: itxi
+    if (popup.style.display === "block" && !popup.contains(e.target)) {
+      itxiPopup();
+    }
+  });
+
+  // ESC -> itxi (aukerakoa baina erabilgarria)
+  document.addEventListener('keydown', function(e){
+    if (e.key === "Escape" && popup.style.display === "block") itxiPopup();
+  });
+
+})();
 </script>
+
+	
 
 
 </body>

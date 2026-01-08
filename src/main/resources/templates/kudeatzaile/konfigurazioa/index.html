@@ -141,40 +141,42 @@
 	
 	  <!-- Existenteen eguneratzea + ezabaketa -->
 	  <form th:action="@{/kudeatzaile/konfigurazioa/egoerak/gorde}" method="post">
-	    <table>
-	      <thead>
-	      <tr>
-	        <th>Kodea</th>
-	        <th>Izena</th>
-	        <th>ID</th>
-	        <th>Ezabatu</th>
-	      </tr>
-	      </thead>
-	      <tbody>
-	      <tr th:each="e : ${egoerak}">
-	        <!-- ID-a mantentzeko -->
-	        <td>
-	          <input type="hidden" name="ids" th:value="${e.id}"/>
-	          <input type="text"
-	                 th:name="|kodea_${e.id}|"
-	                 th:value="${e.kodea}"
-	                 style="width:100%;">
-	        </td>
-	        <td>
-	          <input type="text"
-	                 th:name="|izena_${e.id}|"
-	                 th:value="${e.izena}"
-	                 style="width:100%;">
-	        </td>
-	        <td th:text="${e.id}">1</td>
-	        <td style="text-align:center;">
-	          <input type="checkbox"
-	                 name="deleteIds"
-	                 th:value="${e.id}">
-	        </td>
-	      </tr>
-	      </tbody>
-	    </table>
+		  <div class="table-wrap">
+		    <table>
+		      <thead>
+		      <tr>
+		        <th>Kodea</th>
+		        <th>Izena</th>
+		        <th>ID</th>
+		        <th>Ezabatu</th>
+		      </tr>
+		      </thead>
+		      <tbody>
+		      <tr th:each="e : ${egoerak}">
+		        <!-- ID-a mantentzeko -->
+		        <td>
+		          <input type="hidden" name="ids" th:value="${e.id}"/>
+		          <input type="text"
+		                 th:name="|kodea_${e.id}|"
+		                 th:value="${e.kodea}"
+		                 style="width:100%;">
+		        </td>
+		        <td>
+		          <input type="text"
+		                 th:name="|izena_${e.id}|"
+		                 th:value="${e.izena}"
+		                 style="width:100%;">
+		        </td>
+		        <td th:text="${e.id}">1</td>
+		        <td style="text-align:center;">
+		          <input type="checkbox"
+		                 name="deleteIds"
+		                 th:value="${e.id}">
+		        </td>
+		      </tr>
+		      </tbody>
+		    </table>
+		   </div>
 	    <div class="actions">
 	      <button type="submit">Gorde egoerak</button>
 	    </div>
@@ -212,29 +214,31 @@
 	
 	  <form th:action="@{/kudeatzaile/konfigurazioa/familiak/aktiboak}"
 	        th:object="${activeFamiliaForm}" method="post">
-	    <table>
-	      <thead>
-	      <tr>
-	        <th>Aktibo</th>
-	        <th>Izena</th>
-	        <th>Slug</th>
-	        <th>ID</th>
-	      </tr>
-	      </thead>
-	      <tbody>
-	      <tr th:each="f : ${familiak}">
-	        <td>
-	          <input type="checkbox"
-	                 th:name="|aktiboIds|"
-	                 th:value="${f.id}"
-	                 th:checked="${f.aktibo}">
-	        </td>
-	        <td th:text="${f.izena}">INFORMATIKA</td>
-	        <td th:text="${f.slug}">informatika</td>
-	        <td th:text="${f.id}">1</td>
-	      </tr>
-	      </tbody>
-	    </table>
+	    <div class="table-wrap">
+		    <table>
+		      <thead>
+		      <tr>
+		        <th>Aktibo</th>
+		        <th>Izena</th>
+		        <th>Slug</th>
+		        <th>ID</th>
+		      </tr>
+		      </thead>
+		      <tbody>
+		      <tr th:each="f : ${familiak}">
+		        <td>
+		          <input type="checkbox"
+		                 th:name="|aktiboIds|"
+		                 th:value="${f.id}"
+		                 th:checked="${f.aktibo}">
+		        </td>
+		        <td th:text="${f.izena}">INFORMATIKA</td>
+		        <td th:text="${f.slug}">informatika</td>
+		        <td th:text="${f.id}">1</td>
+		      </tr>
+		      </tbody>
+		    </table>
+		   </div>
 	    <div class="actions">
 	      <button type="submit">Gorde aktiboak</button>
 	    </div>
@@ -268,56 +272,56 @@
 	           th:if="${_csrf != null}"
 	           th:name="${_csrf.parameterName}"
 	           th:value="${_csrf.token}"/>
-	
-	    <table>
-	      <thead>
-	      <tr>
-	        <th>Kodea</th>
-	        <th>Emandako blokeak (&ge; %)</th>
-	        <th>Emandako orduak (&ge; %)</th>
-	        <th>Ikasleen bertaratzea (&ge; %)</th>
-	        <th>Gaindituak (&ge; %)</th>
-	        <th>Ezabatu</th>
-	      </tr>
-	      </thead>
-	      <tbody>
-	      <tr th:each="cfg : ${ezadostasunKonfigList}">
-	        <!-- ID ezkutuan, bulk update egiteko -->
-	        <td>
-	          <input type="hidden" name="ids" th:value="${cfg.id}"/>
-	          <span th:text="${cfg.kodea}">DEFAULT</span>
-	        </td>
-	
-	        <td>
-	          <input type="number" min="0" max="100"
-	                 th:name="|minBlokeak_${cfg.id}|"
-	                 th:value="${cfg.minBlokePortzentaia}">
-	        </td>
-	        <td>
-	          <input type="number" min="0" max="100"
-	                 th:name="|minOrduak_${cfg.id}|"
-	                 th:value="${cfg.minOrduPortzentaia}">
-	        </td>
-	        <td>
-	          <input type="number" min="0" max="100"
-	                 th:name="|minBertaratzea_${cfg.id}|"
-	                 th:value="${cfg.minBertaratzePortzentaia}">
-	        </td>
-	        <td>
-	          <input type="number" min="0" max="100"
-	                 th:name="|minGaindituak_${cfg.id}|"
-	                 th:value="${cfg.minGaindituPortzentaia}">
-	        </td>
-	
-	        <td style="text-align:center;">
-	          <input type="checkbox"
-	                 name="deleteIds"
-	                 th:value="${cfg.id}">
-	        </td>
-	      </tr>
-	      </tbody>
-	    </table>
-	
+		<div class="table-wrap">
+		    <table>
+		      <thead>
+		      <tr>
+		        <th>Kodea</th>
+		        <th>Emandako blokeak (&ge; %)</th>
+		        <th>Emandako orduak (&ge; %)</th>
+		        <th>Ikasleen bertaratzea (&ge; %)</th>
+		        <th>Gaindituak (&ge; %)</th>
+		        <th>Ezabatu</th>
+		      </tr>
+		      </thead>
+		      <tbody>
+		      <tr th:each="cfg : ${ezadostasunKonfigList}">
+		        <!-- ID ezkutuan, bulk update egiteko -->
+		        <td>
+		          <input type="hidden" name="ids" th:value="${cfg.id}"/>
+		          <span th:text="${cfg.kodea}">DEFAULT</span>
+		        </td>
+		
+		        <td>
+		          <input type="number" min="0" max="100"
+		                 th:name="|minBlokeak_${cfg.id}|"
+		                 th:value="${cfg.minBlokePortzentaia}">
+		        </td>
+		        <td>
+		          <input type="number" min="0" max="100"
+		                 th:name="|minOrduak_${cfg.id}|"
+		                 th:value="${cfg.minOrduPortzentaia}">
+		        </td>
+		        <td>
+		          <input type="number" min="0" max="100"
+		                 th:name="|minBertaratzea_${cfg.id}|"
+		                 th:value="${cfg.minBertaratzePortzentaia}">
+		        </td>
+		        <td>
+		          <input type="number" min="0" max="100"
+		                 th:name="|minGaindituak_${cfg.id}|"
+		                 th:value="${cfg.minGaindituPortzentaia}">
+		        </td>
+		
+		        <td style="text-align:center;">
+		          <input type="checkbox"
+		                 name="deleteIds"
+		                 th:value="${cfg.id}">
+		        </td>
+		      </tr>
+		      </tbody>
+		    </table>
+		</div>
 	    <div class="actions" style="margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
 	      <span class="muted">Aldaketak gordetzeko: "Gorde aldaketak". Ezabatzeko, lerroa markatu "Ezabatu" zutabean.</span>
 	      <button type="submit">Gorde aldaketak</button>

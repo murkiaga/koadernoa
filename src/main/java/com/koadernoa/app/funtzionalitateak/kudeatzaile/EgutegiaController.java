@@ -62,6 +62,7 @@ public class EgutegiaController {
 	
 	@GetMapping("/{egutegiaId}")
 	public String erakutsiEgutegiBat(@PathVariable("egutegiaId") Long egutegiaId, Model model) {
+
 	    Egutegia egutegia = egutegiaService.getById(egutegiaId);
 	    if (egutegia == null) {
 	        model.addAttribute("errorea", "Ez da egutegia aurkitu.");
@@ -70,17 +71,67 @@ public class EgutegiaController {
 
 	    Map<String, List<List<LocalDate>>> hilabeteka = egutegiaService.prestatuHilabetekoEgutegiak(egutegia);
 	    Map<String, String> klaseak = egutegiaService.kalkulatuKlaseak(egutegia);
-	    Map<String, String> deskribapenaMap = egutegia.getEgunBereziak().stream()
-	        .collect(Collectors.toMap(
-	            eb -> eb.getData().toString(),
-	            EgunBerezi::getDeskribapena,
-	            (a, b) -> a
-	        ));
+
+	    // NEW: mapak popup/JS-rako eta UI-rako
+	    Map<String, String> motaMap = new java.util.HashMap<>();
+	    Map<String, String> ordezkatuaMap = new java.util.HashMap<>();
+	    Map<String, String> oharraMap = new java.util.HashMap<>();
+
+	    // Tooltip-erako (zure template-ak th:title-n erabiltzen duena)
+	    Map<String, String> deskribapenaMap = new java.util.HashMap<>();
+
+	    if (egutegia.getEgunBereziak() != null) {
+	        for (EgunBerezi eb : egutegia.getEgunBereziak()) {
+	            if (eb.getData() == null) continue;
+
+	            String key = eb.getData().toString();
+
+	            if (eb.getMota() != null) {
+	                motaMap.put(key, eb.getMota().name());
+	            }
+	            if (eb.getOrdezkatua() != null) {
+	                ordezkatuaMap.put(key, eb.getOrdezkatua().name());
+	            }
+
+	            String oharra = eb.getDeskribapena();
+	            if (oharra != null && !oharra.isBlank()) {
+	                oharraMap.put(key, oharra.trim());
+	            }
+
+	            // Tooltip testua: mota (+ ordezkatua) + " — " + oharra
+	            String base = "";
+	            if (eb.getMota() != null) {
+	                switch (eb.getMota()) {
+	                    case JAIEGUNA -> base = "Jaieguna";
+	                    case EZ_LEKTIBOA -> base = "Ez-lektiboa";
+	                    case LEKTIBOA -> base = "Lektiboa";
+	                    case ORDEZKATUA -> {
+	                        base = "Ordezkatua";
+	                        if (eb.getOrdezkatua() != null) base += " (" + eb.getOrdezkatua().name() + ")";
+	                    }
+	                }
+	            }
+
+	            String tooltip = base;
+	            String oh = oharraMap.get(key);
+	            if (oh != null) {
+	                if (!tooltip.isBlank()) tooltip += " — ";
+	                tooltip += oh;
+	            }
+	            if (!tooltip.isBlank()) {
+	                deskribapenaMap.put(key, tooltip);
+	            }
+	        }
+	    }
 
 	    model.addAttribute("egutegia", egutegia);
 	    model.addAttribute("ikasturtea", egutegia.getIkasturtea());
 	    model.addAttribute("hilabeteka", hilabeteka);
+
 	    model.addAttribute("klaseMap", klaseak);
+	    model.addAttribute("motaMap", motaMap);
+	    model.addAttribute("ordezkatuaMap", ordezkatuaMap);
+	    model.addAttribute("oharraMap", oharraMap);
 	    model.addAttribute("deskribapenaMap", deskribapenaMap);
 
 	    return "kudeatzaile/egutegia/egutegi-fitxa";
@@ -92,10 +143,11 @@ public class EgutegiaController {
 	        @RequestParam("data") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data,
 	        @RequestParam("mota") EgunMota mota,
 	        @RequestParam(value = "ordezkatua", required = false) Astegunak ordezkatua,
-	        @RequestParam("egutegiaId") Long egutegiaId) {
+	        @RequestParam("egutegiaId") Long egutegiaId,
+	        @RequestParam(required = false) String oharra) {
 
 	    Egutegia egutegia = egutegiaService.getById(egutegiaId);
-	    egutegiaService.aldatuEgunMota(egutegia, data, mota, ordezkatua);
+	    egutegiaService.aldatuEgunMota(egutegia, data, mota, ordezkatua, oharra);
 
 	    return "redirect:/kudeatzaile/egutegia/" + egutegiaId;
 	}

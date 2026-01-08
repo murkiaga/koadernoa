@@ -13,7 +13,6 @@
 <main class="page">
     <h1>Zikloen kudeaketa</h1>
 
-    <a th:href="@{/kudeatzaile/zikloak/sortu}" class="btn btn-primary">➕ Ziklo berria sortu</a>
 	<div class="table-wrap">
 	    <table>
 	        <thead>
@@ -36,7 +35,7 @@
 	                <td th:text="${ziklo.familia != null ? ziklo.familia.izena : '—'}">INFORMATIKA</td>
 	                <td class="actions-cell">
 	                    <a th:href="@{/kudeatzaile/zikloak/editatu/{id}(id=${ziklo.id})}" class="btn btn-secondary">Editatu</a>
-	                    <a th:href="@{/kudeatzaile/zikloak/ezabatu/{id}(id=${ziklo.id})}" class="btn btn-danger">Ezabatu</a>
+	                    <!-- <a th:href="@{/kudeatzaile/zikloak/ezabatu/{id}(id=${ziklo.id})}" class="btn btn-danger">Ezabatu</a> -->
 	                </td>
 	            </tr>
 	        </tbody>

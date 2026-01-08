@@ -44,14 +44,26 @@
     			         th:classappend="${egunMap[egunaBista.data.toString()] == 'ezlektiboa'} ? ' testu-zuria' : ''"
     			         th:style="${egunaBista.data != null && !egunaBista.hilabeteAktibokoa} ? 'color: #ccc;' : 'color: black;'">
     			    </div>
-    			    <!-- Asistentzia botoia (lektiboa bada soilik) -->
-    				<a th:if="${egunaBista.data != null 
-              					and (asistentziaEgunMap[egunaBista.data.toString()] == true)}"
-    				   th:href="@{/irakasle/asistentzia(data=${egunaBista.data})}"
-    				   class="btn-asistentzia"
-    				   title="Egun honetako asistentzia">
-    				  👤✔
-    				</a>
+    			    
+    			    <!-- Goiko ikonoak: asistentzia + oharra -->
+					<div class="goiko-ikonoak"
+					     th:if="${egunaBista.data != null and (asistentziaEgunMap[egunaBista.data.toString()] == true
+					             or oharraMap[egunaBista.data.toString()] != null)}">
+             
+	    			    <!-- Asistentzia botoia (lektiboa bada soilik) -->
+	    				<a th:if="${egunaBista.data != null 
+	              					and (asistentziaEgunMap[egunaBista.data.toString()] == true)}"
+	    				   th:href="@{/irakasle/asistentzia(data=${egunaBista.data})}"
+	    				   class="btn-asistentzia"
+	    				   title="Egun honetako asistentzia">
+	    				  👤✔
+	    				</a>
+    					<!-- Ohar ikonoa (oharra badago) -->
+					  	<span th:if="${egunaBista.data != null and oharraMap[egunaBista.data.toString()] != null}"
+					        class="ohar-ikonoa"
+					        th:title="${oharraMap[egunaBista.data.toString()]}"
+					        aria-label="Oharra">!</span>
+        			</div>
     			    <!-- Egun honetako jarduerak -->
     				  <ul class="jarduerak" th:if="${egunaBista.data != null and jardueraMap[egunaBista.data] != null}">
 						  <li class="jarduera-item"

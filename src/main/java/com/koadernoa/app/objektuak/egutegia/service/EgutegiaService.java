@@ -131,7 +131,7 @@ public class EgutegiaService {
     }
 	
 	@Transactional
-    public void aldatuEgunMota(Egutegia egutegia, LocalDate data, EgunMota mota, Astegunak ordezkatua) {
+    public void aldatuEgunMota(Egutegia egutegia, LocalDate data, EgunMota mota, Astegunak ordezkatua, String oharra) {
         for (EgunBerezi eb : egutegia.getEgunBereziak()) {
             if (eb.getData().equals(data)) {
                 eb.setMota(mota);
@@ -140,8 +140,9 @@ public class EgutegiaService {
                     eb.setDeskribapena("Ordezkatua: " + (ordezkatua != null ? ordezkatua.name() : ""));
                 } else {
                     eb.setOrdezkatua(null); // garbitu aurreko balioa
-                    eb.setDeskribapena("Eskuz aldatuta");
                 }
+                if (oharra != null)
+                	eb.setDeskribapena(oharra);
                 return;
             }
         }
@@ -152,10 +153,9 @@ public class EgutegiaService {
         if (mota == EgunMota.ORDEZKATUA) {
             berria.setOrdezkatua(ordezkatua);
             berria.setDeskribapena("Ordezkatua: " + (ordezkatua != null ? ordezkatua.name() : ""));
-        } else {
-            berria.setDeskribapena("Eskuz aldatuta");
         }
         berria.setEgutegia(egutegia);
+        berria.setDeskribapena(oharra);
         egutegia.getEgunBereziak().add(berria);
     }
 	

@@ -156,7 +156,7 @@ public class KudeatzaileController {
         return "redirect:/kudeatzaile/taldeak";
     }
 
-    @PostMapping("/taldeak/ezabatu/{id}")
+    @GetMapping("/taldeak/ezabatu/{id}")
     public String ezabatuTaldea(@PathVariable("id") Long id) {
         taldeaService.deleteById(id);
         return "redirect:/kudeatzaile/taldeak";

@@ -2,6 +2,7 @@ package com.koadernoa.app.funtzionalitateak.irakasle;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -156,6 +157,17 @@ public class DenboralizazioaController {
 	        model.addAttribute("faltaEgunOrduak", faltak.getEgunekoOrduak());
 	        model.addAttribute("faltakIkasleak", faltak.getIkasleRows());
 	    }
+	    
+	    //Egutegiko oharrak hartzeko:
+	    Map<String, String> oharraMap = new HashMap<>();
+	    if (egutegia.getEgunBereziak() != null) {
+	        for (EgunBerezi eb : egutegia.getEgunBereziak()) {
+	            if (eb.getData() == null) continue;
+	            if (eb.getDeskribapena() == null || eb.getDeskribapena().isBlank()) continue;
+	            oharraMap.put(eb.getData().toString(), eb.getDeskribapena().trim());
+	        }
+	    }
+	    model.addAttribute("oharraMap", oharraMap);
 
 	    return "irakasleak/denboralizazioa/denboralizazioa";
 	}

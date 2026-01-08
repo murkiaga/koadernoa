@@ -135,31 +135,68 @@ public class IrakasleController {
 	    return "irakasleak/index";
 	}
     
-    @GetMapping("/egutegia")
-    public String koadernoarenEgutegia(@ModelAttribute("koadernoAktiboa") Koadernoa koadernoa, Model model) {
-    	
-    	if (koadernoa == null) {
-            model.addAttribute("errorea", "Ez dago koaderno aktiborik aukeratuta.");
-            return "error/404";
-        }
+	@GetMapping("/egutegia")
+	public String koadernoarenEgutegia(@ModelAttribute("koadernoAktiboa") Koadernoa koadernoa, Model model) {
 
-        Egutegia egutegia = koadernoa.getEgutegia();
+	    if (koadernoa == null) {
+	        model.addAttribute("errorea", "Ez dago koaderno aktiborik aukeratuta.");
+	        return "error/404";
+	    }
 
-        Map<String, List<List<LocalDate>>> hilabeteka = egutegiaService.prestatuHilabetekoEgutegiak(egutegia);
-        Map<String, String> klaseak = egutegiaService.kalkulatuKlaseak(egutegia);
-        Map<String, String> deskribapenaMap = egutegia.getEgunBereziak().stream()
-            .collect(Collectors.toMap(
-                eb -> eb.getData().toString(),
-                EgunBerezi::getDeskribapena,
-                (a, b) -> a
-            ));
+	    Egutegia egutegia = koadernoa.getEgutegia();
 
-        model.addAttribute("egutegia", egutegia);
-        model.addAttribute("ikasturtea", egutegia.getIkasturtea());
-        model.addAttribute("hilabeteka", hilabeteka);
-        model.addAttribute("klaseMap", klaseak);
-        model.addAttribute("deskribapenaMap", deskribapenaMap);
+	    Map<String, List<List<LocalDate>>> hilabeteka = egutegiaService.prestatuHilabetekoEgutegiak(egutegia);
+	    Map<String, String> klaseak = egutegiaService.kalkulatuKlaseak(egutegia);
 
-        return "irakasleak/egutegia/egutegi-fitxa";
-    }
+	    Map<String, String> oharraMap = new java.util.HashMap<>();
+	    Map<String, String> deskribapenaMap = new java.util.HashMap<>();
+
+	    if (egutegia.getEgunBereziak() != null) {
+	        for (EgunBerezi eb : egutegia.getEgunBereziak()) {
+	            if (eb.getData() == null) continue;
+	            String key = eb.getData().toString();
+
+	            String oharra = eb.getDeskribapena();
+	            if (oharra != null && !oharra.isBlank()) {
+	                oharraMap.put(key, oharra.trim());
+	            }
+
+	            // Tooltip-a: mota + (ordezkatua) + — + oharra
+	            String base = "";
+	            if (eb.getMota() != null) {
+	                switch (eb.getMota()) {
+	                    case JAIEGUNA -> base = "Jaieguna";
+	                    case EZ_LEKTIBOA -> base = "Ez-lektiboa";
+	                    case LEKTIBOA -> base = "Lektiboa";
+	                    case ORDEZKATUA -> {
+	                        base = "Ordezkatua";
+	                        if (eb.getOrdezkatua() != null) base += " (" + eb.getOrdezkatua().name() + ")";
+	                    }
+	                }
+	            }
+
+	            String tooltip = base;
+	            if (oharraMap.containsKey(key)) {
+	                if (!tooltip.isBlank()) tooltip += " — ";
+	                tooltip += oharraMap.get(key);
+	            }
+
+	            if (!tooltip.isBlank()) {
+	                deskribapenaMap.put(key, tooltip);
+	            }
+	        }
+	    }
+
+	    model.addAttribute("egutegia", egutegia);
+	    model.addAttribute("ikasturtea", egutegia.getIkasturtea());
+	    model.addAttribute("hilabeteka", hilabeteka);
+	    model.addAttribute("klaseMap", klaseak);
+
+	    // NEW
+	    model.addAttribute("oharraMap", oharraMap);
+	    model.addAttribute("deskribapenaMap", deskribapenaMap);
+
+	    return "irakasleak/egutegia/egutegi-fitxa";
+	}
+
 }

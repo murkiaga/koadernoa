@@ -89,14 +89,6 @@
             margin-right: auto;
         }
 
-        .btn-asistentzia{
-          position:absolute; left:6px; top:4px;
-          font-size:.85rem; text-decoration:none;
-          padding:2px 6px; border:1px solid #ddd; border-radius:6px;
-          background:#fff; cursor:pointer;
-        }
-        .btn-asistentzia:hover{ background:#f3f4f6; }
-
         .bista-tabs {
 		    display: flex;
 		    gap: .5rem;
@@ -188,6 +180,47 @@
         .jarduera-item:active{
             cursor: grabbing;
         }
+        
+        .goiko-ikonoak{
+		  position:absolute;
+		  left:6px;
+		  top:4px;
+		  display:flex;
+		  gap:6px;
+		  align-items:center;
+		  z-index:3;
+		}
+		
+		/* btn-asistentzia lehen absolutua bazen, hemen gainidatzi */
+		.btn-asistentzia{
+		  position: static;
+		  font-size:.85rem;
+		  text-decoration:none;
+		  padding:2px 6px;
+		  border:1px solid #ddd;
+		  border-radius:6px;
+		  background:#fff;
+		  cursor:pointer;
+		}
+		.btn-asistentzia:hover{ background:#f3f4f6; }
+		
+		.ohar-ikonoa{
+		  display:inline-flex;
+		  align-items:center;
+		  justify-content:center;
+		  width:18px;
+		  height:18px;
+		  border-radius:6px;
+		  border:1px solid #ddd;
+		  background:#fff;
+		  font-size:.9rem;
+		  font-weight:900;
+		  color:#b91c1c;
+		  cursor: help;   /* tooltip dagoela adierazi */
+		  user-select:none;
+		}
+		.ohar-ikonoa:hover{ background:#f3f4f6; }
+
     </style>
     
     <script th:src="@{/js/jarduera-modal.js}"></script>
@@ -235,7 +268,7 @@ document.addEventListener('DOMContentLoaded', function(){
   if(!table) return;
 
   table.addEventListener('click', function(e){
-    if (e.target.closest('a.btn-asistentzia')) return;
+	if (e.target.closest('a.btn-asistentzia') || e.target.closest('.ohar-ikonoa')) return;
 
     const td = e.target.closest('td[data-date]');
     if (!td) return;

@@ -77,6 +77,21 @@
         .hilabete-card td {
             font-size: .7rem;
         }
+        .oharra-eguna{
+		  position: relative;
+		  cursor: help; /* tooltip-a dagoela adierazteko */
+		}
+		.oharra-eguna::after{
+		  content: "";
+		  position: absolute;
+		  right: 2px;
+		  bottom: 2px;
+		  width: 6px;
+		  height: 6px;
+		  border-radius: 999px;
+		  background: #111827; /* puntutxoa */
+		  opacity: .65;
+		}
     </style>
 </head>
 <body>
@@ -101,11 +116,13 @@
                     <tbody>
                     <tr th:each="astea : ${entry.value}">
                         <td th:each="egun : ${astea}"
-                            th:class="${egun} == null ? 'blank' : ''"
-                            th:classappend="${egun} != null ? ${klaseMap[egun.toString()]} : ''"
-                            th:title="${egun} != null ? ${deskribapenaMap[egun.toString()]} : ''"
-                            th:text="${egun != null ? egun.dayOfMonth : ''}">
-                        </td>
+						    th:class="${egun == null ? 'blank' :
+						              ((klaseMap[egun.toString()] != null ? klaseMap[egun.toString()] : '') +
+						               (oharraMap[egun.toString()] != null ? ' oharra-eguna' : ''))}"
+						    th:title="${egun != null ?
+						              (deskribapenaMap[egun.toString()] != null ? deskribapenaMap[egun.toString()] : '') : ''}"
+						    th:text="${egun != null ? egun.dayOfMonth : ''}">
+						</td>
                     </tr>
                     </tbody>
                 </table>
