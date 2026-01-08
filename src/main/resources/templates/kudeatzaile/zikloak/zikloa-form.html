@@ -4,40 +4,48 @@
     <title>Zikloa gorde</title>
     <meta charset="UTF-8">
     <link rel="stylesheet" th:href="@{/css/navbar.css}">
+    <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
 	<div th:replace="/kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
-    <h1 th:text="${zikloa.id} != null ? 'Zikloa editatu' : 'Ziklo berria sortu'"></h1>
-
-    <form th:action="@{/kudeatzaile/zikloak/gorde}" th:object="${zikloa}" method="post">
-        <!-- ID ezkutuan, bakarrik editatzeko -->
-        <input type="hidden" th:if="${zikloa.id != null}" th:field="*{id}" />
-
-        <label for="izena">Izena:</label>
-        <input type="text" id="izena" th:field="*{izena}" required />
-        <br/><br/>
-
-        <label for="maila">Maila:</label>
-        <select id="maila" th:field="*{maila}" required>
-            <option th:each="m : ${mailak}" th:value="${m}" th:text="${m}"></option>
-        </select>
-        <br/><br/>
-
-        <label for="familia">Familia:</label>
-        <!-- GAKOA: familia.id bideratu -->
-        <select id="familia" th:field="*{familia.id}" required>
-            <option value="" th:if="${zikloa.familia == null}" selected>— Aukeratu —</option>
-            <option th:each="f : ${familiak}"
-                    th:value="${f.id}"
-                    th:text="${f.izena}">
-            </option>
-        </select>
-        <br/><br/>
-
-        <button type="submit">Gorde</button>
-        <a th:href="@{/kudeatzaile/zikloak}">Atzera</a>
-    </form>
-<script th:src="@{/js/kudeatzaile-nav.js}"></script>
+	<main class="page">
+	    <h1 th:text="${zikloa.id} != null ? 'Zikloa editatu' : 'Ziklo berria sortu'"></h1>
+	
+	    <form class="form" th:action="@{/kudeatzaile/zikloak/gorde}" th:object="${zikloa}" method="post">
+	        <!-- ID ezkutuan, bakarrik editatzeko -->
+	        <input type="hidden" th:if="${zikloa.id != null}" th:field="*{id}" />
+			
+			<div class="field">
+		        <label for="izena">Izena:</label>
+		        <input type="text" id="izena" th:field="*{izena}" required />
+	    	</div>
+	
+			<div class="field">
+		        <label for="maila">Maila:</label>
+		        <select id="maila" th:field="*{maila}" required>
+		            <option th:each="m : ${mailak}" th:value="${m}" th:text="${m}"></option>
+		        </select>
+		    </div>
+	
+			<div class="field">
+		        <label for="familia">Familia:</label>
+		        <!-- GAKOA: familia.id bideratu -->
+		        <select id="familia" th:field="*{familia.id}" required>
+		            <option value="" th:if="${zikloa.familia == null}" selected>— Aukeratu —</option>
+		            <option th:each="f : ${familiak}"
+		                    th:value="${f.id}"
+		                    th:text="${f.izena}">
+		            </option>
+		        </select>
+			</div>
+			
+			<div class="form-actions">
+	        	<button class="btn btn-primary" type="submit">Gorde</button>
+	        	<a class="btn btn-secondary" th:href="@{/kudeatzaile/zikloak}">Atzera</a>
+	        </div>
+	    </form>
+	</main>
+	<script th:src="@{/js/kudeatzaile-nav.js}"></script>
 </body>
 </html>

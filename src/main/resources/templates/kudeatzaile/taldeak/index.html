@@ -5,6 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" th:href="@{/css/navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
   <style>
     .modal { display:none; position:fixed; inset:0; background:#0006; align-items:center; justify-content:center; }
     .modal.open { display:flex; }
@@ -24,130 +25,128 @@
 <body>
 
 <div th:replace="/kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
-
-<h1>Taldeak</h1>
-
-<div th:if="${msg}" style="color:green" th:text="${msg}"></div>
-<div th:if="${errorea}" style="color:red" th:text="${errorea}"></div>
-
-<a th:href="@{/kudeatzaile/taldeak/sortu}">➕ Sortu talde berria</a>
-
-<form method="get" th:action="@{/kudeatzaile/taldeak}" style="margin: 1em 0;">
-  <label for="zikloaId">Zikloa:</label>
-  <select id="zikloaId" name="zikloaId" onchange="this.form.submit()">
-    <option value="" th:selected="${zikloaId == null}">— Guztiak —</option>
-    <option th:each="z : ${zikloak}"
-            th:value="${z.id}"
-            th:text="${z.izena + ' (' + z.maila + ', ' + z.familia + ')'}"
-            th:selected="${zikloaId != null and z.id == zikloaId}">
-    </option>
-  </select>
-  <noscript><button type="submit">Iragazi</button></noscript>
-  <a th:if="${zikloaId != null}" th:href="@{/kudeatzaile/taldeak}" style="margin-left: .5em;">(Garbitu)</a>
-</form>
-
-<table border="1" cellpadding="8" cellspacing="0">
-  <thead>
-    <tr>
-      <th>ID</th>
-      <th>Izena</th>
-      <th>Zikloa</th>
-      <th>Tutorea</th>
-      <th>Ikasleak / Argazkiak</th>
-      <th>Ekintzak</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr th:each="taldea : ${taldeak}">
-      <td th:text="${taldea.id}">1</td>
-      <td>
-        <a th:href="@{/kudeatzaile/moduloak(taldeaId=${taldea.id})}"
-           th:text="${taldea.izena}">1SMA</a>
-      </td>
-      <td th:text="${taldea.zikloa != null ? taldea.zikloa.izena : '-'}">Informatika</td>
-
-      <td>
-        <form th:action="@{/kudeatzaile/taldeak/{id}/tutorea(id=${taldea.id})}" method="post">
-          <input type="hidden" th:if="${csrf != null}" th:name="${csrf.parameterName}" th:value="${csrf.token}"/>
-          <select name="irakasleId">
-            <option value="" th:selected="${taldea.tutorea == null}">(ez dago)</option>
-            <option th:each="ira : ${irakasleak}"
-                    th:value="${ira.id}"
-                    th:selected="${taldea.tutorea != null and ira.id == taldea.tutorea.id}"
-                    th:text="${ira.mintegia != null ? ira.izena + ' (' + ira.mintegia.izena + ')' : ira.izena}">
-            </option>
-          </select>
-          <button type="submit">Gorde</button>
-        </form>
-      </td>
-
-      <td>
-        <button type="button"
-                th:attr="data-taldea-id=${taldea.id}"
-                onclick="openImportModal(this)">⬆️ Inportatu</button>
-
-        <a th:href="@{/kudeatzaile/taldeak/{id}/argazkiak(id=${taldea.id})}"
-           style="margin-left:.5rem; text-decoration:none;">📸 Argazkiak gehitu</a>
-
-        <span style="margin-left:.5rem; padding:.1rem .45rem; border-radius:999px; font-size:.85em; background:#eef2ff; color:#374151;"
-              th:text="${(ikasleKop[taldea.id] != null ? ikasleKop[taldea.id] : 0) + ' ikasle'}">
-          0 ikasle
-        </span>
-      </td>
-
-      <td>
-        <a th:href="@{/kudeatzaile/taldeak/editatu/{id}(id=${taldea.id})}">✏️ Editatu</a> |
-        <a th:href="@{/kudeatzaile/taldeak/ezabatu/{id}(id=${taldea.id})}"
-           onclick="return confirm('Ziur zaude ezabatu nahi duzula?');">🗑️ Ezabatu</a>
-      </td>
-    </tr>
-  </tbody>
-</table>
-
-<br>
-<a th:href="@{/kudeatzaile/taldeak/sortu}">➕ Sortu talde berria</a>
-
-<!-- INPORT MODALA -->
-<div id="importModal" class="modal" onclick="closeOnBackdrop(event)">
-  <div class="modal-card">
-    <h3 style="margin-top:0">Ikasleak inportatu (XLSX)</h3>
-
-    <form id="importForm" method="post" enctype="multipart/form-data">
-      <input type="hidden" id="csrfName" th:if="${csrf != null}" th:value="${csrf.parameterName}">
-      <input type="hidden" id="csrfToken" th:if="${csrf != null}" th:value="${csrf.token}">
-      <input type="hidden" name="taldeaId" id="taldeaIdHidden">
-
-      <div id="dropzone" class="dropzone" aria-live="polite">
-        <!-- Egoera hutsa -->
-        <div id="dz-empty">
-          <p><strong>Arrastatu eta askatu</strong> fitxategia hemen, edo egin klik hautatzeko.</p>
-          <p style="font-size:.9em;color:#6b7280">
-            Onartutakoa: .xlsx • Orria: “Zerrenda” • Goiburuak: Zbk Nº, HNA DIE, NAN DNI, Abizena_1 Apellido_1,
-            Abizena_2 Apellido_2, Izena Nombre
-          </p>
-        </div>
-
-        <!-- Egoera fitxategiarekin -->
-        <div id="dz-hasfile" style="display:none">
-          <div class="file-chip">
-            <span id="fileName">fitxategia.xlsx</span>
-            <span id="fileSize" class="muted">(0 KB)</span>
-            <button type="button" id="removeFileBtn" class="linklike">Kendu</button>
-            <button type="button" id="changeFileBtn" class="linklike">Aldatu</button>
-          </div>
-        </div>
-
-        <input id="fileInput" type="file" name="fitxategia" accept=".xlsx" style="display:none">
-      </div>
-
-      <div style="margin-top:1rem; display:flex; gap:.5rem; justify-content:flex-end">
-        <button type="button" onclick="closeImportModal()">Utzi</button>
-        <button id="submitBtn" type="submit" disabled>Bidali eta inportatu</button>
-      </div>
-    </form>
-  </div>
-</div>
-
+<main class="page">
+	<h1>Taldeak</h1>
+	
+	<div th:if="${msg}" style="color:green" th:text="${msg}"></div>
+	<div th:if="${errorea}" style="color:red" th:text="${errorea}"></div>
+	
+	<a class="btn btn-primary" th:href="@{/kudeatzaile/taldeak/sortu}">➕ Sortu talde berria</a>
+	
+	<form method="get" th:action="@{/kudeatzaile/taldeak}" style="margin: 1em 0;">
+	  <label for="zikloaId">Zikloa:</label>
+	  <select id="zikloaId" name="zikloaId" onchange="this.form.submit()">
+	    <option value="" th:selected="${zikloaId == null}">— Guztiak —</option>
+	    <option th:each="z : ${zikloak}"
+	            th:value="${z.id}"
+	            th:text="${z.izena + ' (' + z.maila + ', ' + z.familia + ')'}"
+	            th:selected="${zikloaId != null and z.id == zikloaId}">
+	    </option>
+	  </select>
+	  <noscript><button type="submit">Iragazi</button></noscript>
+	  <a class="btn btn-secondary" th:if="${zikloaId != null}" th:href="@{/kudeatzaile/taldeak}" style="margin-left: .5em;">Guztiak ikusi</a>
+	</form>
+	<div class="table-wrap">
+		<table cellpadding="8" cellspacing="0">
+		  <thead>
+		    <tr>
+		      <th>ID</th>
+		      <th>Izena</th>
+		      <th>Zikloa</th>
+		      <th>Tutorea</th>
+		      <th>Ikasleak / Argazkiak</th>
+		      <th>Ekintzak</th>
+		    </tr>
+		  </thead>
+		  <tbody>
+		    <tr th:each="taldea : ${taldeak}">
+		      <td th:text="${taldea.id}">1</td>
+		      <td>
+		        <a th:href="@{/kudeatzaile/moduloak(taldeaId=${taldea.id})}"
+		           th:text="${taldea.izena}">1SMA</a>
+		      </td>
+		      <td th:text="${taldea.zikloa != null ? taldea.zikloa.izena : '-'}">Informatika</td>
+		
+		      <td>
+		        <form th:action="@{/kudeatzaile/taldeak/{id}/tutorea(id=${taldea.id})}" method="post">
+		          <input type="hidden" th:if="${csrf != null}" th:name="${csrf.parameterName}" th:value="${csrf.token}"/>
+		          <select name="irakasleId">
+		            <option value="" th:selected="${taldea.tutorea == null}">(ez dago)</option>
+		            <option th:each="ira : ${irakasleak}"
+		                    th:value="${ira.id}"
+		                    th:selected="${taldea.tutorea != null and ira.id == taldea.tutorea.id}"
+		                    th:text="${ira.mintegia != null ? ira.izena + ' (' + ira.mintegia.izena + ')' : ira.izena}">
+		            </option>
+		          </select>
+		          <button type="submit">Gorde</button>
+		        </form>
+		      </td>
+		
+		      <td class="actions-cell">
+		        <button type="button"
+		                th:attr="data-taldea-id=${taldea.id}"
+		                onclick="openImportModal(this)">⬆️ Inportatu</button>
+		
+		        <a th:href="@{/kudeatzaile/taldeak/{id}/argazkiak(id=${taldea.id})}"
+		           style="margin-left:.5rem; text-decoration:none;">📸 Argazkiak gehitu</a>
+		
+		        <span style="margin-left:.5rem; padding:.1rem .45rem; border-radius:999px; font-size:.85em; background:#eef2ff; color:#374151;"
+		              th:text="${(ikasleKop[taldea.id] != null ? ikasleKop[taldea.id] : 0) + ' ikasle'}">
+		          0 ikasle
+		        </span>
+		      </td>
+		
+		      <td class="actions-cell">
+		        <a th:href="@{/kudeatzaile/taldeak/editatu/{id}(id=${taldea.id})}">✏️ Editatu</a> |
+		        <a th:href="@{/kudeatzaile/taldeak/ezabatu/{id}(id=${taldea.id})}"
+		           onclick="return confirm('Ziur zaude ezabatu nahi duzula?');">🗑️ Ezabatu</a>
+		      </td>
+		    </tr>
+		  </tbody>
+		</table>
+	</div>
+	
+	<!-- INPORT MODALA -->
+	<div id="importModal" class="modal" onclick="closeOnBackdrop(event)">
+	  <div class="modal-card">
+	    <h3 style="margin-top:0">Ikasleak inportatu (XLSX)</h3>
+	
+	    <form id="importForm" method="post" enctype="multipart/form-data">
+	      <input type="hidden" id="csrfName" th:if="${csrf != null}" th:value="${csrf.parameterName}">
+	      <input type="hidden" id="csrfToken" th:if="${csrf != null}" th:value="${csrf.token}">
+	      <input type="hidden" name="taldeaId" id="taldeaIdHidden">
+	
+	      <div id="dropzone" class="dropzone" aria-live="polite">
+	        <!-- Egoera hutsa -->
+	        <div id="dz-empty">
+	          <p><strong>Arrastatu eta askatu</strong> fitxategia hemen, edo egin klik hautatzeko.</p>
+	          <p style="font-size:.9em;color:#6b7280">
+	            Onartutakoa: .xlsx • Orria: “Zerrenda” • Goiburuak: Zbk Nº, HNA DIE, NAN DNI, Abizena_1 Apellido_1,
+	            Abizena_2 Apellido_2, Izena Nombre
+	          </p>
+	        </div>
+	
+	        <!-- Egoera fitxategiarekin -->
+	        <div id="dz-hasfile" style="display:none">
+	          <div class="file-chip">
+	            <span id="fileName">fitxategia.xlsx</span>
+	            <span id="fileSize" class="muted">(0 KB)</span>
+	            <button type="button" id="removeFileBtn" class="linklike">Kendu</button>
+	            <button type="button" id="changeFileBtn" class="linklike">Aldatu</button>
+	          </div>
+	        </div>
+	
+	        <input id="fileInput" type="file" name="fitxategia" accept=".xlsx" style="display:none">
+	      </div>
+	
+	      <div style="margin-top:1rem; display:flex; gap:.5rem; justify-content:flex-end">
+	        <button type="button" onclick="closeImportModal()">Utzi</button>
+	        <button id="submitBtn" type="submit" disabled>Bidali eta inportatu</button>
+	      </div>
+	    </form>
+	  </div>
+	</div>
+</main>
 <script>
   let currentTaldeaId = null;
 

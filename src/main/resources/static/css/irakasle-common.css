@@ -188,5 +188,5 @@ tbody tr:nth-child(even) {
   color: #b91c1c;
 }
 
-
+.is-active{ font-weight:700; color:darkgreen; }
 

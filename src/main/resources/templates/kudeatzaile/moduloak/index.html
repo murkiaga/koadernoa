@@ -4,97 +4,100 @@
     <title>Moduluen Zerrenda</title>
     <meta charset="UTF-8">
     <link rel="stylesheet" th:href="@{/css/navbar.css}">
+    <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
 	<div th:replace="/kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
-
-<h1>Moduluen Zerrenda</h1>
-
-<form th:action="@{/kudeatzaile/moduloak}" method="get">
-    <label>Taldea:</label>
-    <select name="taldeaId" onchange="this.form.submit()">
-        <option value="">GUZTIAK</option>
-        <option th:each="t : ${taldeak}"
-                th:value="${t.id}"
-                th:text="${t.izena}"
-                th:selected="${t.id == taldeaId}">
-        </option>
-    </select>
-</form>
-
-
-<a th:href="@{/kudeatzaile/moduloak/sortu(taldeaId=${param.taldeaId})}">Sortu Modulo Berria</a>
-
-
-<table border="1">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>EEI kodea</th>
-            <th>Kodea</th>
-            <th>Izena</th>
-            <th>Maila</th>
-            <th>Taldea</th>
-            <th>Aukerak</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr th:each="moduloa : ${moduluak}">
-            <td th:text="${moduloa.id}">1</td>
-            <td th:text="${moduloa.eeiKodea}">0225</td>
-            <td th:text="${moduloa.kodea}">ADAT</td>
-            <td th:text="${moduloa.izena}">Datuen Atzipena</td>
-            <td th:text="${moduloa.maila.getKodea}">LEHENENGOA</td>
-            <td th:text="${moduloa.taldea.izena}">2AM3</td>
-            <td>
-                <a th:href="@{/kudeatzaile/moduloak/editatu/{id}(id=${moduloa.id})}">Editatu</a>
-                <a th:href="@{/kudeatzaile/moduloak/ezabatu/{id}(id=${moduloa.id})}">Ezabatu</a>
-            </td>
-        </tr>
-    </tbody>
-</table>
-
-<div th:if="${taldeaId != null}" style="margin:.75rem 0 1rem;">
-  <a th:href="@{/kudeatzaile/taldeak/{id}/argazkiak(id=${taldeaId})}"
-   style="display:inline-flex;align-items:center;gap:.4rem;padding:.4rem .7rem;border:1px solid #e5e7eb;border-radius:.5rem;text-decoration:none;">
-   📸 Argazkiak gehitu
-  </a>
-</div>
-
-<!-- IKASLE ZERRENDA: taldeaId badagoenean bakarrik -->
-<div th:if="${taldeaId != null}" style="margin-top: 2rem;">
-  <h2 style="margin-bottom:.5rem;">Ikasleak
-    <small style="font-weight: normal; color:#6b7280;"
-           th:text="'(' + ${#lists.size(ikasleak)} + ' ikasle)'"> (0 ikasle)</small>
-  </h2>
-
-  <table border="1" cellpadding="8" cellspacing="0" style="width:100%; border-collapse:collapse;">
-    <thead>
-      <tr>
-        <th>HNA (DIE)</th>
-        <th>NAN (DNI)</th>
-        <th>Abizena 1</th>
-        <th>Abizena 2</th>
-        <th>Izena</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr th:each="ik : ${ikasleak}">
-        <td th:text="${ik.hna}">HNA</td>
-        <td th:text="${ik.nan != null ? ik.nan : '-'}">NAN</td>
-        <td th:text="${ik.abizena1 != null ? ik.abizena1 : '-'}">Abizena 1</td>
-        <td th:text="${ik.abizena2 != null ? ik.abizena2 : '-'}">Abizena 2</td>
-        <td th:text="${ik.izena != null ? ik.izena : '-'}">Izena</td>
-      </tr>
-      <tr th:if="${#lists.isEmpty(ikasleak)}">
-        <td colspan="5" style="text-align:center; color:#6b7280;">Ez dago ikaslerik talde honetan oraindik.</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-<a th:href="@{/kudeatzaile}">Itzuli Hasierara</a>
+	<main class="page">
+		<h1>Moduluen Zerrenda</h1>
+		
+		<form class="form" th:action="@{/kudeatzaile/moduloak}" method="get">
+		    <label>Taldea:</label>
+		    <select name="taldeaId" onchange="this.form.submit()">
+		        <option value="">GUZTIAK</option>
+		        <option th:each="t : ${taldeak}"
+		                th:value="${t.id}"
+		                th:text="${t.izena}"
+		                th:selected="${t.id == taldeaId}">
+		        </option>
+		    </select>
+		</form>
+		
+		
+		<a class="btn btn-primary" th:href="@{/kudeatzaile/moduloak/sortu(taldeaId=${param.taldeaId})}">Sortu Modulo Berria</a>
+		
+		<div class="table-wrap">
+			<table>
+			    <thead>
+			        <tr>
+			            <th>ID</th>
+			            <th>EEI kodea</th>
+			            <th>Kodea</th>
+			            <th>Izena</th>
+			            <th>Maila</th>
+			            <th>Taldea</th>
+			            <th>Aukerak</th>
+			        </tr>
+			    </thead>
+			    <tbody>
+			        <tr th:each="moduloa : ${moduluak}">
+			            <td th:text="${moduloa.id}">1</td>
+			            <td th:text="${moduloa.eeiKodea}">0225</td>
+			            <td th:text="${moduloa.kodea}">ADAT</td>
+			            <td th:text="${moduloa.izena}">Datuen Atzipena</td>
+			            <td th:text="${moduloa.maila.getKodea}">LEHENENGOA</td>
+			            <td th:text="${moduloa.taldea.izena}">2AM3</td>
+			            <td class="actions-cell">
+			                <a th:href="@{/kudeatzaile/moduloak/editatu/{id}(id=${moduloa.id})}" class="btn btn-secondary">Editatu</a>
+			                <a th:href="@{/kudeatzaile/moduloak/ezabatu/{id}(id=${moduloa.id})}" class="btn btn-danger">Ezabatu</a>
+			            </td>
+			        </tr>
+			    </tbody>
+			</table>
+		</div>
+		<div th:if="${taldeaId != null}" style="margin:.75rem 0 1rem;">
+		  <a th:href="@{/kudeatzaile/taldeak/{id}/argazkiak(id=${taldeaId})}"
+		   style="display:inline-flex;align-items:center;gap:.4rem;padding:.4rem .7rem;border:1px solid #e5e7eb;border-radius:.5rem;text-decoration:none;">
+		   📸 Argazkiak gehitu
+		  </a>
+		</div>
+		
+		<!-- IKASLE ZERRENDA: taldeaId badagoenean bakarrik -->
+		<div th:if="${taldeaId != null}" style="margin-top: 2rem;">
+		  <h2 style="margin-bottom:.5rem;">Ikasleak
+		    <small style="font-weight: normal; color:#6b7280;"
+		           th:text="'(' + ${#lists.size(ikasleak)} + ' ikasle)'"> (0 ikasle)</small>
+		  </h2>
+		<div class="table-wrap">
+		  <table class="table-wrap" cellpadding="8" cellspacing="0" style="width:100%; border-collapse:collapse;">
+		    <thead>
+		      <tr>
+		        <th>HNA (DIE)</th>
+		        <th>NAN (DNI)</th>
+		        <th>Abizena 1</th>
+		        <th>Abizena 2</th>
+		        <th>Izena</th>
+		      </tr>
+		    </thead>
+		    <tbody>
+		      <tr th:each="ik : ${ikasleak}">
+		        <td th:text="${ik.hna}">HNA</td>
+		        <td th:text="${ik.nan != null ? ik.nan : '-'}">NAN</td>
+		        <td th:text="${ik.abizena1 != null ? ik.abizena1 : '-'}">Abizena 1</td>
+		        <td th:text="${ik.abizena2 != null ? ik.abizena2 : '-'}">Abizena 2</td>
+		        <td th:text="${ik.izena != null ? ik.izena : '-'}">Izena</td>
+		      </tr>
+		      <tr th:if="${#lists.isEmpty(ikasleak)}">
+		        <td colspan="5" style="text-align:center; color:#6b7280;">Ez dago ikaslerik talde honetan oraindik.</td>
+		      </tr>
+		    </tbody>
+		  </table>
+		 </div>
+		</div>
+		
+		<a class="btn btn-secondary" th:href="@{/kudeatzaile}">Itzuli Hasierara</a>
+	</main>
 <script th:src="@{/js/kudeatzaile-nav.js}"></script>
 </body>
 </html>

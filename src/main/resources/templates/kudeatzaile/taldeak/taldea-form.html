@@ -3,30 +3,34 @@
 <head>
     <title>Taldea gorde</title>
     <link rel="stylesheet" th:href="@{/css/navbar.css}">
+    <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
-<h1>Taldearen datuak</h1>
-
-<form th:action="@{/kudeatzaile/taldeak/gorde}" th:object="${taldea}" method="post">
-    <input type="hidden" th:field="*{id}" />
-
-    <label for="izena">Izena:</label>
-    <input type="text" id="izena" th:field="*{izena}" required/><br/>
-
-    <label for="zikloa">Zikloa:</label>
-    <select id="zikloa" th:field="*{zikloa}" required>
-        <option value="">-- Aukeratu zikloa --</option>
-        <option th:each="z : ${zikloak}"
-                th:value="${z.id}"
-                th:text="${z.izena}">
-        </option>
-    </select><br/>
-
-    <button type="submit">Gorde</button>
-</form>
-
-<a th:href="@{/kudeatzaile/taldeak}">Itzuli</a>
+	<div th:replace="/kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+	<main class="page">
+		<h1>Taldearen datuak</h1>
+		
+		<form class="form" th:action="@{/kudeatzaile/taldeak/gorde}" th:object="${taldea}" method="post">
+		    <input type="hidden" th:field="*{id}" />
+		
+		    <label for="izena">Izena:</label>
+		    <input type="text" id="izena" th:field="*{izena}" required/><br/>
+		
+		    <label for="zikloa">Zikloa:</label>
+		    <select id="zikloa" th:field="*{zikloa}" required>
+		        <option value="">-- Aukeratu zikloa --</option>
+		        <option th:each="z : ${zikloak}"
+		                th:value="${z.id}"
+		                th:text="${z.izena}">
+		        </option>
+		    </select><br/>
+			<div class="form-actions">
+		    	<button class="btn btn-primary" type="submit">Gorde</button>
+		    	<a class="btn btn-secondary" th:href="@{/kudeatzaile/taldeak}">Itzuli</a>
+		    </div>
+		</form>
+	</main>
 <script th:src="@{/js/kudeatzaile-nav.js}"></script>
 </body>
 </html>

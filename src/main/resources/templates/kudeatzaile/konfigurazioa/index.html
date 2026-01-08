@@ -4,403 +4,338 @@
   <meta charset="UTF-8">
   <title>Konfigurazioa</title>
   <link rel="stylesheet" th:href="@{/css/navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    :root { --b: #e5e7eb; --t: #111827; --m: #2563eb; --bg: #fff; }
-    body { color: var(--t); background: var(--bg); }
-
-    .tabs { display:flex; gap:.5rem; border-bottom:1px solid var(--b); margin:16px 0; }
-    .tab-btn { border:none; background:none; padding:10px 14px; cursor:pointer; border-bottom:3px solid transparent; }
-    .tab-btn[aria-selected="true"] { border-color: var(--m); font-weight:600; }
-
-    .tab-panel { display:none; padding-top:16px; }
-    .tab-panel.active { display:block; }
-
-    table { border-collapse: collapse; width:100%; }
-    th, td { border-bottom:1px solid var(--b); padding:8px; text-align:left; }
-    th { background:#f9fafb; }
-
-    .row { display:grid; gap:12px; grid-template-columns: 1fr 1fr 1fr auto; align-items:center; }
-    .row > * { width:100%; }
-    .muted { color:#6b7280; font-size:.9rem; }
-    .actions { margin-top:12px; }
-    .section { margin: 24px 0; }
-
-    .inline-row {
-      display: flex;
-      gap: 12px;
-      align-items: end;
-      max-width: 520px;
-    }
-    .inline-row label { flex: 1; min-width: 240px; }
-    .inline-row button { flex: 0 0 auto; }
-
-    @media (max-width: 520px) {
-      .inline-row { flex-direction: column; align-items: stretch; }
-      .inline-row button { width: 100%; }
-      .row { grid-template-columns: 1fr; }
-    }
-
-    .alert.alert-success {
-      background:#dcfce7;
-      color:#166534;
-      padding:8px 12px;
-      border-radius:8px;
-      font-size:.9rem;
-      margin:8px 0;
-    }
-    .alert.alert-error {
-      background:#fee2e2;
-      color:#b91c1c;
-      padding:8px 12px;
-      border-radius:8px;
-      font-size:.9rem;
-      margin:8px 0;
-    }
-
-    /* Ezadostasun taularako apur bat */
-    .percent-input {
-      width:4rem;
-    }
-    
-    /* Ebaluazio momentuen estiloa */
-    .ebal-momentu-aktibo {
-      font-weight: 600;         /* negritan */
-    }
-    .ebal-momentu-inaktibo {
-      color: #9ca3af;           /* grisago */
-      text-decoration: line-through;  /* tatxatuta (nahi ez baduzu, kendu lerro hau) */
-    }
-  </style>
+  
 </head>
 <body>
 <div th:replace="/kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+<main class="page">
+	<h1>Konfigurazioa</h1>
+	
+	<!-- Flash mezu sinpleak (aukerakoa, baina lagungarria) -->
+	<div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+	<div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+	
+	<!-- Tab botoiak -->
+	<div class="tabs" role="tablist" aria-label="Konfigurazio atalak">
+	  <button type="button" class="tab-btn"
+	          role="tab"
+	          aria-selected="true"
+	          aria-controls="panel-mailak"
+	          id="tab-mailak">
+	    Mailak
+	  </button>
+	
+	  <button type="button" class="tab-btn"
+	          role="tab"
+	          aria-selected="false"
+	          aria-controls="panel-egoerak"
+	          id="tab-egoerak">
+	    Ebaluazio egoerak
+	  </button>
+	
+	  <button type="button" class="tab-btn"
+	          role="tab"
+	          aria-selected="false"
+	          aria-controls="panel-familiak"
+	          id="tab-familiak">
+	    Familiak
+	  </button>
+	
+	  <!-- Lehen "TBD" zena → orain Ezadostasunak etiketa, baina id bera mantendu (hash #ezadostasunak) -->
+	  <button type="button" class="tab-btn"
+	          role="tab"
+	          aria-selected="false"
+	          aria-controls="panel-ezadostasunak"
+	          id="tab-ezadostasunak">
+	    Ezadostasunak
+	  </button>
+	</div>
+	
+	<!-- Mailak PANELA -->
+	<section id="panel-mailak" class="tab-panel active" role="tabpanel"
+	         aria-labelledby="tab-mailak" tabindex="0">
+	  <h2>Mailak</h2>
+	  <p class="muted">Aktibatu/desaktibatu checkbox bidez. Azpian, maila berria sor dezakezu.</p>
+	
+	  <!-- Aktibo/desaktibo bulk form -->
+	  <form th:action="@{/kudeatzaile/konfigurazioa/mailak/aktiboak}"
+	        th:object="${activeForm}" method="post">
+	    <div class="table-wrap">
+		    <table>
+		      <thead>
+		      <tr>
+		        <th>Aktibo</th>
+		        <th>Ordena</th>
+		        <th>Kodea</th>
+		        <th>Izena</th>
+		        <th>ID</th>
+		        <th>Ebaluazioak</th>
+		      </tr>
+		      </thead>
+		      <tbody>
+		      <tr th:each="m : ${mailak}">
+		        <td>
+		          <input type="checkbox"
+		                 name="aktiboIds"
+		                 th:value="${m.id}"
+		                 th:checked="${m.aktibo}">
+		        </td>
+		        <td th:text="${m.ordena}">1</td>
+		        <td th:text="${m.kodea}">LEHENENGOA</td>
+		        <td th:text="${m.izena}">1. maila</td>
+		        <td th:text="${m.id}">1</td>
+		        <td>
+				  <ul>
+				    <li th:each="em : ${m.ebaluazioMomentuak}"
+				        th:text="${em.izena}"
+				        th:classappend="${em.aktibo} ? ' ebal-momentu-aktibo' : ' ebal-momentu-inaktibo'">
+				      1. ebaluazioa
+				    </li>
+				  </ul>
+				  <a class="btn btn-primary" th:href="@{|/kudeatzaile/konfigurazioa/mailak/${m.id}/ebaluazioak|}">
+				    Editatu
+				  </a>
+				</td>
+		      </tr>
+		      </tbody>
+		    </table>
+	    </div>
+	    <div class="actions">
+	      <button class="btn btn-primary" type="submit">Gorde aktiboak</button>
+	    </div>
+	  </form>
+	
+	  <h3 style="margin-top:24px;">Sortu maila berria</h3>
+	  <form th:action="@{/kudeatzaile/konfigurazioa/mailak/sortu}"
+	        th:object="${sortuForm}" method="post">
+	    <div class="row">
+	      <label>
+	        <div class="muted">Kodea</div>
+	        <input type="text" th:field="*{kodea}" placeholder="LEHENENGOA" required>
+	      </label>
+	      <label>
+	        <div class="muted">Izena</div>
+	        <input type="text" th:field="*{izena}" placeholder="1. maila">
+	      </label>
+	      <label>
+	        <div class="muted">Ordena</div>
+	        <input type="number" th:field="*{ordena}" min="0" placeholder="1" required>
+	      </label>
+	      <div style="align-self:end;">
+	        <button type="submit">Sortu</button>
+	      </div>
+	    </div>
+	  </form>
+	</section>
+	
+	<!-- Ebaluazio egoerak PANELA -->
+	<section id="panel-egoerak" class="tab-panel" role="tabpanel"
+	         aria-labelledby="tab-egoerak" tabindex="0" aria-hidden="true">
+	  <h2>Ebaluazio egoerak</h2>
+	  <p class="muted">
+	    Ebaluazio egoera bereziak (adib. <code>EZ_AURKEZTUA</code>, <code>EZ_EBAL_FALTA</code>…) hemen definitzen dira.
+	    Gero mailako ebaluazio momentuetan hautatuko dira.
+	  </p>
+	
+	  <!-- Existenteen eguneratzea + ezabaketa -->
+	  <form th:action="@{/kudeatzaile/konfigurazioa/egoerak/gorde}" method="post">
+	    <table>
+	      <thead>
+	      <tr>
+	        <th>Kodea</th>
+	        <th>Izena</th>
+	        <th>ID</th>
+	        <th>Ezabatu</th>
+	      </tr>
+	      </thead>
+	      <tbody>
+	      <tr th:each="e : ${egoerak}">
+	        <!-- ID-a mantentzeko -->
+	        <td>
+	          <input type="hidden" name="ids" th:value="${e.id}"/>
+	          <input type="text"
+	                 th:name="|kodea_${e.id}|"
+	                 th:value="${e.kodea}"
+	                 style="width:100%;">
+	        </td>
+	        <td>
+	          <input type="text"
+	                 th:name="|izena_${e.id}|"
+	                 th:value="${e.izena}"
+	                 style="width:100%;">
+	        </td>
+	        <td th:text="${e.id}">1</td>
+	        <td style="text-align:center;">
+	          <input type="checkbox"
+	                 name="deleteIds"
+	                 th:value="${e.id}">
+	        </td>
+	      </tr>
+	      </tbody>
+	    </table>
+	    <div class="actions">
+	      <button type="submit">Gorde egoerak</button>
+	    </div>
+	  </form>
+	
+	  <h3 style="margin-top:24px;">Sortu egoera berria</h3>
+	  <form th:action="@{/kudeatzaile/konfigurazioa/egoerak/sortu}"
+	        th:object="${sortuEgoeraForm}" method="post">
+	    <div class="row">
+	      <label>
+	        <div class="muted">Kodea</div>
+	        <input type="text" th:field="*{kodea}" placeholder="EZ_AURKEZTUA" required>
+	      </label>
+	      <label>
+	        <div class="muted">Izena</div>
+	        <input type="text" th:field="*{izena}" placeholder="Ez aurkeztua" required>
+	      </label>
+	      <div style="align-self:end;">
+	        <button type="submit">Sortu</button>
+	      </div>
+	    </div>
+	    <p class="muted" style="margin-top:8px;">
+	      Ohikoena da egoera bereziek ez eskatzea nota zenbakizkorik
+	      (adib. "EZ_AURKEZTUA" → nota = NULL).
+	    </p>
+	  </form>
+	</section>
+	
+	
+	<!-- Familiak PANELA -->
+	<section id="panel-familiak" class="tab-panel" role="tabpanel"
+	         aria-labelledby="tab-familiak" tabindex="0" aria-hidden="true">
+	  <h2>Familiak</h2>
+	  <p class="muted">Aktibatu/desaktibatu checkbox bidez. Azpian, familia berria sor dezakezu.</p>
+	
+	  <form th:action="@{/kudeatzaile/konfigurazioa/familiak/aktiboak}"
+	        th:object="${activeFamiliaForm}" method="post">
+	    <table>
+	      <thead>
+	      <tr>
+	        <th>Aktibo</th>
+	        <th>Izena</th>
+	        <th>Slug</th>
+	        <th>ID</th>
+	      </tr>
+	      </thead>
+	      <tbody>
+	      <tr th:each="f : ${familiak}">
+	        <td>
+	          <input type="checkbox"
+	                 th:name="|aktiboIds|"
+	                 th:value="${f.id}"
+	                 th:checked="${f.aktibo}">
+	        </td>
+	        <td th:text="${f.izena}">INFORMATIKA</td>
+	        <td th:text="${f.slug}">informatika</td>
+	        <td th:text="${f.id}">1</td>
+	      </tr>
+	      </tbody>
+	    </table>
+	    <div class="actions">
+	      <button type="submit">Gorde aktiboak</button>
+	    </div>
+	  </form>
+	
+	  <h3 style="margin-top:24px;">Sortu familia berria</h3>
+	  <form th:action="@{/kudeatzaile/konfigurazioa/familiak/sortu}"
+	        th:object="${sortuFamiliaForm}" method="post">
+	    <div class="inline-row">
+	      <label style="margin:0;">
+	        <div class="muted">Izena</div>
+	        <input type="text" th:field="*{izena}" placeholder="INFORMATIKA" required>
+	      </label>
+	      <button type="submit">Sortu</button>
+	    </div>
+	    <p class="muted">
+	      Slug-a automatikoki sortuko da izenetik
+	      (adib. “Fabrikazio Mekanikoa” → “fabrikazio-mekanikoa”).
+	    </p>
+	  </form>
+	</section>
+	
+	<!-- Ezadostasunak PANELA -->
+	<section id="panel-ezadostasunak" class="tab-panel" role="tabpanel"
+	         aria-labelledby="tab-ezadostasunak" tabindex="0" aria-hidden="true">
+	  <h2>Ezadostasunak</h2>
+	
+	  <!-- Existenteak eguneratzeko / ezabatzeko -->
+	  <form th:action="@{/kudeatzaile/konfigurazioa/ezadostasunak/gorde}" method="post">
+	    <input type="hidden"
+	           th:if="${_csrf != null}"
+	           th:name="${_csrf.parameterName}"
+	           th:value="${_csrf.token}"/>
+	
+	    <table>
+	      <thead>
+	      <tr>
+	        <th>Kodea</th>
+	        <th>Emandako blokeak (&ge; %)</th>
+	        <th>Emandako orduak (&ge; %)</th>
+	        <th>Ikasleen bertaratzea (&ge; %)</th>
+	        <th>Gaindituak (&ge; %)</th>
+	        <th>Ezabatu</th>
+	      </tr>
+	      </thead>
+	      <tbody>
+	      <tr th:each="cfg : ${ezadostasunKonfigList}">
+	        <!-- ID ezkutuan, bulk update egiteko -->
+	        <td>
+	          <input type="hidden" name="ids" th:value="${cfg.id}"/>
+	          <span th:text="${cfg.kodea}">DEFAULT</span>
+	        </td>
+	
+	        <td>
+	          <input type="number" min="0" max="100"
+	                 th:name="|minBlokeak_${cfg.id}|"
+	                 th:value="${cfg.minBlokePortzentaia}">
+	        </td>
+	        <td>
+	          <input type="number" min="0" max="100"
+	                 th:name="|minOrduak_${cfg.id}|"
+	                 th:value="${cfg.minOrduPortzentaia}">
+	        </td>
+	        <td>
+	          <input type="number" min="0" max="100"
+	                 th:name="|minBertaratzea_${cfg.id}|"
+	                 th:value="${cfg.minBertaratzePortzentaia}">
+	        </td>
+	        <td>
+	          <input type="number" min="0" max="100"
+	                 th:name="|minGaindituak_${cfg.id}|"
+	                 th:value="${cfg.minGaindituPortzentaia}">
+	        </td>
+	
+	        <td style="text-align:center;">
+	          <input type="checkbox"
+	                 name="deleteIds"
+	                 th:value="${cfg.id}">
+	        </td>
+	      </tr>
+	      </tbody>
+	    </table>
+	
+	    <div class="actions" style="margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
+	      <span class="muted">Aldaketak gordetzeko: "Gorde aldaketak". Ezabatzeko, lerroa markatu "Ezabatu" zutabean.</span>
+	      <button type="submit">Gorde aldaketak</button>
+	    </div>
+	  </form>
+	
+	  <!-- Beheko eskuineko botoia: konfigurazio berria sortu -->
+	  <div style="margin-top:16px; display:flex; justify-content:flex-end;">
+	    <button type="button" id="btn-open-ezadostasun-modal">
+	      Konfigurazio berria
+	    </button>
+	  </div>
+	
+	  <!-- Modal fragment-a -->
+	  <div th:replace="~{kudeatzaile/konfigurazioa/ezadostasun-konfig-berria :: ezadostasun-konfig-berria-modal}"></div>
+	</section>
+</main>
 
-<h1>Konfigurazioa</h1>
-
-<!-- Flash mezu sinpleak (aukerakoa, baina lagungarria) -->
-<div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
-<div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
-
-<!-- Tab botoiak -->
-<div class="tabs" role="tablist" aria-label="Konfigurazio atalak">
-  <button type="button" class="tab-btn"
-          role="tab"
-          aria-selected="true"
-          aria-controls="panel-mailak"
-          id="tab-mailak">
-    Mailak
-  </button>
-
-  <button type="button" class="tab-btn"
-          role="tab"
-          aria-selected="false"
-          aria-controls="panel-egoerak"
-          id="tab-egoerak">
-    Ebaluazio egoerak
-  </button>
-
-  <button type="button" class="tab-btn"
-          role="tab"
-          aria-selected="false"
-          aria-controls="panel-familiak"
-          id="tab-familiak">
-    Familiak
-  </button>
-
-  <!-- Lehen "TBD" zena → orain Ezadostasunak etiketa, baina id bera mantendu (hash #ezadostasunak) -->
-  <button type="button" class="tab-btn"
-          role="tab"
-          aria-selected="false"
-          aria-controls="panel-ezadostasunak"
-          id="tab-ezadostasunak">
-    Ezadostasunak
-  </button>
-</div>
-
-<!-- Mailak PANELA -->
-<section id="panel-mailak" class="tab-panel active" role="tabpanel"
-         aria-labelledby="tab-mailak" tabindex="0">
-  <h2>Mailak</h2>
-  <p class="muted">Aktibatu/desaktibatu checkbox bidez. Azpian, maila berria sor dezakezu.</p>
-
-  <!-- Aktibo/desaktibo bulk form -->
-  <form th:action="@{/kudeatzaile/konfigurazioa/mailak/aktiboak}"
-        th:object="${activeForm}" method="post">
-    <table>
-      <thead>
-      <tr>
-        <th>Aktibo</th>
-        <th>Ordena</th>
-        <th>Kodea</th>
-        <th>Izena</th>
-        <th>ID</th>
-        <th>Ebaluazioak</th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr th:each="m : ${mailak}">
-        <td>
-          <input type="checkbox"
-                 name="aktiboIds"
-                 th:value="${m.id}"
-                 th:checked="${m.aktibo}">
-        </td>
-        <td th:text="${m.ordena}">1</td>
-        <td th:text="${m.kodea}">LEHENENGOA</td>
-        <td th:text="${m.izena}">1. maila</td>
-        <td th:text="${m.id}">1</td>
-        <td>
-		  <ul>
-		    <li th:each="em : ${m.ebaluazioMomentuak}"
-		        th:text="${em.izena}"
-		        th:classappend="${em.aktibo} ? ' ebal-momentu-aktibo' : ' ebal-momentu-inaktibo'">
-		      1. ebaluazioa
-		    </li>
-		  </ul>
-		  <a th:href="@{|/kudeatzaile/konfigurazioa/mailak/${m.id}/ebaluazioak|}">
-		    Editatu
-		  </a>
-		</td>
-      </tr>
-      </tbody>
-    </table>
-    <div class="actions">
-      <button type="submit">Gorde aktiboak</button>
-    </div>
-  </form>
-
-  <h3 style="margin-top:24px;">Sortu maila berria</h3>
-  <form th:action="@{/kudeatzaile/konfigurazioa/mailak/sortu}"
-        th:object="${sortuForm}" method="post">
-    <div class="row">
-      <label>
-        <div class="muted">Kodea</div>
-        <input type="text" th:field="*{kodea}" placeholder="LEHENENGOA" required>
-      </label>
-      <label>
-        <div class="muted">Izena</div>
-        <input type="text" th:field="*{izena}" placeholder="1. maila">
-      </label>
-      <label>
-        <div class="muted">Ordena</div>
-        <input type="number" th:field="*{ordena}" min="0" placeholder="1" required>
-      </label>
-      <div style="align-self:end;">
-        <button type="submit">Sortu</button>
-      </div>
-    </div>
-  </form>
-</section>
-
-<!-- Ebaluazio egoerak PANELA -->
-<section id="panel-egoerak" class="tab-panel" role="tabpanel"
-         aria-labelledby="tab-egoerak" tabindex="0" aria-hidden="true">
-  <h2>Ebaluazio egoerak</h2>
-  <p class="muted">
-    Ebaluazio egoera bereziak (adib. <code>EZ_AURKEZTUA</code>, <code>EZ_EBAL_FALTA</code>…) hemen definitzen dira.
-    Gero mailako ebaluazio momentuetan hautatuko dira.
-  </p>
-
-  <!-- Existenteen eguneratzea + ezabaketa -->
-  <form th:action="@{/kudeatzaile/konfigurazioa/egoerak/gorde}" method="post">
-    <table>
-      <thead>
-      <tr>
-        <th>Kodea</th>
-        <th>Izena</th>
-        <th>ID</th>
-        <th>Ezabatu</th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr th:each="e : ${egoerak}">
-        <!-- ID-a mantentzeko -->
-        <td>
-          <input type="hidden" name="ids" th:value="${e.id}"/>
-          <input type="text"
-                 th:name="|kodea_${e.id}|"
-                 th:value="${e.kodea}"
-                 style="width:100%;">
-        </td>
-        <td>
-          <input type="text"
-                 th:name="|izena_${e.id}|"
-                 th:value="${e.izena}"
-                 style="width:100%;">
-        </td>
-        <td th:text="${e.id}">1</td>
-        <td style="text-align:center;">
-          <input type="checkbox"
-                 name="deleteIds"
-                 th:value="${e.id}">
-        </td>
-      </tr>
-      </tbody>
-    </table>
-    <div class="actions">
-      <button type="submit">Gorde egoerak</button>
-    </div>
-  </form>
-
-  <h3 style="margin-top:24px;">Sortu egoera berria</h3>
-  <form th:action="@{/kudeatzaile/konfigurazioa/egoerak/sortu}"
-        th:object="${sortuEgoeraForm}" method="post">
-    <div class="row">
-      <label>
-        <div class="muted">Kodea</div>
-        <input type="text" th:field="*{kodea}" placeholder="EZ_AURKEZTUA" required>
-      </label>
-      <label>
-        <div class="muted">Izena</div>
-        <input type="text" th:field="*{izena}" placeholder="Ez aurkeztua" required>
-      </label>
-      <div style="align-self:end;">
-        <button type="submit">Sortu</button>
-      </div>
-    </div>
-    <p class="muted" style="margin-top:8px;">
-      Ohikoena da egoera bereziek ez eskatzea nota zenbakizkorik
-      (adib. "EZ_AURKEZTUA" → nota = NULL).
-    </p>
-  </form>
-</section>
-
-
-<!-- Familiak PANELA -->
-<section id="panel-familiak" class="tab-panel" role="tabpanel"
-         aria-labelledby="tab-familiak" tabindex="0" aria-hidden="true">
-  <h2>Familiak</h2>
-  <p class="muted">Aktibatu/desaktibatu checkbox bidez. Azpian, familia berria sor dezakezu.</p>
-
-  <form th:action="@{/kudeatzaile/konfigurazioa/familiak/aktiboak}"
-        th:object="${activeFamiliaForm}" method="post">
-    <table>
-      <thead>
-      <tr>
-        <th>Aktibo</th>
-        <th>Izena</th>
-        <th>Slug</th>
-        <th>ID</th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr th:each="f : ${familiak}">
-        <td>
-          <input type="checkbox"
-                 th:name="|aktiboIds|"
-                 th:value="${f.id}"
-                 th:checked="${f.aktibo}">
-        </td>
-        <td th:text="${f.izena}">INFORMATIKA</td>
-        <td th:text="${f.slug}">informatika</td>
-        <td th:text="${f.id}">1</td>
-      </tr>
-      </tbody>
-    </table>
-    <div class="actions">
-      <button type="submit">Gorde aktiboak</button>
-    </div>
-  </form>
-
-  <h3 style="margin-top:24px;">Sortu familia berria</h3>
-  <form th:action="@{/kudeatzaile/konfigurazioa/familiak/sortu}"
-        th:object="${sortuFamiliaForm}" method="post">
-    <div class="inline-row">
-      <label style="margin:0;">
-        <div class="muted">Izena</div>
-        <input type="text" th:field="*{izena}" placeholder="INFORMATIKA" required>
-      </label>
-      <button type="submit">Sortu</button>
-    </div>
-    <p class="muted">
-      Slug-a automatikoki sortuko da izenetik
-      (adib. “Fabrikazio Mekanikoa” → “fabrikazio-mekanikoa”).
-    </p>
-  </form>
-</section>
-
-<!-- Ezadostasunak PANELA -->
-<section id="panel-ezadostasunak" class="tab-panel" role="tabpanel"
-         aria-labelledby="tab-ezadostasunak" tabindex="0" aria-hidden="true">
-  <h2>Ezadostasunak</h2>
-
-  <!-- Existenteak eguneratzeko / ezabatzeko -->
-  <form th:action="@{/kudeatzaile/konfigurazioa/ezadostasunak/gorde}" method="post">
-    <input type="hidden"
-           th:if="${_csrf != null}"
-           th:name="${_csrf.parameterName}"
-           th:value="${_csrf.token}"/>
-
-    <table>
-      <thead>
-      <tr>
-        <th>Kodea</th>
-        <th>Emandako blokeak (&ge; %)</th>
-        <th>Emandako orduak (&ge; %)</th>
-        <th>Ikasleen bertaratzea (&ge; %)</th>
-        <th>Gaindituak (&ge; %)</th>
-        <th>Ezabatu</th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr th:each="cfg : ${ezadostasunKonfigList}">
-        <!-- ID ezkutuan, bulk update egiteko -->
-        <td>
-          <input type="hidden" name="ids" th:value="${cfg.id}"/>
-          <span th:text="${cfg.kodea}">DEFAULT</span>
-        </td>
-
-        <td>
-          <input type="number" min="0" max="100"
-                 th:name="|minBlokeak_${cfg.id}|"
-                 th:value="${cfg.minBlokePortzentaia}">
-        </td>
-        <td>
-          <input type="number" min="0" max="100"
-                 th:name="|minOrduak_${cfg.id}|"
-                 th:value="${cfg.minOrduPortzentaia}">
-        </td>
-        <td>
-          <input type="number" min="0" max="100"
-                 th:name="|minBertaratzea_${cfg.id}|"
-                 th:value="${cfg.minBertaratzePortzentaia}">
-        </td>
-        <td>
-          <input type="number" min="0" max="100"
-                 th:name="|minGaindituak_${cfg.id}|"
-                 th:value="${cfg.minGaindituPortzentaia}">
-        </td>
-
-        <td style="text-align:center;">
-          <input type="checkbox"
-                 name="deleteIds"
-                 th:value="${cfg.id}">
-        </td>
-      </tr>
-      </tbody>
-    </table>
-
-    <div class="actions" style="margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
-      <span class="muted">Aldaketak gordetzeko: "Gorde aldaketak". Ezabatzeko, lerroa markatu "Ezabatu" zutabean.</span>
-      <button type="submit">Gorde aldaketak</button>
-    </div>
-  </form>
-
-  <!-- Beheko eskuineko botoia: konfigurazio berria sortu -->
-  <div style="margin-top:16px; display:flex; justify-content:flex-end;">
-    <button type="button" id="btn-open-ezadostasun-modal">
-      Konfigurazio berria
-    </button>
-  </div>
-
-  <!-- Modal fragment-a -->
-  <div th:replace="~{kudeatzaile/konfigurazioa/ezadostasun-konfig-berria :: ezadostasun-konfig-berria-modal}"></div>
-</section>
-
-
-<!-- MODALA: Ezadostasun konfigurazio berria (fragment gisa) -->
-<div th:replace="~{kudeatzaile/konfigurazioa/ezadostasun-konfig-berria :: ezadostasun-konfig-berria-modal}"></div>
 
 <script>
   // Tabs JS sinplea

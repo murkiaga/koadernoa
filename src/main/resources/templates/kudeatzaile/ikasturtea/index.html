@@ -3,28 +3,25 @@
 <head>
     <title>Ikasturteak</title>
     <link rel="stylesheet" th:href="@{/css/navbar.css}">
+    <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-		.aktiboa {
-		    font-weight: bold;
-		    color: darkgreen;
-		}
-	</style>
+
 </head>
 <body>
 	<div th:replace="/kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
-    <h1>Ikasturteak</h1>
-    <a th:href="@{/kudeatzaile/ikasturteak/sortu}">Ikasturte berria sortu</a>
-    <ul>
-        <li th:each="ikasturtea : ${ikasturteak}"
-    			th:classappend="${ikasturtea.aktiboa} ? 'aktiboa'">
-            <a th:href="@{'/kudeatzaile/ikasturteak/' + ${ikasturtea.id}}">
-                <span th:text="${ikasturtea.izena}">2024-2025</span>
-                <span th:if="${ikasturtea.aktiboa}" style="color: green;"> (aktiboa)</span>
-            </a>
-        </li>
-    </ul>
-    
+	<main class="page">
+	    <h1>Ikasturteak</h1>
+	    <a class="btn btn-primary" th:href="@{/kudeatzaile/ikasturteak/sortu}">Ikasturte berria sortu</a>
+	    <ul class="link-list">
+	        <li th:each="ikasturtea : ${ikasturteak}" 
+	    			th:classappend="${ikasturtea.aktiboa} ? 'is-active'">
+	            <a th:href="@{'/kudeatzaile/ikasturteak/' + ${ikasturtea.id}}">
+	                <span th:text="${ikasturtea.izena}">2024-2025</span>
+	                <span th:if="${ikasturtea.aktiboa}" style="color: green;"> (aktiboa)</span>
+	            </a>
+	        </li>
+	    </ul>
+    </main>
 <script th:src="@{/js/kudeatzaile-nav.js}"></script>
 </body>
 </html>

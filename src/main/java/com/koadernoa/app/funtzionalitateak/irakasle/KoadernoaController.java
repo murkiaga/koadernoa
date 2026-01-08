@@ -197,12 +197,11 @@ public class KoadernoaController {
         if (koadernoa.getIrakasleak() == null) {
             koadernoa.setIrakasleak(new ArrayList<>());
         }
+        
+        // 3) Egiaztatu une-ko irakaslea koadernoaren irakasle-zerrendan dagoela, edo KUDEATZAILEA dela
+        boolean irakasleakBaimena = koadernoaService.irakasleakBadaukaSarbidea(uneKoIrakaslea, koadernoa);
 
-        // 3) Egiaztatu une-ko irakaslea koadernoaren irakasle-zerrendan dagoela
-        boolean uneanBadago = koadernoa.getIrakasleak().stream()
-                .anyMatch(i -> i.getId().equals(uneKoIrakaslea.getId()));
-
-        if (!uneanBadago) {
+        if (!irakasleakBaimena) {
             ra.addFlashAttribute("error", "Ez duzu koaderno hau partekatzeko baimenik.");
             return "redirect:/irakasle";
         }

@@ -1,0 +1,391 @@
+/* ========== Koaderno Berria — Kudeatzaile common ========== */
+:root{
+  --b:#e5e7eb;         /* border */
+  --t:#111827;         /* text */
+  --mut:#6b7280;       /* muted text */
+  --m:#2563eb;         /* primary */
+  --m-hover:#1d4ed8;
+  --bg:#ffffff;
+  --surface:#ffffff;
+  --surface-2:#f9fafb;
+  --danger:#dc2626;
+  --danger-hover:#b91c1c;
+  --success:#16a34a;
+  --success-hover:#15803d;
+  --shadow:0 1px 3px rgba(15, 23, 42, .06);
+}
+
+*{ box-sizing:border-box; }
+
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  color:var(--t);
+  background:var(--bg);
+}
+
+a{ color:var(--m); text-decoration:none; }
+a:hover{ text-decoration:underline; }
+
+/* Layout */
+.page{
+  max-width:1100px;
+  margin:16px auto 32px;
+  padding:0 16px;
+}
+.page--narrow{ max-width:960px; }
+
+.page-header{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-bottom:12px;
+}
+
+h1{ font-size:1.4rem; margin:0 0 .25rem; }
+h2{ font-size:1.1rem; margin:1.25rem 0 .5rem; }
+h3{ font-size:1rem; margin:1rem 0 .5rem; }
+
+.muted{
+  color:var(--mut);
+  font-size:.9rem;
+  margin:0 0 1rem;
+}
+
+.section{ margin-top:24px; }
+
+/* Alerts */
+.alert{
+  padding:8px 12px;
+  border-radius:8px;
+  font-size:.9rem;
+  margin:8px 0;
+}
+.alert-success{ background:#dcfce7; color:#166534; }
+.alert-error{ background:#fee2e2; color:#b91c1c; }
+
+/* Buttons */
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:.35rem;
+  border-radius:999px;
+  padding:6px 12px;
+  border:1px solid var(--b);
+  background:#fff;
+  color:var(--t);
+  font-size:.85rem;
+  text-decoration:none;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.btn:hover{ background:var(--surface-2); text-decoration:none; }
+
+.btn-primary{
+  border-color:var(--m);
+  background:var(--m);
+  color:#fff;
+}
+.btn-primary:hover{ background:var(--m-hover); }
+
+.btn-secondary{
+  border-color:var(--b);
+  background:#fff;
+  color:var(--t);
+}
+.btn-danger{
+  border-color:var(--danger);
+  background:var(--danger);
+  color:#fff;
+}
+.btn-danger:hover{ background:var(--danger-hover); }
+
+.btn-success{
+  border-color:var(--success);
+  background:var(--success);
+  color:#fff;
+}
+.btn-success:hover{ background:var(--success-hover); }
+
+/* Badges / chips */
+.badge{
+  display:inline-flex;
+  align-items:center;
+  padding:.15rem .5rem;
+  border-radius:999px;
+  font-size:.85rem;
+  background:#eef2ff;
+  color:#374151;
+  border:1px solid #e5e7eb;
+}
+
+/* Forms */
+.form{
+  display:grid;
+  gap:12px;
+  max-width:720px;
+}
+.field{
+  display:grid;
+  gap:6px;
+}
+.field > label{
+  font-size:.85rem;
+  color:#374151;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="date"],
+select{
+  width:100%;
+  padding:6px 10px;
+  border-radius:10px;
+  border:1px solid var(--b);
+  font-size:.92rem;
+  background:#fff;
+}
+input[type="checkbox"]{ transform:translateY(1px); }
+
+.form-actions{
+  display:flex;
+  gap:8px;
+  justify-content:flex-end;
+  flex-wrap:wrap;
+  margin-top:4px;
+}
+
+/* Filters (koadernoak estilokoa) */
+.filters{ margin:16px 0 12px; }
+.filters-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  align-items:flex-end;
+}
+.filters-row label{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  font-size:.85rem;
+  color:#374151;
+  min-width:180px;
+}
+@media (max-width:640px){
+  .filters-row{ align-items:stretch; }
+  .filters-row label{ flex:1 1 100%; }
+}
+
+/* Tables */
+.table-wrap{
+  border-radius:12px;
+  border:1px solid var(--b);
+  background:#fff;
+  box-shadow:var(--shadow);
+  overflow-x:auto;
+}
+.table-wrap table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:.9rem;
+  min-width:520px;
+}
+
+.table-wrap th,
+.table-wrap td{
+  padding:8px 10px;
+  border-bottom:1px solid var(--b);
+  vertical-align:middle;
+}
+.table-wrap th{
+  background:var(--surface-2);
+  text-align:left;
+  white-space:nowrap;
+  font-weight:600;
+}
+.table-wrap tbody tr:nth-child(even){ background:#f9fafb40; }
+
+.actions-cell{ white-space:nowrap; text-align:right; }
+.col-truncate{
+  max-width:220px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.col-nowrap{ white-space:nowrap; }
+
+/* Koadernoak orrialdeko klaseak mantentzeko */
+table.koaderno-taula{ min-width:820px; }         /* zehazki koadernoena */
+.col-irakasleak{ max-width:220px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.col-mod-kodea{ white-space:nowrap; }
+
+/* Link list (dashboard / zerrendak) */
+.link-list{
+  list-style:none;
+  padding:0;
+  margin:0;
+  display:grid;
+  gap:8px;
+}
+.link-list a{
+  display:block;
+  padding:10px 12px;
+  border:1px solid var(--b);
+  border-radius:12px;
+  background:#fff;
+  box-shadow:var(--shadow);
+  color:var(--t);
+  text-decoration:none;
+}
+.link-list a:hover{
+  background:var(--surface-2);
+  border-color:#cbd5e1;
+}
+
+/* Tabs (Konfigurazioa) */
+.tabs{ display:flex; gap:.5rem; border-bottom:1px solid var(--b); margin:16px 0; }
+.tab-btn{ border:none; background:none; padding:10px 14px; cursor:pointer; border-bottom:3px solid transparent; }
+.tab-btn[aria-selected="true"]{ border-color:var(--m); font-weight:600; }
+.tab-panel{ display:none; padding-top:16px; }
+.tab-panel.active{ display:block; }
+
+.row{
+  display:grid;
+  gap:12px;
+  grid-template-columns: 1fr 1fr 1fr auto;
+  align-items:end;
+}
+.inline-row{
+  display:flex;
+  gap:12px;
+  align-items:end;
+  max-width:520px;
+}
+@media (max-width:520px){
+  .inline-row{ flex-direction:column; align-items:stretch; }
+  .row{ grid-template-columns:1fr; }
+  .form-actions{ justify-content:stretch; }
+  .form-actions .btn{ width:100%; }
+}
+
+/* Konfigurazio xehetasun batzuk */
+.percent-input{ width:4rem; }
+.ebal-momentu-aktibo{ font-weight:600; }
+.ebal-momentu-inaktibo{ color:#9ca3af; text-decoration:line-through; }
+
+/* Modal generikoa (taldeak + ikasturtea-fitxa + ezadostasun modalak…) */
+div.modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.35);
+  align-items:center;
+  justify-content:center;
+  z-index:60;
+  padding:16px;
+}
+div.modal.open,
+div.modal.show{ display:flex; }
+
+.modal-card{
+  background:#fff;
+  width:min(600px, 95vw);
+  border-radius:12px;
+  padding:1rem 1.2rem;
+  box-shadow:0 15px 40px rgba(0,0,0,.25);
+}
+.modal-actions{
+  margin-top:1rem;
+  display:flex;
+  justify-content:flex-end;
+  gap:.5rem;
+  flex-wrap:wrap;
+}
+
+/* Dropzone (taldeak inportazioa) */
+.dropzone{
+  border:2px dashed #9ca3af;
+  padding:1.25rem;
+  text-align:center;
+  cursor:pointer;
+  transition:all .2s;
+  border-radius:12px;
+  background:var(--surface-2);
+}
+.dropzone.drag{ border-color:var(--m); background:#eff6ff; }
+
+.file-chip{
+  display:flex;
+  align-items:center;
+  gap:.5rem;
+  border:1px solid #d1d5db;
+  border-radius:.75rem;
+  padding:.5rem .6rem;
+  background:#fff;
+  justify-content:center;
+  flex-wrap:wrap;
+}
+.file-chip .muted{ color:var(--mut); font-size:.9em; }
+.linklike{
+  background:none;
+  border:none;
+  color:var(--m);
+  cursor:pointer;
+  padding:0 .2rem;
+}
+.linklike:hover{ text-decoration:underline; }
+
+/* Argazkiak (scoped: .photo-page barruan bakarrik) */
+.photo-page .topbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  border-bottom:1px solid var(--b);
+  padding-bottom:.5rem;
+  margin-bottom:1rem;
+}
+.photo-page h1{ font-size:1.5rem; margin:.5rem 0 1rem; }
+.photo-page .grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+  gap:12px;
+}
+.photo-page .card{
+  border:1px solid var(--b);
+  border-radius:14px;
+  overflow:hidden;
+  background:#fff;
+  box-shadow:0 1px 2px rgba(0,0,0,.04);
+  position:relative;
+}
+.photo-page .ph{
+  display:block;
+  width:100%;
+  height:160px;
+  object-fit:cover;
+  background:#f3f4f6;
+}
+.photo-page .meta{ padding:.6rem .75rem .75rem; }
+.photo-page .surnames{ font-size:.95rem; line-height:1.1; }
+.photo-page .name{ font-weight:700; font-size:1.05rem; line-height:1.2; }
+.photo-page .idline{ font-size:.85rem; color:var(--mut); margin-top:.15rem; }
+
+.photo-page .progress{ height:4px; background:#e5e7eb; width:100%; }
+.photo-page .bar{ height:100%; width:0%; background:var(--m); transition:width .2s; }
+
+.photo-page .hidden-input{ display:none; }
+.photo-page .upload-cta{
+  position:absolute;
+  top:.5rem;
+  right:.5rem;
+  background:#ffffffcc;
+  border:1px solid var(--b);
+  border-radius:999px;
+  padding:.2rem .6rem;
+  font-size:.85rem;
+  cursor:pointer;
+  backdrop-filter:saturate(1.2) blur(2px);
+}

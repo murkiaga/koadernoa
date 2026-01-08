@@ -3,23 +3,27 @@
 <head>
     <title>Ikasturte berria</title>
     <link rel="stylesheet" th:href="@{/css/navbar.css}">
+    <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
     <div th:replace="/kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
-
-    <h1>Ikasturte berria sortu</h1>
-
-    <form th:action="@{/kudeatzaile/ikasturteak/gorde}" th:object="${ikasturtea}" method="post" id="ikasturteaForm">
-        <label for="izena">Izena:</label>
-        <input type="text" id="izena" name="izena" th:field="*{izena}" required>
-        <br>
-        <label for="aktiboa">Aktiboa:</label>
-        <input type="checkbox" id="aktiboa" name="aktiboa" th:field="*{aktiboa}">
-        <br>
-        <button type="submit">Gorde</button>
-    </form>
-    
+	<main class="page">
+	    <h1>Ikasturte berria sortu</h1>
+	
+	    <form th:action="@{/kudeatzaile/ikasturteak/gorde}" th:object="${ikasturtea}" method="post" id="ikasturteaForm">
+	        <label for="izena">Izena:</label>
+	        <input type="text" id="izena" name="izena" placeholder="2026-2027" th:field="*{izena}" required>
+	      
+	        <label for="aktiboa">Aktiboa:</label>
+	        <input type="checkbox" id="aktiboa" name="aktiboa" th:field="*{aktiboa}">
+	        
+	        <div class="form-actions">
+	        	<button class="btn btn-primary" type="submit">Gorde</button>
+	        	<a class="btn btn-secondary" th:href="@{/kudeatzaile/ikasturteak}">Atzera</a>
+	        </div>
+	    </form>
+    </main>
     <script>
         function balidatuFormularioa(event) {
             const izenaInput = document.getElementById("izena");

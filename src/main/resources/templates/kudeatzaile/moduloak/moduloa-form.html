@@ -4,58 +4,62 @@
   <meta charset="UTF-8">
   <title>Moduloa Gorde</title>
   <link rel="stylesheet" th:href="@{/css/navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
 
 <div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+<main class="page">
+	<h1 th:text="${moduloaForm.id != null} ? 'Editatu Moduloa' : 'Modulo Berria Sortu'">Moduloa</h1>
+	
+	<form class="form" th:action="@{/kudeatzaile/moduloak/gorde}" th:object="${moduloaForm}" method="post">
+	  <input type="hidden" th:field="*{id}"/>
+	
+	  <label>Izena:</label>
+	  <input type="text" th:field="*{izena}" required/>
+	  <div th:if="${#fields.hasErrors('izena')}" th:errors="*{izena}"></div>
 
-<h1 th:text="${moduloaForm.id != null} ? 'Editatu Moduloa' : 'Modulo Berria Sortu'">Moduloa</h1>
-
-<form th:action="@{/kudeatzaile/moduloak/gorde}" th:object="${moduloaForm}" method="post">
-  <input type="hidden" th:field="*{id}"/>
-
-  <label>Izena:</label>
-  <input type="text" th:field="*{izena}" required/>
-  <div th:if="${#fields.hasErrors('izena')}" th:errors="*{izena}"></div>
-  <br/>
-
-  <label>Kodea:</label>
-  <input type="text" th:field="*{kodea}" required/>
-  <div th:if="${#fields.hasErrors('kodea')}" th:errors="*{kodea}"></div>
-  <br/>
-  
-  <label>EEI kodea:</label>
-  <input type="text" th:field="*{eeiKodea}" placeholder="0225, 0224..." />
-  <div th:if="${#fields.hasErrors('eeiKodea')}" th:errors="*{eeiKodea}"></div>
-  <br/>
-
-  <label>Maila:</label>
-  <select th:field="*{mailaId}" required>
-    <option value="">-- Aukeratu maila --</option>
-    <option th:each="m : ${mailak}"
-            th:value="${m.id}"
-            th:text="${m.izena} + ' (' + ${m.kodea} + ')'">
-    </option>
-  </select>
-  <div th:if="${#fields.hasErrors('mailaId')}" th:errors="*{mailaId}"></div>
-  <br/>
-
-  <label>Taldea:</label>
-  <select th:field="*{taldeaId}" required>
-    <option value="">-- Aukeratu taldea --</option>
-    <option th:each="t : ${taldeak}"
-            th:value="${t.id}"
-            th:text="${t.izena}">
-    </option>
-  </select>
-  <div th:if="${#fields.hasErrors('taldeaId')}" th:errors="*{taldeaId}"></div>
-  <br/>
-
-  <button type="submit">Gorde</button>
-</form>
-
-<a th:href="@{/kudeatzaile/moduloak}">Itzuli moduluen zerrendara</a>
+	
+	  <label>Kodea:</label>
+	  <input type="text" th:field="*{kodea}" required/>
+	  <div th:if="${#fields.hasErrors('kodea')}" th:errors="*{kodea}"></div>
+	 
+	  
+	  <label>EEI kodea:</label>
+	  <input type="text" th:field="*{eeiKodea}" placeholder="0225, 0224..." />
+	  <div th:if="${#fields.hasErrors('eeiKodea')}" th:errors="*{eeiKodea}"></div>
+	
+	
+	  <label>Maila:</label>
+	  <select th:field="*{mailaId}" required>
+	    <option value="">-- Aukeratu maila --</option>
+	    <option th:each="m : ${mailak}"
+	            th:value="${m.id}"
+	            th:text="${m.izena} + ' (' + ${m.kodea} + ')'">
+	    </option>
+	  </select>
+	  <div th:if="${#fields.hasErrors('mailaId')}" th:errors="*{mailaId}"></div>
+	
+	
+	  <label>Taldea:</label>
+	  <select th:field="*{taldeaId}" required>
+	    <option value="">-- Aukeratu taldea --</option>
+	    <option th:each="t : ${taldeak}"
+	            th:value="${t.id}"
+	            th:text="${t.izena}">
+	    </option>
+	  </select>
+	  <div th:if="${#fields.hasErrors('taldeaId')}" th:errors="*{taldeaId}"></div>
+	
+	  <td class="actions-cell">
+	  	<button class="btn btn-primary" type="submit">Gorde</button>
+	  	<a class="btn btn-secondary" th:href="@{/kudeatzaile/moduloak}">Itzuli moduluen zerrendara</a>
+	  </td>
+	</form>
+	
+	
+</main>
 <script th:src="@{/js/kudeatzaile-nav.js}"></script>
 </body>
 </html>
