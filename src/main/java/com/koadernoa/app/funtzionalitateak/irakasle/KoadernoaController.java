@@ -23,6 +23,7 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoaSortuDto;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
 import com.koadernoa.app.objektuak.modulua.service.IkasleaService;
+import com.koadernoa.app.objektuak.zikloak.service.FamiliaService;
 
 import jakarta.transaction.Transactional;
 
@@ -44,6 +45,7 @@ public class KoadernoaController {
 	private final KoadernoaService koadernoaService;
 	private final IkasleaService ikasleaService;
 	private final KoadernoaRepository koadernoaRepository;
+	private final FamiliaService familiaService;
 	
 	private static final List<Astegunak> ASTE_ORDENA = List.of(
 	        Astegunak.ASTELEHENA,
@@ -115,17 +117,38 @@ public class KoadernoaController {
 	}
 	
 	@GetMapping("/berria")
-	public String erakutsiFormularioa(Authentication auth, Model model) {
+	public String erakutsiFormularioa(Authentication auth, 
+									@RequestParam(value = "familiaId", required = false) Long familiaId,
+									Model model) {
 		Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
-        model.addAttribute("moduluak", koadernoaService.lortuErabilgarriDaudenModuluak(irakaslea));
-        model.addAttribute("irakasleAukeragarriak", koadernoaService.lortuFamiliaBerekoIrakasleak(irakaslea));
-        model.addAttribute("irakasleLogeatua", irakaslea);
-        model.addAttribute("koadernoaDto", new KoadernoaSortuDto());
-        //Ordutegia zehazteko:
-        model.addAttribute("rows", IntStream.rangeClosed(1, 12).boxed().toList());
-        model.addAttribute("cols", ASTE_ORDENA);
-        model.addAttribute("selected", Set.of()); //hasiera hutsa
-        return "irakasleak/koadernoa-sortu";
+
+	    Long nireFamiliaId = (irakaslea.getMintegia() != null) ? irakaslea.getMintegia().getId() : null;
+	    Long aukeratua = (familiaId != null) ? familiaId : nireFamiliaId;
+
+	    KoadernoaSortuDto dto = new KoadernoaSortuDto();
+	    dto.setFamiliaId(aukeratua);
+
+	    model.addAttribute("koadernoaDto", dto);
+
+	    // 1) Familia guztien zerrenda (aktiboak)
+	    model.addAttribute("familiaGuztiak", familiaService.lortuAktiboakOrdenatuta()); // zuk inplementatu
+
+	    // 2) Moduluak familia horren arabera
+	    model.addAttribute("moduluak",
+	            koadernoaService.lortuErabilgarriDaudenModuluak(irakaslea, aukeratua));
+
+	    // 3) Irakasle aukeragarriak (gomendioa: aukeratutako familiakoak)
+	    model.addAttribute("irakasleAukeragarriak",
+	            koadernoaService.lortuFamiliaBerekoIrakasleak(irakaslea, aukeratua));
+
+	    model.addAttribute("irakasleLogeatua", irakaslea);
+
+	    // Ordutegi-grid-a
+	    model.addAttribute("rows", IntStream.rangeClosed(1, 12).boxed().toList());
+	    model.addAttribute("cols", ASTE_ORDENA);
+	    model.addAttribute("selected", Set.of());
+
+	    return "irakasleak/koadernoa-sortu";
     }
 
 	@PostMapping("/berria")

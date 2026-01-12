@@ -69,13 +69,26 @@
     <form th:action="@{/irakasle/koadernoa/berria}" th:object="${koadernoaDto}" method="post">
       <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
-      <!-- 1) Moduloa -->
-      <label>Moduloa</label>
-      <select th:field="*{moduloaId}" required>
-        <option value="" disabled selected>Aukeratu modulu bat...</option>
-        <option th:each="m : ${moduluak}" th:value="${m.id}"
-                th:text="${m.izena} + ' (' + ${m.taldea.izena} + ')'"></option>
-      </select>
+      <!-- 0) Familia -->
+		<label>Familia</label>
+		<select th:field="*{familiaId}" id="familiaSelect" onchange="changeFamilia()" required>
+		  <option th:each="f : ${familiaGuztiak}"
+		          th:value="${f.id}"
+		          th:text="${f.izena}">
+		  </option>
+		</select>
+		
+		<!-- 1) Moduloa -->
+		<label>Moduloa</label>
+		<select th:field="*{moduloaId}" required>
+		  <option value="" disabled th:selected="${koadernoaDto.moduloaId == null}">
+		    Aukeratu modulu bat...
+		  </option>
+		  <option th:each="m : ${moduluak}"
+		          th:value="${m.id}"
+		          th:text="${m.izena} + ' (' + ${m.taldea.izena} + ')'">
+		  </option>
+		</select>
 
       <!-- 2) Beste irakasleak (aukerakoa) -->
       <div th:if="${not #lists.isEmpty(irakasleAukeragarriak)}">
@@ -145,6 +158,13 @@ function toggleCell(td){
   } else {
     if (hidden) hidden.remove();
   }
+}
+
+function changeFamilia() {
+  const id = document.getElementById('familiaSelect').value;
+  const url = new URL(window.location.href);
+  url.searchParams.set('familiaId', id);
+  window.location.href = url.toString();
 }
 </script>
 

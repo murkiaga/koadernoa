@@ -97,6 +97,12 @@ public class KoadernoaService {
     public List<Koadernoa> findByIrakaslea(Irakaslea irakaslea) {
         return koadernoaRepository.findByIrakasleakContaining(irakaslea);
     }
+    
+    public List<Moduloa> lortuErabilgarriDaudenModuluak(Irakaslea irakaslea, Long familiaId) {
+        if (familiaId == null) return List.of();
+        // Hemen zure eredura egokitu:
+        return moduloaRepository.findAllByTaldea_Zikloa_Familia_Id(familiaId);
+    }
 
     public List<Moduloa> lortuErabilgarriDaudenModuluak(Irakaslea irakaslea) {
         return moduloaRepository.findByTaldea_Zikloa_Familia(irakaslea.getMintegia());
@@ -496,6 +502,22 @@ public class KoadernoaService {
         // Normalean jardueraRepository.save(j) egingo zenuke;
         // baina zure service-ak jada kudeatzen badu, bertan
         // dagoen mekanismoa erabili.
+    }
+    
+    @Transactional(readOnly = true)
+    public List<Irakaslea> lortuFamiliaBerekoIrakasleak(Irakaslea logeatua, Long familiaId) {
+
+        // familiaId ez bada bidali, logeatuaren mintegia hartu
+        Long fid = (familiaId != null)
+                ? familiaId
+                : (logeatua.getMintegia() != null ? logeatua.getMintegia().getId() : null);
+
+        if (fid == null) return List.of();
+
+        // familiako irakasleak eta logeatua kanpoan utzi (checkboxetan ez agertzeko)
+        return irakasleaRepository.findAllByMintegia_IdOrderByIzenaAsc(fid).stream()
+                .filter(i -> logeatua.getId() == null || !logeatua.getId().equals(i.getId()))
+                .toList();
     }
     
 }

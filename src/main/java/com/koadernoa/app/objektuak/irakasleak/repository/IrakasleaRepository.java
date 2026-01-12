@@ -25,4 +25,6 @@ public interface IrakasleaRepository extends JpaRepository<Irakaslea, Long> {
             String izenZatia,
             String emailZatia
     );
+    
+    List<Irakaslea> findAllByMintegia_IdOrderByIzenaAsc(Long familiaId);
 }
