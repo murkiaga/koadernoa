@@ -100,7 +100,6 @@ public class KoadernoaService {
     
     public List<Moduloa> lortuErabilgarriDaudenModuluak(Irakaslea irakaslea, Long familiaId) {
         if (familiaId == null) return List.of();
-        // Hemen zure eredura egokitu:
         return moduloaRepository.findAllByTaldea_Zikloa_Familia_Id(familiaId);
     }
 

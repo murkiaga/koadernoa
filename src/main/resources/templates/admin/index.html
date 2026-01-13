@@ -2,31 +2,93 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="eu">
 <head>
   <meta charset="UTF-8">
-  <title>Ebaluazio koloreak</title>
+  <title>Admin</title>
   <link rel="stylesheet" th:href="@{/css/navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
 <div th:replace="/kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
 
-<div class="page">
-  <h1>Ebaluazioen koloreak</h1>
+<main class="page">
+  <h1>Admin</h1>
 
-  <form method="post" th:action="@{/admin/ebalu-koloreak}">
-    <label>1. Ebaluazioa:
-      <input type="color" name="ebal1Kolore" th:value="${ebal1Kolore}">
-    </label><br><br>
+  <!-- Flash mezuak (redirect:/admin/?success=... / ?error=...) -->
+  <div th:if="${param.success}" class="alert alert-success" th:text="${param.success}"></div>
+  <div th:if="${param.error}" class="alert alert-error" th:text="${param.error}"></div>
 
-    <label>2. Ebaluazioa:
-      <input type="color" name="ebal2Kolore" th:value="${ebal2Kolore}">
-    </label><br><br>
+  <!-- Tab botoiak -->
+  <div class="tabs" role="tablist" aria-label="Admin atalak">
+    <button type="button" class="tab-btn"
+            role="tab"
+            aria-selected="true"
+            aria-controls="panel-logoa"
+            id="tab-logoa">
+      Logoa
+    </button>
 
-    <label>3. Ebaluazioa:
-      <input type="color" name="ebal3Kolore" th:value="${ebal3Kolore}">
-    </label><br><br>
+    <button type="button" class="tab-btn"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-koloreak"
+            id="tab-koloreak">
+      Ebaluazio koloreak
+    </button>
+  </div>
 
-    <button type="submit" class="btn btn-primary">Gorde</button>
-  </form>
-</div>
+  <!-- LOGOA PANELA -->
+  <section id="panel-logoa" class="tab-panel active" role="tabpanel"
+           aria-labelledby="tab-logoa" tabindex="0">
+    <div th:replace="~{admin/fragments/logo :: logo-panel}"></div>
+  </section>
 
+  <!-- KOLOREAK PANELA -->
+  <section id="panel-koloreak" class="tab-panel" role="tabpanel"
+           aria-labelledby="tab-koloreak" tabindex="0" aria-hidden="true">
+    <div th:replace="~{admin/fragments/ebalu-koloreak :: ebal-koloreak-panel}"></div>
+  </section>
+</main>
+
+<script>
+  // Tabs JS sinplea (zure konfigurazio-orriaren berdina)
+  document.addEventListener('DOMContentLoaded', function() {
+    const tabs = document.querySelectorAll('.tab-btn');
+    const panels = document.querySelectorAll('.tab-panel');
+
+    function activateTab(tab) {
+      const targetId = tab.getAttribute('aria-controls');
+
+      tabs.forEach(b => b.setAttribute('aria-selected', 'false'));
+      panels.forEach(p => {
+        p.classList.remove('active');
+        p.setAttribute('aria-hidden', 'true');
+      });
+
+      tab.setAttribute('aria-selected', 'true');
+      const panel = document.getElementById(targetId);
+      if (panel) {
+        panel.classList.add('active');
+        panel.removeAttribute('aria-hidden');
+        panel.focus();
+      }
+
+      const hash = tab.id.replace('tab-', '');
+      if (window.history && window.history.replaceState) {
+        history.replaceState(null, '', '#' + hash);
+      }
+    }
+
+    tabs.forEach(btn => btn.addEventListener('click', () => activateTab(btn)));
+
+    // Hash bidez hasieratu (#logoa edo #koloreak)
+    const hash = location.hash.replace('#','');
+    if (hash) {
+      const to = document.getElementById('tab-' + hash);
+      if (to) activateTab(to);
+    }
+  });
+</script>
+
+<script th:src="@{/js/kudeatzaile-nav.js}"></script>
 </body>
 </html>

@@ -1,6 +1,5 @@
 package com.koadernoa.app.common.advice;
 
-
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -20,9 +19,16 @@ import org.springframework.security.web.csrf.CsrfToken;
 
 @Configuration
 public class CsrfTokenConfig implements WebMvcConfigurer {
-	
-	@Value("${koadernoa.uploads.dir:uploads}")
+
+    @Value("${koadernoa.uploads.dir:uploads}")
     private String baseDir;
+
+    // (aukerakoa, baina erabilgarria) subdir-ak ere properties-etik
+    @Value("${koadernoa.uploads.logo-subdir:logoa}")
+    private String logoSubdir;
+
+    @Value("${koadernoa.uploads.ikasleak-subdir:ikasleak}")
+    private String ikasleakSubdir;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
@@ -39,12 +45,12 @@ public class CsrfTokenConfig implements WebMvcConfigurer {
             }
         });
     }
-    
+
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         Path root = Paths.get(baseDir).toAbsolutePath().normalize();
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:" + root.toString() + "/")
-                .setCacheControl(CacheControl.noStore()); // <-- Cacherik ez
+                .setCacheControl(CacheControl.noStore()); // cachearik ez -> ?v=... ere ez da ezinbestekoa
     }
 }

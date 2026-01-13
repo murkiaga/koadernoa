@@ -17,6 +17,8 @@ public class AplikazioAukeraService {
     public static final String EBAL2_KOLORE = "ebal2.kolore";
     public static final String EBAL3_KOLORE = "ebal3.kolore";
     
+    public static final String APP_LOGO_URL = "APP_LOGO_URL"; // adib: /uploads/logo.png
+    
     private final AplikazioAukeraRepository repo;
 
     public String get(String gakoa) {

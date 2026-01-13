@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<body>
+<div th:fragment="logo-panel">
+  <h2>Logoa</h2>
+  <p class="muted">PNG edo JPG txiki bat igo (gomendatua: 300KB baino gutxiago).</p>
+
+  <div class="table-wrap" style="margin:12px 0;">
+    <div style="padding:12px; border:1px solid var(--b); border-radius:12px;">
+      <div th:if="${logoBadago}">
+        <div class="muted" style="margin-bottom:8px;">Uneko logoa:</div>
+        <img th:src="${logoUrl}"
+             alt="Ikastetxeko logoa"
+             style="max-height:80px; max-width:260px; object-fit:contain; display:block; margin-bottom:12px;">
+
+        <form method="post" th:action="@{/admin/logoa/ezabatu}">
+          <input type="hidden"
+                 th:if="${_csrf != null}"
+                 th:name="${_csrf.parameterName}"
+                 th:value="${_csrf.token}"/>
+          <button type="submit" class="btn">Logoa ezabatu</button>
+        </form>
+      </div>
+
+      <div th:if="${!logoBadago}">
+        <div class="muted">Ez dago logorik konfiguratuta.</div>
+      </div>
+    </div>
+  </div>
+
+  <form method="post" th:action="@{/admin/logoa}" enctype="multipart/form-data">
+    <input type="hidden"
+           th:if="${_csrf != null}"
+           th:name="${_csrf.parameterName}"
+           th:value="${_csrf.token}"/>
+
+    <div class="row" style="align-items:end;">
+      <label>
+        <div class="muted">Igo fitxategia</div>
+        <input type="file" name="logoFile" accept="image/png,image/jpeg" required>
+      </label>
+
+      <div style="align-self:end;">
+        <button type="submit" class="btn btn-primary">Gorde</button>
+      </div>
+    </div>
+
+    <p class="muted" style="margin-top:8px;">
+      Fitxategia <code>/uploads/logoa/</code> azpikarpetan gordeko da, eta aukeran <code>APP_LOGO_URL</code> giltzan.
+    </p>
+  </form>
+</div>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<body>
+<div th:fragment="ebal-koloreak-panel">
+  <h2>Ebaluazio koloreak</h2>
+  <p class="muted">Egutegia eta bistak kolore hauekin margotuko dira.</p>
+
+  <form method="post" th:action="@{/admin/ebalu-koloreak}">
+    <input type="hidden"
+           th:if="${_csrf != null}"
+           th:name="${_csrf.parameterName}"
+           th:value="${_csrf.token}"/>
+
+    <div class="row" style="align-items:end;">
+      <label>
+        <div class="muted">1. Ebaluazioa</div>
+        <input type="color" name="ebal1Kolore" th:value="${ebal1Kolore}">
+      </label>
+
+      <label>
+        <div class="muted">2. Ebaluazioa</div>
+        <input type="color" name="ebal2Kolore" th:value="${ebal2Kolore}">
+      </label>
+
+      <label>
+        <div class="muted">3. Ebaluazioa</div>
+        <input type="color" name="ebal3Kolore" th:value="${ebal3Kolore}">
+      </label>
+
+      <div style="align-self:end;">
+        <button type="submit" class="btn btn-primary">Gorde</button>
+      </div>
+    </div>
+  </form>
+</div>
+</body>
+</html>

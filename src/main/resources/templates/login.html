@@ -1,10 +1,33 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
 <head>
-    <title>Login</title>
+  <meta charset="UTF-8">
+  <title>Koadernoa · Saioa hasi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" th:href="@{/css/login.css}">
 </head>
 <body>
-    <h1>Sartu zure Google kontuarekin</h1>
-    <a href="/oauth2/authorization/google">Google bidez hasi saioa</a>
+  <main class="login-wrap">
+    <section class="login-card" aria-label="Saioa hasteko panela">
+      <div class="brand">
+        <img th:if="${appLogoUrl != null and !#strings.isEmpty(appLogoUrl)}"
+             th:src="${appLogoUrl}"
+             alt="Ikastetxeko logoa"
+             class="brand-logo">
+
+        <h1 class="title">Koaderno berria</h1>
+        <p class="subtitle">Sartu zure Google kontuarekin jarraitzeko</p>
+      </div>
+
+      <a class="google-btn" href="/oauth2/authorization/google">
+        <span class="google-dot" aria-hidden="true"></span>
+        Google bidez hasi saioa
+      </a>
+
+      <p class="hint">
+        Arazoak badituzu, jarri harremanetan administrazioarekin.
+      </p>
+    </section>
+  </main>
 </body>
 </html>
