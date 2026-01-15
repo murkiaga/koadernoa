@@ -1,6 +1,7 @@
 package com.koadernoa.app.objektuak.koadernoak.service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -44,6 +45,9 @@ public class EstatistikaService {
     private final SaioaRepository saioaRepository;
     private final MatrikulaRepository matrikulaRepository;
     private final AsistentziaRepository asistentziaRepository; // hutsegiteetarako, aurrerago
+    
+    public long countGuztira(){ return estatRepo.countGuztira(); } //KENDU
+    public long countIkasturteAktiboan(){ return estatRepo.countIkasturteAktiboan(); } //KENDU
 
  // Tarte bat adierazteko record txiki bat
     private record DateRange(LocalDate from, LocalDate to) {}
@@ -119,6 +123,9 @@ public class EstatistikaService {
         int hutsOrdu = kalkulatuHutsegiteOrduak(koadernoa, tartea);
         est.setHutsegiteOrduak(hutsOrdu);
 
+        est.setKalkulatua(true);
+        est.setAzkenKalkulua(LocalDateTime.now());
+        
         estatRepo.save(est);
     }
 

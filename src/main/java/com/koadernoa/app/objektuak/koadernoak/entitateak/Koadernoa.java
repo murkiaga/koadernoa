@@ -1,6 +1,7 @@
 package com.koadernoa.app.objektuak.koadernoak.entitateak;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
@@ -14,6 +15,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.Transient;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -55,5 +57,18 @@ public class Koadernoa {
         if (moduloa == null || egutegia == null || egutegia.getIkasturtea() == null)
             return "(koaderno osatu gabea)";
         return moduloa.getKodea() + " - " + egutegia.getIkasturtea().getIzena();
+    }
+    
+    @Transient
+    public String getIrakasleakLabur() {
+        if (irakasleak == null || irakasleak.isEmpty()) return "—";
+        return irakasleak.stream()
+                .map(i -> {
+                    String iz = i.getIzena() != null ? i.getIzena() : "";
+                    String full = (iz).trim();
+                    return full.isBlank() ? ("#" + i.getId()) : full;
+                })
+                .distinct()
+                .collect(Collectors.joining(", "));
     }
 }

@@ -1,5 +1,6 @@
 package com.koadernoa.app.funtzionalitateak.irakasle;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -96,6 +97,7 @@ public class EstatistikakController {
                     est.setOrduakEmanda(Integer.parseInt(orduEmandaStr));
                 } catch (NumberFormatException ignored) {}
             }
+            est.setAzkenKalkulua(LocalDateTime.now());
         }
 
         // batch gordeta

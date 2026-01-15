@@ -1,6 +1,8 @@
 package com.koadernoa.app.objektuak.koadernoak.entitateak;
 
 
+import java.time.LocalDateTime;
+
 import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioMomentua;
 
 import jakarta.persistence.*;
@@ -31,6 +33,10 @@ public class EstatistikaEbaluazioan {
 
     @ManyToOne
     private Koadernoa koadernoa;
+    
+    @Column(nullable = false)
+    private boolean kalkulatua = false;
+    private LocalDateTime azkenKalkulua;
     
     
     //%ak kalkulatzeko

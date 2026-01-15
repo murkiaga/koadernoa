@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <title>Estatistikak</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" th:href="@{/css/navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
+
+  <style>
+    .page-wrap{
+      width: 100%;
+      max-width: none;
+      margin: 0;
+      padding: 16px 24px;
+      box-sizing: border-box;
+    }
+
+    .muted { opacity: .75; }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .card {
+      display: block;
+      padding: 12px 14px;
+      border: 1px solid var(--b);
+      border-radius: 12px;
+      background: var(--bg2);
+      text-decoration: none;
+      color: inherit;
+      box-shadow: 0 1px 0 rgba(0,0,0,.04);
+    }
+    .card:hover { filter: brightness(0.98); }
+    .card .k { font-size: .85rem; opacity: .8; }
+    .card .v { font-size: 1.6rem; font-weight: 800; margin-top: 4px; }
+    .card .hint { font-size: .8rem; opacity: .7; margin-top: 6px; }
+
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(160px, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+      padding: 12px;
+      border: 1px solid var(--b);
+      border-radius: 12px;
+      background: var(--bg2);
+    }
+    .filters label {
+      font-size: .8rem; opacity: .8; display: block; margin-bottom: 4px;
+    }
+    .filters select {
+      width: 100%;
+      padding: 7px 8px;
+      border: 1px solid var(--b);
+      border-radius: 10px;
+      background: var(--bg);
+      color: inherit;
+      box-sizing: border-box;
+    }
+    .filters .actions {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    .btn {
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--b);
+      background: var(--bg);
+      cursor: pointer;
+      font-weight: 700;
+      text-decoration: none;
+      color: inherit;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ===== TABLE LOOK ===== */
+    .table-wrap{
+      overflow-x: auto;
+      border: 1px solid var(--b);
+      border-radius: 14px;
+      background: var(--bg2);
+      box-shadow: 0 1px 0 rgba(0,0,0,.04);
+      margin-top: 14px;
+    }
+
+    table{
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      margin-top: 0;
+    }
+
+    /* Header */
+    thead th{
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: var(--bg2);
+      border-bottom: 2px solid var(--b);
+      font-size: .82rem;
+      letter-spacing: .02em;
+      opacity: 1;
+    }
+
+    th, td{
+      padding: 12px 12px;
+      border-bottom: 1px solid var(--b);
+      vertical-align: top;
+      text-align: left;
+      white-space: nowrap; /* zutabe asko daudenez */
+    }
+
+    .sub { display:block; font-size:.75rem; opacity:.7; margin-top:.15rem; white-space: normal; }
+
+    /* Zebra + hover */
+    tbody tr:nth-child(even){ background: rgba(0,0,0,.03); }
+    tbody tr:hover{ background: rgba(0,0,0,.06); }
+
+    /* azken lerroan border kendu */
+    tbody tr:last-child td{ border-bottom: 0; }
+
+    /* Header-ko izkinak biribil */
+    thead th:first-child{ border-top-left-radius: 14px; }
+    thead th:last-child{ border-top-right-radius: 14px; }
+
+    /* “metrika” barruko estiloa */
+    .metric { display:flex; justify-content:space-between; gap:10px; align-items:baseline; }
+    .metric .main { font-weight: 800; }
+    .metric .pct { font-size: .85rem; opacity: .9; white-space: nowrap; }
+    .limit { font-size:.75rem; opacity:.7; margin-top:.15rem; white-space: normal; }
+
+    .bad { color: #b91c1c; font-weight: 800; }
+    .bad .pct, .bad .limit, .bad .sub { color: #b91c1c; opacity: 1; }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border: 1px solid var(--b);
+      border-radius: 999px;
+      font-size: .8rem;
+      opacity: .85;
+      background: var(--bg);
+    }
+
+    /* Pager */
+    .pager { display:flex; gap:8px; justify-content:flex-end; margin-top: 12px; flex-wrap: wrap; }
+    .pager a {
+      padding: 6px 10px; border:1px solid var(--b); border-radius:10px;
+      text-decoration:none; color:inherit;
+    }
+    .pager a.active { font-weight: 900; }
+
+    /* Irakasleak: moztu + tooltip */
+    th.teachers-col, td.teachers-col{
+      width: 140px;
+      max-width: 140px;
+    }
+    td.teachers-col .clip{
+      display: block;
+      max-width: 140px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ===== SORTING HEADER ===== */
+    th.sortable{ padding:0; }
+    th.sortable .sort-link{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      padding:12px 12px;
+      color:inherit;
+      text-decoration:none;
+    }
+    th.sortable .sort-link:hover{
+      background: rgba(0,0,0,.04);
+    }
+
+    .sort-ico{
+      width:16px;
+      display:inline-flex;
+      justify-content:center;
+      opacity:.55;
+    }
+    .sort-ico::before{ content:"⇅"; }
+    .sort-ico.active{ opacity:1; font-weight:900; }
+    .sort-ico.active.asc::before{ content:"↑"; }
+    .sort-ico.active.desc::before{ content:"↓"; }
+  </style>
+</head>
+
+<body>
+
+<!-- Kudeatzaile navbar -->
+<div th:replace="/kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+
+<div class="page-wrap">
+  <h1>Estatistikak</h1>
+
+  <!-- Txartelak -->
+  <p class="muted" style="margin-top:10px;">
+    Ebaluazio-kode bakoitzeko <b>kalkulatu gabe</b> dauden estatistikak. Klik eginda, zerrenda filtroarekin irekiko da.
+  </p>
+
+  <div class="cards">
+    <a class="card"
+       th:each="row : ${beteGabeakKodez}"
+       th:href="@{/kudeatzaile/estatistikak(
+          ebaluazioKodea=${row.kodea},
+          kalkulatua=false,
+          familiaId=${filtro.familiaId},
+          zikloaId=${filtro.zikloaId},
+          taldeaId=${filtro.taldeaId},
+          mailaId=${filtro.mailaId}
+       )}">
+      <div class="k" th:text="${row.kodea}">1_EBAL</div>
+      <div class="v" th:text="${row.kopurua}">0</div>
+      <div class="hint">Kalkulatu gabe</div>
+    </a>
+
+    <div class="card" th:if="${beteGabeakKodez == null or #lists.isEmpty(beteGabeakKodez)}" style="opacity:.8;">
+      <div class="k">Ez dago daturik</div>
+      <div class="v">0</div>
+      <div class="hint">Ikasturte aktiboan estatistikarik ez</div>
+    </div>
+  </div>
+
+  <!-- Filtroak -->
+  <form class="filters" method="get" th:object="${filtro}">
+    <div>
+      <label>Familia</label>
+      <select th:field="*{familiaId}">
+        <option value="">Denak</option>
+        <option th:each="f : ${familiaList}" th:value="${f.id}" th:text="${f.izena}"></option>
+      </select>
+    </div>
+
+    <div>
+      <label>Zikloa</label>
+      <select th:field="*{zikloaId}">
+        <option value="">Denak</option>
+        <option th:each="z : ${zikloaList}" th:value="${z.id}" th:text="${z.izena}"></option>
+      </select>
+    </div>
+
+    <div>
+      <label>Taldea</label>
+      <select th:field="*{taldeaId}">
+        <option value="">Denak</option>
+        <option th:each="t : ${taldeaList}" th:value="${t.id}" th:text="${t.izena}"></option>
+      </select>
+    </div>
+
+    <div>
+      <label>Maila</label>
+      <select th:field="*{mailaId}">
+        <option value="">Denak</option>
+        <option th:each="m : ${mailaList}" th:value="${m.id}" th:text="${m.izena}"></option>
+      </select>
+    </div>
+
+    <div>
+      <label>Ebaluazio kodea</label>
+      <select th:field="*{ebaluazioKodea}">
+        <option value="">Denak</option>
+        <option th:each="k : ${ebaluazioKodeList}" th:value="${k}" th:text="${k}"></option>
+      </select>
+    </div>
+
+    <div>
+      <label>Egoera</label>
+      <select th:field="*{kalkulatua}">
+        <option value="">Denak</option>
+        <option value="false">Kalkulatu gabe</option>
+        <option value="true">Kalkulatuta</option>
+      </select>
+    </div>
+
+    <div class="actions">
+      <button class="btn" type="submit">Aplikatu filtroak</button>
+      <a class="btn" th:href="@{/kudeatzaile/estatistikak}">Garbitu</a>
+    </div>
+  </form>
+
+  <h2 style="margin-top:18px;">Zerrenda</h2>
+
+  <div class="muted" style="margin-top:6px;" th:if="${orria != null}">
+    <span class="badge" th:text="'Emaitzak: ' + ${orria.totalElements}">Emaitzak: 0</span>
+    <span class="badge" th:text="'Orria: ' + ${orria.number + 1} + '/' + ${orria.totalPages}">Orria: 1/1</span>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+      <tr>
+        <!-- ID -->
+        <th class="sortable"
+            th:with="field='id',
+                     nextDir=${(sortBy == field and sortDir == 'asc') ? 'desc' : 'asc'},
+                     active=${sortBy == field}">
+          <a class="sort-link"
+             th:href="@{/kudeatzaile/estatistikak(
+                page=0,
+                size=${orria != null ? orria.size : 20},
+                sort=|${field},${nextDir}|,
+                familiaId=${filtro.familiaId},
+                zikloaId=${filtro.zikloaId},
+                taldeaId=${filtro.taldeaId},
+                mailaId=${filtro.mailaId},
+                ebaluazioKodea=${filtro.ebaluazioKodea},
+                kalkulatua=${filtro.kalkulatua}
+             )}">
+            <span class="sort-ico" th:classappend="${active} ? ('active ' + sortDir) : ''"></span>
+            <span>ID</span>
+          </a>
+        </th>
+
+        <!-- Ebaluazioa -->
+        <th class="sortable"
+            th:with="field='ebaluazioMomentua.ordena',
+                     nextDir=${(sortBy == field and sortDir == 'asc') ? 'desc' : 'asc'},
+                     active=${sortBy == field}">
+          <a class="sort-link"
+             th:href="@{/kudeatzaile/estatistikak(
+                page=0,
+                size=${orria != null ? orria.size : 20},
+                sort=|${field},${nextDir}|,
+                familiaId=${filtro.familiaId},
+                zikloaId=${filtro.zikloaId},
+                taldeaId=${filtro.taldeaId},
+                mailaId=${filtro.mailaId},
+                ebaluazioKodea=${filtro.ebaluazioKodea},
+                kalkulatua=${filtro.kalkulatua}
+             )}">
+            <span class="sort-ico" th:classappend="${active} ? ('active ' + sortDir) : ''"></span>
+            <span>Ebaluazioa</span>
+          </a>
+        </th>
+
+        <!-- TALDEA lehenengo -->
+        <th class="sortable"
+            th:with="field='koadernoa.moduloa.taldea.izena',
+                     nextDir=${(sortBy == field and sortDir == 'asc') ? 'desc' : 'asc'},
+                     active=${sortBy == field}">
+          <a class="sort-link"
+             th:href="@{/kudeatzaile/estatistikak(
+                page=0,
+                size=${orria != null ? orria.size : 20},
+                sort=|${field},${nextDir}|,
+                familiaId=${filtro.familiaId},
+                zikloaId=${filtro.zikloaId},
+                taldeaId=${filtro.taldeaId},
+                mailaId=${filtro.mailaId},
+                ebaluazioKodea=${filtro.ebaluazioKodea},
+                kalkulatua=${filtro.kalkulatua}
+             )}">
+            <span class="sort-ico" th:classappend="${active} ? ('active ' + sortDir) : ''"></span>
+            <span>Taldea</span>
+          </a>
+        </th>
+
+        <!-- MODULOA gero -->
+        <th class="sortable"
+            th:with="field='koadernoa.moduloa.izena',
+                     nextDir=${(sortBy == field and sortDir == 'asc') ? 'desc' : 'asc'},
+                     active=${sortBy == field}">
+          <a class="sort-link"
+             th:href="@{/kudeatzaile/estatistikak(
+                page=0,
+                size=${orria != null ? orria.size : 20},
+                sort=|${field},${nextDir}|,
+                familiaId=${filtro.familiaId},
+                zikloaId=${filtro.zikloaId},
+                taldeaId=${filtro.taldeaId},
+                mailaId=${filtro.mailaId},
+                ebaluazioKodea=${filtro.ebaluazioKodea},
+                kalkulatua=${filtro.kalkulatua}
+             )}">
+            <span class="sort-ico" th:classappend="${active} ? ('active ' + sortDir) : ''"></span>
+            <span>Moduloa</span>
+          </a>
+        </th>
+
+        <!-- Irakasleak -->
+        <th class="teachers-col">Irakasleak</th>
+
+        <!-- Maila -->
+        <th class="sortable"
+            th:with="field='koadernoa.egutegia.maila.ordena',
+                     nextDir=${(sortBy == field and sortDir == 'asc') ? 'desc' : 'asc'},
+                     active=${sortBy == field}">
+          <a class="sort-link"
+             th:href="@{/kudeatzaile/estatistikak(
+                page=0,
+                size=${orria != null ? orria.size : 20},
+                sort=|${field},${nextDir}|,
+                familiaId=${filtro.familiaId},
+                zikloaId=${filtro.zikloaId},
+                taldeaId=${filtro.taldeaId},
+                mailaId=${filtro.mailaId},
+                ebaluazioKodea=${filtro.ebaluazioKodea},
+                kalkulatua=${filtro.kalkulatua}
+             )}">
+            <span class="sort-ico" th:classappend="${active} ? ('active ' + sortDir) : ''"></span>
+            <span>Maila</span>
+          </a>
+        </th>
+
+        <!-- UD-ak -->
+        <th>
+          UD-ak
+          <span class="sub">emanda / aurreikusita</span>
+        </th>
+
+        <!-- Orduak -->
+        <th>
+          Orduak
+          <span class="sub">emanda / aurreikusita</span>
+        </th>
+
+        <!-- Aprobatuak -->
+        <th>
+          Aprobatuak
+          <span class="sub">gainditu / ebaluatu</span>
+        </th>
+
+        <!-- Hutsegiteak -->
+        <th>
+          Hutsegite orduak
+          <span class="sub">(HUTS + JUSTIFIKATUA)</span>
+        </th>
+
+        <!-- Kalkulatua -->
+        <th class="sortable"
+            th:with="field='kalkulatua',
+                     nextDir=${(sortBy == field and sortDir == 'asc') ? 'desc' : 'asc'},
+                     active=${sortBy == field}">
+          <a class="sort-link"
+             th:href="@{/kudeatzaile/estatistikak(
+                page=0,
+                size=${orria != null ? orria.size : 20},
+                sort=|${field},${nextDir}|,
+                familiaId=${filtro.familiaId},
+                zikloaId=${filtro.zikloaId},
+                taldeaId=${filtro.taldeaId},
+                mailaId=${filtro.mailaId},
+                ebaluazioKodea=${filtro.ebaluazioKodea},
+                kalkulatua=${filtro.kalkulatua}
+             )}">
+            <span class="sort-ico" th:classappend="${active} ? ('active ' + sortDir) : ''"></span>
+            <span>Kalkulatua</span>
+          </a>
+        </th>
+
+        <!-- Azken kalkulua -->
+        <th class="sortable"
+            th:with="field='azkenKalkulua',
+                     nextDir=${(sortBy == field and sortDir == 'asc') ? 'desc' : 'asc'},
+                     active=${sortBy == field}">
+          <a class="sort-link"
+             th:href="@{/kudeatzaile/estatistikak(
+                page=0,
+                size=${orria != null ? orria.size : 20},
+                sort=|${field},${nextDir}|,
+                familiaId=${filtro.familiaId},
+                zikloaId=${filtro.zikloaId},
+                taldeaId=${filtro.taldeaId},
+                mailaId=${filtro.mailaId},
+                ebaluazioKodea=${filtro.ebaluazioKodea},
+                kalkulatua=${filtro.kalkulatua}
+             )}">
+            <span class="sort-ico" th:classappend="${active} ? ('active ' + sortDir) : ''"></span>
+            <span>Azken kalkulua</span>
+          </a>
+        </th>
+      </tr>
+      </thead>
+
+      <tbody>
+      <tr th:if="${orria == null or orria.totalElements == 0}">
+        <!-- zutabe kopurua: 12 -->
+        <td colspan="12" class="muted">
+          Ez dago emaitzarik filtro hauekin (edo ez dago estatistikarik ikasturte aktiboan).
+        </td>
+      </tr>
+
+      <tr th:each="e : ${orria.content}">
+        <td th:text="${e.id}">1</td>
+
+        <td>
+          <div class="metric">
+            <span class="main" th:text="${e.ebaluazioMomentua != null ? e.ebaluazioMomentua.izena : '—'}">1. Ebaluazioa</span>
+          </div>
+          <div class="muted" style="font-size:.8rem;" th:text="${e.ebaluazioMomentua != null ? e.ebaluazioMomentua.kodea : ''}">1_EBAL</div>
+        </td>
+
+        <!-- TALDEA lehenengo -->
+        <td th:text="${e.koadernoa != null and e.koadernoa.moduloa != null and e.koadernoa.moduloa.taldea != null ? e.koadernoa.moduloa.taldea.izena : '—'}">
+          1SMA
+        </td>
+
+        <!-- MODULOA gero -->
+        <td th:text="${e.koadernoa != null and e.koadernoa.moduloa != null ? e.koadernoa.moduloa.izena : '—'}">
+          Redes Locales
+        </td>
+
+        <!-- Irakasleak -->
+        <td class="teachers-col">
+          <span class="clip"
+                th:text="${e.koadernoa != null ? e.koadernoa.irakasleakLabur : '—'}"
+                th:title="${e.koadernoa != null ? e.koadernoa.irakasleakLabur : ''}">
+            Mikel, Alots
+          </span>
+        </td>
+
+        <!-- Maila -->
+        <td th:text="${e.koadernoa != null and e.koadernoa.egutegia != null and e.koadernoa.egutegia.maila != null ? e.koadernoa.egutegia.maila.izena : '—'}">
+          LEHENENGOA
+        </td>
+
+        <!-- UD-ak -->
+        <td th:classappend="${
+              (e.udPortzentaia != null
+                and e.ebaluazioMomentua != null
+                and e.ebaluazioMomentua.ezadostasunKonfig != null
+                and e.udPortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minBlokePortzentaia)
+            } ? 'bad'">
+          <div class="metric">
+            <span class="main" th:text="|${e.unitateakEmanda} / ${e.unitateakAurreikusiak}|">0 / 0</span>
+            <span class="pct" th:if="${e.udPortzentaia != null}" th:text="|${e.udPortzentaia}%|">0%</span>
+          </div>
+          <div class="limit" th:if="${e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null}">
+            (≥ <span th:text="${e.ebaluazioMomentua.ezadostasunKonfig.minBlokePortzentaia}">0</span>%)
+          </div>
+        </td>
+
+        <!-- Orduak -->
+        <td th:classappend="${
+              (e.orduPortzentaia != null
+                and e.ebaluazioMomentua != null
+                and e.ebaluazioMomentua.ezadostasunKonfig != null
+                and e.orduPortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minOrduPortzentaia)
+            } ? 'bad'">
+          <div class="metric">
+            <span class="main" th:text="|${e.orduakEmanda} / ${e.orduakAurreikusiak}|">0 / 0</span>
+            <span class="pct" th:if="${e.orduPortzentaia != null}" th:text="|${e.orduPortzentaia}%|">0%</span>
+          </div>
+          <div class="limit" th:if="${e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null}">
+            (≥ <span th:text="${e.ebaluazioMomentua.ezadostasunKonfig.minOrduPortzentaia}">0</span>%)
+          </div>
+        </td>
+
+        <!-- Aprobatuak -->
+        <td th:classappend="${
+              (e.gaindituPortzentaia != null
+                and e.ebaluazioMomentua != null
+                and e.ebaluazioMomentua.ezadostasunKonfig != null
+                and e.gaindituPortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minGaindituPortzentaia)
+            } ? 'bad'">
+          <div class="metric">
+            <span class="main" th:text="|${e.aprobatuak} / ${e.ebaluatuak}|">0 / 0</span>
+            <span class="pct" th:if="${e.gaindituPortzentaia != null}" th:text="|${e.gaindituPortzentaia}%|">0%</span>
+          </div>
+          <div class="limit" th:if="${e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null}">
+            (≥ <span th:text="${e.ebaluazioMomentua.ezadostasunKonfig.minGaindituPortzentaia}">0</span>%)
+          </div>
+        </td>
+
+        <!-- Hutsegite orduak / bertaratzea -->
+        <td th:classappend="${
+              (e.bertaratzePortzentaia != null
+                and e.ebaluazioMomentua != null
+                and e.ebaluazioMomentua.ezadostasunKonfig != null
+                and e.bertaratzePortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minBertaratzePortzentaia)
+            } ? 'bad'">
+          <div class="metric">
+            <span class="main" th:text="${e.hutsegiteOrduak}">0</span>
+            <span class="pct" th:if="${e.bertaratzePortzentaia != null}">
+              <span th:text="${#numbers.formatDecimal(e.bertaratzePortzentaia, 2, 2)}">0.00</span>%
+            </span>
+          </div>
+          <div class="limit" th:if="${e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null}">
+            (≥ <span th:text="${e.ebaluazioMomentua.ezadostasunKonfig.minBertaratzePortzentaia}">0</span>%)
+          </div>
+        </td>
+
+        <td th:text="${e.kalkulatua} ? 'Bai' : 'Ez'">Ez</td>
+        <td th:text="${e.azkenKalkulua != null ? #temporals.format(e.azkenKalkulua, 'yyyy-MM-dd HH:mm') : '-'}">-</td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pager" th:if="${orria != null and orria.totalPages > 1}">
+    <a th:each="i : ${#numbers.sequence(0, orria.totalPages - 1)}"
+       th:classappend="${i == orria.number} ? 'active'"
+       th:href="@{/kudeatzaile/estatistikak(
+          page=${i},
+          size=${orria.size},
+          sort=|${sortBy},${sortDir}|,
+          familiaId=${filtro.familiaId},
+          zikloaId=${filtro.zikloaId},
+          taldeaId=${filtro.taldeaId},
+          mailaId=${filtro.mailaId},
+          ebaluazioKodea=${filtro.ebaluazioKodea},
+          kalkulatua=${filtro.kalkulatua}
+       )}"
+       th:text="${i + 1}">1</a>
+  </div>
+
+</div>
+</body>
+</html>
