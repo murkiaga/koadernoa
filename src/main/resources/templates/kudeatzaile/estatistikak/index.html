@@ -194,9 +194,30 @@
       opacity:.55;
     }
     .sort-ico::before{ content:"⇅"; }
-    .sort-ico.active{ opacity:1; font-weight:900; }
+    .sort-ico.active{ opacity:1; font-weight:900; color:blue }
     .sort-ico.active.asc::before{ content:"↑"; }
     .sort-ico.active.desc::before{ content:"↓"; }
+    
+    /* ===== BUTTON VARIANTS ===== */
+	.btn-primary{
+	  background: #2563eb;         /* urdina */
+	  border-color: #2563eb;
+	  color: #fff;
+	}
+	.btn-primary:hover{ filter: brightness(0.95); }
+	
+	.btn-success{
+	  background: #34d399;         /* berde argia */
+	  border-color: #22c55e;
+	  color: #fff;
+	}
+	.btn-success:hover{ filter: brightness(0.95); }
+	
+	/* (Aukerakoa) Disabled itxura, inoiz erabiltzen baduzu */
+	.btn:disabled, .btn[aria-disabled="true"]{
+	  opacity: .6;
+	  cursor: not-allowed;
+	}
   </style>
 </head>
 
@@ -288,9 +309,23 @@
     </div>
 
     <div class="actions">
-      <button class="btn" type="submit">Aplikatu filtroak</button>
-      <a class="btn" th:href="@{/kudeatzaile/estatistikak}">Garbitu</a>
-    </div>
+	  <button class="btn btn-primary" type="submit">Aplikatu filtroak</button>
+	
+	  <a class="btn" th:href="@{/kudeatzaile/estatistikak}">Garbitu</a>
+	
+	  <a class="btn btn-success"
+	     th:href="@{/kudeatzaile/estatistikak/csv(
+	        familiaId=${filtro.familiaId},
+	        zikloaId=${filtro.zikloaId},
+	        taldeaId=${filtro.taldeaId},
+	        mailaId=${filtro.mailaId},
+	        ebaluazioKodea=${filtro.ebaluazioKodea},
+	        kalkulatua=${filtro.kalkulatua},
+	        sort=|${sortBy},${sortDir}|
+	     )}">
+	    CSV deskargatu
+	  </a>
+	</div>
   </form>
 
   <h2 style="margin-top:18px;">Zerrenda</h2>
@@ -620,5 +655,7 @@
   </div>
 
 </div>
+
+
 </body>
 </html>

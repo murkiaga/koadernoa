@@ -1,10 +1,18 @@
 package com.koadernoa.app.objektuak.koadernoak.service;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
@@ -61,4 +69,126 @@ public class EstatistikakKudeatzaileService {
 	  return estatistikaRepo.findMailaAktiboak();
 	}
     public List<String> lortuEbaluazioKodeak(EstatistikakFiltroa f) { return List.of("1_EBAL","2_EBAL","3_EBAL","1_FINAL","2_FINAL"); }
+
+
+    /*************************** CSV exportazioa egiteko *****************************/
+    public void exportCsv(EstatistikakFiltroa f, Sort sort, OutputStream os) throws IOException {
+
+        try (BufferedWriter w = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8))) {
+
+            // Header
+            w.write(String.join(";",
+                "ID",
+                "Ebaluazioa",
+                "EbaluazioKodea",
+                "Taldea",
+                "Moduloa",
+                "Maila",
+                "Irakasleak",
+                "UD_Emanda",
+                "UD_Aurreikusiak",
+                "UD_%",
+                "Ordu_Emanda",
+                "Ordu_Aurreikusiak",
+                "Ordu_%",
+                "Aprobatuak",
+                "Ebaluatuak",
+                "Gainditu_%",
+                "HutsegiteOrduak",
+                "Bertaratze_%",
+                "Kalkulatua",
+                "AzkenKalkulua"
+            ));
+            w.newLine();
+
+            int page = 0;
+            int size = 1000; // handitu/txikitu nahi baduzu
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+            while (true) {
+                Pageable pageable = PageRequest.of(page, size, sort);
+
+                Page<EstatistikaEbaluazioan> p = bilatuOrrikatuta(f, pageable); // zure metodo bera
+                if (p == null || p.isEmpty()) break;
+
+                for (EstatistikaEbaluazioan e : p.getContent()) {
+                    String ebIz = (e.getEbaluazioMomentua() != null) ? nz(e.getEbaluazioMomentua().getIzena()) : "";
+                    String ebKo = (e.getEbaluazioMomentua() != null) ? nz(e.getEbaluazioMomentua().getKodea()) : "";
+
+                    String taldea = "";
+                    String moduloa = "";
+                    String maila = "";
+                    String irakasleak = "";
+
+                    if (e.getKoadernoa() != null) {
+                        if (e.getKoadernoa().getModuloa() != null) {
+                            moduloa = nz(e.getKoadernoa().getModuloa().getIzena());
+                            if (e.getKoadernoa().getModuloa().getTaldea() != null) {
+                                taldea = nz(e.getKoadernoa().getModuloa().getTaldea().getIzena());
+                            }
+                        }
+                        if (e.getKoadernoa().getEgutegia() != null && e.getKoadernoa().getEgutegia().getMaila() != null) {
+                            maila = nz(e.getKoadernoa().getEgutegia().getMaila().getIzena());
+                        }
+                        // zuk HTML-an erabiltzen duzun property bera
+                        try {
+                            irakasleak = nz(e.getKoadernoa().getIrakasleakLabur());
+                        } catch (Exception ex) {
+                            irakasleak = "";
+                        }
+                    }
+
+                    String azken = (e.getAzkenKalkulua() != null) ? e.getAzkenKalkulua().format(fmt) : "";
+
+                    w.write(String.join(";",
+                        nz(String.valueOf(e.getId())),
+                        csv(ebIz),
+                        csv(ebKo),
+                        csv(taldea),
+                        csv(moduloa),
+                        csv(maila),
+                        csv(irakasleak),
+
+                        nz(String.valueOf(e.getUnitateakEmanda())),
+                        nz(String.valueOf(e.getUnitateakAurreikusiak())),
+                        (e.getUdPortzentaia() == null ? "" : String.valueOf(e.getUdPortzentaia())),
+
+                        nz(String.valueOf(e.getOrduakEmanda())),
+                        nz(String.valueOf(e.getOrduakAurreikusiak())),
+                        (e.getOrduPortzentaia() == null ? "" : String.valueOf(e.getOrduPortzentaia())),
+
+                        nz(String.valueOf(e.getAprobatuak())),
+                        nz(String.valueOf(e.getEbaluatuak())),
+                        (e.getGaindituPortzentaia() == null ? "" : String.valueOf(e.getGaindituPortzentaia())),
+
+                        nz(String.valueOf(e.getHutsegiteOrduak())),
+                        (e.getBertaratzePortzentaia() == null ? "" : String.valueOf(e.getBertaratzePortzentaia())),
+
+                        String.valueOf(e.isKalkulatua()),
+                        csv(azken)
+                    ));
+                    w.newLine();
+                }
+
+                w.flush();
+
+                if (!p.hasNext()) break;
+                page++;
+            }
+        }
+    }
+
+    private String nz(String s) { return s == null ? "" : s; }
+
+    /**
+     * CSV-eko field-a seguru idazteko:
+     * - ; edo " edo \n badu, komatxo artean sartu
+     * - " bada, "" bihurtu
+     */
+    private String csv(String s) {
+        if (s == null) return "";
+        boolean mustQuote = s.contains(";") || s.contains("\"") || s.contains("\n") || s.contains("\r");
+        String v = s.replace("\"", "\"\"");
+        return mustQuote ? ("\"" + v + "\"") : v;
+    }
 }
