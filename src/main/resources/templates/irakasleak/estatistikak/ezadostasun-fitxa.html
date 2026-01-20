@@ -83,6 +83,29 @@
       align-items:center;
       font-size:.9rem;
     }
+    .card{
+    padding:1rem 1.2rem;
+    position:relative; /* <-- garrantzitsua X-a goian eskuinean kokatzeko */
+  }
+
+  .close-x{
+    position:absolute;
+    top:12px;
+    right:12px;
+    width:38px;
+    height:38px;
+    border-radius:10px;
+    border:1px solid #d1d5db;
+    background:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:1.35rem;
+    line-height:1;
+    cursor:pointer;
+  }
+  .close-x:hover{ background:#f3f4f6; }
+  .close-x:active{ transform: translateY(1px); }
   </style>
 </head>
 <body>
@@ -104,6 +127,14 @@
              th:if="${_csrf != null}"
              th:name="${_csrf.parameterName}"
              th:value="${_csrf.token}"/>
+             
+      <!-- X = gorde + itxi -->
+  	  <button type="submit"
+          class="close-x"
+          name="postAction"
+          value="close"
+          title="Gorde eta itxi"
+          aria-label="Gorde eta itxi">×</button>
 
       <div class="section">
         <div class="section-title">Emandako ezadostasuna(k)</div>
