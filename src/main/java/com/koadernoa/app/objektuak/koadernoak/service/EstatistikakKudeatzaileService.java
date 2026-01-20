@@ -280,7 +280,10 @@ public class EstatistikakKudeatzaileService {
                         }
                     }
 
-                    String motak = String.join(", ", kalkulatuEzadostasunak(e));
+                    List<String> motak = kalkulatuEzadostasunak(e);
+                    if (motak.isEmpty()) {
+                        motak = List.of("—");
+                    }
                     String jarraipenData = fitxa.getJarraipenData() != null ? fitxa.getJarraipenData().format(dateFmt) : "";
                     String itxieraData = fitxa.getItxieraData() != null ? fitxa.getItxieraData().format(dateFmt) : "";
                     String bertaratzea = fitxa.getIkasleenBertaratzePortzentaia() != null
@@ -290,27 +293,29 @@ public class EstatistikakKudeatzaileService {
                             ? String.valueOf(fitxa.getGaindituPortzentaia())
                             : "";
 
-                    w.write(String.join(";",
-                        csv(taldea),
-                        csv(motak),
-                        csv(moduloa),
-                        csv(maila),
-                        csv(ebIz),
-                        csv(ebKo),
-                        nz(String.valueOf(fitxa.getEmandakoBlokeKopurua())),
-                        nz(String.valueOf(fitxa.getEmandakoOrduKopurua())),
-                        bertaratzea,
-                        gainditu,
-                        csv(nz(fitxa.getZuzentzeJarduerak())),
-                        csv(nz(fitxa.getZuzentzeJarduerakArduraduna())),
-                        csv(jarraipenData),
-                        csv(nz(fitxa.getJarraipenArduradunak())),
-                        csv(nz(fitxa.getHartutakoErabakiak())),
-                        csv(itxieraData),
-                        csv(nz(fitxa.getItxieraArduraduna())),
-                        csv(fitxa.getEzadostasunaZuzenduta() == null ? "" : (fitxa.getEzadostasunaZuzenduta() ? "Bai" : "Ez"))
-                    ));
-                    w.newLine();
+                    for (String mota : motak) {
+                        w.write(String.join(";",
+                            csv(taldea),
+                            csv(mota),
+                            csv(moduloa),
+                            csv(maila),
+                            csv(ebIz),
+                            csv(ebKo),
+                            nz(String.valueOf(fitxa.getEmandakoBlokeKopurua())),
+                            nz(String.valueOf(fitxa.getEmandakoOrduKopurua())),
+                            bertaratzea,
+                            gainditu,
+                            csv(nz(fitxa.getZuzentzeJarduerak())),
+                            csv(nz(fitxa.getZuzentzeJarduerakArduraduna())),
+                            csv(jarraipenData),
+                            csv(nz(fitxa.getJarraipenArduradunak())),
+                            csv(nz(fitxa.getHartutakoErabakiak())),
+                            csv(itxieraData),
+                            csv(nz(fitxa.getItxieraArduraduna())),
+                            csv(fitxa.getEzadostasunaZuzenduta() == null ? "" : (fitxa.getEzadostasunaZuzenduta() ? "Bai" : "Ez"))
+                        ));
+                        w.newLine();
+                    }
                 }
 
                 w.flush();

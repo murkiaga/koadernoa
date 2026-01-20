@@ -4,18 +4,18 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.EzadostasunFitxa;
 
 public class EzadostasunFitxaRow {
     private final EzadostasunFitxa fitxa;
-    private final String ezadostasunMotak;
+    private final String ezadostasunMota;
 
-    public EzadostasunFitxaRow(EzadostasunFitxa fitxa, String ezadostasunMotak) {
+    public EzadostasunFitxaRow(EzadostasunFitxa fitxa, String ezadostasunMota) {
         this.fitxa = fitxa;
-        this.ezadostasunMotak = ezadostasunMotak;
+        this.ezadostasunMota = ezadostasunMota;
     }
 
     public EzadostasunFitxa getFitxa() {
         return fitxa;
     }
 
-    public String getEzadostasunMotak() {
-        return ezadostasunMotak;
+    public String getEzadostasunMota() {
+        return ezadostasunMota;
     }
 }

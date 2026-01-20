@@ -75,11 +75,17 @@ public class EstatistikakKudeatzaileController {
                 pageable.getPageSize(),
                 mapSortForEzadostasun(pageable.getSort()));
         Page<EzadostasunFitxa> ezadostasunOrria = estatistikakService.bilatuEzadostasunOrrikatuta(filtro, ezadostasunPageable);
-        List<EzadostasunFitxaRow> ezadostasunRows = ezadostasunOrria.getContent().stream()
-                .map(fitxa -> new EzadostasunFitxaRow(
-                        fitxa,
-                        String.join(", ", estatistikakService.kalkulatuEzadostasunak(fitxa.getEstatistika()))))
-                .toList();
+        List<EzadostasunFitxaRow> ezadostasunRows = new java.util.ArrayList<>();
+        for (EzadostasunFitxa fitxa : ezadostasunOrria.getContent()) {
+            List<String> motak = estatistikakService.kalkulatuEzadostasunak(fitxa.getEstatistika());
+            if (motak.isEmpty()) {
+                ezadostasunRows.add(new EzadostasunFitxaRow(fitxa, "—"));
+            } else {
+                for (String mota : motak) {
+                    ezadostasunRows.add(new EzadostasunFitxaRow(fitxa, mota));
+                }
+            }
+        }
         Page<EzadostasunFitxaRow> ezadostasunPage = new PageImpl<>(
                 ezadostasunRows, ezadostasunPageable, ezadostasunOrria.getTotalElements());
         model.addAttribute("ezadostasunOrria", ezadostasunPage);
