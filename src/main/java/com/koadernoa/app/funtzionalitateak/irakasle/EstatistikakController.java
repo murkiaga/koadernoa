@@ -153,7 +153,8 @@ public class EstatistikakController {
             @RequestParam(required = false) String itxieraData,
             @RequestParam(required = false) String itxieraArduraduna,
             @RequestParam(required = false) String ezadostasunaZuzenduta,
-            RedirectAttributes ra) {
+            RedirectAttributes ra,
+            @RequestParam(required = false) String postAction) {
 
         EstatistikaEbaluazioan estatistika =
                 estatistikaService.lortuKoadernoarenEstatistika(koadernoAktiboa, estatId);
@@ -182,6 +183,10 @@ public class EstatistikakController {
 
         ezadostasunFitxaRepository.save(fitxa);
         ra.addFlashAttribute("success", "Ezadostasun fitxa gorde da.");
+        //"X" sakatu bada, gorde eta itxi
+        if ("close".equals(postAction)) {
+            return "redirect:/irakasle/estatistikak";
+        }
         return "redirect:/irakasle/estatistikak/" + estatId + "/ezadostasuna";
     }
 
