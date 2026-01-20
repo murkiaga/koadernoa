@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <title>Ezadostasun fitxa</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/irakasle-common.css}">
+
+  <style>
+    body{
+      background:#f3f4f6;
+    }
+    .page{
+      max-width:960px;
+      width:90%;
+      margin:1.5rem auto;
+      padding:0 1rem 2rem;
+    }
+    .card{
+      padding:1rem 1.2rem;
+    }
+    .section{
+      border:1px solid #d1d5db;
+      margin-top:1rem;
+      background:#fff;
+    }
+    .section-title{
+      background:#e5e7eb;
+      font-weight:700;
+      padding:.5rem .75rem;
+      font-size:.9rem;
+      text-transform:uppercase;
+    }
+    .section-body{
+      padding:.75rem;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: 180px 1fr;
+      gap:.5rem .75rem;
+      align-items:center;
+    }
+    label{
+      font-size:.85rem;
+      color:#374151;
+    }
+    input[type="text"],
+    input[type="date"],
+    input[type="number"],
+    textarea{
+      width:100%;
+      padding:.4rem .5rem;
+      border-radius:6px;
+      border:1px solid #d1d5db;
+      font-size:.9rem;
+    }
+    textarea{
+      min-height:90px;
+      resize:vertical;
+    }
+    .muted{
+      color:#6b7280;
+      font-size:.85rem;
+    }
+    .ezadostasun-list{
+      margin:0;
+      padding-left:1.2rem;
+    }
+    .actions{
+      display:flex;
+      justify-content:flex-end;
+      gap:.5rem;
+      margin-top:1rem;
+    }
+    .readonly{
+      background:#f9fafb;
+    }
+    .radio-row{
+      display:flex;
+      gap:1rem;
+      align-items:center;
+      font-size:.9rem;
+    }
+  </style>
+</head>
+<body>
+
+<div th:if="${koadernoAktiboa != null}"
+     th:replace="~{irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})}">
+</div>
+
+<div class="page">
+  <div class="card">
+    <h1>Ezadostasun fitxa</h1>
+    <div class="muted"
+         th:text="'Ebaluazioa: ' + ${estatistika.ebaluazioMomentua != null ? estatistika.ebaluazioMomentua.izena : '—'}">
+      Ebaluazioa
+    </div>
+
+    <form th:action="${readOnly} ? '#' : @{/irakasle/estatistikak/{id}/ezadostasuna(id=${estatistika.id})}"
+          method="post">
+      <input type="hidden"
+             th:if="${_csrf != null}"
+             th:name="${_csrf.parameterName}"
+             th:value="${_csrf.token}"/>
+
+      <div class="section">
+        <div class="section-title">Emandako ezadostasuna(k)</div>
+        <div class="section-body">
+          <ul class="ezadostasun-list" th:if="${ezadostasunak != null and !ezadostasunak.isEmpty()}">
+            <li th:each="item : ${ezadostasunak}" th:text="${item}">Ikasleen bertaratzea &lt; %85</li>
+          </ul>
+          <div class="muted" th:if="${ezadostasunak == null or ezadostasunak.isEmpty()}">
+            Ez dago ezadostasun aktiborik.
+          </div>
+          <div class="grid" style="margin-top:.75rem;">
+            <label>Emandako blokeak</label>
+            <input class="readonly" type="number" readonly
+                   th:value="${fitxa.emandakoBlokeKopurua}">
+
+            <label>Emandako orduak</label>
+            <input class="readonly" type="number" readonly
+                   th:value="${fitxa.emandakoOrduKopurua}">
+
+            <label>Ikasleen bertaratzea (%)</label>
+            <input class="readonly" type="text" readonly
+                   th:value="${fitxa.ikasleenBertaratzePortzentaia != null ? #numbers.formatDecimal(fitxa.ikasleenBertaratzePortzentaia, 2, 2) : ''}">
+
+            <label>Gainditu duten ikasleak (%)</label>
+            <input class="readonly" type="text" readonly
+                   th:value="${fitxa.gaindituPortzentaia != null ? fitxa.gaindituPortzentaia : ''}">
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Zuzentze-jarduerak</div>
+        <div class="section-body">
+          <div class="grid">
+            <label>Egingo diren jarduerak</label>
+            <textarea name="zuzentzeJarduerak"
+                      th:text="${fitxa.zuzentzeJarduerak}"
+                      th:attr="readonly=${readOnly} ? 'readonly' : null"></textarea>
+
+            <label>Arduraduna</label>
+            <input type="text" name="zuzentzeJarduerakArduraduna"
+                   th:value="${fitxa.zuzentzeJarduerakArduraduna}"
+                   th:attr="readonly=${readOnly} ? 'readonly' : null">
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Zuzentze-jardueren jarraipena</div>
+        <div class="section-body">
+          <div class="grid">
+            <label>Jarraipenaren data</label>
+            <input type="date" name="jarraipenData"
+                   th:value="${fitxa.jarraipenData}"
+                   th:attr="readonly=${readOnly} ? 'readonly' : null, disabled=${readOnly} ? 'disabled' : null">
+
+            <label>Arduradunak</label>
+            <input type="text" name="jarraipenArduradunak"
+                   th:value="${fitxa.jarraipenArduradunak}"
+                   th:attr="readonly=${readOnly} ? 'readonly' : null">
+
+            <label>Hartutako erabakiak</label>
+            <textarea name="hartutakoErabakiak"
+                      th:text="${fitxa.hartutakoErabakiak}"
+                      th:attr="readonly=${readOnly} ? 'readonly' : null"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Zuzentze-jardueren itxiera</div>
+        <div class="section-body">
+          <div class="grid">
+            <label>Itxiera data</label>
+            <input type="date" name="itxieraData"
+                   th:value="${fitxa.itxieraData}"
+                   th:attr="readonly=${readOnly} ? 'readonly' : null, disabled=${readOnly} ? 'disabled' : null">
+
+            <label>Arduraduna</label>
+            <input type="text" name="itxieraArduraduna"
+                   th:value="${fitxa.itxieraArduraduna}"
+                   th:attr="readonly=${readOnly} ? 'readonly' : null">
+
+            <label>Ezadostasuna zuzendu da?</label>
+            <div class="radio-row">
+              <label>
+                <input type="radio" name="ezadostasunaZuzenduta" value="true"
+                       th:checked="${fitxa.ezadostasunaZuzenduta != null and fitxa.ezadostasunaZuzenduta}"
+                       th:disabled="${readOnly} ? 'disabled' : null">
+                Bai
+              </label>
+              <label>
+                <input type="radio" name="ezadostasunaZuzenduta" value="false"
+                       th:checked="${fitxa.ezadostasunaZuzenduta != null and !fitxa.ezadostasunaZuzenduta}"
+                       th:disabled="${readOnly} ? 'disabled' : null">
+                Ez
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <a class="btn"
+           th:href="${readOnly} ? @{/kudeatzaile/estatistikak} : @{/irakasle/estatistikak}">
+          Itzuli
+        </a>
+        <button type="submit" class="btn btn-primary" th:if="${!readOnly}">Gorde</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+</body>
+</html>

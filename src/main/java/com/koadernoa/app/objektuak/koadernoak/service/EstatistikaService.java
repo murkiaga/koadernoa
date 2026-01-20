@@ -65,6 +65,19 @@ public class EstatistikaService {
         return estatRepo.findByKoadernoaIdOrderByEbaluazioMomentua_OrdenaAscIdAsc(koadernoa.getId());
     }
 
+    @Transactional(readOnly = true)
+    public EstatistikaEbaluazioan lortuKoadernoarenEstatistika(Koadernoa koadernoa, Long estatistikaId) {
+        if (koadernoa == null || koadernoa.getId() == null || estatistikaId == null) {
+            return null;
+        }
+        EstatistikaEbaluazioan est = estatRepo.findById(estatistikaId).orElse(null);
+        if (est == null || est.getKoadernoa() == null ||
+                !Objects.equals(est.getKoadernoa().getId(), koadernoa.getId())) {
+            return null;
+        }
+        return est;
+    }
+
     /**
      * Ebaluazio momentu bakar baten estatistika berriz kalkulatu (Berkalkulatu botoia).
      * - Aurreikusiak programazioaren arabera

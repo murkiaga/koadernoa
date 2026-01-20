@@ -33,6 +33,9 @@ public class EstatistikaEbaluazioan {
 
     @ManyToOne
     private Koadernoa koadernoa;
+
+    @OneToOne(mappedBy = "estatistika", cascade = CascadeType.ALL, orphanRemoval = true)
+    private EzadostasunFitxa ezadostasunFitxa;
     
     @Column(nullable = false)
     private boolean kalkulatua = false;
@@ -80,4 +83,3 @@ public class EstatistikaEbaluazioan {
     }
 
 }
-

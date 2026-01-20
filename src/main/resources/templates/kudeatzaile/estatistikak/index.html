@@ -142,6 +142,13 @@
     .bad { color: #b91c1c; font-weight: 800; }
     .bad .pct, .bad .limit, .bad .sub { color: #b91c1c; opacity: 1; }
 
+    .warn { color: #f97316; font-weight: 800; }
+    .warn .pct, .warn .limit, .warn .sub { color: #f97316; opacity: 1; }
+    .ezadostasun-link{
+      color: inherit;
+      text-decoration: underline;
+    }
+
     .badge {
       display: inline-block;
       padding: 3px 8px;
@@ -218,6 +225,30 @@
 	  opacity: .6;
 	  cursor: not-allowed;
 	}
+
+    .modal-backdrop{
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.35);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+    .modal{
+      background: #fff;
+      border-radius: 12px;
+      padding: 18px 20px;
+      max-width: 420px;
+      width: 90%;
+      box-shadow: 0 10px 30px rgba(0,0,0,.2);
+    }
+    .modal h3{ margin: 0 0 8px; }
+    .modal .actions{
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 12px;
+    }
   </style>
 </head>
 
@@ -530,7 +561,12 @@
         </td>
       </tr>
 
-      <tr th:each="e : ${orria.content}">
+      <tr th:each="e : ${orria.content}"
+          th:with="udEzadostasun=${e.udPortzentaia != null and e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null and e.udPortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minBlokePortzentaia},
+                   orduEzadostasun=${e.orduPortzentaia != null and e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null and e.orduPortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minOrduPortzentaia},
+                   gaindituEzadostasun=${e.gaindituPortzentaia != null and e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null and e.gaindituPortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minGaindituPortzentaia},
+                   bertaratzeEzadostasun=${e.bertaratzePortzentaia != null and e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null and e.bertaratzePortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minBertaratzePortzentaia},
+                   fitxaBadago=${e.ezadostasunFitxa != null}">
         <td th:text="${e.id}">1</td>
 
         <td>
@@ -570,10 +606,21 @@
                 and e.ebaluazioMomentua != null
                 and e.ebaluazioMomentua.ezadostasunKonfig != null
                 and e.udPortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minBlokePortzentaia)
-            } ? 'bad'">
+            } ? (${fitxaBadago} ? 'bad' : 'warn')">
           <div class="metric">
             <span class="main" th:text="|${e.unitateakEmanda} / ${e.unitateakAurreikusiak}|">0 / 0</span>
-            <span class="pct" th:if="${e.udPortzentaia != null}" th:text="|${e.udPortzentaia}%|">0%</span>
+            <span class="pct" th:if="${e.udPortzentaia != null}">
+              <a th:if="${udEzadostasun and fitxaBadago}"
+                 class="ezadostasun-link"
+                 th:href="@{/kudeatzaile/estatistikak/{id}/ezadostasuna(id=${e.id})}"
+                 th:text="|${e.udPortzentaia}%|">0%</a>
+              <a th:if="${udEzadostasun and !fitxaBadago}"
+                 class="ezadostasun-link"
+                 href="#"
+                 data-no-fitxa="true"
+                 th:text="|${e.udPortzentaia}%|">0%</a>
+              <span th:if="${!udEzadostasun}" th:text="|${e.udPortzentaia}%|">0%</span>
+            </span>
           </div>
           <div class="limit" th:if="${e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null}">
             (≥ <span th:text="${e.ebaluazioMomentua.ezadostasunKonfig.minBlokePortzentaia}">0</span>%)
@@ -586,10 +633,21 @@
                 and e.ebaluazioMomentua != null
                 and e.ebaluazioMomentua.ezadostasunKonfig != null
                 and e.orduPortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minOrduPortzentaia)
-            } ? 'bad'">
+            } ? (${fitxaBadago} ? 'bad' : 'warn')">
           <div class="metric">
             <span class="main" th:text="|${e.orduakEmanda} / ${e.orduakAurreikusiak}|">0 / 0</span>
-            <span class="pct" th:if="${e.orduPortzentaia != null}" th:text="|${e.orduPortzentaia}%|">0%</span>
+            <span class="pct" th:if="${e.orduPortzentaia != null}">
+              <a th:if="${orduEzadostasun and fitxaBadago}"
+                 class="ezadostasun-link"
+                 th:href="@{/kudeatzaile/estatistikak/{id}/ezadostasuna(id=${e.id})}"
+                 th:text="|${e.orduPortzentaia}%|">0%</a>
+              <a th:if="${orduEzadostasun and !fitxaBadago}"
+                 class="ezadostasun-link"
+                 href="#"
+                 data-no-fitxa="true"
+                 th:text="|${e.orduPortzentaia}%|">0%</a>
+              <span th:if="${!orduEzadostasun}" th:text="|${e.orduPortzentaia}%|">0%</span>
+            </span>
           </div>
           <div class="limit" th:if="${e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null}">
             (≥ <span th:text="${e.ebaluazioMomentua.ezadostasunKonfig.minOrduPortzentaia}">0</span>%)
@@ -602,10 +660,21 @@
                 and e.ebaluazioMomentua != null
                 and e.ebaluazioMomentua.ezadostasunKonfig != null
                 and e.gaindituPortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minGaindituPortzentaia)
-            } ? 'bad'">
+            } ? (${fitxaBadago} ? 'bad' : 'warn')">
           <div class="metric">
             <span class="main" th:text="|${e.aprobatuak} / ${e.ebaluatuak}|">0 / 0</span>
-            <span class="pct" th:if="${e.gaindituPortzentaia != null}" th:text="|${e.gaindituPortzentaia}%|">0%</span>
+            <span class="pct" th:if="${e.gaindituPortzentaia != null}">
+              <a th:if="${gaindituEzadostasun and fitxaBadago}"
+                 class="ezadostasun-link"
+                 th:href="@{/kudeatzaile/estatistikak/{id}/ezadostasuna(id=${e.id})}"
+                 th:text="|${e.gaindituPortzentaia}%|">0%</a>
+              <a th:if="${gaindituEzadostasun and !fitxaBadago}"
+                 class="ezadostasun-link"
+                 href="#"
+                 data-no-fitxa="true"
+                 th:text="|${e.gaindituPortzentaia}%|">0%</a>
+              <span th:if="${!gaindituEzadostasun}" th:text="|${e.gaindituPortzentaia}%|">0%</span>
+            </span>
           </div>
           <div class="limit" th:if="${e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null}">
             (≥ <span th:text="${e.ebaluazioMomentua.ezadostasunKonfig.minGaindituPortzentaia}">0</span>%)
@@ -618,11 +687,24 @@
                 and e.ebaluazioMomentua != null
                 and e.ebaluazioMomentua.ezadostasunKonfig != null
                 and e.bertaratzePortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minBertaratzePortzentaia)
-            } ? 'bad'">
+            } ? (${fitxaBadago} ? 'bad' : 'warn')">
           <div class="metric">
             <span class="main" th:text="${e.hutsegiteOrduak}">0</span>
             <span class="pct" th:if="${e.bertaratzePortzentaia != null}">
-              <span th:text="${#numbers.formatDecimal(e.bertaratzePortzentaia, 2, 2)}">0.00</span>%
+              <a th:if="${bertaratzeEzadostasun and fitxaBadago}"
+                 class="ezadostasun-link"
+                 th:href="@{/kudeatzaile/estatistikak/{id}/ezadostasuna(id=${e.id})}">
+                <span th:text="${#numbers.formatDecimal(e.bertaratzePortzentaia, 2, 2)}">0.00</span>%
+              </a>
+              <a th:if="${bertaratzeEzadostasun and !fitxaBadago}"
+                 class="ezadostasun-link"
+                 href="#"
+                 data-no-fitxa="true">
+                <span th:text="${#numbers.formatDecimal(e.bertaratzePortzentaia, 2, 2)}">0.00</span>%
+              </a>
+              <span th:if="${!bertaratzeEzadostasun}">
+                <span th:text="${#numbers.formatDecimal(e.bertaratzePortzentaia, 2, 2)}">0.00</span>%
+              </span>
             </span>
           </div>
           <div class="limit" th:if="${e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null}">
@@ -656,6 +738,64 @@
 
 </div>
 
+<div class="modal-backdrop" id="ezadostasun-modal">
+  <div class="modal">
+    <h3>Ezadostasun fitxa</h3>
+    <p id="ezadostasun-modal-text"
+       th:text="${ezadostasunFitxaMezua != null ? ezadostasunFitxaMezua : 'Irakasleak ez du ezadostasun fitxa bete.'}">
+      Irakasleak ez du ezadostasun fitxa bete.
+    </p>
+    <div class="actions">
+      <button class="btn" type="button" id="ezadostasun-modal-close">Itxi</button>
+    </div>
+  </div>
+</div>
+
+<script th:inline="javascript">
+  const modal = document.getElementById('ezadostasun-modal');
+  const modalText = document.getElementById('ezadostasun-modal-text');
+  const closeBtn = document.getElementById('ezadostasun-modal-close');
+
+  const showModal = (message) => {
+    if (message && modalText) {
+      modalText.textContent = message;
+    }
+    if (modal) {
+      modal.style.display = 'flex';
+    }
+  };
+
+  const hideModal = () => {
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  };
+
+  document.querySelectorAll('[data-no-fitxa="true"]').forEach((link) => {
+    link.addEventListener('click', (event) => {
+      event.preventDefault();
+      showModal('Irakasleak ez du ezadostasun fitxa bete.');
+    });
+  });
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', hideModal);
+  }
+
+  if (modal) {
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) {
+        hideModal();
+      }
+    });
+  }
+
+  const flashMessage = modalText && modalText.textContent && modalText.textContent.trim();
+  const shouldShowFlash = [[${ezadostasunFitxaMezua != null}]];
+  if (flashMessage && shouldShowFlash) {
+    showModal(flashMessage);
+  }
+</script>
 
 </body>
 </html>
