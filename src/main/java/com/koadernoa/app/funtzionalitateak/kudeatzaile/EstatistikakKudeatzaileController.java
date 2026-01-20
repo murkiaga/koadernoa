@@ -12,7 +12,6 @@ import com.koadernoa.app.objektuak.koadernoak.repository.projection.EbaluazioKod
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import org.springframework.http.MediaType;
@@ -21,6 +20,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -70,6 +70,26 @@ public class EstatistikakKudeatzaileController {
         Page<EstatistikaEbaluazioan> orria = estatistikakService.bilatuOrrikatuta(filtro, pageable);
         model.addAttribute("orria", orria);
 
+        Pageable ezadostasunPageable = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                mapSortForEzadostasun(pageable.getSort()));
+        Page<EzadostasunFitxa> ezadostasunOrria = estatistikakService.bilatuEzadostasunOrrikatuta(filtro, ezadostasunPageable);
+        List<EzadostasunFitxaRow> ezadostasunRows = new java.util.ArrayList<>();
+        for (EzadostasunFitxa fitxa : ezadostasunOrria.getContent()) {
+            List<String> motak = estatistikakService.kalkulatuEzadostasunak(fitxa.getEstatistika());
+            if (motak.isEmpty()) {
+                ezadostasunRows.add(new EzadostasunFitxaRow(fitxa, "—"));
+            } else {
+                for (String mota : motak) {
+                    ezadostasunRows.add(new EzadostasunFitxaRow(fitxa, mota));
+                }
+            }
+        }
+        Page<EzadostasunFitxaRow> ezadostasunPage = new PageImpl<>(
+                ezadostasunRows, ezadostasunPageable, ezadostasunOrria.getTotalElements());
+        model.addAttribute("ezadostasunOrria", ezadostasunPage);
+
         // Dropdown-entzako datuak (zure service propioetara egokitu)
         model.addAttribute("familiaList", estatistikakService.lortuFamiliak(filtro));
         model.addAttribute("zikloaList", estatistikakService.lortuZikloak(filtro));
@@ -97,7 +117,7 @@ public class EstatistikakKudeatzaileController {
         }
 
         EzadostasunFitxa fitxa = ezadostasunFitxaRepository.findByEstatistikaId(estatId).orElse(null);
-        List<String> ezadostasunak = kalkulatuEzadostasunak(estatistika);
+        List<String> ezadostasunak = estatistikakService.kalkulatuEzadostasunak(estatistika);
 
         if (fitxa == null && !ezadostasunak.isEmpty()) {
             ra.addFlashAttribute("ezadostasunAlert", "Irakasleak ez du ezadostasun fitxa bete.");
@@ -128,6 +148,26 @@ public class EstatistikakKudeatzaileController {
         };
 
         String filename = "estatistikak.csv";
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
+                .body(body);
+    }
+
+    @GetMapping(value = "/ezadostasunak/csv", produces = "text/csv")
+    public ResponseEntity<StreamingResponseBody> exportEzadostasunCsv(
+            @ModelAttribute("filtro") EstatistikakFiltroa filtro,
+            @RequestParam(name = "sort", required = false) String sortParam
+    ) {
+        Sort sort = mapSortForEzadostasun(parseSortOrDefault(sortParam));
+
+        StreamingResponseBody body = outputStream -> {
+            outputStream.write(new byte[] {(byte)0xEF, (byte)0xBB, (byte)0xBF});
+            estatistikakService.exportEzadostasunCsv(filtro, sort, outputStream);
+        };
+
+        String filename = "ezadostasunak.csv";
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
@@ -168,32 +208,30 @@ public class EstatistikakKudeatzaileController {
         return Sort.by(dir, field);
     }
 
-    private List<String> kalkulatuEzadostasunak(EstatistikaEbaluazioan estatistika) {
-        List<String> emaitza = new ArrayList<>();
-        if (estatistika == null || estatistika.getEbaluazioMomentua() == null ||
-                estatistika.getEbaluazioMomentua().getEzadostasunKonfig() == null) {
-            return emaitza;
+    private Sort mapSortForEzadostasun(Sort sort) {
+        if (sort == null || sort.isUnsorted()) {
+            return Sort.by("estatistika.ebaluazioMomentua.ordena").and(Sort.by("id"));
         }
 
-        com.koadernoa.app.objektuak.ebaluazioa.entitateak.EzadostasunKonfig konfig =
-                estatistika.getEbaluazioMomentua().getEzadostasunKonfig();
+        List<Sort.Order> orders = sort.stream()
+                .map(order -> {
+                    String property = order.getProperty();
+                    String mapped;
+                    if ("id".equals(property)) {
+                        mapped = "id";
+                    } else if (property.startsWith("koadernoa.")
+                            || property.startsWith("ebaluazioMomentua.")
+                            || "kalkulatua".equals(property)
+                            || "azkenKalkulua".equals(property)) {
+                        mapped = "estatistika." + property;
+                    } else {
+                        mapped = "id";
+                    }
+                    return new Sort.Order(order.getDirection(), mapped);
+                })
+                .toList();
 
-        if (estatistika.getUdPortzentaia() != null &&
-                estatistika.getUdPortzentaia() < konfig.getMinBlokePortzentaia()) {
-            emaitza.add("UD-ak emanda < %" + konfig.getMinBlokePortzentaia());
-        }
-        if (estatistika.getOrduPortzentaia() != null &&
-                estatistika.getOrduPortzentaia() < konfig.getMinOrduPortzentaia()) {
-            emaitza.add("Orduak emanda < %" + konfig.getMinOrduPortzentaia());
-        }
-        if (estatistika.getGaindituPortzentaia() != null &&
-                estatistika.getGaindituPortzentaia() < konfig.getMinGaindituPortzentaia()) {
-            emaitza.add("Gainditu duten ikasleak < %" + konfig.getMinGaindituPortzentaia());
-        }
-        if (estatistika.getBertaratzePortzentaia() != null &&
-                estatistika.getBertaratzePortzentaia() < konfig.getMinBertaratzePortzentaia()) {
-            emaitza.add("Ikasleen bertaratzea < %" + konfig.getMinBertaratzePortzentaia());
-        }
-        return emaitza;
+        return Sort.by(orders);
     }
+
 }

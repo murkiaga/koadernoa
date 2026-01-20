@@ -183,6 +183,10 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    .wrap-text{
+      white-space: normal;
+      min-width: 220px;
+    }
 
     /* ===== SORTING HEADER ===== */
     th.sortable{ padding:0; }
@@ -243,6 +247,27 @@
   </script>
   <h1>Estatistikak</h1>
 
+  <!-- Tabs -->
+  <div class="tabs" role="tablist" aria-label="Estatistikak atalak">
+    <button type="button" class="tab-btn"
+            role="tab"
+            aria-selected="true"
+            aria-controls="panel-estatistikak"
+            id="tab-estatistikak">
+      Estatistikak
+    </button>
+
+    <button type="button" class="tab-btn"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-ezadostasunak"
+            id="tab-ezadostasunak">
+      Ezadostasunak
+    </button>
+  </div>
+
+  <section id="panel-estatistikak" class="tab-panel active" role="tabpanel"
+           aria-labelledby="tab-estatistikak" tabindex="0">
   <!-- Txartelak -->
   <p class="muted" style="margin-top:10px;">
     Ebaluazio-kode bakoitzeko <b>kalkulatu gabe</b> dauden estatistikak. Klik eginda, zerrenda filtroarekin irekiko da.
@@ -702,8 +727,129 @@
        th:text="${i + 1}">1</a>
   </div>
 
+  </section>
+
+  <section id="panel-ezadostasunak" class="tab-panel" role="tabpanel"
+           aria-labelledby="tab-ezadostasunak" tabindex="0" aria-hidden="true">
+    <h2 style="margin-top:18px;">Ezadostasunak</h2>
+    <p class="muted" style="margin-top:6px;">
+      Ezadostasun fitxetan jasotako informazioa eta jarraipena.
+    </p>
+
+    <form class="filters" method="get" th:object="${filtro}"
+          th:action="@{/kudeatzaile/estatistikak} + '#ezadostasunak'">
+      <div>
+        <label>Familia</label>
+        <select th:field="*{familiaId}">
+          <option value="">Denak</option>
+          <option th:each="f : ${familiaList}" th:value="${f.id}" th:text="${f.izena}"></option>
+        </select>
+      </div>
+
+      <div>
+        <label>Zikloa</label>
+        <select th:field="*{zikloaId}">
+          <option value="">Denak</option>
+          <option th:each="z : ${zikloaList}" th:value="${z.id}" th:text="${z.izena}"></option>
+        </select>
+      </div>
+
+      <div>
+        <label>Taldea</label>
+        <select th:field="*{taldeaId}">
+          <option value="">Denak</option>
+          <option th:each="t : ${taldeaList}" th:value="${t.id}" th:text="${t.izena}"></option>
+        </select>
+      </div>
+
+      <div>
+        <label>Maila</label>
+        <select th:field="*{mailaId}">
+          <option value="">Denak</option>
+          <option th:each="m : ${mailaList}" th:value="${m.id}" th:text="${m.izena}"></option>
+        </select>
+      </div>
+
+      <div>
+        <label>Ebaluazio kodea</label>
+        <select th:field="*{ebaluazioKodea}">
+          <option value="">Denak</option>
+          <option th:each="k : ${ebaluazioKodeList}" th:value="${k}" th:text="${k}"></option>
+        </select>
+      </div>
+
+      <div>
+        <label>Egoera</label>
+        <select th:field="*{kalkulatua}">
+          <option value="">Denak</option>
+          <option value="false">Kalkulatu gabe</option>
+          <option value="true">Kalkulatuta</option>
+        </select>
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" type="submit">Aplikatu filtroak</button>
+
+        <a class="btn" th:href="@{/kudeatzaile/estatistikak} + '#ezadostasunak'">Garbitu</a>
+
+        <a class="btn btn-success"
+           th:href="@{/kudeatzaile/estatistikak/ezadostasunak/csv(
+              familiaId=${filtro.familiaId},
+              zikloaId=${filtro.zikloaId},
+              taldeaId=${filtro.taldeaId},
+              mailaId=${filtro.mailaId},
+              ebaluazioKodea=${filtro.ebaluazioKodea},
+              kalkulatua=${filtro.kalkulatua},
+              sort=|${sortBy},${sortDir}|
+           )}">
+          CSV deskargatu
+        </a>
+      </div>
+    </form>
+
+    <div th:replace="~{kudeatzaile/estatistikak/ezadostasunak-fragment :: ezadostasunak-taula}"></div>
+  </section>
+
 </div>
 
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const tabs = document.querySelectorAll('.tab-btn');
+    const panels = document.querySelectorAll('.tab-panel');
+
+    function activateTab(tab) {
+      const targetId = tab.getAttribute('aria-controls');
+      tabs.forEach(b => b.setAttribute('aria-selected', 'false'));
+      panels.forEach(p => {
+        p.classList.remove('active');
+        p.setAttribute('aria-hidden', 'true');
+      });
+
+      tab.setAttribute('aria-selected', 'true');
+      const panel = document.getElementById(targetId);
+      if (panel) {
+        panel.classList.add('active');
+        panel.removeAttribute('aria-hidden');
+        panel.focus();
+      }
+
+      const hash = tab.id.replace('tab-', '');
+      if (window.history && window.history.replaceState) {
+        history.replaceState(null, '', '#' + hash);
+      }
+    }
+
+    tabs.forEach(btn => {
+      btn.addEventListener('click', () => activateTab(btn));
+    });
+
+    const hash = location.hash.replace('#', '');
+    if (hash) {
+      const to = document.getElementById('tab-' + hash);
+      if (to) activateTab(to);
+    }
+  });
+</script>
 
 </body>
 </html>
