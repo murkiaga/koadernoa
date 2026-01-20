@@ -99,13 +99,14 @@ public class EstatistikakKudeatzaileController {
         EzadostasunFitxa fitxa = ezadostasunFitxaRepository.findByEstatistikaId(estatId).orElse(null);
         List<String> ezadostasunak = kalkulatuEzadostasunak(estatistika);
 
+        if (fitxa == null && !ezadostasunak.isEmpty()) {
+            ra.addFlashAttribute("ezadostasunAlert", "Irakasleak ez du ezadostasun fitxa bete.");
+            return "redirect:/kudeatzaile/estatistikak";
+        }
+
         model.addAttribute("estatistika", estatistika);
         model.addAttribute("fitxa", fitxa);
         model.addAttribute("ezadostasunak", ezadostasunak);
-        model.addAttribute("ezadostasunFitxaMezua",
-                (fitxa == null && !ezadostasunak.isEmpty())
-                        ? "Irakasleak ez du ezadostasun fitxa bete."
-                        : null);
 
         return "kudeatzaile/estatistikak/ezadostasun-fitxa";
     }

@@ -17,6 +17,7 @@
       box-sizing: border-box;
     }
     .card{
+      position: relative;
       padding: 16px 18px;
       border: 1px solid var(--b);
       border-radius: 12px;
@@ -69,15 +70,24 @@
       opacity: .75;
       font-size: .9rem;
     }
-    .alert{
-      background: #fee2e2;
-      color: #991b1b;
-      border: 1px solid #fecaca;
-      padding: 10px 12px;
-      border-radius: 10px;
-      margin-top: 12px;
-      font-weight: 700;
+    .close-btn{
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--b);
+      background: var(--bg);
+      color: inherit;
+      text-decoration: none;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
     }
+    .close-btn:hover{ filter: brightness(0.95); }
     .actions{
       display: flex;
       justify-content: flex-end;
@@ -100,14 +110,11 @@
 
 <div class="page-wrap">
   <div class="card">
+    <a class="close-btn" th:href="@{/kudeatzaile/estatistikak}" aria-label="Itxi">X</a>
     <h1>Ezadostasun fitxa</h1>
     <div class="muted"
          th:text="'Ebaluazioa: ' + ${estatistika.ebaluazioMomentua != null ? estatistika.ebaluazioMomentua.izena : '—'}">
       Ebaluazioa
-    </div>
-
-    <div class="alert" th:if="${ezadostasunFitxaMezua != null}" th:text="${ezadostasunFitxaMezua}">
-      Irakasleak ez du ezadostasun fitxa bete.
     </div>
 
     <div class="section">
