@@ -70,14 +70,18 @@ public class EstatistikakKudeatzaileController {
         Page<EstatistikaEbaluazioan> orria = estatistikakService.bilatuOrrikatuta(filtro, pageable);
         model.addAttribute("orria", orria);
 
-        Page<EzadostasunFitxa> ezadostasunOrria = estatistikakService.bilatuEzadostasunOrrikatuta(filtro, pageable);
+        Pageable ezadostasunPageable = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize(),
+                mapSortForEzadostasun(pageable.getSort()));
+        Page<EzadostasunFitxa> ezadostasunOrria = estatistikakService.bilatuEzadostasunOrrikatuta(filtro, ezadostasunPageable);
         List<EzadostasunFitxaRow> ezadostasunRows = ezadostasunOrria.getContent().stream()
                 .map(fitxa -> new EzadostasunFitxaRow(
                         fitxa,
                         String.join(", ", estatistikakService.kalkulatuEzadostasunak(fitxa.getEstatistika()))))
                 .toList();
         Page<EzadostasunFitxaRow> ezadostasunPage = new PageImpl<>(
-                ezadostasunRows, pageable, ezadostasunOrria.getTotalElements());
+                ezadostasunRows, ezadostasunPageable, ezadostasunOrria.getTotalElements());
         model.addAttribute("ezadostasunOrria", ezadostasunPage);
 
         // Dropdown-entzako datuak (zure service propioetara egokitu)
@@ -150,7 +154,7 @@ public class EstatistikakKudeatzaileController {
             @ModelAttribute("filtro") EstatistikakFiltroa filtro,
             @RequestParam(name = "sort", required = false) String sortParam
     ) {
-        Sort sort = parseSortOrDefault(sortParam);
+        Sort sort = mapSortForEzadostasun(parseSortOrDefault(sortParam));
 
         StreamingResponseBody body = outputStream -> {
             outputStream.write(new byte[] {(byte)0xEF, (byte)0xBB, (byte)0xBF});
@@ -196,6 +200,32 @@ public class EstatistikakKudeatzaileController {
         if (!allowed.contains(field)) field = "id";
 
         return Sort.by(dir, field);
+    }
+
+    private Sort mapSortForEzadostasun(Sort sort) {
+        if (sort == null || sort.isUnsorted()) {
+            return Sort.by("estatistika.ebaluazioMomentua.ordena").and(Sort.by("id"));
+        }
+
+        List<Sort.Order> orders = sort.stream()
+                .map(order -> {
+                    String property = order.getProperty();
+                    String mapped;
+                    if ("id".equals(property)) {
+                        mapped = "id";
+                    } else if (property.startsWith("koadernoa.")
+                            || property.startsWith("ebaluazioMomentua.")
+                            || "kalkulatua".equals(property)
+                            || "azkenKalkulua".equals(property)) {
+                        mapped = "estatistika." + property;
+                    } else {
+                        mapped = "id";
+                    }
+                    return new Sort.Order(order.getDirection(), mapped);
+                })
+                .toList();
+
+        return Sort.by(orders);
     }
 
 }
