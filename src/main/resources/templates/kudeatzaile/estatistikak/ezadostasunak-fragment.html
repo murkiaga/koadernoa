@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<body>
+  <div th:fragment="ezadostasunak-taula">
+    <div class="muted" style="margin-top:6px;" th:if="${ezadostasunOrria != null}">
+      <span class="badge" th:text="'Emaitzak: ' + ${ezadostasunOrria.totalElements}">Emaitzak: 0</span>
+      <span class="badge" th:text="'Orria: ' + ${ezadostasunOrria.number + 1} + '/' + ${ezadostasunOrria.totalPages}">Orria: 1/1</span>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+        <tr>
+          <th>Taldea</th>
+          <th>Ezadostasun mota</th>
+          <th>Moduloa</th>
+          <th>Emandako blokeak</th>
+          <th>Emandako orduak</th>
+          <th>Bertaratzea (%)</th>
+          <th>Gainditu (%)</th>
+          <th class="wrap-text">Zuzentze jarduerak</th>
+          <th>Arduraduna</th>
+          <th>Jarraipen data</th>
+          <th>Jarraipen arduradunak</th>
+          <th class="wrap-text">Hartutako erabakiak</th>
+          <th>Itxiera data</th>
+          <th>Itxiera arduraduna</th>
+          <th>Ezadostasuna zuzenduta</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:if="${ezadostasunOrria == null or ezadostasunOrria.totalElements == 0}">
+          <td colspan="15" class="muted">
+            Ez dago ezadostasun fitxarik filtro hauekin (edo ez dago daturik ikasturte aktiboan).
+          </td>
+        </tr>
+
+        <tr th:each="row : ${ezadostasunOrria.content}"
+            th:with="fitxa=${row.fitxa}, estat=${row.fitxa != null ? row.fitxa.estatistika : null}">
+          <td th:text="${estat != null && estat.koadernoa != null && estat.koadernoa.moduloa != null && estat.koadernoa.moduloa.taldea != null ? estat.koadernoa.moduloa.taldea.izena : '—'}">
+            1SMA
+          </td>
+          <td th:text="${row.ezadostasunMotak != null and !#strings.isEmpty(row.ezadostasunMotak) ? row.ezadostasunMotak : '—'}">
+            Gainditu duten ikasleak
+          </td>
+          <td th:text="${estat != null && estat.koadernoa != null && estat.koadernoa.moduloa != null ? estat.koadernoa.moduloa.izena : '—'}">
+            RELO
+          </td>
+          <td th:text="${fitxa != null ? fitxa.emandakoBlokeKopurua : ''}">0</td>
+          <td th:text="${fitxa != null ? fitxa.emandakoOrduKopurua : ''}">0</td>
+          <td th:text="${fitxa != null && fitxa.ikasleenBertaratzePortzentaia != null ? #numbers.formatDecimal(fitxa.ikasleenBertaratzePortzentaia, 2, 2) : ''}">0.00</td>
+          <td th:text="${fitxa != null && fitxa.gaindituPortzentaia != null ? fitxa.gaindituPortzentaia : ''}">0</td>
+          <td class="wrap-text" th:text="${fitxa != null ? fitxa.zuzentzeJarduerak : ''}">-</td>
+          <td th:text="${fitxa != null ? fitxa.zuzentzeJarduerakArduraduna : ''}">-</td>
+          <td th:text="${fitxa != null && fitxa.jarraipenData != null ? #temporals.format(fitxa.jarraipenData, 'yyyy-MM-dd') : ''}">-</td>
+          <td th:text="${fitxa != null ? fitxa.jarraipenArduradunak : ''}">-</td>
+          <td class="wrap-text" th:text="${fitxa != null ? fitxa.hartutakoErabakiak : ''}">-</td>
+          <td th:text="${fitxa != null && fitxa.itxieraData != null ? #temporals.format(fitxa.itxieraData, 'yyyy-MM-dd') : ''}">-</td>
+          <td th:text="${fitxa != null ? fitxa.itxieraArduraduna : ''}">-</td>
+          <td th:text="${fitxa != null && fitxa.ezadostasunaZuzenduta != null ? (fitxa.ezadostasunaZuzenduta ? 'Bai' : 'Ez') : ''}">-</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pager" th:if="${ezadostasunOrria != null and ezadostasunOrria.totalPages > 1}">
+      <a th:each="i : ${#numbers.sequence(0, ezadostasunOrria.totalPages - 1)}"
+         th:classappend="${i == ezadostasunOrria.number} ? 'active'"
+         th:href="@{/kudeatzaile/estatistikak(
+            page=${i},
+            size=${ezadostasunOrria.size},
+            sort=|${sortBy},${sortDir}|,
+            familiaId=${filtro.familiaId},
+            zikloaId=${filtro.zikloaId},
+            taldeaId=${filtro.taldeaId},
+            mailaId=${filtro.mailaId},
+            ebaluazioKodea=${filtro.ebaluazioKodea},
+            kalkulatua=${filtro.kalkulatua}
+         )} + '#ezadostasunak'"
+         th:text="${i + 1}">1</a>
+    </div>
+  </div>
+</body>
+</html>
