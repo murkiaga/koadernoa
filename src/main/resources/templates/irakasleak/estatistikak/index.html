@@ -68,6 +68,12 @@
       margin-left:.25rem;
       white-space:nowrap;
     }
+
+    .ezadostasun-link{
+      color:#b91c1c;
+      font-weight:600;
+      text-decoration:underline;
+    }
   </style>
 </head>
 <body>
@@ -124,7 +130,11 @@
 		  </thead>
 		
 		  <tbody>
-		  <tr th:each="e : ${estatistikak}">
+		  <tr th:each="e : ${estatistikak}"
+		      th:with="udEzadostasun=${e.udPortzentaia != null and e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null and e.udPortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minBlokePortzentaia},
+		               orduEzadostasun=${e.orduPortzentaia != null and e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null and e.orduPortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minOrduPortzentaia},
+		               gaindituEzadostasun=${e.gaindituPortzentaia != null and e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null and e.gaindituPortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minGaindituPortzentaia},
+		               bertaratzeEzadostasun=${e.bertaratzePortzentaia != null and e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null and e.bertaratzePortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minBertaratzePortzentaia}">
 		    <!-- Ebaluazio momentuaren izena -->
 		    <td class="label">
 		      <span th:text="${e.ebaluazioMomentua != null ? e.ebaluazioMomentua.izena : '—'}">
@@ -143,9 +153,17 @@
 		      </div>
 		      <div class="muted" style="font-size:.75rem;margin-top:0.1rem;">
 		        <!-- Benetako % -->
-		        <span th:if="${e.udPortzentaia != null}"
-		              th:text="|${e.udPortzentaia}%|">
-		          100%
+		        <span th:if="${e.udPortzentaia != null}">
+		          <a th:if="${udEzadostasun}"
+		             class="ezadostasun-link"
+		             th:href="@{/irakasle/estatistikak/{id}/ezadostasuna(id=${e.id})}"
+		             th:text="|${e.udPortzentaia}%|">
+		            100%
+		          </a>
+		          <span th:if="${!udEzadostasun}"
+		                th:text="|${e.udPortzentaia}%|">
+		            100%
+		          </span>
 		        </span>
 		        <!-- Konfiguratutako muga -->
 		        <span th:if="${e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null}"
@@ -165,9 +183,17 @@
 		        <span th:text="${e.orduakAurreikusiak}">0</span>
 		      </div>
 		      <div class="muted" style="font-size:.75rem;margin-top:0.1rem;">
-		        <span th:if="${e.orduPortzentaia != null}"
-		              th:text="|${e.orduPortzentaia}%|">
-		          83%
+		        <span th:if="${e.orduPortzentaia != null}">
+		          <a th:if="${orduEzadostasun}"
+		             class="ezadostasun-link"
+		             th:href="@{/irakasle/estatistikak/{id}/ezadostasuna(id=${e.id})}"
+		             th:text="|${e.orduPortzentaia}%|">
+		            83%
+		          </a>
+		          <span th:if="${!orduEzadostasun}"
+		                th:text="|${e.orduPortzentaia}%|">
+		            83%
+		          </span>
 		        </span>
 		        <span th:if="${e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null}"
 		              th:text="| (>= ${e.ebaluazioMomentua.ezadostasunKonfig.minOrduPortzentaia}% )|">
@@ -182,9 +208,17 @@
 		        0 / 0
 		      </div>
 		      <div class="muted" style="font-size:.75rem;margin-top:0.1rem;">
-		        <span th:if="${e.gaindituPortzentaia != null}"
-		              th:text="|${e.gaindituPortzentaia}%|">
-		          83%
+		        <span th:if="${e.gaindituPortzentaia != null}">
+		          <a th:if="${gaindituEzadostasun}"
+		             class="ezadostasun-link"
+		             th:href="@{/irakasle/estatistikak/{id}/ezadostasuna(id=${e.id})}"
+		             th:text="|${e.gaindituPortzentaia}%|">
+		            83%
+		          </a>
+		          <span th:if="${!gaindituEzadostasun}"
+		                th:text="|${e.gaindituPortzentaia}%|">
+		            83%
+		          </span>
 		        </span>
 		        <span th:if="${e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null}"
 		              th:text="| (>= ${e.ebaluazioMomentua.ezadostasunKonfig.minGaindituPortzentaia}% )|">
@@ -201,7 +235,14 @@
 		      <div class="muted" style="font-size:.75rem;margin-top:0.1rem;">
 				  <!-- Bertaratze portzentaia (adib. 96.2% bertaratzea) -->
 				  <span th:if="${e.bertaratzePortzentaia != null}">
-				    <span th:text="${#numbers.formatDecimal(e.bertaratzePortzentaia, 2, 2)}">96.21</span>%
+				    <a th:if="${bertaratzeEzadostasun}"
+				       class="ezadostasun-link"
+				       th:href="@{/irakasle/estatistikak/{id}/ezadostasuna(id=${e.id})}">
+				      <span th:text="${#numbers.formatDecimal(e.bertaratzePortzentaia, 2, 2)}">96.21</span>%
+				    </a>
+				    <span th:if="${!bertaratzeEzadostasun}">
+				      <span th:text="${#numbers.formatDecimal(e.bertaratzePortzentaia, 2, 2)}">96.21</span>%
+				    </span>
 				  </span>
 				
 				  <!-- Muga konfiguratuarekin (adib. (≥ 80%)) -->

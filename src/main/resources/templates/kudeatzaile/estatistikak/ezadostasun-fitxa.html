@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <title>Ezadostasun fitxa</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel="stylesheet" th:href="@{/css/navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
+
+  <style>
+    .page-wrap{
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .card{
+      padding: 16px 18px;
+      border: 1px solid var(--b);
+      border-radius: 12px;
+      background: var(--bg2);
+      box-shadow: 0 1px 0 rgba(0,0,0,.04);
+    }
+    .section{
+      border: 1px solid var(--b);
+      border-radius: 10px;
+      margin-top: 16px;
+      background: var(--bg);
+    }
+    .section-title{
+      background: var(--bg2);
+      border-bottom: 1px solid var(--b);
+      padding: 8px 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      font-size: .85rem;
+    }
+    .section-body{
+      padding: 12px;
+    }
+    .grid{
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 8px 12px;
+      align-items: center;
+    }
+    label{
+      font-size: .85rem;
+      opacity: .8;
+    }
+    input[type="text"],
+    input[type="date"],
+    input[type="number"],
+    textarea{
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid var(--b);
+      border-radius: 8px;
+      background: var(--bg2);
+      font-size: .9rem;
+    }
+    textarea{
+      min-height: 90px;
+      resize: vertical;
+    }
+    .muted{
+      opacity: .75;
+      font-size: .9rem;
+    }
+    .alert{
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+      padding: 10px 12px;
+      border-radius: 10px;
+      margin-top: 12px;
+      font-weight: 700;
+    }
+    .actions{
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 16px;
+    }
+    .btn{
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--b);
+      background: var(--bg);
+      text-decoration: none;
+      color: inherit;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+<div th:replace="/kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+
+<div class="page-wrap">
+  <div class="card">
+    <h1>Ezadostasun fitxa</h1>
+    <div class="muted"
+         th:text="'Ebaluazioa: ' + ${estatistika.ebaluazioMomentua != null ? estatistika.ebaluazioMomentua.izena : '—'}">
+      Ebaluazioa
+    </div>
+
+    <div class="alert" th:if="${ezadostasunFitxaMezua != null}" th:text="${ezadostasunFitxaMezua}">
+      Irakasleak ez du ezadostasun fitxa bete.
+    </div>
+
+    <div class="section">
+      <div class="section-title">Emandako ezadostasuna(k)</div>
+      <div class="section-body">
+        <ul th:if="${ezadostasunak != null and !ezadostasunak.isEmpty()}">
+          <li th:each="item : ${ezadostasunak}" th:text="${item}">Ikasleen bertaratzea &lt; %85</li>
+        </ul>
+        <div class="muted" th:if="${ezadostasunak == null or ezadostasunak.isEmpty()}">
+          Ez dago ezadostasun aktiborik.
+        </div>
+        <div class="grid" style="margin-top: 10px;">
+          <label>Emandako blokeak</label>
+          <input type="number" readonly
+                 th:value="${fitxa != null ? fitxa.emandakoBlokeKopurua : ''}">
+
+          <label>Emandako orduak</label>
+          <input type="number" readonly
+                 th:value="${fitxa != null ? fitxa.emandakoOrduKopurua : ''}">
+
+          <label>Ikasleen bertaratzea (%)</label>
+          <input type="text" readonly
+                 th:value="${fitxa != null and fitxa.ikasleenBertaratzePortzentaia != null ? #numbers.formatDecimal(fitxa.ikasleenBertaratzePortzentaia, 2, 2) : ''}">
+
+          <label>Gainditu duten ikasleak (%)</label>
+          <input type="text" readonly
+                 th:value="${fitxa != null and fitxa.gaindituPortzentaia != null ? fitxa.gaindituPortzentaia : ''}">
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Zuzentze-jarduerak</div>
+      <div class="section-body">
+        <div class="grid">
+          <label>Egingo diren jarduerak</label>
+          <textarea readonly th:text="${fitxa != null ? fitxa.zuzentzeJarduerak : ''}"></textarea>
+
+          <label>Arduraduna</label>
+          <input type="text" readonly
+                 th:value="${fitxa != null ? fitxa.zuzentzeJarduerakArduraduna : ''}">
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Zuzentze-jardueren jarraipena</div>
+      <div class="section-body">
+        <div class="grid">
+          <label>Jarraipenaren data</label>
+          <input type="date" readonly
+                 th:value="${fitxa != null ? fitxa.jarraipenData : ''}">
+
+          <label>Arduradunak</label>
+          <input type="text" readonly
+                 th:value="${fitxa != null ? fitxa.jarraipenArduradunak : ''}">
+
+          <label>Hartutako erabakiak</label>
+          <textarea readonly th:text="${fitxa != null ? fitxa.hartutakoErabakiak : ''}"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Zuzentze-jardueren itxiera</div>
+      <div class="section-body">
+        <div class="grid">
+          <label>Itxiera data</label>
+          <input type="date" readonly
+                 th:value="${fitxa != null ? fitxa.itxieraData : ''}">
+
+          <label>Arduraduna</label>
+          <input type="text" readonly
+                 th:value="${fitxa != null ? fitxa.itxieraArduraduna : ''}">
+
+          <label>Ezadostasuna zuzendu da?</label>
+          <input type="text" readonly
+                 th:value="${fitxa != null and fitxa.ezadostasunaZuzenduta != null ? (fitxa.ezadostasunaZuzenduta ? 'Bai' : 'Ez') : ''}">
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <a class="btn" th:href="@{/kudeatzaile/estatistikak}">Itzuli</a>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
