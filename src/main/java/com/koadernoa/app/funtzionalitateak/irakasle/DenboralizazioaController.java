@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,12 +24,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import org.springframework.security.core.Authentication;
 
 import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
 import com.koadernoa.app.objektuak.egutegia.entitateak.EgunBerezi;
 import com.koadernoa.app.objektuak.egutegia.entitateak.EgunaBista;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
 import com.koadernoa.app.objektuak.egutegia.service.EgutegiaService;
+import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
+import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Jarduera;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.JardueraEditDto;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.JardueraSortuDto;
@@ -38,6 +42,7 @@ import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoOrdutegiBlokeaR
 import com.koadernoa.app.objektuak.koadernoak.service.AsistentziaService;
 import com.koadernoa.app.objektuak.koadernoak.service.DenboralizazioFaltaService;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
+import com.koadernoa.app.objektuak.koadernoak.service.ProgramazioTxantiloiService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -52,6 +57,8 @@ public class DenboralizazioaController {
 	private final KoadernoOrdutegiBlokeaRepository koadernoOrdutegiBlokeaRepository;
 	private final KoadernoaService koadernoaService;
 	private final DenboralizazioFaltaService denboralizazioFaltaService;
+	private final ProgramazioTxantiloiService programazioTxantiloiService;
+	private final IrakasleaService irakasleaService;
 
 	@GetMapping({"",""})
 	public String erakutsiHilabetekoDenboralizazioa(
@@ -186,6 +193,36 @@ public class DenboralizazioaController {
 
 	    if (id == null) koadernoaService.gordeJarduera(koadernoa, dto);
 	    else koadernoaService.eguneratuJarduera(koadernoa, id, dto);
+
+	    return "redirect:/irakasle/denboralizazioa?urtea=" + urtea + "&hilabetea=" + hilabetea;
+	}
+
+	@PostMapping("/txantiloiak/sortu")
+	public String sortuTxantiloia(
+	    @SessionAttribute(value = "koadernoAktiboa", required = false) Koadernoa koadernoa,
+	    @RequestParam("urtea") int urtea,
+	    @RequestParam("hilabetea") int hilabetea,
+	    @RequestParam(value = "izena", required = false) String izena,
+	    Authentication auth,
+	    RedirectAttributes ra) {
+
+	    if (koadernoa == null || koadernoa.getId() == null) {
+	        ra.addFlashAttribute("error", "Ez dago koaderno aktiborik aukeratuta.");
+	        return "redirect:/irakasle";
+	    }
+
+	    Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+	    if (!koadernoaService.irakasleakBadaukaSarbidea(irakaslea, koadernoa)) {
+	        ra.addFlashAttribute("error", "Ez duzu baimenik txantiloia sortzeko.");
+	        return "redirect:/irakasle/denboralizazioa?urtea=" + urtea + "&hilabetea=" + hilabetea;
+	    }
+
+	    try {
+	        var txantiloi = programazioTxantiloiService.sortuTxantiloiDenboralizaziotik(koadernoa, irakaslea, izena);
+	        ra.addFlashAttribute("success", "Txantiloia gorde da: " + txantiloi.getIzena());
+	    } catch (IllegalArgumentException ex) {
+	        ra.addFlashAttribute("error", "Ezin izan da txantiloia sortu: " + ex.getMessage());
+	    }
 
 	    return "redirect:/irakasle/denboralizazioa?urtea=" + urtea + "&hilabetea=" + hilabetea;
 	}

@@ -204,7 +204,7 @@
 		}
 		.btn-asistentzia:hover{ background:#f3f4f6; }
 		
-		.ohar-ikonoa{
+        .ohar-ikonoa{
 		  display:inline-flex;
 		  align-items:center;
 		  justify-content:center;
@@ -221,6 +221,14 @@
 		}
 		.ohar-ikonoa:hover{ background:#f3f4f6; }
 
+        .denboralizazio-actions{
+          display:flex;
+          justify-content:flex-end;
+          gap:.5rem;
+          margin:1rem 0;
+          padding:0 1rem;
+        }
+
     </style>
     
     <script th:src="@{/js/jarduera-modal.js}"></script>
@@ -231,6 +239,12 @@
 <!-- Navbar -->
 <div th:if="${koadernoAktiboa != null}"
      th:replace="irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})"></div>
+
+<div class="denboralizazio-actions">
+    <button class="btn btn-primary" type="button" onclick="irekiTxantiloiModala()">
+        Gorde txantiloi gisa
+    </button>
+</div>
 
 <!-- Bista aukeraketa: egutegia vs faltak -->
 <div class="bista-tabs">
@@ -261,6 +275,29 @@
      th:insert="irakasleak/denboralizazioa/falten-bista-fragment :: faltakBista">
 </div>
 
+<div id="txantiloiModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 style="margin:0;">Txantiloia gorde</h3>
+            <button class="close" type="button" onclick="itxiTxantiloiModala()">×</button>
+        </div>
+        <form method="post" th:action="@{/irakasle/denboralizazioa/txantiloiak/sortu}">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" th:if="${_csrf != null}">
+            <input type="hidden" name="urtea" th:value="${urtea}">
+            <input type="hidden" name="hilabetea" th:value="${hilabetea}">
+            <div class="form-row">
+                <label for="txantiloiIzena">Izena</label>
+                <input id="txantiloiIzena" name="izena" type="text"
+                       th:attr="placeholder=${ikasturtea != null ? ikasturtea.izena + ' denboralizazioa' : 'Denboralizazioa'}">
+            </div>
+            <div class="modal-actions">
+                <button class="btn secondary" type="button" onclick="itxiTxantiloiModala()">Utzi</button>
+                <button class="btn primary" type="submit">Gorde</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Egutegiaren JS (egutegi fragmentoa dagoenean soilik aurkituko du taula) -->
 <script>
 document.addEventListener('DOMContentLoaded', function(){
@@ -281,6 +318,18 @@ document.addEventListener('DOMContentLoaded', function(){
 </script>
 
 <script>
+function irekiTxantiloiModala() {
+  const modal = document.getElementById('txantiloiModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function itxiTxantiloiModala() {
+  const modal = document.getElementById('txantiloiModal');
+  if (modal) modal.style.display = 'none';
+  const input = document.getElementById('txantiloiIzena');
+  if (input) input.value = '';
+}
+
 	//Jardueren drag&drop
 document.addEventListener('DOMContentLoaded', function(){
   const table = document.querySelector('.taula-egutegia');

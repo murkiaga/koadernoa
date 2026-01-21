@@ -98,6 +98,25 @@
     .jp-title{font-weight:500;}
     .jp-hours{color:var(--muted); margin-left:.5rem;}
 
+    .txantiloi-taula{
+      width:100%;
+      border-collapse:collapse;
+      font-size:.9rem;
+    }
+    .txantiloi-taula th,
+    .txantiloi-taula td{
+      border:1px solid var(--b);
+      padding:.5rem;
+      text-align:left;
+    }
+    .txantiloi-taula th{
+      background:#f3f4f6;
+      font-weight:600;
+    }
+    .txantiloi-taula tbody tr:nth-child(odd){
+      background:#fff;
+    }
+
     /* Modal <dialog> */
     dialog.modal{
       border:none;
@@ -342,6 +361,51 @@
 		    </div>
 		  </li>
 		</ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h2 style="margin:0;">Txantiloiak</h2>
+          <div class="muted">Denboralizaziotik gordetako jarduerak programaziora gehitzeko.</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div th:if="${#lists.isEmpty(txantiloiak)}" class="muted">
+          Ez dago txantiloirik oraindik.
+        </div>
+        <div th:if="${!#lists.isEmpty(txantiloiak)}" class="table-responsive">
+          <table class="txantiloi-taula">
+            <thead>
+              <tr>
+                <th>Izena</th>
+                <th>Sortze-data</th>
+                <th>Jarduerak</th>
+                <th>Guztira (min)</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="tx : ${txantiloiak}">
+                <td th:text="${tx.izena}">Txantiloia</td>
+                <td th:text="${#temporals.format(tx.sortzeData, 'yyyy-MM-dd HH:mm')}">2025-06-30 12:00</td>
+                <td th:text="${tx.jardueraKopurua}">0</td>
+                <td th:text="${tx.guztiraMin}">0</td>
+                <td style="text-align:right;">
+                  <form method="post"
+                        th:action="@{/irakasle/programazioa/txantiloiak/{id}/aplikatu(id=${tx.id})}">
+                    <input type="hidden"
+                           th:if="${_csrf != null}"
+                           th:name="${_csrf.parameterName}"
+                           th:value="${_csrf.token}"/>
+                    <button type="submit" class="btn btn-primary">Aplikatu koaderno honetara</button>
+                  </form>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 

@@ -14,6 +14,8 @@ public interface JardueraRepository extends JpaRepository<Jarduera, Long>{
 	List<Jarduera> findByKoadernoaIdAndDataBetweenOrderByDataAscIdAsc(
 	        Long koadernoaId, LocalDate start, LocalDate end);
 
+    List<Jarduera> findByKoadernoaIdOrderByDataAscIdAsc(Long koadernoaId);
+
     // Editatzeko erabiliko duguna
 	Jarduera findByIdAndKoadernoaId(Long id, Long koadernoaId);
 	
