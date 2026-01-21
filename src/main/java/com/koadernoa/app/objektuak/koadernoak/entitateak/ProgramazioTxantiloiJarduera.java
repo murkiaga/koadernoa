@@ -37,4 +37,12 @@ public class ProgramazioTxantiloiJarduera {
 
     @Column(length = 500)
     private String oharrak;
+
+    private Integer ebaluaketaOrdena;
+
+    @Column(length = 20)
+    private String udKodea;
+
+    @Column(length = 255)
+    private String udIzenburua;
 }

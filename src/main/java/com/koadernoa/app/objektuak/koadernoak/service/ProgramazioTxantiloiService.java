@@ -2,8 +2,11 @@ package com.koadernoa.app.objektuak.koadernoak.service;
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,6 +53,9 @@ public class ProgramazioTxantiloiService {
         }
 
         List<Jarduera> jarduerak = jardueraRepository.findByKoadernoaIdOrderByDataAscIdAsc(koadernoa.getId());
+        List<Ebaluaketa> ebaluaketak = programazioaRepository.findByKoadernoaIdFetchEbaluaketak(koadernoa.getId())
+            .map(Programazioa::getEbaluaketak)
+            .orElse(List.of());
 
         ProgramazioTxantiloi txantiloi = new ProgramazioTxantiloi();
         txantiloi.setIrakaslea(irakaslea);
@@ -66,6 +72,10 @@ public class ProgramazioTxantiloiService {
             tJ.setDeskribapena(j.getDeskribapena());
             tJ.setIraupenaMin(kalkulatuIraupenaMin(j));
             tJ.setOharrak(j.getMota());
+            tJ.setEbaluaketaOrdena(ebaluaketaOrdena(j, ebaluaketak));
+            UdInfo udInfo = parseUdInfo(j);
+            tJ.setUdKodea(udInfo.kodea());
+            tJ.setUdIzenburua(udInfo.izenburua());
             tJ.setOrdena(ordena++);
             txantiloi.getJarduerak().add(tJ);
         }
@@ -103,28 +113,19 @@ public class ProgramazioTxantiloiService {
         Programazioa programazioa = programazioaRepository.findByKoadernoa(koadernoa)
             .orElseGet(() -> programazioaRepository.save(new Programazioa(koadernoa, koadernoa.getIzena())));
 
-        Ebaluaketa ebaluaketa = programazioa.getEbaluaketak().stream()
-            .sorted(Comparator.comparing(e -> e.getOrdena() == null ? 0 : e.getOrdena()))
-            .findFirst()
-            .orElseGet(() -> sortuEbaluaketaLehenengoa(programazioa));
-
-        UnitateDidaktikoa ud = new UnitateDidaktikoa();
-        ud.setProgramazioa(programazioa);
-        ud.setEbaluaketa(ebaluaketa);
-        ud.setKodea(sortuTxantiloiKodea(ebaluaketa));
-        ud.setIzenburua("Txantiloia");
-        ud.setOrduak(0);
-        ud.setPosizioa(ebaluaketa.getUnitateak() == null ? 0 : ebaluaketa.getUnitateak().size());
-        udRepository.save(ud);
-
         int gehitutakoak = 0;
         List<ProgramazioTxantiloiJarduera> jarduerak = txantiloi.getJarduerak() == null ? List.of() : txantiloi.getJarduerak();
+        Map<Long, Ebaluaketa> ebaluaketaMap = resolveEbaluaketaMap(programazioa);
+        Map<UdKey, UnitateDidaktikoa> udMap = new HashMap<>();
         for (ProgramazioTxantiloiJarduera j : jarduerak) {
+            Ebaluaketa ebaluaketa = resolveEbaluaketaForJarduera(j, ebaluaketaMap);
+            UnitateDidaktikoa ud = resolveUdForJarduera(programazioa, ebaluaketa, udMap, j);
+
             JardueraPlanifikatua jp = new JardueraPlanifikatua();
             jp.setUnitatea(ud);
             jp.setIzenburua(j.getIzenburua());
             jp.setOrduak(bihurtuMinutuakOrduetara(j.getIraupenaMin()));
-            jp.setPosizioa(gehitutakoak);
+            jp.setPosizioa(ud.getAzpiJarduerak() == null ? 0 : ud.getAzpiJarduerak().size());
             jpRepository.save(jp);
             gehitutakoak++;
         }
@@ -173,6 +174,107 @@ public class ProgramazioTxantiloiService {
         ebaluaketaRepository.save(e);
         programazioa.getEbaluaketak().add(e);
         return e;
+    }
+
+    private Integer ebaluaketaOrdena(Jarduera jarduera, List<Ebaluaketa> ebaluaketak) {
+        if (jarduera == null || jarduera.getData() == null || ebaluaketak == null) return null;
+        return ebaluaketak.stream()
+            .filter(e -> e.getHasieraData() != null && e.getBukaeraData() != null)
+            .filter(e -> !jarduera.getData().isBefore(e.getHasieraData())
+                && !jarduera.getData().isAfter(e.getBukaeraData()))
+            .map(Ebaluaketa::getOrdena)
+            .filter(Objects::nonNull)
+            .findFirst()
+            .orElse(null);
+    }
+
+    private UdInfo parseUdInfo(Jarduera jarduera) {
+        if (jarduera == null) return new UdInfo(null, null);
+        String deskribapena = jarduera.getDeskribapena();
+        if (deskribapena == null || !deskribapena.contains("—")) {
+            return new UdInfo(null, null);
+        }
+        String[] parts = deskribapena.split("—", 2);
+        String kodea = parts[0].trim();
+        String izenburua = parts.length > 1 ? parts[1].trim() : null;
+        if (izenburua != null && izenburua.contains("(UD orokorra)")) {
+            izenburua = Optional.ofNullable(jarduera.getTitulua()).orElse(izenburua).trim();
+        }
+        if (kodea.isBlank()) kodea = null;
+        if (izenburua != null && izenburua.isBlank()) izenburua = null;
+        return new UdInfo(kodea, izenburua);
+    }
+
+    private record UdInfo(String kodea, String izenburua) {}
+
+    private record UdKey(Long ebaluaketaId, String kodea, String izenburua) {}
+
+    private Map<Long, Ebaluaketa> resolveEbaluaketaMap(Programazioa programazioa) {
+        if (programazioa.getEbaluaketak() == null || programazioa.getEbaluaketak().isEmpty()) {
+            Ebaluaketa berria = sortuEbaluaketaLehenengoa(programazioa);
+            return Map.of(1L, berria);
+        }
+        return programazioa.getEbaluaketak().stream()
+            .filter(e -> e.getOrdena() != null)
+            .collect(java.util.stream.Collectors.toMap(
+                e -> e.getOrdena().longValue(),
+                e -> e,
+                (a, b) -> a
+            ));
+    }
+
+    private Ebaluaketa resolveEbaluaketaForJarduera(ProgramazioTxantiloiJarduera jarduera,
+                                                    Map<Long, Ebaluaketa> ebaluaketaMap) {
+        if (jarduera.getEbaluaketaOrdena() != null) {
+            Ebaluaketa match = ebaluaketaMap.get(jarduera.getEbaluaketaOrdena().longValue());
+            if (match != null) return match;
+        }
+        return ebaluaketaMap.values().stream()
+            .sorted(Comparator.comparing(e -> Optional.ofNullable(e.getOrdena()).orElse(0)))
+            .findFirst()
+            .orElseThrow(() -> new IllegalStateException("Ez dago ebaluaketarik."));
+    }
+
+    private UnitateDidaktikoa resolveUdForJarduera(Programazioa programazioa,
+                                                   Ebaluaketa ebaluaketa,
+                                                   Map<UdKey, UnitateDidaktikoa> udMap,
+                                                   ProgramazioTxantiloiJarduera jarduera) {
+        String kodea = jarduera.getUdKodea();
+        String izenburua = jarduera.getUdIzenburua();
+
+        if (kodea == null || kodea.isBlank()) {
+            kodea = sortuTxantiloiKodea(ebaluaketa);
+        }
+        if (izenburua == null || izenburua.isBlank()) {
+            izenburua = "Txantiloia";
+        }
+
+        UdKey key = new UdKey(ebaluaketa.getId(), kodea, izenburua);
+        if (udMap.containsKey(key)) return udMap.get(key);
+
+        UnitateDidaktikoa existing = ebaluaketa.getUnitateak() == null ? null
+            : ebaluaketa.getUnitateak().stream()
+                .filter(ud -> kodea.equals(ud.getKodea()))
+                .findFirst()
+                .orElse(null);
+        if (existing != null) {
+            udMap.put(key, existing);
+            return existing;
+        }
+
+        UnitateDidaktikoa ud = new UnitateDidaktikoa();
+        ud.setProgramazioa(programazioa);
+        ud.setEbaluaketa(ebaluaketa);
+        ud.setKodea(kodea);
+        ud.setIzenburua(izenburua);
+        ud.setOrduak(0);
+        ud.setPosizioa(ebaluaketa.getUnitateak() == null ? 0 : ebaluaketa.getUnitateak().size());
+        udRepository.save(ud);
+        if (ebaluaketa.getUnitateak() != null) {
+            ebaluaketa.getUnitateak().add(ud);
+        }
+        udMap.put(key, ud);
+        return ud;
     }
 
     private String sortuTxantiloiKodea(Ebaluaketa ebaluaketa) {
