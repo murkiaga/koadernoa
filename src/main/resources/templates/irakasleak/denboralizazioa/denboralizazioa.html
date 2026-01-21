@@ -247,7 +247,7 @@
     </button>
 </div>
 
-<div class="page" style="padding-top:0;">
+<div class="page" style="padding-top:0;" th:if="${success} or ${error}">
     <div th:if="${success}" class="flash flash-success" th:text="${success}"></div>
     <div th:if="${error}" class="flash flash-error" th:text="${error}"></div>
 </div>
