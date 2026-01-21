@@ -239,22 +239,25 @@ public class ProgramazioTxantiloiService {
                                                    Ebaluaketa ebaluaketa,
                                                    Map<UdKey, UnitateDidaktikoa> udMap,
                                                    ProgramazioTxantiloiJarduera jarduera) {
-        String kodea = jarduera.getUdKodea();
-        String izenburua = jarduera.getUdIzenburua();
+        String kodeaRaw = jarduera.getUdKodea();
+        String izenburuaRaw = jarduera.getUdIzenburua();
 
-        if (kodea == null || kodea.isBlank()) {
-            kodea = sortuTxantiloiKodea(ebaluaketa);
-        }
-        if (izenburua == null || izenburua.isBlank()) {
-            izenburua = "Txantiloia";
-        }
+        String kodea = (kodeaRaw == null || kodeaRaw.isBlank())
+            ? sortuTxantiloiKodea(ebaluaketa)
+            : kodeaRaw;
+        String izenburua = (izenburuaRaw == null || izenburuaRaw.isBlank())
+            ? "Txantiloia"
+            : izenburuaRaw;
 
-        UdKey key = new UdKey(ebaluaketa.getId(), kodea, izenburua);
+        final String kodeaFinal = kodea;
+        final String izenburuaFinal = izenburua;
+
+        UdKey key = new UdKey(ebaluaketa.getId(), kodeaFinal, izenburuaFinal);
         if (udMap.containsKey(key)) return udMap.get(key);
 
         UnitateDidaktikoa existing = ebaluaketa.getUnitateak() == null ? null
             : ebaluaketa.getUnitateak().stream()
-                .filter(ud -> kodea.equals(ud.getKodea()))
+                .filter(ud -> kodeaFinal.equals(ud.getKodea()))
                 .findFirst()
                 .orElse(null);
         if (existing != null) {
@@ -265,8 +268,8 @@ public class ProgramazioTxantiloiService {
         UnitateDidaktikoa ud = new UnitateDidaktikoa();
         ud.setProgramazioa(programazioa);
         ud.setEbaluaketa(ebaluaketa);
-        ud.setKodea(kodea);
-        ud.setIzenburua(izenburua);
+        ud.setKodea(kodeaFinal);
+        ud.setIzenburua(izenburuaFinal);
         ud.setOrduak(0);
         ud.setPosizioa(ebaluaketa.getUnitateak() == null ? 0 : ebaluaketa.getUnitateak().size());
         udRepository.save(ud);
