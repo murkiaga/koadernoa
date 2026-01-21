@@ -241,9 +241,15 @@
      th:replace="irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})"></div>
 
 <div class="denboralizazio-actions">
-    <button class="btn btn-primary" type="button" onclick="irekiTxantiloiModala()">
+    <button class="btn btn-primary" type="button" onclick="irekiTxantiloiModala()"
+            th:if="${txantiloiAldia}">
         Gorde txantiloi gisa
     </button>
+</div>
+
+<div class="page" style="padding-top:0;">
+    <div th:if="${success}" class="flash flash-success" th:text="${success}"></div>
+    <div th:if="${error}" class="flash flash-error" th:text="${error}"></div>
 </div>
 
 <!-- Bista aukeraketa: egutegia vs faltak -->

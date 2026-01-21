@@ -10,6 +10,7 @@ import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Ebaluaketa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Programazioa;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.ProgramazioTxantiloi;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.UnitateDidaktikoa;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.ProgramazioaRepository;
@@ -120,9 +121,12 @@ public class ProgramazioaController {
       model.addAttribute("ebaluaketak", programazioa.getEbaluaketak());
       model.addAttribute("ebalDispon", ebalDispon);
       model.addAttribute("ebalUdOrduak", ebalUdOrduak);
-      Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
-      model.addAttribute("txantiloiak",
-          programazioTxantiloiService.zerrendatuIrakaslearenTxantiloiak(irakaslea, koadernoAktiboa));
+      List<ProgramazioTxantiloi> txantiloiak = java.util.Collections.emptyList();
+      if (programazioaHutsik) {
+        Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+        txantiloiak = programazioTxantiloiService.zerrendatuIrakaslearenTxantiloiak(irakaslea, koadernoAktiboa);
+      }
+      model.addAttribute("txantiloiak", txantiloiak);
       return "irakasleak/programazioa/index";
     }
  // ---------- Programazioa inportatu ----------   
