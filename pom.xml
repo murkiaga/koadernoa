@@ -78,13 +78,11 @@
 		</dependency>
 		<dependency>
 		  <groupId>org.springframework.boot</groupId>
-		  <artifactId>spring-boot-starter-ldap</artifactId>
-		  <version>3.3.5</version>
+		  <artifactId>spring-boot-starter-data-ldap</artifactId>
 		</dependency>
 		<dependency>
 		  <groupId>org.springframework.security</groupId>
 		  <artifactId>spring-security-ldap</artifactId>
-		  <version>6.3.5</version>
 		</dependency>
 		<dependency>
 		    <groupId>jakarta.validation</groupId>
