@@ -45,7 +45,7 @@ public class EgutegiaService {
 	            EgunBerezi lektiboa = new EgunBerezi();
 	            lektiboa.setData(eguna);
 	            lektiboa.setMota(EgunMota.LEKTIBOA);
-	            lektiboa.setDeskribapena("Lektiboa");
+	            //lektiboa.setDeskribapena("Lektiboa"); Deskribapena kudeatzaileak jartzeko oharretarako da
 	            lektiboa.setEgutegia(egutegia);
 	            egunBereziak.add(lektiboa);
 	        }
