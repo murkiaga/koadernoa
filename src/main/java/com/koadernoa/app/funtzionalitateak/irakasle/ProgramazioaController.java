@@ -8,15 +8,16 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Ebaluaketa;
-import com.koadernoa.app.objektuak.koadernoak.entitateak.Jarduera;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Programazioa;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.ProgramazioTxantiloi;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.UnitateDidaktikoa;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.ProgramazioaRepository;
 import com.koadernoa.app.objektuak.koadernoak.service.DenboralizazioGeneratorService;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
 import com.koadernoa.app.objektuak.koadernoak.service.ProgramazioaService;
+import com.koadernoa.app.objektuak.koadernoak.service.ProgramazioTxantiloiService;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -42,6 +43,7 @@ public class ProgramazioaController {
     private final KoadernoaRepository koadernoaRepository;
     private final ProgramazioaRepository programazioaRepository;
     private final DenboralizazioGeneratorService denboralizazioGeneratorService;
+    private final ProgramazioTxantiloiService programazioTxantiloiService;
     
 
     @GetMapping
@@ -119,6 +121,12 @@ public class ProgramazioaController {
       model.addAttribute("ebaluaketak", programazioa.getEbaluaketak());
       model.addAttribute("ebalDispon", ebalDispon);
       model.addAttribute("ebalUdOrduak", ebalUdOrduak);
+      List<ProgramazioTxantiloi> txantiloiak = java.util.Collections.emptyList();
+      if (programazioaHutsik) {
+        Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+        txantiloiak = programazioTxantiloiService.zerrendatuIrakaslearenTxantiloiak(irakaslea, koadernoAktiboa);
+      }
+      model.addAttribute("txantiloiak", txantiloiak);
       return "irakasleak/programazioa/index";
     }
  // ---------- Programazioa inportatu ----------   
@@ -154,6 +162,27 @@ public class ProgramazioaController {
         } catch (Exception ex) {
             ex.printStackTrace(); // behin-behinean, logean ikusteko
             ra.addFlashAttribute("error", "Ezin izan da programazioa inportatu: " + ex.getMessage());
+        }
+        return "redirect:/irakasle/programazioa";
+    }
+
+    @PostMapping("/txantiloiak/{id}/aplikatu")
+    public String aplikatuTxantiloia(@PathVariable("id") Long txantiloiId,
+                                     @SessionAttribute("koadernoAktiboa") Koadernoa koadernoAktiboa,
+                                     Authentication auth,
+                                     RedirectAttributes ra) {
+        try {
+            Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+            if (!koadernoaService.irakasleakBadaukaSarbidea(irakaslea, koadernoAktiboa)) {
+                ra.addFlashAttribute("error", "Ez duzu baimenik txantiloia aplikatzeko.");
+                return "redirect:/irakasle/programazioa";
+            }
+            int kopurua = programazioTxantiloiService.aplikatuTxantiloiKoadernoan(
+                txantiloiId, koadernoAktiboa, irakaslea
+            );
+            ra.addFlashAttribute("success", "Txantiloia aplikatu da: " + kopurua + " jarduera gehitu dira.");
+        } catch (IllegalArgumentException ex) {
+            ra.addFlashAttribute("error", "Ezin izan da txantiloia aplikatu: " + ex.getMessage());
         }
         return "redirect:/irakasle/programazioa";
     }

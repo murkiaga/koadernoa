@@ -98,6 +98,25 @@
     .jp-title{font-weight:500;}
     .jp-hours{color:var(--muted); margin-left:.5rem;}
 
+    .txantiloi-taula{
+      width:100%;
+      border-collapse:collapse;
+      font-size:.9rem;
+    }
+    .txantiloi-taula th,
+    .txantiloi-taula td{
+      border:1px solid var(--b);
+      padding:.5rem;
+      text-align:left;
+    }
+    .txantiloi-taula th{
+      background:#f3f4f6;
+      font-weight:600;
+    }
+    .txantiloi-taula tbody tr:nth-child(odd){
+      background:#fff;
+    }
+
     /* Modal <dialog> */
     dialog.modal{
       border:none;
@@ -208,9 +227,15 @@
 		        Programazioa inportatu
 		      </button>
 
-          <div th:if="${programazioaHutsik and #lists.isEmpty(inportatzekoKoadernoak)}"
+          <button id="txantiloiEkarriBtn"
+                  class="btn"
+                  th:if="${programazioaHutsik and !#lists.isEmpty(txantiloiak)}">
+            Aurreko urteko denboralizaziotik ekarri
+          </button>
+
+          <div th:if="${programazioaHutsik and #lists.isEmpty(inportatzekoKoadernoak) and #lists.isEmpty(txantiloiak)}"
                class="muted">
-            Ez dago beste koadernorik inportatzeko.
+            Ez dago beste koadernorik edo txantiloirik inportatzeko.
           </div>
         </div>
       </div>
@@ -472,6 +497,47 @@
   <!-- Programazioa inportatzeko modala (fragment-a) -->
   <div th:replace="~{irakasleak/programazioa/programazioa-inport-modala :: programazioa-inport-modal}"></div>
 
+  <dialog id="txantiloiModal" class="modal" th:if="${programazioaHutsik and !#lists.isEmpty(txantiloiak)}">
+    <header>Txantiloia aukeratu</header>
+    <div class="content">
+      <div class="muted">Aurreko urteko denboralizaziotik ekarritako jarduerak gehitzeko.</div>
+      <div class="table-responsive">
+        <table class="txantiloi-taula">
+          <thead>
+            <tr>
+              <th>Izena</th>
+              <th>Sortze-data</th>
+              <th>Jarduerak</th>
+              <th>Guztira (min)</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr th:each="tx : ${txantiloiak}">
+              <td th:text="${tx.izena}">Txantiloia</td>
+              <td th:text="${#temporals.format(tx.sortzeData, 'yyyy-MM-dd HH:mm')}">2025-06-30 12:00</td>
+              <td th:text="${tx.jardueraKopurua}">0</td>
+              <td th:text="${tx.guztiraMin}">0</td>
+              <td style="text-align:right;">
+                <form method="post"
+                      th:action="@{/irakasle/programazioa/txantiloiak/{id}/aplikatu(id=${tx.id})}">
+                  <input type="hidden"
+                         th:if="${_csrf != null}"
+                         th:name="${_csrf.parameterName}"
+                         th:value="${_csrf.token}"/>
+                  <button type="submit" class="btn btn-primary">Aplikatu koaderno honetara</button>
+                </form>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn" type="button" onclick="closeTxantiloiModal()">Itxi</button>
+    </div>
+  </dialog>
+
     <!-- SCRIPT NAGUSIAK -->
   <script>
   // ---------- CSRF helpers ----------
@@ -487,6 +553,22 @@
   const CSRF_TOKEN  = metaToken || cookieToken || '';
   const CSRF_HEADER = metaToken ? (metaHeader || 'X-CSRF-TOKEN')
                                 : (cookieToken ? 'X-XSRF-TOKEN' : '');
+
+  function openTxantiloiModal() {
+    const modal = document.getElementById('txantiloiModal');
+    if (modal) modal.showModal();
+  }
+
+  function closeTxantiloiModal() {
+    const modal = document.getElementById('txantiloiModal');
+    if (modal) modal.close();
+  }
+
+  function initTxantiloiModal() {
+    const btn = document.getElementById('txantiloiEkarriBtn');
+    if (!btn) return;
+    btn.addEventListener('click', openTxantiloiModal);
+  }
 
   // ---------- Open state (ebal/UD irekiak gordetzeko) ----------
   const OPEN_STATE_KEY = 'programazioaOpenState_' + (KOADERNO_ID || 'default');
@@ -573,6 +655,7 @@
   document.addEventListener('DOMContentLoaded', () => {
     restoreOpenState();
     initEbalEditToggle();
+    initTxantiloiModal();
   });
 
   const fjson = (url, method, body) => fetch(url, {
