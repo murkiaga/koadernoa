@@ -16,15 +16,34 @@
              class="brand-logo">
 
         <h1 class="title">Koadernoa</h1>
-        <p class="subtitle">Sartu zure Google kontuarekin jarraitzeko</p>
+        <p class="subtitle">Aukeratu saioa hasteko modua</p>
       </div>
 
-      <a class="google-btn" href="/oauth2/authorization/google">
-        <span class="google-dot" aria-hidden="true"></span>
-        Google bidez hasi saioa
-      </a>
+      <div th:if="${param.disabled}" class="login-alert login-alert-error">
+        Autentikazio mota ez dago aktibo edo ez dago konfiguratuta.
+      </div>
 
-      <p class="hint">
+      <div class="login-actions">
+        <a class="oauth-btn google-btn"
+           th:if="${googleEnabled and googleConfigured}"
+           href="/oauth2/authorization/google">
+          <span class="google-dot" aria-hidden="true"></span>
+          Google bidez hasi saioa
+        </a>
+
+        <a class="oauth-btn azure-btn"
+           th:if="${adEnabled and adConfigured}"
+           href="/oauth2/authorization/ad">
+          <span class="azure-dot" aria-hidden="true"></span>
+          Active Directory bidez hasi saioa
+        </a>
+      </div>
+
+      <p class="hint" th:if="${!(googleEnabled and googleConfigured) and !(adEnabled and adConfigured)}">
+        Ez dago autentikazio motarik aktibo. Jarri harremanetan administrazioarekin.
+      </p>
+
+      <p class="hint" th:if="${(googleEnabled and googleConfigured) or (adEnabled and adConfigured)}">
         Arazoak badituzu, jarri harremanetan administrazioarekin.
       </p>
     </section>

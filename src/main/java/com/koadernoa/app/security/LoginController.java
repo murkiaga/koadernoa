@@ -20,9 +20,14 @@ public class LoginController {
 	
 	private final IrakasleaRepository irakasleaRepository;
 	private final FamiliaRepository familiaRepository;
+    private final AuthProviderStatusService statusService;
 
     @GetMapping({"/", "/login"})
-    public String loginPage() {
+    public String loginPage(Model model) {
+        model.addAttribute("googleEnabled", statusService.isGoogleEnabled());
+        model.addAttribute("googleConfigured", statusService.isGoogleConfigured());
+        model.addAttribute("adEnabled", statusService.isAdEnabled());
+        model.addAttribute("adConfigured", statusService.isAdConfigured());
         return "login"; // --> resources/templates/login.html
     }
     

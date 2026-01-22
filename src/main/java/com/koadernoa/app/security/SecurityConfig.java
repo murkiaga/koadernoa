@@ -8,6 +8,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
 
 import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
 
@@ -22,11 +23,14 @@ public class SecurityConfig {
     
 	private final CustomOAuth2UserService customOAuth2UserService;
     private final IrakasleaRepository irakasleaRepository;
+    private final AuthProviderEnabledFilter authProviderEnabledFilter;
     
     public SecurityConfig(IrakasleaRepository irakasleaRepository,
-    		CustomOAuth2UserService customOAuth2UserService) {
+    		CustomOAuth2UserService customOAuth2UserService,
+            AuthProviderEnabledFilter authProviderEnabledFilter) {
         this.irakasleaRepository = irakasleaRepository;
         this.customOAuth2UserService = customOAuth2UserService;
+        this.authProviderEnabledFilter = authProviderEnabledFilter;
     }
    
     
@@ -71,7 +75,7 @@ public class SecurityConfig {
             	        response.sendRedirect("/login?error");
             	    })
             	)
+            .addFilterBefore(authProviderEnabledFilter, OAuth2AuthorizationRequestRedirectFilter.class)
             .build();
     }
 }
-

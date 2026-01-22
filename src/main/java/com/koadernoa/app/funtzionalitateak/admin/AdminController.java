@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.koadernoa.app.objektuak.konfigurazioa.service.AplikazioAukeraService;
+import com.koadernoa.app.security.AuthProviderStatusService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 public class AdminController {
 
     private final AplikazioAukeraService aukService;
+    private final AuthProviderStatusService statusService;
 
     @Value("${koadernoa.uploads.dir:uploads}")
     private String baseDir;
@@ -40,6 +42,11 @@ public class AdminController {
         String logoUrl = aukService.get(AplikazioAukeraService.APP_LOGO_URL, "");
         model.addAttribute("logoUrl", logoUrl);
         model.addAttribute("logoBadago", logoUrl != null && !logoUrl.isBlank());
+        
+        model.addAttribute("googleEnabled", statusService.isGoogleEnabled());
+        model.addAttribute("googleConfigured", statusService.isGoogleConfigured());
+        model.addAttribute("adEnabled", statusService.isAdEnabled());
+        model.addAttribute("adConfigured", statusService.isAdConfigured());
 
         return "admin/index";
     }
@@ -108,5 +115,31 @@ public class AdminController {
 
         aukService.set(AplikazioAukeraService.APP_LOGO_URL, "");
         return "redirect:/admin/?success=Logoa%20ezabatuta";
+    }
+
+    @PostMapping("/auth-providers")
+    public String saveAuthProviders(@RequestParam(name = "googleEnabled", required = false) String googleEnabledParam,
+                                    @RequestParam(name = "adEnabled", required = false) String adEnabledParam) {
+
+        boolean googleEnabled = "on".equalsIgnoreCase(googleEnabledParam);
+        boolean adEnabled = "on".equalsIgnoreCase(adEnabledParam);
+
+        boolean googleConfigured = statusService.isGoogleConfigured();
+        boolean adConfigured = statusService.isAdConfigured();
+
+        if (googleEnabled && !googleConfigured) {
+            return "redirect:/admin/?error=Google%20ez%20dago%20konfiguratuta";
+        }
+        if (adEnabled && !adConfigured) {
+            return "redirect:/admin/?error=Active%20Directory%20ez%20dago%20konfiguratuta";
+        }
+        if (!googleEnabled && !adEnabled) {
+            return "redirect:/admin/?error=Gutxienez%20autentikazio%20mota%20bat%20aktibo%20egon%20behar%20da";
+        }
+
+        aukService.setBool(AplikazioAukeraService.AUTH_GOOGLE_ENABLED, googleEnabled);
+        aukService.setBool(AplikazioAukeraService.AUTH_AD_ENABLED, adEnabled);
+
+        return "redirect:/admin/?success=Autentikazio%20aukerak%20eguneratuta";
     }
 }
