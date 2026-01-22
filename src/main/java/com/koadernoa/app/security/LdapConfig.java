@@ -18,7 +18,7 @@ public class LdapConfig {
     @Bean
     public LdapContextSource ldapContextSource(LdapProperties properties) {
         LdapContextSource contextSource = new LdapContextSource();
-        contextSource.setUrls(properties.getUrls().toArray(String[]::new));
+        contextSource.setUrls(properties.getUrls());
         contextSource.setBase(properties.getBase());
         contextSource.setUserDn(properties.getUsername());
         contextSource.setPassword(properties.getPassword());
