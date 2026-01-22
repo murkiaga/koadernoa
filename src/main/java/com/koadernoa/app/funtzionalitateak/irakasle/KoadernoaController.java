@@ -172,8 +172,10 @@ public class KoadernoaController {
 	        // nahi baduzu, log-ean utzi; baina ez bota koadernoaren sorrera atzera
 	        // log.error("Ezin izan dira taldeko ikasleak inportatu automatikoki", e);
 	    }
-
-	    return "redirect:/irakasle";
+	    
+	    //Sortu berri den koadernoa kargatu
+	    return "redirect:/irakasle/koadernoa/" + berria.getId() + "?next='/irakasle'";
+	  
 	}
 	
 	@PostMapping("/{id}/ordutegia/cell")
