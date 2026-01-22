@@ -39,6 +39,7 @@ public class LdapConfig {
                     settings.getUserSearchFilter(),
                     contextSource
             );
+            userSearch.setSearchSubtree(true);
             authenticator.setUserSearch(userSearch);
         }
 
