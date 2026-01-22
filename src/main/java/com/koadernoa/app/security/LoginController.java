@@ -28,6 +28,8 @@ public class LoginController {
         model.addAttribute("googleConfigured", statusService.isGoogleConfigured());
         model.addAttribute("adEnabled", statusService.isAdEnabled());
         model.addAttribute("adConfigured", statusService.isAdConfigured());
+        model.addAttribute("ldapEnabled", statusService.isLdapEnabled());
+        model.addAttribute("ldapConfigured", statusService.isLdapConfigured());
         return "login"; // --> resources/templates/login.html
     }
     

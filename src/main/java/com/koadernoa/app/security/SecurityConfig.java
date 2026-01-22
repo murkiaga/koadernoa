@@ -9,6 +9,9 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.ldap.authentication.LdapAuthenticationProvider;
 
 import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
 
@@ -24,13 +27,16 @@ public class SecurityConfig {
 	private final CustomOAuth2UserService customOAuth2UserService;
     private final IrakasleaRepository irakasleaRepository;
     private final AuthProviderEnabledFilter authProviderEnabledFilter;
+    private final LdapAuthenticationProvider ldapAuthenticationProvider;
     
     public SecurityConfig(IrakasleaRepository irakasleaRepository,
     		CustomOAuth2UserService customOAuth2UserService,
-            AuthProviderEnabledFilter authProviderEnabledFilter) {
+            AuthProviderEnabledFilter authProviderEnabledFilter,
+            LdapAuthenticationProvider ldapAuthenticationProvider) {
         this.irakasleaRepository = irakasleaRepository;
         this.customOAuth2UserService = customOAuth2UserService;
         this.authProviderEnabledFilter = authProviderEnabledFilter;
+        this.ldapAuthenticationProvider = ldapAuthenticationProvider;
     }
    
     
@@ -61,6 +67,12 @@ public class SecurityConfig {
             	    .defaultSuccessUrl("/aukeratu-mintegia", true)
             	    .failureUrl("/login?error")
             )
+            .formLogin(form -> form
+                    .loginPage("/login")
+                    .loginProcessingUrl("/login")
+                    .defaultSuccessUrl("/aukeratu-mintegia", true)
+                    .failureHandler(ldapFailureHandler())
+            )
             .logout(logout -> logout
                     .logoutUrl("/logout")                 // endpoint real de logout (POST)
                     .logoutSuccessUrl("/login?logout")    // a dónde se redirige después
@@ -75,7 +87,18 @@ public class SecurityConfig {
             	        response.sendRedirect("/login?error");
             	    })
             	)
+            .authenticationProvider(ldapAuthenticationProvider)
             .addFilterBefore(authProviderEnabledFilter, OAuth2AuthorizationRequestRedirectFilter.class)
             .build();
+    }
+    
+    private AuthenticationFailureHandler ldapFailureHandler() {
+        return (request, response, exception) -> {
+            if (exception instanceof DisabledException) {
+                response.sendRedirect("/login?disabled=ldap");
+                return;
+            }
+            response.sendRedirect("/login?error");
+        };
     }
 }
