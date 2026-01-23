@@ -16,15 +16,51 @@
              class="brand-logo">
 
         <h1 class="title">Koadernoa</h1>
-        <p class="subtitle">Sartu zure Google kontuarekin jarraitzeko</p>
+        <p class="subtitle">Aukeratu saioa hasteko modua</p>
       </div>
 
-      <a class="google-btn" href="/oauth2/authorization/google">
-        <span class="google-dot" aria-hidden="true"></span>
-        Google bidez hasi saioa
-      </a>
+      <div th:if="${param.disabled}" class="login-alert login-alert-error">
+        Autentikazio mota ez dago aktibo edo ez dago konfiguratuta.
+      </div>
+      <div th:if="${param.error}" class="login-alert login-alert-error">
+        Erabiltzailea edo pasahitza ez da zuzena.
+      </div>
+      <div th:if="${param.logout}" class="login-alert login-alert-success">
+        Saioa itxi da.
+      </div>
 
-      <p class="hint">
+      <div class="login-actions">
+        <a class="oauth-btn google-btn"
+           th:if="${googleEnabled and googleConfigured}"
+           href="/oauth2/authorization/google">
+          <span class="google-dot" aria-hidden="true"></span>
+          Google bidez hasi saioa
+        </a>
+
+        <form class="login-form"
+              th:if="${ldapEnabled and ldapConfigured}"
+              th:action="@{/login}"
+              method="post">
+          <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+          <div class="login-field">
+            <label for="ldap-username">Erabiltzailea</label>
+            <input id="ldap-username" name="username" type="text" autocomplete="username" required>
+          </div>
+          <div class="login-field">
+            <label for="ldap-password">Pasahitza</label>
+            <input id="ldap-password" name="password" type="password" autocomplete="current-password" required>
+          </div>
+          <button class="oauth-btn ldap-btn" type="submit">LDAP bidez hasi saioa</button>
+        </form>
+      </div>
+
+      <p class="hint"
+         th:if="${!(googleEnabled and googleConfigured) and !(ldapEnabled and ldapConfigured)}">
+        Ez dago autentikazio motarik aktibo. Jarri harremanetan administrazioarekin.
+      </p>
+
+      <p class="hint"
+         th:if="${(googleEnabled and googleConfigured) or (ldapEnabled and ldapConfigured)}">
         Arazoak badituzu, jarri harremanetan administrazioarekin.
       </p>
     </section>

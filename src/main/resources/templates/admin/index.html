@@ -34,6 +34,14 @@
             id="tab-koloreak">
       Ebaluazio koloreak
     </button>
+
+    <button type="button" class="tab-btn"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-auth"
+            id="tab-auth">
+      Autentikazioa
+    </button>
   </div>
 
   <!-- LOGOA PANELA -->
@@ -46,6 +54,12 @@
   <section id="panel-koloreak" class="tab-panel" role="tabpanel"
            aria-labelledby="tab-koloreak" tabindex="0" aria-hidden="true">
     <div th:replace="~{admin/fragments/ebalu-koloreak :: ebal-koloreak-panel}"></div>
+  </section>
+
+  <!-- AUTENTIKAZIOA PANELA -->
+  <section id="panel-auth" class="tab-panel" role="tabpanel"
+           aria-labelledby="tab-auth" tabindex="0" aria-hidden="true">
+    <div th:replace="~{admin/fragments/auth-providers :: auth-providers-panel}"></div>
   </section>
 </main>
 

@@ -8,10 +8,10 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
-
-import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
-
-import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.ldap.authentication.LdapAuthenticationProvider;
 
 import jakarta.annotation.PostConstruct;
 
@@ -20,13 +20,19 @@ import jakarta.annotation.PostConstruct;
 @EnableWebSecurity
 public class SecurityConfig {
     
-	private final CustomOAuth2UserService customOAuth2UserService;
-    private final IrakasleaRepository irakasleaRepository;
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final AuthProviderEnabledFilter authProviderEnabledFilter;
+    private final LdapAuthenticationProvider ldapAuthenticationProvider;
+    private final LdapLoginSuccessHandler ldapLoginSuccessHandler;
     
-    public SecurityConfig(IrakasleaRepository irakasleaRepository,
-    		CustomOAuth2UserService customOAuth2UserService) {
-        this.irakasleaRepository = irakasleaRepository;
+    public SecurityConfig(CustomOAuth2UserService customOAuth2UserService,
+            AuthProviderEnabledFilter authProviderEnabledFilter,
+            LdapAuthenticationProvider ldapAuthenticationProvider,
+            LdapLoginSuccessHandler ldapLoginSuccessHandler) {
         this.customOAuth2UserService = customOAuth2UserService;
+        this.authProviderEnabledFilter = authProviderEnabledFilter;
+        this.ldapAuthenticationProvider = ldapAuthenticationProvider;
+        this.ldapLoginSuccessHandler = ldapLoginSuccessHandler;
     }
    
     
@@ -57,6 +63,12 @@ public class SecurityConfig {
             	    .defaultSuccessUrl("/aukeratu-mintegia", true)
             	    .failureUrl("/login?error")
             )
+            .formLogin(form -> form
+                    .loginPage("/login")
+                    .loginProcessingUrl("/login")
+                    .successHandler(ldapLoginSuccessHandler)
+                    .failureHandler(ldapFailureHandler())
+            )
             .logout(logout -> logout
                     .logoutUrl("/logout")                 // endpoint real de logout (POST)
                     .logoutSuccessUrl("/login?logout")    // a dónde se redirige después
@@ -71,7 +83,18 @@ public class SecurityConfig {
             	        response.sendRedirect("/login?error");
             	    })
             	)
+            .authenticationProvider(ldapAuthenticationProvider)
+            .addFilterBefore(authProviderEnabledFilter, OAuth2AuthorizationRequestRedirectFilter.class)
             .build();
     }
+    
+    private AuthenticationFailureHandler ldapFailureHandler() {
+        return (request, response, exception) -> {
+            if (exception instanceof DisabledException) {
+                response.sendRedirect("/login?disabled=ldap");
+                return;
+            }
+            response.sendRedirect("/login?error");
+        };
+    }
 }
-

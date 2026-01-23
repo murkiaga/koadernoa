@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<body>
+  <section th:fragment="auth-providers-panel" class="section">
+    <h2>Autentikazioa</h2>
+    <p class="muted">
+      Aktibo dauden autentikazio motak /login orrian agertuko dira.
+      Konfiguratuta ez badago, ezin da aktibatu.
+    </p>
+
+    <form class="form" th:action="@{/admin/auth-providers}" method="post">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+      <div class="field">
+        <label>
+          <input type="checkbox"
+                 name="googleEnabled"
+                 th:checked="${googleEnabled}"
+                 th:disabled="${!googleConfigured && !googleEnabled}">
+          Google
+        </label>
+        <span class="badge"
+              th:classappend="${googleConfigured} ? ' badge-success' : ' badge-error'"
+              th:text="${googleConfigured} ? 'Konfiguratuta' : 'Ez konfiguratuta'"></span>
+      </div>
+
+      <div class="field">
+        <label>
+          <input type="checkbox"
+                 name="ldapEnabled"
+                 th:checked="${ldapEnabled}"
+                 th:disabled="${!ldapConfigured && !ldapEnabled}">
+          LDAP (Active Directory)
+        </label>
+        <span class="badge"
+              th:classappend="${ldapConfigured} ? ' badge-success' : ' badge-error'"
+              th:text="${ldapConfigured} ? 'Konfiguratuta' : 'Ez konfiguratuta'"></span>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Gorde autentikazioa</button>
+      </div>
+    </form>
+  </section>
+</body>
+</html>
