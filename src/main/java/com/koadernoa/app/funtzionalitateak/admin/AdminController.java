@@ -45,8 +45,6 @@ public class AdminController {
         
         model.addAttribute("googleEnabled", statusService.isGoogleEnabled());
         model.addAttribute("googleConfigured", statusService.isGoogleConfigured());
-        model.addAttribute("adEnabled", statusService.isAdEnabled());
-        model.addAttribute("adConfigured", statusService.isAdConfigured());
         model.addAttribute("ldapEnabled", statusService.isLdapEnabled());
         model.addAttribute("ldapConfigured", statusService.isLdapConfigured());
 
@@ -121,32 +119,25 @@ public class AdminController {
 
     @PostMapping("/auth-providers")
     public String saveAuthProviders(@RequestParam(name = "googleEnabled", required = false) String googleEnabledParam,
-                                    @RequestParam(name = "adEnabled", required = false) String adEnabledParam,
                                     @RequestParam(name = "ldapEnabled", required = false) String ldapEnabledParam) {
 
         boolean googleEnabled = "on".equalsIgnoreCase(googleEnabledParam);
-        boolean adEnabled = "on".equalsIgnoreCase(adEnabledParam);
         boolean ldapEnabled = "on".equalsIgnoreCase(ldapEnabledParam);
 
         boolean googleConfigured = statusService.isGoogleConfigured();
-        boolean adConfigured = statusService.isAdConfigured();
         boolean ldapConfigured = statusService.isLdapConfigured();
 
         if (googleEnabled && !googleConfigured) {
             return "redirect:/admin/?error=Google%20ez%20dago%20konfiguratuta";
         }
-        if (adEnabled && !adConfigured) {
-            return "redirect:/admin/?error=Active%20Directory%20ez%20dago%20konfiguratuta";
-        }
         if (ldapEnabled && !ldapConfigured) {
             return "redirect:/admin/?error=LDAP%20ez%20dago%20konfiguratuta";
         }
-        if (!googleEnabled && !adEnabled && !ldapEnabled) {
+        if (!googleEnabled && !ldapEnabled) {
             return "redirect:/admin/?error=Gutxienez%20autentikazio%20mota%20bat%20aktibo%20egon%20behar%20da";
         }
 
         aukService.setBool(AplikazioAukeraService.AUTH_GOOGLE_ENABLED, googleEnabled);
-        aukService.setBool(AplikazioAukeraService.AUTH_AD_ENABLED, adEnabled);
         aukService.setBool(AplikazioAukeraService.AUTH_LDAP_ENABLED, ldapEnabled);
 
         return "redirect:/admin/?success=Autentikazio%20aukerak%20eguneratuta";

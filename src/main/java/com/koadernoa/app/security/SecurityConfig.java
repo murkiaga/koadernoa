@@ -13,10 +13,6 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.ldap.authentication.LdapAuthenticationProvider;
 
-import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
-
-import org.springframework.security.core.Authentication;
-
 import jakarta.annotation.PostConstruct;
 
 
@@ -24,19 +20,19 @@ import jakarta.annotation.PostConstruct;
 @EnableWebSecurity
 public class SecurityConfig {
     
-	private final CustomOAuth2UserService customOAuth2UserService;
-    private final IrakasleaRepository irakasleaRepository;
+    private final CustomOAuth2UserService customOAuth2UserService;
     private final AuthProviderEnabledFilter authProviderEnabledFilter;
     private final LdapAuthenticationProvider ldapAuthenticationProvider;
+    private final LdapLoginSuccessHandler ldapLoginSuccessHandler;
     
-    public SecurityConfig(IrakasleaRepository irakasleaRepository,
-    		CustomOAuth2UserService customOAuth2UserService,
+    public SecurityConfig(CustomOAuth2UserService customOAuth2UserService,
             AuthProviderEnabledFilter authProviderEnabledFilter,
-            LdapAuthenticationProvider ldapAuthenticationProvider) {
-        this.irakasleaRepository = irakasleaRepository;
+            LdapAuthenticationProvider ldapAuthenticationProvider,
+            LdapLoginSuccessHandler ldapLoginSuccessHandler) {
         this.customOAuth2UserService = customOAuth2UserService;
         this.authProviderEnabledFilter = authProviderEnabledFilter;
         this.ldapAuthenticationProvider = ldapAuthenticationProvider;
+        this.ldapLoginSuccessHandler = ldapLoginSuccessHandler;
     }
    
     
@@ -70,7 +66,7 @@ public class SecurityConfig {
             .formLogin(form -> form
                     .loginPage("/login")
                     .loginProcessingUrl("/login")
-                    .defaultSuccessUrl("/aukeratu-mintegia", true)
+                    .successHandler(ldapLoginSuccessHandler)
                     .failureHandler(ldapFailureHandler())
             )
             .logout(logout -> logout

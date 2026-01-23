@@ -19,7 +19,6 @@ public class AplikazioAukeraService {
     public static final String APP_LOGO_URL = "APP_LOGO_URL"; // adib: /uploads/logo.png
     
     public static final String AUTH_GOOGLE_ENABLED = "auth.google.enabled";
-    public static final String AUTH_AD_ENABLED = "auth.ad.enabled";
     public static final String AUTH_LDAP_ENABLED = "auth.ldap.enabled";
     public static final String AUTH_DEFAULT = "auth.default";
     
