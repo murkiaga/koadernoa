@@ -50,3 +50,8 @@ src/main/resources/application.properties
 # Argazkiak eta bestelako igoerak
 /uploads/
 /uploads/*
+
+# Environment files
+.env
+.env.*
+!.env.example
