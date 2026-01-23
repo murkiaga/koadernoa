@@ -55,3 +55,6 @@ src/main/resources/application.properties
 .env
 .env.*
 !.env.example
+
+# Local env (STS / local run) - DO NOT COMMIT
+local.env.properties
