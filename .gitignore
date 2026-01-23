@@ -44,9 +44,6 @@ target/
 .DS_Store
 Thumbs.db
 
-# Application secrets
-src/main/resources/application.properties
-
 # Argazkiak eta bestelako igoerak
 /uploads/
 /uploads/*
