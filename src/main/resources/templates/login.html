@@ -37,13 +37,6 @@
           Google bidez hasi saioa
         </a>
 
-        <a class="oauth-btn azure-btn"
-           th:if="${adEnabled and adConfigured}"
-           href="/oauth2/authorization/ad">
-          <span class="azure-dot" aria-hidden="true"></span>
-          Active Directory bidez hasi saioa
-        </a>
-
         <form class="login-form"
               th:if="${ldapEnabled and ldapConfigured}"
               th:action="@{/login}"
@@ -62,12 +55,12 @@
       </div>
 
       <p class="hint"
-         th:if="${!(googleEnabled and googleConfigured) and !(adEnabled and adConfigured) and !(ldapEnabled and ldapConfigured)}">
+         th:if="${!(googleEnabled and googleConfigured) and !(ldapEnabled and ldapConfigured)}">
         Ez dago autentikazio motarik aktibo. Jarri harremanetan administrazioarekin.
       </p>
 
       <p class="hint"
-         th:if="${(googleEnabled and googleConfigured) or (adEnabled and adConfigured) or (ldapEnabled and ldapConfigured)}">
+         th:if="${(googleEnabled and googleConfigured) or (ldapEnabled and ldapConfigured)}">
         Arazoak badituzu, jarri harremanetan administrazioarekin.
       </p>
     </section>

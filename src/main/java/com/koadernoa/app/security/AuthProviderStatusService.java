@@ -19,10 +19,6 @@ public class AuthProviderStatusService {
         return aukService.getBool(AplikazioAukeraService.AUTH_GOOGLE_ENABLED, true);
     }
 
-    public boolean isAdEnabled() {
-        return aukService.getBool(AplikazioAukeraService.AUTH_AD_ENABLED, false);
-    }
-    
     public boolean isLdapEnabled() {
         return aukService.getBool(AplikazioAukeraService.AUTH_LDAP_ENABLED, false);
     }
@@ -32,12 +28,6 @@ public class AuthProviderStatusService {
                 && hasText("spring.security.oauth2.client.registration.google.client-secret");
     }
 
-    public boolean isAdConfigured() {
-        return hasText("spring.security.oauth2.client.registration.ad.client-id")
-                && hasText("spring.security.oauth2.client.registration.ad.client-secret")
-                && hasText("spring.security.oauth2.client.provider.ad.issuer-uri");
-    }
-    
     public boolean isLdapConfigured() {
         boolean urlConfigured = hasText("spring.ldap.urls") || hasText("spring.ldap.url");
         boolean baseConfigured = hasText("spring.ldap.base");
@@ -54,7 +44,7 @@ public class AuthProviderStatusService {
         String id = registrationId.toLowerCase();
         return switch (id) {
             case "google" -> isGoogleEnabled() && isGoogleConfigured();
-            case "ad" -> isAdEnabled() && isAdConfigured();
+            case "ad" -> false;
             default -> true;
         };
     }

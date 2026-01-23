@@ -27,19 +27,6 @@
       <div class="field">
         <label>
           <input type="checkbox"
-                 name="adEnabled"
-                 th:checked="${adEnabled}"
-                 th:disabled="${!adConfigured && !adEnabled}">
-          Active Directory (OIDC/ADFS)
-        </label>
-        <span class="badge"
-              th:classappend="${adConfigured} ? ' badge-success' : ' badge-error'"
-              th:text="${adConfigured} ? 'Konfiguratuta' : 'Ez konfiguratuta'"></span>
-      </div>
-
-      <div class="field">
-        <label>
-          <input type="checkbox"
                  name="ldapEnabled"
                  th:checked="${ldapEnabled}"
                  th:disabled="${!ldapConfigured && !ldapEnabled}">

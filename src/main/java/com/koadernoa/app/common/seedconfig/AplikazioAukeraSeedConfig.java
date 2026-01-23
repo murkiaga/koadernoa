@@ -15,7 +15,6 @@ public class AplikazioAukeraSeedConfig {
     CommandLineRunner seedAplikazioAukerak(AplikazioAukeraRepository repo) {
         return args -> {
             ensure(repo, AplikazioAukeraService.AUTH_GOOGLE_ENABLED, "true");
-            ensure(repo, AplikazioAukeraService.AUTH_AD_ENABLED, "false");
             ensure(repo, AplikazioAukeraService.AUTH_LDAP_ENABLED, "false");
             ensure(repo, AplikazioAukeraService.AUTH_DEFAULT, "google");
         };

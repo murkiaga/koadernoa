@@ -26,8 +26,6 @@ public class LoginController {
     public String loginPage(Model model) {
         model.addAttribute("googleEnabled", statusService.isGoogleEnabled());
         model.addAttribute("googleConfigured", statusService.isGoogleConfigured());
-        model.addAttribute("adEnabled", statusService.isAdEnabled());
-        model.addAttribute("adConfigured", statusService.isAdConfigured());
         model.addAttribute("ldapEnabled", statusService.isLdapEnabled());
         model.addAttribute("ldapConfigured", statusService.isLdapConfigured());
         return "login"; // --> resources/templates/login.html
