@@ -3,57 +3,77 @@ services:
     image: mysql:8.0
     command: --default-authentication-plugin=mysql_native_password
     environment:
-      MYSQL_DATABASE: koaderno_berria
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      TZ: Europe/Madrid
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      TZ: ${TZ}
+      # Root pasahitza hutsik erabili nahi baduzu (EZ gomendatua):
+      # MYSQL_ALLOW_EMPTY_PASSWORD: ${MYSQL_ALLOW_EMPTY_PASSWORD}
     volumes:
       - koaderno_db:/var/lib/mysql
-    ports:
-      - "3306:3306"   # nahi baduzu kanpotik konektatzeko (aukerakoa)
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 5s
       timeout: 5s
-      retries: 20
+      retries: 30
 
   app:
-    build: .
+    # Aukera A: zerbitzarian bertan build (Dockerfile behar du)
+    # build: .
+
+    # Aukera B: GitHub/Registry-tik pull egingo du (gomendatua “ez konpilatzeko”)
+    image: ghcr.io/murkiaga/koadernoa:latest
+
     depends_on:
       db:
         condition: service_healthy
     ports:
-      - "8091:8091"
+      - "${SERVER_PORT}:8091"
     environment:
-      SERVER_PORT: 8091
-      SERVER_ADDRESS: 0.0.0.0
+      # Spring Boot-ek env bidez hartu ditzan (zure proiektuan placeholderrak badituzu)
+      SERVER_PORT: ${SERVER_PORT}
+      SERVER_ADDRESS: ${SERVER_ADDRESS}
 
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/koaderno_berria?serverTimezone=Europe/Madrid&useSSL=false&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: ${DB_USER}
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
 
-      # Google OAuth2
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO}
+      SPRING_JPA_SHOW_SQL: ${SPRING_JPA_SHOW_SQL}
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: ${SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT}
+
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_SCOPE: ${SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_GOOGLE_SCOPE}
 
-      # LDAP
-      SPRING_LDAP_URLS: ${LDAP_URLS}
-      SPRING_LDAP_BASE: ${LDAP_BASE}
-      SPRING_LDAP_USERNAME: ${LDAP_USERNAME}
-      SPRING_LDAP_PASSWORD: ${LDAP_PASSWORD}
+      SPRING_LDAP_URLS: ${SPRING_LDAP_URLS}
+      SPRING_LDAP_BASE: ${SPRING_LDAP_BASE}
+      SPRING_LDAP_USERNAME: ${SPRING_LDAP_USERNAME}
+      SPRING_LDAP_PASSWORD: ${SPRING_LDAP_PASSWORD}
 
-      KOADERNOA_LDAP_USER_SEARCH_BASE: OU=Irakasleak
-      KOADERNOA_LDAP_USER_SEARCH_FILTER: (&(objectClass=user)(sAMAccountName={0}))
-      KOADERNOA_LDAP_USER_SEARCH_SUBTREE: "true"
+      KOADERNOA_LDAP_USER_SEARCH_BASE: ${KOADERNOA_LDAP_USER_SEARCH_BASE}
+      KOADERNOA_LDAP_USER_SEARCH_FILTER: ${KOADERNOA_LDAP_USER_SEARCH_FILTER}
+      KOADERNOA_LDAP_USER_SEARCH_SUBTREE: ${KOADERNOA_LDAP_USER_SEARCH_SUBTREE}
 
-      KOADERNOA_UPLOADS_DIR: /data/uploads
+      LOGGING_LEVEL_ROOT: ${LOGGING_LEVEL_ROOT}
+      LOGGING_LEVEL_COM_KOADERNOA: ${LOGGING_LEVEL_COM_KOADERNOA}
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY: ${LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY}
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY_OAUTH2: ${LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY_OAUTH2}
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY_LDAP: ${LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY_LDAP}
+      LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_LDAP: ${LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_LDAP}
 
-      # (gomendatua prod-en)
-      SPRING_JPA_SHOW_SQL: "false"
-      LOGGING_LEVEL_ROOT: INFO
+      SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE: ${SPRING_SERVLET_MULTIPART_MAX_FILE_SIZE}
+      SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE: ${SPRING_SERVLET_MULTIPART_MAX_REQUEST_SIZE}
+
+      KOADERNOA_UPLOADS_DIR: ${KOADERNOA_UPLOADS_DIR}
+      KOADERNOA_UPLOADS_IKASLEAK_SUBDIR: ${KOADERNOA_UPLOADS_IKASLEAK_SUBDIR}
+      KOADERNOA_UPLOADS_LOGO_SUBDIR: ${KOADERNOA_UPLOADS_LOGO_SUBDIR}
+
     volumes:
       - koaderno_uploads:/data/uploads
+    restart: unless-stopped
 
 volumes:
   koaderno_db:
