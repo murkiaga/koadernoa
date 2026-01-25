@@ -62,7 +62,7 @@ public class KudeatzaileController {
 
 	@GetMapping({"","/"})
     public String kudeatzaileDashboard(Model model) {
-        return "/kudeatzaile/kudeatzaile_dashboard";
+        return "kudeatzaile/kudeatzaile_dashboard";
     }
 //----ZIKLOAK
 	@GetMapping("/zikloak")

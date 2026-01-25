@@ -30,10 +30,10 @@ services:
       db:
         condition: service_healthy
     ports:
-      - "${SERVER_PORT}:8091"
+      - "${HOST_HTTP_PORT}:8091"
     environment:
       # Spring Boot-ek env bidez hartu ditzan (zure proiektuan placeholderrak badituzu)
-      SERVER_PORT: ${SERVER_PORT}
+      SERVER_PORT: ${APP_PORT}
       SERVER_ADDRESS: ${SERVER_ADDRESS}
 
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
