@@ -61,7 +61,7 @@ public class DenboralizazioaController {
 	private final ProgramazioTxantiloiService programazioTxantiloiService;
 	private final IrakasleaService irakasleaService;
 
-	@GetMapping({"",""})
+	@GetMapping({"","/"})
 	public String erakutsiHilabetekoDenboralizazioa(
 	    @SessionAttribute(value = "koadernoAktiboa", required = false) Koadernoa koadernoa,
 	    @RequestParam(name="urtea", required=false) Integer urtea,
@@ -79,8 +79,13 @@ public class DenboralizazioaController {
 	    int unekoHilabetea = (hilabetea != null) ? hilabetea : orain.getMonthValue();
 
 	    Egutegia egutegia = koadernoa.getEgutegia();
+	    if (egutegia == null) {
+	        model.addAttribute("errorea", "Koaderno aktiboak ez du egutegirik esleituta.");
+	        return "error/404";
+	    }
 
-	    List<LocalDate> egunGuztiak = egutegiaService.getEgunakHilabetekoBista(unekoUrtea, unekoHilabetea, egutegia);
+	    List<LocalDate> egunGuztiak =
+	        egutegiaService.getEgunakHilabetekoBista(unekoUrtea, unekoHilabetea, egutegia);
 
 	    // Asteen zerrenda prestatu (astelehenetik ostiralera)
 	    List<List<EgunaBista>> asteak = new ArrayList<>();
@@ -110,37 +115,49 @@ public class DenboralizazioaController {
 	        }
 	        asteak.add(new ArrayList<>(astea));
 	    }
-	    
+
 	    Map<String, String> egunMap = egutegiaService.kalkulatuKlaseak(egutegia);
-	    Map<String, String> deskribapenaMap = egutegia.getEgunBereziak().stream()
+
+	    // Egun bereziak segurtasunez hartu (null -> lista hutsa)
+	    List<EgunBerezi> egunBereziak = (egutegia.getEgunBereziak() != null)
+	            ? egutegia.getEgunBereziak()
+	            : java.util.Collections.emptyList();
+
+	    // toMap-ek ez du null key/value onartzen
+	    Map<String, String> deskribapenaMap = egunBereziak.stream()
+	            .filter(eb -> eb.getData() != null)                 // key-a ez dadin null izan
+	            .filter(eb -> eb.getDeskribapena() != null)         // value-a ez dadin null izan
 	            .collect(Collectors.toMap(
 	                    eb -> eb.getData().toString(),
-	                    EgunBerezi::getDeskribapena,
+	                    eb -> eb.getDeskribapena(),                 // nahi baduzu: .trim()
 	                    (a, b) -> a
 	            ));
 
 	    // Hilabete + urtea euskaraz formatuta
 	    String hilabeteUrtea = LocalDate.of(unekoUrtea, unekoHilabetea, 1)
 	            .format(java.time.format.DateTimeFormatter
-	            		.ofPattern("LLLL yyyy")
-	            		.withLocale(new java.util.Locale("eu", "ES")));
+	                    .ofPattern("LLLL yyyy")
+	                    .withLocale(new java.util.Locale("eu", "ES")));
 
 	    // Hilabetearen muga-datak
 	    LocalDate hasiera = LocalDate.of(unekoUrtea, unekoHilabetea, 1);
 	    LocalDate amaiera = hasiera.withDayOfMonth(hasiera.lengthOfMonth());
 
 	    // Lortu jarduerak
-	    List<Jarduera> jarduerak = koadernoaService.lortuJarduerakDataTartean(koadernoa, hasiera, amaiera);
+	    List<Jarduera> jarduerak =
+	            koadernoaService.lortuJarduerakDataTartean(koadernoa, hasiera, amaiera);
 
 	    // Lortu asistentzia egunak
-	    List<Astegunak> astegunak = koadernoOrdutegiBlokeaRepository
-	            .findAstegunakByKoadernoaId(koadernoa.getId());
+	    List<Astegunak> astegunak =
+	            koadernoOrdutegiBlokeaRepository.findAstegunakByKoadernoaId(koadernoa.getId());
 	    Set<Astegunak> blokAstegunak = new HashSet<>(astegunak);
+
 	    Map<String, Boolean> asistentziaEgunMap =
-	    		asistentziaService.kalkulatuAsistentziaEgunak(blokAstegunak, egutegia, unekoUrtea, unekoHilabetea);
-	    
+	            asistentziaService.kalkulatuAsistentziaEgunak(blokAstegunak, egutegia, unekoUrtea, unekoHilabetea);
+
 	    Map<LocalDate, List<Jarduera>> jardueraMap = jarduerak.stream()
-	        .collect(Collectors.groupingBy(Jarduera::getData));
+	            .filter(j -> j.getData() != null) // segurtasun gehigarria
+	            .collect(Collectors.groupingBy(Jarduera::getData));
 
 	    // Model atributuak (bi bistentzat komunak)
 	    model.addAttribute("jardueraMap", jardueraMap);
@@ -166,20 +183,19 @@ public class DenboralizazioaController {
 	        model.addAttribute("faltaEgunOrduak", faltak.getEgunekoOrduak());
 	        model.addAttribute("faltakIkasleak", faltak.getIkasleRows());
 	    }
-	    
-	    //Egutegiko oharrak hartzeko:
+
+	    // Egutegiko oharrak hartzeko:
 	    Map<String, String> oharraMap = new HashMap<>();
-	    if (egutegia.getEgunBereziak() != null) {
-	        for (EgunBerezi eb : egutegia.getEgunBereziak()) {
-	            if (eb.getData() == null) continue;
-	            if (eb.getDeskribapena() == null || eb.getDeskribapena().isBlank()) continue;
-	            oharraMap.put(eb.getData().toString(), eb.getDeskribapena().trim());
-	        }
+	    for (EgunBerezi eb : egunBereziak) {
+	        if (eb.getData() == null) continue;
+	        if (eb.getDeskribapena() == null || eb.getDeskribapena().isBlank()) continue;
+	        oharraMap.put(eb.getData().toString(), eb.getDeskribapena().trim());
 	    }
 	    model.addAttribute("oharraMap", oharraMap);
 
 	    return "irakasleak/denboralizazioa/denboralizazioa";
 	}
+
 	
 	@PostMapping("/jarduera")
 	public String gordeEdoEguneratu(
