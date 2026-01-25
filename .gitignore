@@ -54,4 +54,4 @@ Thumbs.db
 !.env.example
 
 # Local env (STS / local run) - DO NOT COMMIT
-local.env.properties
+/config/local.env.properties
