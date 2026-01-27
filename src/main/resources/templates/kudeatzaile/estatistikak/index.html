@@ -570,7 +570,10 @@
       </tr>
 
       <tr th:each="e : ${orria.content}"
-          th:with="fitxaBeteta=${e.ezadostasunFitxa != null},
+          th:with="fitxaUdBeteta=${e.hasEzadostasunFitxa(T(com.koadernoa.app.objektuak.koadernoak.entitateak.EzadostasunMota).UD_EMANDA)},
+                   fitxaOrduBeteta=${e.hasEzadostasunFitxa(T(com.koadernoa.app.objektuak.koadernoak.entitateak.EzadostasunMota).ORDU_EMANDA)},
+                   fitxaGaindituBeteta=${e.hasEzadostasunFitxa(T(com.koadernoa.app.objektuak.koadernoak.entitateak.EzadostasunMota).GAINDITU)},
+                   fitxaBertaratzeBeteta=${e.hasEzadostasunFitxa(T(com.koadernoa.app.objektuak.koadernoak.entitateak.EzadostasunMota).BERTARATZE)},
                    udEzadostasun=${e.udPortzentaia != null and e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null and e.udPortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minBlokePortzentaia},
                    orduEzadostasun=${e.orduPortzentaia != null and e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null and e.orduPortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minOrduPortzentaia},
                    gaindituEzadostasun=${e.gaindituPortzentaia != null and e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null and e.gaindituPortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minGaindituPortzentaia},
@@ -620,8 +623,8 @@
             <span class="pct" th:if="${e.udPortzentaia != null}">
               <a th:if="${udEzadostasun}"
                  class="ezadostasun-link"
-                 th:classappend="${fitxaBeteta} ? ' filled' : ' pending'"
-                 th:href="@{/kudeatzaile/estatistikak/{id}/ezadostasuna(id=${e.id})}"
+                 th:classappend="${fitxaUdBeteta} ? ' filled' : ' pending'"
+                 th:href="@{/kudeatzaile/estatistikak/{id}/ezadostasuna(id=${e.id}, mota='UD_EMANDA')}"
                  th:text="|${e.udPortzentaia}%|">0%</a>
               <span th:if="${!udEzadostasun}" th:text="|${e.udPortzentaia}%|">0%</span>
             </span>
@@ -643,8 +646,8 @@
             <span class="pct" th:if="${e.orduPortzentaia != null}">
               <a th:if="${orduEzadostasun}"
                  class="ezadostasun-link"
-                 th:classappend="${fitxaBeteta} ? ' filled' : ' pending'"
-                 th:href="@{/kudeatzaile/estatistikak/{id}/ezadostasuna(id=${e.id})}"
+                 th:classappend="${fitxaOrduBeteta} ? ' filled' : ' pending'"
+                 th:href="@{/kudeatzaile/estatistikak/{id}/ezadostasuna(id=${e.id}, mota='ORDU_EMANDA')}"
                  th:text="|${e.orduPortzentaia}%|">0%</a>
               <span th:if="${!orduEzadostasun}" th:text="|${e.orduPortzentaia}%|">0%</span>
             </span>
@@ -666,8 +669,8 @@
             <span class="pct" th:if="${e.gaindituPortzentaia != null}">
               <a th:if="${gaindituEzadostasun}"
                  class="ezadostasun-link"
-                 th:classappend="${fitxaBeteta} ? ' filled' : ' pending'"
-                 th:href="@{/kudeatzaile/estatistikak/{id}/ezadostasuna(id=${e.id})}"
+                 th:classappend="${fitxaGaindituBeteta} ? ' filled' : ' pending'"
+                 th:href="@{/kudeatzaile/estatistikak/{id}/ezadostasuna(id=${e.id}, mota='GAINDITU')}"
                  th:text="|${e.gaindituPortzentaia}%|">0%</a>
               <span th:if="${!gaindituEzadostasun}" th:text="|${e.gaindituPortzentaia}%|">0%</span>
             </span>
@@ -689,8 +692,8 @@
             <span class="pct" th:if="${e.bertaratzePortzentaia != null}">
               <a th:if="${bertaratzeEzadostasun}"
                  class="ezadostasun-link"
-                 th:classappend="${fitxaBeteta} ? ' filled' : ' pending'"
-                 th:href="@{/kudeatzaile/estatistikak/{id}/ezadostasuna(id=${e.id})}">
+                 th:classappend="${fitxaBertaratzeBeteta} ? ' filled' : ' pending'"
+                 th:href="@{/kudeatzaile/estatistikak/{id}/ezadostasuna(id=${e.id}, mota='BERTARATZE')}">
                 <span th:text="${#numbers.formatDecimal(e.bertaratzePortzentaia, 2, 2)}">0.00</span>%
               </a>
               <span th:if="${!bertaratzeEzadostasun}">

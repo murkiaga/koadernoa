@@ -122,11 +122,12 @@
       Ebaluazioa
     </div>
 
-    <form th:action="@{/irakasle/estatistikak/{id}/ezadostasuna(id=${estatistika.id})}" method="post">
+    <form th:action="@{/irakasle/estatistikak/{id}/ezadostasuna(id=${estatistika.id}, mota=${ezadostasunMota})}" method="post">
       <input type="hidden"
              th:if="${_csrf != null}"
              th:name="${_csrf.parameterName}"
              th:value="${_csrf.token}"/>
+      <input type="hidden" name="mota" th:value="${ezadostasunMota}">
              
       <!-- X = gorde + itxi -->
   	  <button type="submit"
@@ -137,14 +138,9 @@
           aria-label="Gorde eta itxi">×</button>
 
       <div class="section">
-        <div class="section-title">Emandako ezadostasuna(k)</div>
+        <div class="section-title">Emandako ezadostasuna</div>
         <div class="section-body">
-          <ul class="ezadostasun-list" th:if="${ezadostasunak != null and !ezadostasunak.isEmpty()}">
-            <li th:each="item : ${ezadostasunak}" th:text="${item}">Ikasleen bertaratzea &lt; %85</li>
-          </ul>
-          <div class="muted" th:if="${ezadostasunak == null or ezadostasunak.isEmpty()}">
-            Ez dago ezadostasun aktiborik.
-          </div>
+          <div class="muted" th:text="${ezadostasunMotaLabel}">Ikasleen bertaratzea &lt; %85</div>
           <div class="grid" style="margin-top:.75rem;">
             <label>Emandako blokeak</label>
             <input class="readonly" type="number" readonly

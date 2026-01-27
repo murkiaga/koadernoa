@@ -6,6 +6,8 @@ import java.time.LocalDateTime;
 import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioMomentua;
 
 import jakarta.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.*;
 
 @Entity
@@ -34,8 +36,8 @@ public class EstatistikaEbaluazioan {
     @ManyToOne
     private Koadernoa koadernoa;
 
-    @OneToOne(mappedBy = "estatistika", cascade = CascadeType.ALL, orphanRemoval = true)
-    private EzadostasunFitxa ezadostasunFitxa;
+    @OneToMany(mappedBy = "estatistika", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<EzadostasunFitxa> ezadostasunFitxak = new ArrayList<>();
     
     @Column(nullable = false)
     private boolean kalkulatua = false;
@@ -80,6 +82,14 @@ public class EstatistikaEbaluazioan {
 
         // 2 dezimaletara biribildu: adib. 87.234 → 87.23
         return Math.round(raw * 100.0) / 100.0;
+    }
+
+    @Transient
+    public boolean hasEzadostasunFitxa(EzadostasunMota mota) {
+        if (mota == null || ezadostasunFitxak == null) {
+            return false;
+        }
+        return ezadostasunFitxak.stream().anyMatch(fitxa -> mota.equals(fitxa.getMota()));
     }
 
 }
