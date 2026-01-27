@@ -20,6 +20,9 @@
             transition: transform 0.22s ease, opacity 0.22s ease;
             will-change: transform, opacity;
         }
+        .egutegi-slide-panel {
+            width: 100%;
+        }
         .egutegi-slide.slide-exit-left {
             transform: translateX(-20%);
             opacity: 0;
@@ -303,7 +306,7 @@
 
 <!-- FRAGMENT Egutegi Bista -->
 <div class="egutegi-slide-container" th:if="${bista == null or bista == 'egutegia'}">
-    <div id="egutegiSlideWrapper" class="egutegi-slide"
+    <div id="egutegiSlideWrapper" class="egutegi-slide egutegi-slide-panel active"
          th:insert="irakasleak/denboralizazioa/egutegi-bista-fragment :: egutegiBista">
     </div>
 </div>
@@ -336,25 +339,6 @@
     </div>
 </div>
 
-<!-- Egutegiaren JS (egutegi fragmentoa dagoenean soilik aurkituko du taula) -->
-<script>
-document.addEventListener('DOMContentLoaded', function(){
-  const table = document.querySelector('.taula-egutegia');
-  if(!table) return;
-
-  table.addEventListener('click', function(e){
-	if (e.target.closest('a.btn-asistentzia') || e.target.closest('.ohar-ikonoa')) return;
-
-    const td = e.target.closest('td[data-date]');
-    if (!td) return;
-
-    if (typeof irekiJardueraModala === 'function') {
-      irekiJardueraModala(td);
-    }
-  });
-});
-</script>
-
 <script>
 function irekiTxantiloiModala() {
   const modal = document.getElementById('txantiloiModal');
@@ -370,17 +354,8 @@ function itxiTxantiloiModala() {
 
 	//Jardueren drag&drop
 document.addEventListener('DOMContentLoaded', function(){
-  const slideWrapper = document.getElementById('egutegiSlideWrapper');
-  const slideIntent = sessionStorage.getItem('denboralizazioa-slide');
-  if (slideWrapper && slideIntent) {
-    slideWrapper.classList.add(
-      slideIntent === 'next' ? 'slide-enter-from-right' : 'slide-enter-from-left'
-    );
-    sessionStorage.removeItem('denboralizazioa-slide');
-  }
-
-  const table = document.querySelector('.taula-egutegia');
-  if (!table) return;
+  const container = document.querySelector('.egutegi-slide-container');
+  if (!container) return;
 
   // CSRF datuak meta-etiketatik
   const metaToken  = document.querySelector('meta[name="_csrf"]');
@@ -394,137 +369,220 @@ document.addEventListener('DOMContentLoaded', function(){
   let draggedFromDate = null;
   let navPending = false;
   let navTimeout = null;
+  let pendingRemovalPanel = null;
 
-  const prevLink = document.getElementById('egutegiPrevMonth');
-  const nextLink = document.getElementById('egutegiNextMonth');
   const edgeThreshold = 90;
-  const exitDelayMs = 220;
+  const exitDelayMs = 240;
 
-  function triggerMonthNav(direction, href) {
-    if (navPending || !href) return;
-    navPending = true;
-    sessionStorage.setItem('denboralizazioa-slide', direction);
-    if (slideWrapper) {
-      slideWrapper.classList.add(
-        direction === 'next' ? 'slide-exit-left' : 'slide-exit-right'
-      );
-    }
-    window.setTimeout(() => {
-      window.location.href = href;
-    }, exitDelayMs);
+  function getActivePanel() {
+    return container.querySelector('.egutegi-slide-panel.active');
   }
 
-  // DRAG HASIERA
-  table.addEventListener('dragstart', function(e){
-    const li = e.target.closest('.jarduera-item');
-    if (!li) return;
+  function getNavLinks(panel) {
+    if (!panel) return { prevLink: null, nextLink: null };
+    return {
+      prevLink: panel.querySelector('[data-egutegi-nav="prev"]'),
+      nextLink: panel.querySelector('[data-egutegi-nav="next"]')
+    };
+  }
 
-    draggedItem = li;
-    const td = li.closest('td[data-date]');
-    draggedFromDate = td ? td.getAttribute('data-date') : null;
+  function attachCalendarClickHandler(panel) {
+    if (!panel || panel.dataset.clickInit === 'true') return;
+    const table = panel.querySelector('.taula-egutegia');
+    if (!table) return;
 
-    e.dataTransfer.effectAllowed = 'move';
-  });
+    table.addEventListener('click', function(e){
+      if (e.target.closest('a.btn-asistentzia') || e.target.closest('.ohar-ikonoa')) return;
 
-  table.addEventListener('dragend', function(){
-    draggedItem = null;
-    draggedFromDate = null;
-    navPending = false;
-    if (navTimeout) {
-      window.clearTimeout(navTimeout);
-      navTimeout = null;
-    }
-  });
+      const td = e.target.closest('td[data-date]');
+      if (!td) return;
 
-  // DROP HELBURUAK: td[data-date]
-  table.querySelectorAll('td[data-date]').forEach(td => {
-
-    td.addEventListener('dragover', function(e){
-      if (!draggedItem) return;
-      e.preventDefault(); // beharrezkoa drop egiteko
-      e.dataTransfer.dropEffect = 'move';
+      if (typeof irekiJardueraModala === 'function') {
+        irekiJardueraModala(td);
+      }
     });
 
-    td.addEventListener('drop', async function(e){
-      if (!draggedItem) return;
-      e.preventDefault();
-      e.stopPropagation();
+    panel.dataset.clickInit = 'true';
+  }
 
-      const targetTd = e.currentTarget;
-      const newDate = targetTd.getAttribute('data-date');
-      if (!newDate) return;
+  function attachDnDToPanel(panel) {
+    if (!panel || panel.dataset.dragInit === 'true') return;
+    const table = panel.querySelector('.taula-egutegia');
+    if (!table) return;
 
-      if (newDate === draggedFromDate) {
-        // Egun berean uzten badu, ez dugu ezer egiten
-        return;
+    // DRAG HASIERA
+    table.addEventListener('dragstart', function(e){
+      const li = e.target.closest('.jarduera-item');
+      if (!li) return;
+
+      draggedItem = li;
+      const td = li.closest('td[data-date]');
+      draggedFromDate = td ? td.getAttribute('data-date') : null;
+
+      e.dataTransfer.effectAllowed = 'move';
+    });
+
+    table.addEventListener('dragend', function(){
+      draggedItem = null;
+      draggedFromDate = null;
+      navPending = false;
+      if (navTimeout) {
+        window.clearTimeout(navTimeout);
+        navTimeout = null;
       }
-
-      const jardueraId = draggedItem.getAttribute('data-id');
-      if (!jardueraId) {
-        console.warn('[DND] jardueraId falta da');
-        return;
+      if (pendingRemovalPanel) {
+        pendingRemovalPanel.remove();
+        pendingRemovalPanel = null;
       }
+    });
 
-      // -------- BACKENDera deia --------
-      try {
-        const params = new URLSearchParams();
-        params.append('data', newDate);
+    // DROP HELBURUAK: td[data-date]
+    table.querySelectorAll('td[data-date]').forEach(td => {
+      td.addEventListener('dragover', function(e){
+        if (!draggedItem) return;
+        e.preventDefault(); // beharrezkoa drop egiteko
+        e.dataTransfer.dropEffect = 'move';
+      });
 
-        const headers = {
-          'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
-        };
-        if (CSRF_TOKEN) {
-          headers[CSRF_HEADER] = CSRF_TOKEN;
-        }
+      td.addEventListener('drop', async function(e){
+        if (!draggedItem) return;
+        e.preventDefault();
+        e.stopPropagation();
 
-        const res = await fetch(`/irakasle/denboralizazioa/jarduera/${jardueraId}/mugitu`, {
-          method: 'POST',
-          headers,
-          body: params.toString()
-        });
+        const targetTd = e.currentTarget;
+        const newDate = targetTd.getAttribute('data-date');
+        if (!newDate) return;
 
-        if (!res.ok) {
-          alert('Ezin izan da jarduera mugitu (HTTP ' + res.status + ').');
+        if (newDate === draggedFromDate) {
+          // Egun berean uzten badu, ez dugu ezer egiten
           return;
         }
 
-        let json = {};
+        const jardueraId = draggedItem.getAttribute('data-id');
+        if (!jardueraId) {
+          console.warn('[DND] jardueraId falta da');
+          return;
+        }
+
+        // -------- BACKENDera deia --------
         try {
-          json = await res.json();
-        } catch (e2) {
-          json = { ok: true }; // kasu arraro batean JSON ez badator
-        }
+          const params = new URLSearchParams();
+          params.append('data', newDate);
 
-        if (json.error) {
-          alert('Ezin izan da jarduera mugitu: ' + json.error);
+          const headers = {
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+          };
+          if (CSRF_TOKEN) {
+            headers[CSRF_HEADER] = CSRF_TOKEN;
+          }
+
+          const res = await fetch(`/irakasle/denboralizazioa/jarduera/${jardueraId}/mugitu`, {
+            method: 'POST',
+            headers,
+            body: params.toString()
+          });
+
+          if (!res.ok) {
+            alert('Ezin izan da jarduera mugitu (HTTP ' + res.status + ').');
+            return;
+          }
+
+          let json = {};
+          try {
+            json = await res.json();
+          } catch (e2) {
+            json = { ok: true }; // kasu arraro batean JSON ez badator
+          }
+
+          if (json.error) {
+            alert('Ezin izan da jarduera mugitu: ' + json.error);
+            return;
+          }
+
+          // -------- HEMEN: dena ondo → orria birkargatu --------
+          window.location.reload();
+
+        } catch (err) {
+          console.error('[DND] Fetch errorea:', err);
+          alert('Ezin izan da jarduera mugitu. Saiatu berriro, mesedez.');
           return;
         }
+      });
+    });
 
-        // -------- HEMEN: dena ondo → orria birkargatu --------
-        window.location.reload();
+    panel.dataset.dragInit = 'true';
+  }
 
-      } catch (err) {
-        console.error('[DND] Fetch errorea:', err);
-        alert('Ezin izan da jarduera mugitu. Saiatu berriro, mesedez.');
+  async function loadMonth(direction, href) {
+    if (navPending || !href) return;
+    navPending = true;
+
+    try {
+      const res = await fetch(href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+      if (!res.ok) {
+        window.location.href = href;
         return;
       }
-    });
-  });
+
+      const html = await res.text();
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const newWrapper = doc.querySelector('#egutegiSlideWrapper');
+      if (!newWrapper) {
+        window.location.href = href;
+        return;
+      }
+
+      const newPanel = document.createElement('div');
+      newPanel.className = `egutegi-slide egutegi-slide-panel active ${
+        direction === 'next' ? 'slide-enter-from-right' : 'slide-enter-from-left'
+      }`;
+      newPanel.innerHTML = newWrapper.innerHTML;
+
+      const currentPanel = getActivePanel();
+      if (currentPanel) {
+        currentPanel.classList.remove('active');
+        currentPanel.classList.add(direction === 'next' ? 'slide-exit-left' : 'slide-exit-right');
+      }
+
+      container.appendChild(newPanel);
+      attachCalendarClickHandler(newPanel);
+      attachDnDToPanel(newPanel);
+
+      window.setTimeout(() => {
+        if (currentPanel) {
+          if (draggedItem) {
+            pendingRemovalPanel = currentPanel;
+          } else {
+            currentPanel.remove();
+          }
+        }
+        navPending = false;
+      }, exitDelayMs);
+    } catch (err) {
+      console.error('[DND] Hilabetea kargatzean errorea:', err);
+      window.location.href = href;
+    }
+  }
+
+  attachCalendarClickHandler(getActivePanel());
+  attachDnDToPanel(getActivePanel());
 
   document.addEventListener('dragover', function(e){
     if (!draggedItem || navPending) return;
 
     const x = e.clientX;
+    const { prevLink, nextLink } = getNavLinks(getActivePanel());
+
     if (x >= window.innerWidth - edgeThreshold && nextLink) {
       navTimeout = navTimeout || window.setTimeout(() => {
-        triggerMonthNav('next', nextLink.getAttribute('href'));
+        loadMonth('next', nextLink.getAttribute('href'));
       }, 120);
       return;
     }
 
     if (x <= edgeThreshold && prevLink) {
       navTimeout = navTimeout || window.setTimeout(() => {
-        triggerMonthNav('prev', prevLink.getAttribute('href'));
+        loadMonth('prev', prevLink.getAttribute('href'));
       }, 120);
       return;
     }
