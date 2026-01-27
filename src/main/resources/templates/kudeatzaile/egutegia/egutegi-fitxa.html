@@ -23,7 +23,10 @@
 
 <h2 th:text="${ikasturtea.izena}">Ikasturtea</h2>
 
-<div th:each="entry : ${hilabeteka}">
+<div th:each="entry, stat : ${hilabeteka}"
+     class="hilabete-blokea"
+     th:id="'hilabete-' + ${stat.index}"
+     th:attr="data-hilabete='hilabete-' + ${stat.index}">
     <h3 th:text="${entry.key}">Hilabetea</h3>
     <table>
 	    <thead>
@@ -62,6 +65,7 @@
 
     <input type="hidden" name="data" id="egunDataInput" />
     <input type="hidden" name="egutegiaId" th:value="${egutegia.id}" />
+    <input type="hidden" name="anchor" id="egunAnchorInput" />
 
     <div style="display:flex; gap:.5rem; align-items:center; flex-wrap:wrap;">
       <label style="font-size:.85rem;">Mota:</label>
@@ -102,6 +106,7 @@
   const popup = document.getElementById("egunAldaketaForm");
   const txt   = document.getElementById("egunDataText");
   const input = document.getElementById("egunDataInput");
+  const anchorInput = document.getElementById("egunAnchorInput");
   const oharraInput = document.getElementById("egunOharraInput");
 
   const motaSelect = document.querySelector('#egunAldaketaForm select[name="mota"]');
@@ -142,6 +147,10 @@
     toggleOrdezkatua();
     ordezkatuaSelect.value = ordez;
     oharraInput.value = oharra;
+    if (anchorInput) {
+      const hilabeteBlokea = td.closest('.hilabete-blokea');
+      anchorInput.value = hilabeteBlokea ? hilabeteBlokea.dataset.hilabete : '';
+    }
 
     popup.style.left = (ev.pageX + 10) + "px";
     popup.style.top  = (ev.pageY + 10) + "px";

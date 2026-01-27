@@ -144,11 +144,15 @@ public class EgutegiaController {
 	        @RequestParam("mota") EgunMota mota,
 	        @RequestParam(value = "ordezkatua", required = false) Astegunak ordezkatua,
 	        @RequestParam("egutegiaId") Long egutegiaId,
-	        @RequestParam(required = false) String oharra) {
+	        @RequestParam(required = false) String oharra,
+	        @RequestParam(required = false) String anchor) {
 
 	    Egutegia egutegia = egutegiaService.getById(egutegiaId);
 	    egutegiaService.aldatuEgunMota(egutegia, data, mota, ordezkatua, oharra);
 
+	    if (anchor != null && !anchor.isBlank()) {
+	        return "redirect:/kudeatzaile/egutegia/" + egutegiaId + "#" + anchor;
+	    }
 	    return "redirect:/kudeatzaile/egutegia/" + egutegiaId;
 	}
 	
