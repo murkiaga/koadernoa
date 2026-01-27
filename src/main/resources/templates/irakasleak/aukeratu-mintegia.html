@@ -1,18 +1,74 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
 <head>
-    <title>Mintegia aukeratu</title>
-    <meta charset="UTF-8">
+  <meta charset="UTF-8">
+  <title>Koadernoa · Mintegia aukeratu</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Login-eko estilo bera berrerabiltzeko -->
+  <link rel="stylesheet" th:href="@{/css/login.css}">
+
+  <!-- Aukerakoa: select-a eta botoia input-en antzera geratzeko (login.css-k select-a ez badu estilatzen) -->
+  <style>
+    .login-field select{
+      width:100%;
+      padding:12px 12px;
+      border:1px solid rgba(0,0,0,.12);
+      border-radius:12px;
+      background:#fff;
+      font-size:1rem;
+      outline:none;
+    }
+    .login-field select:focus{
+      border-color: rgba(59,130,246,.55);
+      box-shadow: 0 0 0 4px rgba(59,130,246,.15);
+    }
+  </style>
 </head>
+
 <body>
-    <h1>Aukeratu zure mintegia</h1>
-    <form method="post" th:action="@{/aukeratu-mintegia}">
-        <select name="mintegia" required>
+  <main class="login-wrap">
+    <section class="login-card" aria-label="Mintegia aukeratzeko panela">
+      <div class="brand">
+        <img th:if="${appLogoUrl != null and !#strings.isEmpty(appLogoUrl)}"
+             th:src="${appLogoUrl}"
+             alt="Ikastetxeko logoa"
+             class="brand-logo">
+
+        <h1 class="title">Koadernoa</h1>
+        <p class="subtitle">Aukeratu zure mintegia</p>
+      </div>
+
+      <!-- Mezuren bat erakutsi nahi baduzu (aukerakoa) -->
+      <div th:if="${param.error}" class="login-alert login-alert-error">
+        Ezin izan da mintegia gorde. Saiatu berriro, mesedez.
+      </div>
+      <div th:if="${param.saved}" class="login-alert login-alert-success">
+        Mintegia ondo gorde da.
+      </div>
+
+      <form class="login-form" method="post" th:action="@{/aukeratu-mintegia}">
+        <!-- CSRF -->
+        <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+        <div class="login-field">
+          <label for="mintegia">Mintegia</label>
+          <select id="mintegia" name="mintegia" required>
+            <option value="" selected disabled>-- Aukeratu --</option>
             <option th:each="fam : ${familiaGuztiak}"
                     th:value="${fam.id}"
-                    th:text="${fam.izena}"></option>
-        </select>
-        <button type="submit">Gorde</button>
-    </form>
+                    th:text="${fam.izena}">
+            </option>
+          </select>
+        </div>
+
+        <!-- Login-eko botoien estilo bera aprobetxatzeko -->
+        <button class="oauth-btn ldap-btn" type="submit">Gorde</button>
+      </form>
+
+      <p class="hint">
+        Zalantzak badituzu, jarri harremanetan administrazioarekin.
+      </p>
+    </section>
+  </main>
 </body>
 </html>
