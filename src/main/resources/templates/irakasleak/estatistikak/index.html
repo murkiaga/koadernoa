@@ -156,7 +156,7 @@
 		        <span th:if="${e.udPortzentaia != null}">
 		          <a th:if="${udEzadostasun}"
 		             class="ezadostasun-link"
-		             th:href="@{/irakasle/estatistikak/{id}/ezadostasuna(id=${e.id})}"
+		             th:href="@{/irakasle/estatistikak/{id}/ezadostasuna(id=${e.id}, mota='UD_EMANDA')}"
 		             th:text="|${e.udPortzentaia}%|">
 		            100%
 		          </a>
@@ -186,7 +186,7 @@
 		        <span th:if="${e.orduPortzentaia != null}">
 		          <a th:if="${orduEzadostasun}"
 		             class="ezadostasun-link"
-		             th:href="@{/irakasle/estatistikak/{id}/ezadostasuna(id=${e.id})}"
+		             th:href="@{/irakasle/estatistikak/{id}/ezadostasuna(id=${e.id}, mota='ORDU_EMANDA')}"
 		             th:text="|${e.orduPortzentaia}%|">
 		            83%
 		          </a>
@@ -211,7 +211,7 @@
 		        <span th:if="${e.gaindituPortzentaia != null}">
 		          <a th:if="${gaindituEzadostasun}"
 		             class="ezadostasun-link"
-		             th:href="@{/irakasle/estatistikak/{id}/ezadostasuna(id=${e.id})}"
+		             th:href="@{/irakasle/estatistikak/{id}/ezadostasuna(id=${e.id}, mota='GAINDITU')}"
 		             th:text="|${e.gaindituPortzentaia}%|">
 		            83%
 		          </a>
@@ -237,7 +237,7 @@
 				  <span th:if="${e.bertaratzePortzentaia != null}">
 				    <a th:if="${bertaratzeEzadostasun}"
 				       class="ezadostasun-link"
-				       th:href="@{/irakasle/estatistikak/{id}/ezadostasuna(id=${e.id})}">
+				       th:href="@{/irakasle/estatistikak/{id}/ezadostasuna(id=${e.id}, mota='BERTARATZE')}">
 				      <span th:text="${#numbers.formatDecimal(e.bertaratzePortzentaia, 2, 2)}">96.21</span>%
 				    </a>
 				    <span th:if="${!bertaratzeEzadostasun}">

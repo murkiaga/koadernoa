@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import com.koadernoa.app.funtzionalitateak.kudeatzaile.EstatistikaDashboard.EstatistikakFiltroa;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.EzadostasunFitxa;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.EzadostasunMota;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.EstatistikaEbaluazioan;
 import com.koadernoa.app.objektuak.koadernoak.repository.EstatistikaEbaluazioanRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.EzadostasunFitxaRepository;
@@ -83,8 +84,8 @@ public class EstatistikakKudeatzaileService {
 	}
 	public List<String> lortuEbaluazioKodeak(EstatistikakFiltroa f) { return List.of("1_EBAL","2_EBAL","3_EBAL","1_FINAL","2_FINAL"); }
 
-    public List<String> kalkulatuEzadostasunak(EstatistikaEbaluazioan estatistika) {
-        List<String> emaitza = new java.util.ArrayList<>();
+    public List<EzadostasunMota> kalkulatuEzadostasunak(EstatistikaEbaluazioan estatistika) {
+        List<EzadostasunMota> emaitza = new java.util.ArrayList<>();
         if (estatistika == null || estatistika.getEbaluazioMomentua() == null ||
                 estatistika.getEbaluazioMomentua().getEzadostasunKonfig() == null) {
             return emaitza;
@@ -95,23 +96,37 @@ public class EstatistikakKudeatzaileService {
 
         if (estatistika.getUdPortzentaia() != null &&
                 estatistika.getUdPortzentaia() < konfig.getMinBlokePortzentaia()) {
-            emaitza.add("UD-ak emanda < %" + konfig.getMinBlokePortzentaia());
+            emaitza.add(EzadostasunMota.UD_EMANDA);
         }
         if (estatistika.getOrduPortzentaia() != null &&
                 estatistika.getOrduPortzentaia() < konfig.getMinOrduPortzentaia()) {
-            emaitza.add("Orduak emanda < %" + konfig.getMinOrduPortzentaia());
+            emaitza.add(EzadostasunMota.ORDU_EMANDA);
         }
         if (estatistika.getGaindituPortzentaia() != null &&
                 estatistika.getGaindituPortzentaia() < konfig.getMinGaindituPortzentaia()) {
-            emaitza.add("Gainditu duten ikasleak < %" + konfig.getMinGaindituPortzentaia());
+            emaitza.add(EzadostasunMota.GAINDITU);
         }
         if (estatistika.getBertaratzePortzentaia() != null &&
                 estatistika.getBertaratzePortzentaia() < konfig.getMinBertaratzePortzentaia()) {
-            emaitza.add("Ikasleen bertaratzea < %" + konfig.getMinBertaratzePortzentaia());
+            emaitza.add(EzadostasunMota.BERTARATZE);
         }
         return emaitza;
     }
 
+    public String kalkulatuEzadostasunLabel(EstatistikaEbaluazioan estatistika, EzadostasunMota mota) {
+        if (estatistika == null || estatistika.getEbaluazioMomentua() == null ||
+                estatistika.getEbaluazioMomentua().getEzadostasunKonfig() == null || mota == null) {
+            return "—";
+        }
+        com.koadernoa.app.objektuak.ebaluazioa.entitateak.EzadostasunKonfig konfig =
+                estatistika.getEbaluazioMomentua().getEzadostasunKonfig();
+        return switch (mota) {
+            case UD_EMANDA -> "UD-ak emanda < %" + konfig.getMinBlokePortzentaia();
+            case ORDU_EMANDA -> "Orduak emanda < %" + konfig.getMinOrduPortzentaia();
+            case GAINDITU -> "Gainditu duten ikasleak < %" + konfig.getMinGaindituPortzentaia();
+            case BERTARATZE -> "Ikasleen bertaratzea < %" + konfig.getMinBertaratzePortzentaia();
+        };
+    }
 
     /*************************** CSV exportazioa egiteko *****************************/
     public void exportCsv(EstatistikakFiltroa f, Sort sort, OutputStream os) throws IOException {
@@ -280,9 +295,18 @@ public class EstatistikakKudeatzaileService {
                         }
                     }
 
-                    List<String> motak = kalkulatuEzadostasunak(e);
-                    if (motak.isEmpty()) {
-                        motak = List.of("—");
+                    List<String> motak = new java.util.ArrayList<>();
+                    if (fitxa.getMota() != null) {
+                        motak.add(kalkulatuEzadostasunLabel(e, fitxa.getMota()));
+                    } else {
+                        List<EzadostasunMota> kalkulatuak = kalkulatuEzadostasunak(e);
+                        if (kalkulatuak.isEmpty()) {
+                            motak.add("—");
+                        } else {
+                            for (EzadostasunMota mota : kalkulatuak) {
+                                motak.add(kalkulatuEzadostasunLabel(e, mota));
+                            }
+                        }
                     }
                     String jarraipenData = fitxa.getJarraipenData() != null ? fitxa.getJarraipenData().format(dateFmt) : "";
                     String itxieraData = fitxa.getItxieraData() != null ? fitxa.getItxieraData().format(dateFmt) : "";

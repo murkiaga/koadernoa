@@ -23,6 +23,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.EstatistikaEbaluazioan;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.EzadostasunFitxa;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.EzadostasunMota;
 import com.koadernoa.app.objektuak.koadernoak.repository.EzadostasunFitxaRepository;
 import com.koadernoa.app.objektuak.koadernoak.service.EstatistikaService;
 
@@ -117,6 +118,7 @@ public class EstatistikakController {
     public String ezadostasunFitxa(
             @PathVariable Long estatId,
             @SessionAttribute("koadernoAktiboa") Koadernoa koadernoAktiboa,
+            @RequestParam(required = false) EzadostasunMota mota,
             Model model,
             RedirectAttributes ra) {
 
@@ -127,16 +129,41 @@ public class EstatistikakController {
             return "redirect:/irakasle/estatistikak";
         }
 
-        EzadostasunFitxa fitxa = ezadostasunFitxaRepository.findByEstatistikaId(estatId).orElse(null);
+        List<EzadostasunMota> motak = kalkulatuEzadostasunMotak(estatistika);
+        if (mota == null) {
+            if (motak.isEmpty()) {
+                ra.addFlashAttribute("error", "Ez dago ezadostasun aktiborik.");
+                return "redirect:/irakasle/estatistikak";
+            }
+            mota = motak.get(0);
+        }
+        if (!motak.contains(mota)) {
+            ra.addFlashAttribute("error", "Ezadostasun mota hori ez dago aktibo.");
+            return "redirect:/irakasle/estatistikak";
+        }
+
+        EzadostasunFitxa fitxa = ezadostasunFitxaRepository
+                .findByEstatistikaIdAndMota(estatId, mota)
+                .orElse(null);
         if (fitxa == null) {
-            fitxa = sortuFitxaAutomatikoa(estatistika);
+            EzadostasunFitxa zaharra = ezadostasunFitxaRepository
+                    .findFirstByEstatistikaIdOrderById(estatId)
+                    .orElse(null);
+            if (zaharra != null && zaharra.getMota() == null) {
+                zaharra.setMota(mota);
+                fitxa = ezadostasunFitxaRepository.save(zaharra);
+            }
+        }
+        if (fitxa == null) {
+            fitxa = sortuFitxaAutomatikoa(estatistika, mota);
             ezadostasunFitxaRepository.save(fitxa);
         }
 
         model.addAttribute("koadernoAktiboa", koadernoAktiboa);
         model.addAttribute("estatistika", estatistika);
         model.addAttribute("fitxa", fitxa);
-        model.addAttribute("ezadostasunak", kalkulatuEzadostasunak(estatistika));
+        model.addAttribute("ezadostasunMota", mota);
+        model.addAttribute("ezadostasunMotaLabel", kalkulatuEzadostasunLabel(estatistika, mota));
         return "irakasleak/estatistikak/ezadostasun-fitxa";
     }
 
@@ -145,6 +172,7 @@ public class EstatistikakController {
     public String gordeEzadostasunFitxa(
             @PathVariable Long estatId,
             @SessionAttribute("koadernoAktiboa") Koadernoa koadernoAktiboa,
+            @RequestParam EzadostasunMota mota,
             @RequestParam(required = false) String zuzentzeJarduerak,
             @RequestParam(required = false) String zuzentzeJarduerakArduraduna,
             @RequestParam(required = false) String jarraipenData,
@@ -163,9 +191,20 @@ public class EstatistikakController {
             return "redirect:/irakasle/estatistikak";
         }
 
-        EzadostasunFitxa fitxa = ezadostasunFitxaRepository.findByEstatistikaId(estatId).orElse(null);
+        EzadostasunFitxa fitxa = ezadostasunFitxaRepository
+                .findByEstatistikaIdAndMota(estatId, mota)
+                .orElse(null);
         if (fitxa == null) {
-            fitxa = sortuFitxaAutomatikoa(estatistika);
+            EzadostasunFitxa zaharra = ezadostasunFitxaRepository
+                    .findFirstByEstatistikaIdOrderById(estatId)
+                    .orElse(null);
+            if (zaharra != null && zaharra.getMota() == null) {
+                zaharra.setMota(mota);
+                fitxa = zaharra;
+            }
+        }
+        if (fitxa == null) {
+            fitxa = sortuFitxaAutomatikoa(estatistika, mota);
         }
 
         fitxa.setZuzentzeJarduerak(zuzentzeJarduerak);
@@ -187,13 +226,14 @@ public class EstatistikakController {
         if ("close".equals(postAction)) {
             return "redirect:/irakasle/estatistikak";
         }
-        return "redirect:/irakasle/estatistikak/" + estatId + "/ezadostasuna";
+        return "redirect:/irakasle/estatistikak/" + estatId + "/ezadostasuna?mota=" + mota;
     }
 
-    private EzadostasunFitxa sortuFitxaAutomatikoa(EstatistikaEbaluazioan estatistika) {
+    private EzadostasunFitxa sortuFitxaAutomatikoa(EstatistikaEbaluazioan estatistika, EzadostasunMota mota) {
         EzadostasunFitxa fitxa = new EzadostasunFitxa();
         fitxa.setEstatistika(estatistika);
-        estatistika.setEzadostasunFitxa(fitxa);
+        fitxa.setMota(mota);
+        estatistika.getEzadostasunFitxak().add(fitxa);
         fitxa.setEmandakoBlokeKopurua(estatistika.getUnitateakEmanda());
         fitxa.setEmandakoOrduKopurua(estatistika.getOrduakEmanda());
         fitxa.setIkasleenBertaratzePortzentaia(estatistika.getBertaratzePortzentaia());
@@ -201,8 +241,8 @@ public class EstatistikakController {
         return fitxa;
     }
 
-    private List<String> kalkulatuEzadostasunak(EstatistikaEbaluazioan estatistika) {
-        List<String> emaitza = new ArrayList<>();
+    private List<EzadostasunMota> kalkulatuEzadostasunMotak(EstatistikaEbaluazioan estatistika) {
+        List<EzadostasunMota> emaitza = new ArrayList<>();
         if (estatistika == null || estatistika.getEbaluazioMomentua() == null ||
                 estatistika.getEbaluazioMomentua().getEzadostasunKonfig() == null) {
             return emaitza;
@@ -212,21 +252,36 @@ public class EstatistikakController {
                 estatistika.getEbaluazioMomentua().getEzadostasunKonfig();
         if (estatistika.getUdPortzentaia() != null &&
                 estatistika.getUdPortzentaia() < konfig.getMinBlokePortzentaia()) {
-            emaitza.add("UD-ak emanda < %" + konfig.getMinBlokePortzentaia());
+            emaitza.add(EzadostasunMota.UD_EMANDA);
         }
         if (estatistika.getOrduPortzentaia() != null &&
                 estatistika.getOrduPortzentaia() < konfig.getMinOrduPortzentaia()) {
-            emaitza.add("Orduak emanda < %" + konfig.getMinOrduPortzentaia());
+            emaitza.add(EzadostasunMota.ORDU_EMANDA);
         }
         if (estatistika.getGaindituPortzentaia() != null &&
                 estatistika.getGaindituPortzentaia() < konfig.getMinGaindituPortzentaia()) {
-            emaitza.add("Gainditu duten ikasleak < %" + konfig.getMinGaindituPortzentaia());
+            emaitza.add(EzadostasunMota.GAINDITU);
         }
         if (estatistika.getBertaratzePortzentaia() != null &&
                 estatistika.getBertaratzePortzentaia() < konfig.getMinBertaratzePortzentaia()) {
-            emaitza.add("Ikasleen bertaratzea < %" + konfig.getMinBertaratzePortzentaia());
+            emaitza.add(EzadostasunMota.BERTARATZE);
         }
         return emaitza;
+    }
+
+    private String kalkulatuEzadostasunLabel(EstatistikaEbaluazioan estatistika, EzadostasunMota mota) {
+        if (estatistika == null || estatistika.getEbaluazioMomentua() == null ||
+                estatistika.getEbaluazioMomentua().getEzadostasunKonfig() == null || mota == null) {
+            return "—";
+        }
+        com.koadernoa.app.objektuak.ebaluazioa.entitateak.EzadostasunKonfig konfig =
+                estatistika.getEbaluazioMomentua().getEzadostasunKonfig();
+        return switch (mota) {
+            case UD_EMANDA -> "UD-ak emanda < %" + konfig.getMinBlokePortzentaia();
+            case ORDU_EMANDA -> "Orduak emanda < %" + konfig.getMinOrduPortzentaia();
+            case GAINDITU -> "Gainditu duten ikasleak < %" + konfig.getMinGaindituPortzentaia();
+            case BERTARATZE -> "Ikasleen bertaratzea < %" + konfig.getMinBertaratzePortzentaia();
+        };
     }
 
     private java.time.LocalDate parseDate(String value) {

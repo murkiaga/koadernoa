@@ -6,6 +6,7 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.EstatistikaEbaluazioan;
 import com.koadernoa.app.objektuak.koadernoak.repository.EstatistikaEbaluazioanRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.EzadostasunFitxaRepository;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.EzadostasunFitxa;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.EzadostasunMota;
 import com.koadernoa.app.objektuak.koadernoak.repository.projection.EbaluazioKodeKopuruaProjection;
 
 
@@ -77,12 +78,20 @@ public class EstatistikakKudeatzaileController {
         Page<EzadostasunFitxa> ezadostasunOrria = estatistikakService.bilatuEzadostasunOrrikatuta(filtro, ezadostasunPageable);
         List<EzadostasunFitxaRow> ezadostasunRows = new java.util.ArrayList<>();
         for (EzadostasunFitxa fitxa : ezadostasunOrria.getContent()) {
-            List<String> motak = estatistikakService.kalkulatuEzadostasunak(fitxa.getEstatistika());
-            if (motak.isEmpty()) {
-                ezadostasunRows.add(new EzadostasunFitxaRow(fitxa, "—"));
+            if (fitxa.getMota() != null) {
+                ezadostasunRows.add(new EzadostasunFitxaRow(
+                        fitxa,
+                        estatistikakService.kalkulatuEzadostasunLabel(fitxa.getEstatistika(), fitxa.getMota())));
             } else {
-                for (String mota : motak) {
-                    ezadostasunRows.add(new EzadostasunFitxaRow(fitxa, mota));
+                List<EzadostasunMota> motak = estatistikakService.kalkulatuEzadostasunak(fitxa.getEstatistika());
+                if (motak.isEmpty()) {
+                    ezadostasunRows.add(new EzadostasunFitxaRow(fitxa, "—"));
+                } else {
+                    for (EzadostasunMota mota : motak) {
+                        ezadostasunRows.add(new EzadostasunFitxaRow(
+                                fitxa,
+                                estatistikakService.kalkulatuEzadostasunLabel(fitxa.getEstatistika(), mota)));
+                    }
                 }
             }
         }
@@ -106,6 +115,7 @@ public class EstatistikakKudeatzaileController {
     @GetMapping("/{estatId}/ezadostasuna")
     public String ezadostasunFitxa(
             @PathVariable Long estatId,
+            @RequestParam(required = false) EzadostasunMota mota,
             Model model,
             RedirectAttributes ra) {
 
@@ -116,8 +126,22 @@ public class EstatistikakKudeatzaileController {
             return "redirect:/kudeatzaile/estatistikak";
         }
 
-        EzadostasunFitxa fitxa = ezadostasunFitxaRepository.findByEstatistikaId(estatId).orElse(null);
-        List<String> ezadostasunak = estatistikakService.kalkulatuEzadostasunak(estatistika);
+        List<EzadostasunMota> ezadostasunak = estatistikakService.kalkulatuEzadostasunak(estatistika);
+        if (mota == null) {
+            if (ezadostasunak.isEmpty()) {
+                ra.addFlashAttribute("error", "Ez dago ezadostasun aktiborik.");
+                return "redirect:/kudeatzaile/estatistikak";
+            }
+            mota = ezadostasunak.get(0);
+        }
+        if (!ezadostasunak.contains(mota)) {
+            ra.addFlashAttribute("error", "Ezadostasun mota hori ez dago aktibo.");
+            return "redirect:/kudeatzaile/estatistikak";
+        }
+
+        EzadostasunFitxa fitxa = ezadostasunFitxaRepository
+                .findByEstatistikaIdAndMota(estatId, mota)
+                .orElse(null);
 
         if (fitxa == null && !ezadostasunak.isEmpty()) {
             ra.addFlashAttribute("ezadostasunAlert", "Irakasleak ez du ezadostasun fitxa bete.");
@@ -126,7 +150,8 @@ public class EstatistikakKudeatzaileController {
 
         model.addAttribute("estatistika", estatistika);
         model.addAttribute("fitxa", fitxa);
-        model.addAttribute("ezadostasunak", ezadostasunak);
+        model.addAttribute("ezadostasunMota", mota);
+        model.addAttribute("ezadostasunMotaLabel", estatistikakService.kalkulatuEzadostasunLabel(estatistika, mota));
 
         return "kudeatzaile/estatistikak/ezadostasun-fitxa";
     }

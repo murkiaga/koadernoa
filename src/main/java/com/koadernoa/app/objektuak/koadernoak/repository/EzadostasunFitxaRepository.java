@@ -1,5 +1,6 @@
 package com.koadernoa.app.objektuak.koadernoak.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -11,9 +12,12 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.koadernoa.app.objektuak.koadernoak.entitateak.EzadostasunFitxa;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.EzadostasunMota;
 
 public interface EzadostasunFitxaRepository extends JpaRepository<EzadostasunFitxa, Long> {
-    Optional<EzadostasunFitxa> findByEstatistikaId(Long estatistikaId);
+    Optional<EzadostasunFitxa> findByEstatistikaIdAndMota(Long estatistikaId, EzadostasunMota mota);
+    Optional<EzadostasunFitxa> findFirstByEstatistikaIdOrderById(Long estatistikaId);
+    List<EzadostasunFitxa> findAllByEstatistikaId(Long estatistikaId);
 
     @EntityGraph(attributePaths = {
         "estatistika",
