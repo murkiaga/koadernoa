@@ -21,7 +21,13 @@
             will-change: transform, opacity;
         }
         .egutegi-slide-panel {
+            position: relative;
+            top: 0;
+            left: 0;
             width: 100%;
+        }
+        .egutegi-slide-panel.is-animating {
+            position: absolute;
         }
         .egutegi-slide.slide-exit-left {
             transform: translateX(-20%);
@@ -370,6 +376,7 @@ document.addEventListener('DOMContentLoaded', function(){
   let navPending = false;
   let navTimeout = null;
   let pendingRemovalPanel = null;
+  let currentMonthHref = window.location.href;
 
   const edgeThreshold = 90;
   const exitDelayMs = 240;
@@ -405,6 +412,16 @@ document.addEventListener('DOMContentLoaded', function(){
     panel.dataset.clickInit = 'true';
   }
 
+  function setContainerHeight(height) {
+    if (typeof height === 'number' && !Number.isNaN(height)) {
+      container.style.height = `${height}px`;
+    }
+  }
+
+  function clearContainerHeight() {
+    container.style.height = '';
+  }
+
   function attachDnDToPanel(panel) {
     if (!panel || panel.dataset.dragInit === 'true') return;
     const table = panel.querySelector('.taula-egutegia');
@@ -434,6 +451,11 @@ document.addEventListener('DOMContentLoaded', function(){
         pendingRemovalPanel.remove();
         pendingRemovalPanel = null;
       }
+      const activePanel = getActivePanel();
+      if (activePanel) {
+        activePanel.classList.remove('is-animating');
+      }
+      clearContainerHeight();
     });
 
     // DROP HELBURUAK: td[data-date]
@@ -500,7 +522,7 @@ document.addEventListener('DOMContentLoaded', function(){
           }
 
           // -------- HEMEN: dena ondo → orria birkargatu --------
-          window.location.reload();
+          window.location.href = currentMonthHref;
 
         } catch (err) {
           console.error('[DND] Fetch errorea:', err);
@@ -532,6 +554,9 @@ document.addEventListener('DOMContentLoaded', function(){
         return;
       }
 
+      currentMonthHref = href;
+      window.history.replaceState(null, '', href);
+
       const newPanel = document.createElement('div');
       newPanel.className = `egutegi-slide egutegi-slide-panel active ${
         direction === 'next' ? 'slide-enter-from-right' : 'slide-enter-from-left'
@@ -539,18 +564,30 @@ document.addEventListener('DOMContentLoaded', function(){
       newPanel.innerHTML = newWrapper.innerHTML;
 
       const currentPanel = getActivePanel();
+      const currentHeight = currentPanel ? currentPanel.offsetHeight : 0;
+      if (currentHeight) {
+        setContainerHeight(currentHeight);
+      }
       if (currentPanel) {
         currentPanel.classList.remove('active');
+        currentPanel.classList.add('is-animating');
         currentPanel.classList.add(direction === 'next' ? 'slide-exit-left' : 'slide-exit-right');
       }
 
       container.appendChild(newPanel);
+      newPanel.classList.add('is-animating');
+      const newHeight = newPanel.offsetHeight;
+      if (newHeight) {
+        setContainerHeight(Math.max(currentHeight, newHeight));
+      }
       attachCalendarClickHandler(newPanel);
       attachDnDToPanel(newPanel);
 
       window.setTimeout(() => {
+        setContainerHeight(newPanel.offsetHeight);
+        newPanel.classList.remove('is-animating');
         if (currentPanel) {
-          if (draggedItem) {
+          if (draggedItem && currentPanel.contains(draggedItem)) {
             pendingRemovalPanel = currentPanel;
           } else {
             currentPanel.remove();
