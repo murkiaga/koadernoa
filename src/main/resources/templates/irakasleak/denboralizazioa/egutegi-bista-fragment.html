@@ -3,7 +3,7 @@
 
     <!-- Hilabetea + botoiak -->
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <a th:href="@{/irakasle/denboralizazioa(
+        <a id="egutegiPrevMonth" th:href="@{/irakasle/denboralizazioa(
                         hilabetea=${hilabetea == 1 ? 12 : hilabetea - 1},
                         urtea=${hilabetea == 1 ? urtea - 1 : urtea},
                         bista='egutegia')}">
@@ -12,7 +12,7 @@
 
         <h2 th:text="${hilabeteUrtea}" style="margin: 0; text-align: center; flex: 1;">Hilabetea</h2>
 
-        <a th:href="@{/irakasle/denboralizazioa(
+        <a id="egutegiNextMonth" th:href="@{/irakasle/denboralizazioa(
                         hilabetea=${hilabetea == 12 ? 1 : hilabetea + 1},
                         urtea=${hilabetea == 12 ? urtea + 1 : urtea},
                         bista='egutegia')}">

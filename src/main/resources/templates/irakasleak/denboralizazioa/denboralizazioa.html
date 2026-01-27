@@ -12,6 +12,36 @@
     <style>
         h2, h3 { text-transform: capitalize; }
         .hilabetea { margin-bottom: 2rem; }
+        .egutegi-slide-container {
+            position: relative;
+            overflow: hidden;
+        }
+        .egutegi-slide {
+            transition: transform 0.22s ease, opacity 0.22s ease;
+            will-change: transform, opacity;
+        }
+        .egutegi-slide.slide-exit-left {
+            transform: translateX(-20%);
+            opacity: 0;
+        }
+        .egutegi-slide.slide-exit-right {
+            transform: translateX(20%);
+            opacity: 0;
+        }
+        .egutegi-slide.slide-enter-from-right {
+            animation: egutegiSlideInFromRight 0.28s ease;
+        }
+        .egutegi-slide.slide-enter-from-left {
+            animation: egutegiSlideInFromLeft 0.28s ease;
+        }
+        @keyframes egutegiSlideInFromRight {
+            from { transform: translateX(20%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes egutegiSlideInFromLeft {
+            from { transform: translateX(-20%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
 
         .taula-egutegia {
             width: 100%;
@@ -272,8 +302,10 @@
 </div>
 
 <!-- FRAGMENT Egutegi Bista -->
-<div th:if="${bista == null or bista == 'egutegia'}"
-     th:insert="irakasleak/denboralizazioa/egutegi-bista-fragment :: egutegiBista">
+<div class="egutegi-slide-container" th:if="${bista == null or bista == 'egutegia'}">
+    <div id="egutegiSlideWrapper" class="egutegi-slide"
+         th:insert="irakasleak/denboralizazioa/egutegi-bista-fragment :: egutegiBista">
+    </div>
 </div>
 
 <!-- FRAGMENT Falten Bista -->
@@ -338,6 +370,15 @@ function itxiTxantiloiModala() {
 
 	//Jardueren drag&drop
 document.addEventListener('DOMContentLoaded', function(){
+  const slideWrapper = document.getElementById('egutegiSlideWrapper');
+  const slideIntent = sessionStorage.getItem('denboralizazioa-slide');
+  if (slideWrapper && slideIntent) {
+    slideWrapper.classList.add(
+      slideIntent === 'next' ? 'slide-enter-from-right' : 'slide-enter-from-left'
+    );
+    sessionStorage.removeItem('denboralizazioa-slide');
+  }
+
   const table = document.querySelector('.taula-egutegia');
   if (!table) return;
 
@@ -351,6 +392,27 @@ document.addEventListener('DOMContentLoaded', function(){
 
   let draggedItem = null;
   let draggedFromDate = null;
+  let navPending = false;
+  let navTimeout = null;
+
+  const prevLink = document.getElementById('egutegiPrevMonth');
+  const nextLink = document.getElementById('egutegiNextMonth');
+  const edgeThreshold = 90;
+  const exitDelayMs = 220;
+
+  function triggerMonthNav(direction, href) {
+    if (navPending || !href) return;
+    navPending = true;
+    sessionStorage.setItem('denboralizazioa-slide', direction);
+    if (slideWrapper) {
+      slideWrapper.classList.add(
+        direction === 'next' ? 'slide-exit-left' : 'slide-exit-right'
+      );
+    }
+    window.setTimeout(() => {
+      window.location.href = href;
+    }, exitDelayMs);
+  }
 
   // DRAG HASIERA
   table.addEventListener('dragstart', function(e){
@@ -367,6 +429,11 @@ document.addEventListener('DOMContentLoaded', function(){
   table.addEventListener('dragend', function(){
     draggedItem = null;
     draggedFromDate = null;
+    navPending = false;
+    if (navTimeout) {
+      window.clearTimeout(navTimeout);
+      navTimeout = null;
+    }
   });
 
   // DROP HELBURUAK: td[data-date]
@@ -442,6 +509,30 @@ document.addEventListener('DOMContentLoaded', function(){
         return;
       }
     });
+  });
+
+  document.addEventListener('dragover', function(e){
+    if (!draggedItem || navPending) return;
+
+    const x = e.clientX;
+    if (x >= window.innerWidth - edgeThreshold && nextLink) {
+      navTimeout = navTimeout || window.setTimeout(() => {
+        triggerMonthNav('next', nextLink.getAttribute('href'));
+      }, 120);
+      return;
+    }
+
+    if (x <= edgeThreshold && prevLink) {
+      navTimeout = navTimeout || window.setTimeout(() => {
+        triggerMonthNav('prev', prevLink.getAttribute('href'));
+      }, 120);
+      return;
+    }
+
+    if (navTimeout) {
+      window.clearTimeout(navTimeout);
+      navTimeout = null;
+    }
   });
 });
 </script>
