@@ -304,9 +304,9 @@
 </div>
 
 <!-- Koadernoa EZABATZEKO fragment-a (botoia + modala, behean ezkerrean) -->
-<div th:if="${koadernoAktiboa != null}"
-     th:replace="~{irakasleak/fragments/koadernoa-ezabatu :: koadernoa-ezabatu-fragment(${koadernoAktiboa})}">
-</div>
+<th:block th:if="${koadernoAktiboa != null}">
+  <div th:replace="~{irakasleak/fragments/koadernoa-ezabatu :: koadernoa-ezabatu-fragment(${koadernoAktiboa})}"></div>
+</th:block>
 
 <script>
 (function () {

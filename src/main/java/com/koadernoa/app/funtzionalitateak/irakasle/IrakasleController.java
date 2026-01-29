@@ -65,7 +65,6 @@ public class IrakasleController {
 	    Irakaslea irakaslea = irakasleaService.findByEmaila(emaila);
 	    model.addAttribute("irakaslea", irakaslea);
 
-	    // ⇒ HAU EGOKITU ZURE SERVICERA:
 	    // navbarreko select-ean erakusten dituzun koaderno berdinak
 	    List<Koadernoa> koadernoZerrenda =
 	    		irakasleModelAttributes.getKoadernoAktiboak(auth);
