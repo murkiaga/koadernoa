@@ -47,18 +47,20 @@
         <ul class="nav-links">
           <li><a th:href="@{/irakasle}"
                  th:classappend="${currentPath == '/irakasle'} ? 'active'">Hasiera</a></li>
-          <li><a th:href="@{/irakasle/egutegia}"
-                 th:classappend="${currentPath.startsWith('/irakasle/egutegia')} ? 'active'">Egutegia</a></li>
-          <li><a th:href="@{/irakasle/ikasleak}"
-                 th:classappend="${currentPath.startsWith('/irakasle/ikasleak')} ? 'active'">Ikasleak</a></li>
-          <li><a th:href="@{/irakasle/programazioa}"
-                 th:classappend="${currentPath.startsWith('/irakasle/programazioa')} ? 'active'">Programazioa</a></li>
-          <li><a th:href="@{/irakasle/denboralizazioa}"
-                 th:classappend="${currentPath.startsWith('/irakasle/denboralizazioa')} ? 'active'">Denboralizazioa</a></li>
-          <li><a th:href="@{/irakasle/notak}"
-                 th:classappend="${currentPath.startsWith('/irakasle/notak')} ? 'active'">Notak</a></li>
-          <li><a th:href="@{/irakasle/estatistikak}"
-                 th:classappend="${currentPath.startsWith('/irakasle/estatistikak')} ? 'active'">Estatistikak</a></li>
+          <th:block th:if="${koadernoAktiboa != null}"> 
+	          <li><a th:href="@{/irakasle/egutegia}"
+	                 th:classappend="${currentPath.startsWith('/irakasle/egutegia')} ? 'active'">Egutegia</a></li>
+	          <li><a th:href="@{/irakasle/ikasleak}"
+	                 th:classappend="${currentPath.startsWith('/irakasle/ikasleak')} ? 'active'">Ikasleak</a></li>
+	          <li><a th:href="@{/irakasle/programazioa}"
+	                 th:classappend="${currentPath.startsWith('/irakasle/programazioa')} ? 'active'">Programazioa</a></li>
+	          <li><a th:href="@{/irakasle/denboralizazioa}"
+	                 th:classappend="${currentPath.startsWith('/irakasle/denboralizazioa')} ? 'active'">Denboralizazioa</a></li>
+	          <li><a th:href="@{/irakasle/notak}"
+	                 th:classappend="${currentPath.startsWith('/irakasle/notak')} ? 'active'">Notak</a></li>
+	          <li><a th:href="@{/irakasle/estatistikak}"
+	                 th:classappend="${currentPath.startsWith('/irakasle/estatistikak')} ? 'active'">Estatistikak</a></li>
+	      </th:block>
           <li th:if="${#authorization.expression('hasAnyRole(''KUDEATZAILEA'',''ADMIN'')')}">
             <a th:href="@{/kudeatzaile}">Kudeaketa</a>
           </li>
