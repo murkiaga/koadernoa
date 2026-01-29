@@ -38,10 +38,19 @@ public class IrakasleModelAttributes {
                 ? oAuth2User.getAttribute("email")
                 : (auth != null ? auth.getName() : null);
 
-        if (emaila == null) return null;
+        if (emaila == null) {
+            return null;
+        }
 
-        Irakaslea ir = irakasleaService.findByEmaila(emaila);
-        if (ir == null || ir.getKoadernoak() == null) return null;
+        var irakasleaOpt = irakasleaService.findOptionalByEmaila(emaila);
+        if (irakasleaOpt.isEmpty()) {
+            return null;
+        }
+
+        Irakaslea ir = irakasleaOpt.get();
+        if (ir.getKoadernoak() == null) {
+            return null;
+        }
 
         return ir.getKoadernoak().stream()
                 .filter(k -> k.getEgutegia() != null
@@ -58,10 +67,19 @@ public class IrakasleModelAttributes {
                 ? oAuth2User.getAttribute("email")
                 : (auth != null ? auth.getName() : null);
 
-        if (emaila == null) return List.of();
+        if (emaila == null) {
+            return List.of();
+        }
 
-        Irakaslea ir = irakasleaService.findByEmaila(emaila);
-        if (ir == null || ir.getKoadernoak() == null) return List.of();
+        var irakasleaOpt = irakasleaService.findOptionalByEmaila(emaila);
+        if (irakasleaOpt.isEmpty()) {
+            return List.of();
+        }
+
+        Irakaslea ir = irakasleaOpt.get();
+        if (ir.getKoadernoak() == null) {
+            return List.of();
+        }
 
         return ir.getKoadernoak().stream()
                 .filter(k -> k.getEgutegia() != null
