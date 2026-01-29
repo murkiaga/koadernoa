@@ -137,12 +137,23 @@ public class IrakasleController {
 	@GetMapping("/egutegia")
 	public String koadernoarenEgutegia(@ModelAttribute("koadernoAktiboa") Koadernoa koadernoa, Model model) {
 
-	    if (koadernoa == null) {
+	    if (koadernoa == null || koadernoa.getId() == null) {
 	        model.addAttribute("errorea", "Ez dago koaderno aktiborik aukeratuta.");
 	        return "error/404";
 	    }
 
-	    Egutegia egutegia = koadernoa.getEgutegia();
+	    var koadernoaOpt = koadernoaRepository.findByIdWithEgutegiaAndEgunBereziak(koadernoa.getId());
+	    if (koadernoaOpt.isEmpty()) {
+	        model.addAttribute("errorea", "Koaderno aktiboa ez da aurkitu.");
+	        return "error/404";
+	    }
+
+	    Koadernoa kargatutakoKoadernoa = koadernoaOpt.get();
+	    Egutegia egutegia = kargatutakoKoadernoa.getEgutegia();
+	    if (egutegia == null) {
+	        model.addAttribute("errorea", "Koaderno aktiboak ez du egutegirik esleituta.");
+	        return "error/404";
+	    }
 
 	    Map<String, List<List<LocalDate>>> hilabeteka = egutegiaService.prestatuHilabetekoEgutegiak(egutegia);
 	    Map<String, String> klaseak = egutegiaService.kalkulatuKlaseak(egutegia);

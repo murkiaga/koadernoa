@@ -89,6 +89,10 @@ public class KoadernoaService {
     public Koadernoa findById(Long id) {
         return koadernoaRepository.findById(id).orElseThrow();
     }
+
+    public Optional<Koadernoa> findByIdWithEgutegiaAndEgunBereziak(Long id) {
+        return koadernoaRepository.findByIdWithEgutegiaAndEgunBereziak(id);
+    }
     
     public List<Koadernoa> findAll() {
         return koadernoaRepository.findAll();

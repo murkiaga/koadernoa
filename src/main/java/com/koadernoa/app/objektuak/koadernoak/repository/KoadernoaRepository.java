@@ -43,13 +43,22 @@ public interface KoadernoaRepository extends JpaRepository<Koadernoa, Long>{
         })
         Optional<Koadernoa> findWithOrdutegiaById(Long id);
     
-    @Query("""
+	@Query("""
 		  select k from Koadernoa k
 		    left join fetch k.ordutegiak
 		    left join fetch k.egutegia eg
 		  where k.id = :id
 		""")
 		Optional<Koadernoa> findByIdWithOrdutegiaAndEgutegia(@Param("id") Long id);
+
+	@Query("""
+		  select distinct k from Koadernoa k
+		    left join fetch k.egutegia eg
+		    left join fetch eg.egunBereziak
+		    left join fetch eg.ikasturtea
+		  where k.id = :id
+		""")
+		Optional<Koadernoa> findByIdWithEgutegiaAndEgunBereziak(@Param("id") Long id);
     
     @Query("select k.id from Koadernoa k where k.moduloa.taldea.id = :taldeaId")
     List<Long> findKoadernoIdsByTaldeaId(@Param("taldeaId") Long taldeaId);
