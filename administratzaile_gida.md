@@ -1,0 +1,1 @@
+- traefik_letsencrypt-ek funtziona dezan, internetetik 80 eta 443 portua atzigarri egon behar dira EEUUtik, LetsEncrypt-ek bertatik egiten duelako eskaria. Gutxienez zabaldu behar da zertifikatua berritzeko momentuan

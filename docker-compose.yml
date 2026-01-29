@@ -1,4 +1,29 @@
 services:
+  traefik:
+    image: traefik:v3.6
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+
+      - --entrypoints.websecure.address=:443
+
+      - --certificatesresolvers.le.acme.tlschallenge=true
+      - --certificatesresolvers.le.acme.email=${LE_EMAIL}
+      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_letsencrypt:/letsencrypt
+    restart: unless-stopped
+    networks:
+      - proxy
+
   db:
     image: mysql:8.0
     command: --default-authentication-plugin=mysql_native_password
@@ -8,8 +33,6 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       TZ: ${TZ}
-      # Root pasahitza hutsik erabili nahi baduzu (EZ gomendatua):
-      # MYSQL_ALLOW_EMPTY_PASSWORD: ${MYSQL_ALLOW_EMPTY_PASSWORD}
     volumes:
       - koaderno_db:/var/lib/mysql
     restart: unless-stopped
@@ -18,21 +41,29 @@ services:
       interval: 5s
       timeout: 5s
       retries: 30
+    networks:
+      - internal
 
   app:
-    # Aukera A: zerbitzarian bertan build (Dockerfile behar du)
-    # build: .
-
-    # Aukera B: GitHub/Registry-tik pull egingo du (gomendatua “ez konpilatzeko”)
     image: ghcr.io/murkiaga/koadernoa:latest
-
     depends_on:
       db:
         condition: service_healthy
-    ports:
-      - "${HOST_HTTP_PORT}:8091"
+
+    # Quitamos el ports: para que NO exponga HTTP al exterior
+    # ports:
+    #   - "${HOST_HTTP_PORT}:8091"
+
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=koadernoa_proxy
+      - traefik.http.routers.koaderno.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.koaderno.entrypoints=websecure
+      - traefik.http.routers.koaderno.tls=true
+      - traefik.http.routers.koaderno.tls.certresolver=le
+      - traefik.http.services.koaderno.loadbalancer.server.port=8091
+
     environment:
-      # Spring Boot-ek env bidez hartu ditzan (zure proiektuan placeholderrak badituzu)
       SERVER_PORT: ${APP_PORT}
       SERVER_ADDRESS: ${SERVER_ADDRESS}
 
@@ -71,10 +102,21 @@ services:
       KOADERNOA_UPLOADS_IKASLEAK_SUBDIR: ${KOADERNOA_UPLOADS_IKASLEAK_SUBDIR}
       KOADERNOA_UPLOADS_LOGO_SUBDIR: ${KOADERNOA_UPLOADS_LOGO_SUBDIR}
 
+      # Importante detrás de proxy para que Spring “vea” https y genere URLs correctas
+      SERVER_FORWARD_HEADERS_STRATEGY: framework
+
     volumes:
       - koaderno_uploads:/data/uploads
     restart: unless-stopped
+    networks:
+      - internal
+      - proxy
 
 volumes:
   koaderno_db:
   koaderno_uploads:
+  traefik_letsencrypt:
+
+networks:
+  internal:
+  proxy:
