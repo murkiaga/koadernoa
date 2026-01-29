@@ -90,18 +90,8 @@
 		  </option>
 		</select>
 
-      <!-- 2) Beste irakasleak (aukerakoa) -->
-      <div th:if="${not #lists.isEmpty(irakasleAukeragarriak)}">
-        <label>Beste irakasle batzuk (aukerakoa)</label>
-        <div class="teachers">
-          <label th:each="i : ${irakasleAukeragarriak}">
-            <input type="checkbox" th:value="${i.id}" th:field="*{irakasleIdZerrenda}"/>
-            <span th:text="${i.izena}"></span>
-          </label>
-        </div>
-      </div>
 
-      <!-- 3) Ordutegia (12x5) -->
+      <!-- 2) Ordutegia (12x5) -->
       <label style="margin-top:1rem">Ordutegia (klik egin gelaxkak hautatzeko)</label>
       <div class="grid-viewport">
         <table class="grid">

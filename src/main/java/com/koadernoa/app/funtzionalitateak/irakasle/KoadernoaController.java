@@ -137,10 +137,6 @@ public class KoadernoaController {
 	    model.addAttribute("moduluak",
 	            koadernoaService.lortuErabilgarriDaudenModuluak(irakaslea, aukeratua));
 
-	    // 3) Irakasle aukeragarriak (gomendioa: aukeratutako familiakoak)
-	    model.addAttribute("irakasleAukeragarriak",
-	            koadernoaService.lortuFamiliaBerekoIrakasleak(irakaslea, aukeratua));
-
 	    model.addAttribute("irakasleLogeatua", irakaslea);
 
 	    // Ordutegi-grid-a
