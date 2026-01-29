@@ -26,7 +26,11 @@ public class IrakasleaService {
 
     public Irakaslea findByEmaila(String emaila) {
         return irakasleaRepository.findByEmaila(emaila)
-        		.orElseThrow(() -> new RuntimeException("Ez da aurkitu irakaslerik email honekin: " + emaila));
+				.orElseThrow(() -> new RuntimeException("Ez da aurkitu irakaslerik email honekin: " + emaila));
+    }
+
+    public Optional<Irakaslea> findOptionalByEmaila(String emaila) {
+        return irakasleaRepository.findByEmaila(emaila);
     }
 
     public Irakaslea findByIzena(String izena) {
