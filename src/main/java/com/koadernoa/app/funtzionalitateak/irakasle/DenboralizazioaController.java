@@ -74,11 +74,19 @@ public class DenboralizazioaController {
 	        return "error/404";
 	    }
 
+	    var koadernoaOpt = koadernoaService.findByIdWithEgutegiaAndEgunBereziak(koadernoa.getId());
+	    if (koadernoaOpt.isEmpty()) {
+	        model.addAttribute("errorea", "Koaderno aktiboa ez da aurkitu.");
+	        return "error/404";
+	    }
+
+	    Koadernoa kargatutakoKoadernoa = koadernoaOpt.get();
+
 	    LocalDate orain = LocalDate.now();
 	    int unekoUrtea = (urtea != null) ? urtea : orain.getYear();
 	    int unekoHilabetea = (hilabetea != null) ? hilabetea : orain.getMonthValue();
 
-	    Egutegia egutegia = koadernoa.getEgutegia();
+	    Egutegia egutegia = kargatutakoKoadernoa.getEgutegia();
 	    if (egutegia == null) {
 	        model.addAttribute("errorea", "Koaderno aktiboak ez du egutegirik esleituta.");
 	        return "error/404";
@@ -145,11 +153,11 @@ public class DenboralizazioaController {
 
 	    // Lortu jarduerak
 	    List<Jarduera> jarduerak =
-	            koadernoaService.lortuJarduerakDataTartean(koadernoa, hasiera, amaiera);
+	            koadernoaService.lortuJarduerakDataTartean(kargatutakoKoadernoa, hasiera, amaiera);
 
 	    // Lortu asistentzia egunak
 	    List<Astegunak> astegunak =
-	            koadernoOrdutegiBlokeaRepository.findAstegunakByKoadernoaId(koadernoa.getId());
+	            koadernoOrdutegiBlokeaRepository.findAstegunakByKoadernoaId(kargatutakoKoadernoa.getId());
 	    Set<Astegunak> blokAstegunak = new HashSet<>(astegunak);
 
 	    Map<String, Boolean> asistentziaEgunMap =
@@ -176,7 +184,7 @@ public class DenboralizazioaController {
 	    // FALTEN BISTA-rako datuak soilik bista == "faltak" denean
 	    if ("faltak".equalsIgnoreCase(bista)) {
 	        FaltakBistaDTO faltak = denboralizazioFaltaService
-	                .kalkulatuFaltenBista(koadernoa, unekoHilabetea, unekoUrtea);
+	                .kalkulatuFaltenBista(kargatutakoKoadernoa, unekoHilabetea, unekoUrtea);
 
 	        model.addAttribute("programaOrduak", faltak.getProgramaOrduak());
 	        model.addAttribute("faltaEgunak", faltak.getEgunak());
