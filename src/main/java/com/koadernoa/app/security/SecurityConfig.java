@@ -80,7 +80,7 @@ public class SecurityConfig {
             	    .authenticationEntryPoint((request, response, authException) -> {
             	        System.out.println("🚨 EXCEPTION: " + authException.getMessage());
             	        authException.printStackTrace();
-            	        response.sendRedirect("/login?error");
+            	        response.sendRedirect("/login");
             	    })
             	)
             .authenticationProvider(ldapAuthenticationProvider)
