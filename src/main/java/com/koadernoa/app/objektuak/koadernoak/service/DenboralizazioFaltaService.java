@@ -11,6 +11,7 @@ import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
 import com.koadernoa.app.objektuak.egutegia.entitateak.EgunBerezi;
@@ -40,6 +41,7 @@ public class DenboralizazioFaltaService {
     private final AsistentziaRepository asistentziaRepository;
     private final KoadernoOrdutegiBlokeaRepository koadernoOrdutegiBlokeaRepository;
 
+    @Transactional(readOnly = true)
     public FaltakBistaDTO kalkulatuFaltenBista(Koadernoa koadernoa, int hilabetea, int urtea) {
 
         Long koadernoId = koadernoa.getId();
@@ -59,8 +61,14 @@ public class DenboralizazioFaltaService {
                         Collectors.summingInt(KoadernoOrdutegiBlokea::getIraupenaSlot)
                 ));
 
+        List<EgunBerezi> egunBereziak = egutegia.getEgunBereziak();
+        if (egunBereziak == null) {
+            egunBereziak = List.of();
+        }
+
         Map<LocalDate,EgunBerezi> bereziMap =
-                egutegia.getEgunBereziak().stream()
+                egunBereziak.stream()
+                        .filter(eb -> eb.getData() != null)
                         .collect(Collectors.toMap(
                                 EgunBerezi::getData,
                                 eb -> eb,
