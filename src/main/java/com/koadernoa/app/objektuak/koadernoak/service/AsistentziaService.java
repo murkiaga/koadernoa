@@ -95,6 +95,9 @@ public class AsistentziaService {
   
   public boolean isEgunLektiboa(Egutegia egutegia, LocalDate data){
     // Errespetatu JAIEGUNA/EZ_LEKTIBOA; ORDEZKATUA bada, lektiboa izaten jarraitzen du
+    if (egutegia.getEgunBereziak() == null) {
+      return true;
+    }
     return egutegia.getEgunBereziak().stream()
       .filter(e -> data.equals(e.getData()))
       .noneMatch(e -> e.getMota()==EgunMota.EZ_LEKTIBOA || e.getMota()==EgunMota.JAIEGUNA);
@@ -306,4 +309,3 @@ public class AsistentziaService {
     }
 
 }
-
