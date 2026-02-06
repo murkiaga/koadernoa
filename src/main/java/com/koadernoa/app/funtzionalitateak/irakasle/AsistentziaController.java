@@ -23,6 +23,7 @@ import com.koadernoa.app.objektuak.koadernoak.repository.AsistentziaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoOrdutegiBlokeaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.SaioaRepository;
 import com.koadernoa.app.objektuak.koadernoak.service.AsistentziaService;
+import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
 import com.koadernoa.app.objektuak.modulua.entitateak.Matrikula;
 import com.koadernoa.app.objektuak.modulua.repository.MatrikulaRepository;
 
@@ -39,6 +40,7 @@ public class AsistentziaController {
 	  private final AsistentziaRepository asistentziaRepository;
 	  private final SaioaRepository saioaRepository;
 	  private final MatrikulaRepository matrikulaRepository;
+	  private final KoadernoaService koadernoaService;
 
 	  /** GET: Eguneko taula (Saioa-ren lazy-create. Behar denean sortu) */
 	  @GetMapping({"","/"})
@@ -48,16 +50,25 @@ public class AsistentziaController {
 	      @RequestParam("data") String dataIso,
 	      Model model) {
 
+	    if (koadernoa == null || koadernoa.getId() == null) {
+	      model.addAttribute("errorea", "Ez dago koaderno aktiborik aukeratuta.");
+	      return "error/404";
+	    }
+
+	    Koadernoa kargatutakoKoadernoa = koadernoaService
+	        .findByIdWithEgutegiaAndEgunBereziak(koadernoa.getId())
+	        .orElseThrow(() -> new IllegalStateException("Koaderno aktiboa ez da aurkitu."));
+
 	    LocalDate data = LocalDate.parse(dataIso);
 
 	    // Egun horretarako saioak bermatu (slot bakoitzeko bana)
-	    asistentziaService.ensureSaioakForDate(koadernoa, data);
+	    asistentziaService.ensureSaioakForDate(kargatutakoKoadernoa, data);
 
 	    // ondoren, kargatu saioak + matrikulak eta renderizatu
-	    List<Saioa> saioak = saioaRepository.findByKoadernoaIdAndData(koadernoa.getId(), data)
+	    List<Saioa> saioak = saioaRepository.findByKoadernoaIdAndData(kargatutakoKoadernoa.getId(), data)
 	        .stream().sorted(Comparator.comparingInt(Saioa::getHasieraSlot)).toList();
 	    List<Matrikula> matrikulak =
-	        matrikulaRepository.findByKoadernoaIdAndEgoeraMatrikulatuta(koadernoa.getId());
+	        matrikulaRepository.findByKoadernoaIdAndEgoeraMatrikulatuta(kargatutakoKoadernoa.getId());
 
 	    model.addAttribute("data", data);
 	    model.addAttribute("saioak", saioak);
