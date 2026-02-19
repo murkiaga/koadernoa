@@ -10,4 +10,5 @@ import com.koadernoa.app.objektuak.zikloak.entitateak.Zikloa;
 public interface ZikloaRepository extends JpaRepository<Zikloa, Long> {
     Optional<Zikloa> findByIzena(String izena);
     Optional<Zikloa> findByIzenaIgnoreCaseAndFamilia(String izena, Familia familia);
+    java.util.List<Zikloa> findAllByOrderByIzenaAsc();
 }

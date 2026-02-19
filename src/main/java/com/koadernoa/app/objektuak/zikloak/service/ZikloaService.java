@@ -18,7 +18,7 @@ public class ZikloaService {
     private final ZikloaRepository zikloaRepository;
 
     public List<Zikloa> getAll() {
-        return zikloaRepository.findAll();
+        return zikloaRepository.findAllByOrderByIzenaAsc();
     }
 
     public Optional<Zikloa> getById(Long id) {

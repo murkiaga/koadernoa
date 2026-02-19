@@ -34,6 +34,6 @@ public class Egutegia {
     @ManyToOne
     private Ikasturtea ikasturtea;
 
-    @OneToMany(mappedBy = "egutegia", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "egutegia", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<EgunBerezi> egunBereziak;
 }

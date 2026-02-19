@@ -65,6 +65,8 @@ public interface KoadernoaRepository extends JpaRepository<Koadernoa, Long>{
     
     //Programazioa inportatzerako
     List<Koadernoa> findByModuloa_EeiKodeaAndIdNot(String eeiKodea, Long excludeId);
+
+    boolean existsByEgutegia_Id(Long egutegiaId);
     
     
     //Kudeatzaileak koadernoak kontsultatzeko

@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="eu">
 <head>
     <meta charset="UTF-8">
-    <title>Egutegi berria sortu</title>
+    <title th:text="${editatzen} ? 'Egutegia editatu' : 'Egutegi berria sortu'">Egutegia</title>
     <link rel="stylesheet" th:href="@{/css/navbar.css}">
     <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,46 +10,60 @@
 <body>
 <div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
 <main class="page">
-	<h1>Egutegi berria sortu</h1>
-	
-	<form th:action="@{/kudeatzaile/egutegia/gorde}" th:object="${egutegia}" method="post">    
-	    <!-- MAILA -->
-		  <select class="form-select" th:field="*{maila.id}" required>
+	<h1 th:text="${editatzen} ? 'Egutegia editatu' : 'Egutegi berria sortu'">Egutegia</h1>
+
+	<form th:action="${editatzen} ? @{/kudeatzaile/egutegia/eguneratu} : @{/kudeatzaile/egutegia/gorde}"
+          th:object="${egutegia}" method="post"
+          th:attr="data-baditu-koadernoak=${badituKoadernoak}">
+        <input th:if="${editatzen}" type="hidden" th:field="*{id}" />
+
+	    <select class="form-select" th:field="*{maila.id}" required>
 		    <option value="" disabled selected>-- Aukeratu maila --</option>
 		    <option th:each="m : ${mailak}"
 		            th:value="${m.id}"
 		            th:text="${m.izena} + ' (' + ${m.kodea} + ')'">
 		    </option>
-		  </select>
-		
-		  <div th:if="${#fields.hasErrors('maila')}" th:errors="*{maila}"></div>
-	
-	    <!-- Hasiera data -->
+		</select>
+
 	    <label for="hasieraData">Hasiera data:</label>
-	    <input type="date" id="hasieraData" name="hasieraData" required>
-	 
-	
-	    <!-- Bukaera data -->
+	    <input type="date" id="hasieraData" th:field="*{hasieraData}" required>
+
 	    <label for="bukaeraData">Bukaera data:</label>
-	    <input type="date" id="bukaeraData" name="bukaeraData" required>
-	 
-	
-	    <!-- 1. ebaluazioaren bukaera -->
+	    <input type="date" id="bukaeraData" th:field="*{bukaeraData}" required>
+
 	    <label for="lehenEbalBukaera">1. Ebaluazio bukaera:</label>
-	    <input type="date" id="lehenEbalBukaera" name="lehenEbalBukaera">
-	    
-	    <!-- 2. ebaluazioaren bukaera -->
+	    <input type="date" id="lehenEbalBukaera" th:field="*{lehenEbalBukaera}">
+
 	    <label for="bigarrenEbalBukaera">2. Ebaluazio bukaera:</label>
-	    <input type="date" id="bigarrenEbalBukaera" name="bigarrenEbalBukaera">
-	
-	    <!-- Ikasturtea ezkutuan -->
+	    <input type="date" id="bigarrenEbalBukaera" th:field="*{bigarrenEbalBukaera}">
+
 	    <input type="hidden" name="ikasturtea.id" th:value="${egutegia.ikasturtea.id}"/>
+
+        <div th:if="${editatzen}" style="margin-top:.75rem;">
+            <label for="berrezarri">
+                <input type="checkbox" id="berrezarri" name="berrezarri" value="true" />
+                egun guztiak berrezarri
+            </label>
+        </div>
+
 		<div class="form-actions">
-	    	<button class="btn btn-primary" type="submit">Gorde</button>
+            <button class="btn btn-primary" type="submit" th:text="${editatzen} ? 'Eguneratu' : 'Gorde'">Gorde</button>
 	    	<a class="btn btn-secondary" th:href="@{/kudeatzaile/egutegia}">Atzera</a>
 	    </div>
 	</form>
 </main>
 <script th:src="@{/js/kudeatzaile-nav.js}"></script>
+<script th:if="${editatzen}">
+(function(){
+  const form = document.querySelector('form[data-baditu-koadernoak]');
+  if (!form) return;
+  form.addEventListener('submit', function(e){
+    const baditu = form.dataset.badituKoadernoak === 'true';
+    if (!baditu) return;
+    const onartu = window.confirm('Kontuz! Jada egutegi hau erabiltzen dauden koadernoak existitzen dira. Ziur zaude editatu nahi duzula?');
+    if (!onartu) e.preventDefault();
+  });
+})();
+</script>
 </body>
 </html>

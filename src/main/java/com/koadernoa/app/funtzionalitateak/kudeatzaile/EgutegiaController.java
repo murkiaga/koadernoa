@@ -5,7 +5,6 @@ import java.time.LocalDate;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
@@ -20,6 +19,7 @@ import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
 import com.koadernoa.app.objektuak.egutegia.repository.MailaRepository;
 import com.koadernoa.app.objektuak.egutegia.service.EgutegiaService;
 import com.koadernoa.app.objektuak.egutegia.service.IkasturteaService;
+import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -30,18 +30,15 @@ public class EgutegiaController {
 
 	private final IkasturteaService ikasturteaService;
 	private final EgutegiaService egutegiaService;
+	private final KoadernoaRepository koadernoaRepository;
 	
 	private final MailaRepository mailaRepository;
 	
 	@ModelAttribute("mailak")
     public List<com.koadernoa.app.objektuak.egutegia.entitateak.Maila> loadMailak() {
-        // Aukeratu zure repo metodoa; adib. aktibo + ordena:
         return mailaRepository.findAllByAktiboTrueOrderByOrdenaAscIzenaAsc();
-        // edo, besterik ezean:
-        // return mailaRepository.findAll(Sort.by("ordena").ascending().and(Sort.by("izena")));
     }
 
-    
 	@GetMapping({"", "/"})
 	public String erakutsiIkasturteAktibokoEgutegiak(Model model) {
 	    Optional<Ikasturtea> aktiboaOpt = ikasturteaService.getAktiboa();
@@ -72,12 +69,10 @@ public class EgutegiaController {
 	    Map<String, List<List<LocalDate>>> hilabeteka = egutegiaService.prestatuHilabetekoEgutegiak(egutegia);
 	    Map<String, String> klaseak = egutegiaService.kalkulatuKlaseak(egutegia);
 
-	    // NEW: mapak popup/JS-rako eta UI-rako
 	    Map<String, String> motaMap = new java.util.HashMap<>();
 	    Map<String, String> ordezkatuaMap = new java.util.HashMap<>();
 	    Map<String, String> oharraMap = new java.util.HashMap<>();
 
-	    // Tooltip-erako (zure template-ak th:title-n erabiltzen duena)
 	    Map<String, String> deskribapenaMap = new java.util.HashMap<>();
 
 	    if (egutegia.getEgunBereziak() != null) {
@@ -98,7 +93,6 @@ public class EgutegiaController {
 	                oharraMap.put(key, oharra.trim());
 	            }
 
-	            // Tooltip testua: mota (+ ordezkatua) + " — " + oharra
 	            String base = "";
 	            if (eb.getMota() != null) {
 	                switch (eb.getMota()) {
@@ -137,7 +131,6 @@ public class EgutegiaController {
 	    return "kudeatzaile/egutegia/egutegi-fitxa";
 	}
 
-    
 	@PostMapping("/aldatu")
 	public String aldatuEgunMota(
 	        @RequestParam("data") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data,
@@ -168,14 +161,32 @@ public class EgutegiaController {
 	    egutegia.setIkasturtea(aktiboa);
 
 	    model.addAttribute("egutegia", egutegia);
+	    model.addAttribute("editatzen", false);
+	    model.addAttribute("mailak", mailaRepository.findAllByAktiboTrueOrderByOrdenaAscIzenaAsc());
+	    return "kudeatzaile/egutegia/form";
+	}
+
+	@GetMapping("/editatu/{egutegiaId}")
+	public String editatuForm(@PathVariable Long egutegiaId, Model model) {
+	    Egutegia egutegia = egutegiaService.getById(egutegiaId);
+	    model.addAttribute("egutegia", egutegia);
+	    model.addAttribute("editatzen", true);
+	    model.addAttribute("badituKoadernoak", koadernoaRepository.existsByEgutegia_Id(egutegiaId));
 	    model.addAttribute("mailak", mailaRepository.findAllByAktiboTrueOrderByOrdenaAscIzenaAsc());
 	    return "kudeatzaile/egutegia/form";
 	}
 
 	@PostMapping("/gorde")
 	public String gordeEgutegia(@ModelAttribute Egutegia egutegia) {
-	    egutegiaService.sortuLektiboEgunak(egutegia); // datak eta lektiboak sortu
+	    egutegiaService.sortuLektiboEgunak(egutegia);
 	    return "redirect:/kudeatzaile/egutegia?egutegiaId=" + egutegia.getId();
+	}
+
+	@PostMapping("/eguneratu")
+	public String eguneratuEgutegia(@ModelAttribute Egutegia egutegia,
+	                                @RequestParam(name = "berrezarri", defaultValue = "false") boolean berrezarri) {
+	    egutegiaService.eguneratuEgutegia(egutegia, berrezarri);
+	    return "redirect:/kudeatzaile/egutegia/" + egutegia.getId();
 	}
 
 }

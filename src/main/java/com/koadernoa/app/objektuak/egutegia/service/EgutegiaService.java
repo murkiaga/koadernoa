@@ -159,6 +159,51 @@ public class EgutegiaService {
         egutegia.getEgunBereziak().add(berria);
     }
 	
+
+	@Transactional
+	public void eguneratuEgutegia(Egutegia input, boolean berrezarriEgunGuztiak) {
+	    Egutegia exist = getById(input.getId());
+	    exist.setMaila(input.getMaila());
+	    exist.setHasieraData(input.getHasieraData());
+	    exist.setBukaeraData(input.getBukaeraData());
+	    exist.setLehenEbalBukaera(input.getLehenEbalBukaera());
+	    exist.setBigarrenEbalBukaera(input.getBigarrenEbalBukaera());
+
+	    if (berrezarriEgunGuztiak) {
+	        exist.setEgunBereziak(new ArrayList<>());
+	        sortuLektiboEgunak(exist);
+	        return;
+	    }
+
+	    List<EgunBerezi> daudenak = exist.getEgunBereziak() != null ? exist.getEgunBereziak() : new ArrayList<>();
+	    LocalDate has = exist.getHasieraData();
+	    LocalDate buk = exist.getBukaeraData();
+
+	    daudenak = daudenak.stream()
+	            .filter(e -> e.getData() != null && !e.getData().isBefore(has) && !e.getData().isAfter(buk))
+	            .collect(Collectors.toCollection(ArrayList::new));
+
+	    Map<LocalDate, EgunBerezi> map = daudenak.stream()
+	            .collect(Collectors.toMap(EgunBerezi::getData, Function.identity(), (a, b) -> a));
+
+	    for (LocalDate d = has; !d.isAfter(buk); d = d.plusDays(1)) {
+	        if (d.getDayOfWeek() == DayOfWeek.SATURDAY || d.getDayOfWeek() == DayOfWeek.SUNDAY) {
+	            continue;
+	        }
+	        if (!map.containsKey(d)) {
+	            EgunBerezi lektiboa = new EgunBerezi();
+	            lektiboa.setData(d);
+	            lektiboa.setMota(EgunMota.LEKTIBOA);
+	            lektiboa.setEgutegia(exist);
+	            daudenak.add(lektiboa);
+	            map.put(d, lektiboa);
+	        }
+	    }
+
+	    exist.setEgunBereziak(daudenak);
+	    egutegiaRepository.save(exist);
+	}
+
 	public Egutegia getById(Long id) {
 	    return egutegiaRepository.findById(id).orElseThrow(() ->
 	        new IllegalArgumentException("Egutegia ez da aurkitu: " + id));

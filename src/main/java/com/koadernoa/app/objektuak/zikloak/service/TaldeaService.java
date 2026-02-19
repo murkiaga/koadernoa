@@ -24,7 +24,7 @@ public class TaldeaService {
 	private final IkasleaRepository ikasleaRepository;
 
     public List<Taldea> getAll() {
-        return taldeaRepository.findAll();
+        return taldeaRepository.findAllByOrderByIzenaAsc();
     }
 
     public Optional<Taldea> getById(Long id) {
@@ -40,7 +40,7 @@ public class TaldeaService {
     }
     
     public List<Taldea> getByZikloaId(Long zikloaId) {
-        return taldeaRepository.findByZikloa_Id(zikloaId);
+        return taldeaRepository.findByZikloa_IdOrderByIzenaAsc(zikloaId);
     }
     
     @Transactional

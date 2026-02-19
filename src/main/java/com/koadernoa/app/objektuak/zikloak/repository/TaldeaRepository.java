@@ -16,6 +16,7 @@ public interface TaldeaRepository extends JpaRepository<Taldea, Long> {
     
     //zikloaren arabera taldeak
     List<Taldea> findByZikloa_Id(Long zikloaId);
+    List<Taldea> findByZikloa_IdOrderByIzenaAsc(Long zikloaId);
     
     Optional<Taldea> findByIzenaIgnoreCaseAndZikloa(String izena, Zikloa zikloa);
     

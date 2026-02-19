@@ -25,7 +25,8 @@
 		            <tr th:each="egutegia : ${egutegiak}">
 		                <td th:text="${egutegia.maila.getKodea}"></td>
 		                <td>
-		                    <a class="btn btn-secondary" th:href="@{'/kudeatzaile/egutegia/' + ${egutegia.id}}">Ikusi / Editatu</a>
+		                    <a class="btn btn-secondary" th:href="@{'/kudeatzaile/egutegia/' + ${egutegia.id}}">Ikusi</a>
+                            <a class="btn btn-primary" style="margin-left:.5rem;" th:href="@{'/kudeatzaile/egutegia/editatu/' + ${egutegia.id}}">Editatu</a>
 		                </td>
 		            </tr>
 		            <tr th:if="${egutegiak == null or egutegiak.isEmpty()}">
