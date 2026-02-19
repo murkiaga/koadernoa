@@ -26,16 +26,20 @@
 		</select>
 
 	    <label for="hasieraData">Hasiera data:</label>
-	    <input type="date" id="hasieraData" th:field="*{hasieraData}" required>
+    <input type="date" id="hasieraData" name="hasieraData"
+           th:value="${egutegia.hasieraData != null ? #temporals.format(egutegia.hasieraData, 'yyyy-MM-dd') : ''}" required>
 
-	    <label for="bukaeraData">Bukaera data:</label>
-	    <input type="date" id="bukaeraData" th:field="*{bukaeraData}" required>
+    <label for="bukaeraData">Bukaera data:</label>
+    <input type="date" id="bukaeraData" name="bukaeraData"
+           th:value="${egutegia.bukaeraData != null ? #temporals.format(egutegia.bukaeraData, 'yyyy-MM-dd') : ''}" required>
 
-	    <label for="lehenEbalBukaera">1. Ebaluazio bukaera:</label>
-	    <input type="date" id="lehenEbalBukaera" th:field="*{lehenEbalBukaera}">
+    <label for="lehenEbalBukaera">1. Ebaluazio bukaera:</label>
+    <input type="date" id="lehenEbalBukaera" name="lehenEbalBukaera"
+           th:value="${egutegia.lehenEbalBukaera != null ? #temporals.format(egutegia.lehenEbalBukaera, 'yyyy-MM-dd') : ''}">
 
-	    <label for="bigarrenEbalBukaera">2. Ebaluazio bukaera:</label>
-	    <input type="date" id="bigarrenEbalBukaera" th:field="*{bigarrenEbalBukaera}">
+    <label for="bigarrenEbalBukaera">2. Ebaluazio bukaera:</label>
+    <input type="date" id="bigarrenEbalBukaera" name="bigarrenEbalBukaera"
+           th:value="${egutegia.bigarrenEbalBukaera != null ? #temporals.format(egutegia.bigarrenEbalBukaera, 'yyyy-MM-dd') : ''}">
 
 	    <input type="hidden" name="ikasturtea.id" th:value="${egutegia.ikasturtea.id}"/>
 

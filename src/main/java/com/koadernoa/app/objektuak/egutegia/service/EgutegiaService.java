@@ -34,25 +34,28 @@ public class EgutegiaService {
 	private final EgutegiaRepository egutegiaRepository;
 
 	public void sortuLektiboEgunak(Egutegia egutegia) {
-	    List<EgunBerezi> egunBereziak = new ArrayList<>();
+	    List<EgunBerezi> egunBereziak = egutegia.getEgunBereziak() != null
+	            ? egutegia.getEgunBereziak()
+	            : new ArrayList<>();
+	    egunBereziak.clear();
 	    LocalDate eguna = egutegia.getHasieraData();
 	    LocalDate bukaera = egutegia.getBukaeraData();
 
 	    while (!eguna.isAfter(bukaera)) {
 	        DayOfWeek asteEguna = eguna.getDayOfWeek();
-	        // Astelehena - Ostirala = Lektibo
 	        if (asteEguna != DayOfWeek.SATURDAY && asteEguna != DayOfWeek.SUNDAY) {
 	            EgunBerezi lektiboa = new EgunBerezi();
 	            lektiboa.setData(eguna);
 	            lektiboa.setMota(EgunMota.LEKTIBOA);
-	            //lektiboa.setDeskribapena("Lektiboa"); Deskribapena kudeatzaileak jartzeko oharretarako da
 	            lektiboa.setEgutegia(egutegia);
 	            egunBereziak.add(lektiboa);
 	        }
 	        eguna = eguna.plusDays(1);
 	    }
 
-	    egutegia.setEgunBereziak(egunBereziak);
+	    if (egutegia.getEgunBereziak() == null) {
+	        egutegia.setEgunBereziak(egunBereziak);
+	    }
 	    egutegiaRepository.save(egutegia);
 	}
 	
@@ -170,20 +173,22 @@ public class EgutegiaService {
 	    exist.setBigarrenEbalBukaera(input.getBigarrenEbalBukaera());
 
 	    if (berrezarriEgunGuztiak) {
-	        exist.setEgunBereziak(new ArrayList<>());
 	        sortuLektiboEgunak(exist);
 	        return;
 	    }
 
-	    List<EgunBerezi> daudenak = exist.getEgunBereziak() != null ? exist.getEgunBereziak() : new ArrayList<>();
+	    if (exist.getEgunBereziak() == null) {
+        exist.setEgunBereziak(new ArrayList<>());
+    }
+    List<EgunBerezi> daudenak = exist.getEgunBereziak();
 	    LocalDate has = exist.getHasieraData();
 	    LocalDate buk = exist.getBukaeraData();
 
-	    daudenak = daudenak.stream()
+	    List<EgunBerezi> filtratuak = daudenak.stream()
 	            .filter(e -> e.getData() != null && !e.getData().isBefore(has) && !e.getData().isAfter(buk))
 	            .collect(Collectors.toCollection(ArrayList::new));
 
-	    Map<LocalDate, EgunBerezi> map = daudenak.stream()
+	    Map<LocalDate, EgunBerezi> map = filtratuak.stream()
 	            .collect(Collectors.toMap(EgunBerezi::getData, Function.identity(), (a, b) -> a));
 
 	    for (LocalDate d = has; !d.isAfter(buk); d = d.plusDays(1)) {
@@ -195,12 +200,13 @@ public class EgutegiaService {
 	            lektiboa.setData(d);
 	            lektiboa.setMota(EgunMota.LEKTIBOA);
 	            lektiboa.setEgutegia(exist);
-	            daudenak.add(lektiboa);
+	            filtratuak.add(lektiboa);
 	            map.put(d, lektiboa);
 	        }
 	    }
 
-	    exist.setEgunBereziak(daudenak);
+	    daudenak.clear();
+	    daudenak.addAll(filtratuak);
 	    egutegiaRepository.save(exist);
 	}
 
