@@ -103,7 +103,7 @@
 		    </table>
 	    </div>
 	    <div class="actions">
-	      <button class="btn btn-primary" type="submit">Gorde aktiboak</button>
+	      <button class="btn btn-primary" type="submit">Gorde aldaketak</button>
 	    </div>
 	  </form>
 	
@@ -232,7 +232,9 @@
 		                 th:value="${f.id}"
 		                 th:checked="${f.aktibo}">
 		        </td>
-		        <td th:text="${f.izena}">INFORMATIKA</td>
+		        <td>
+                  <input type="text" th:name="|izena_${f.id}|" th:value="${f.izena}" required>
+                </td>
 		        <td th:text="${f.slug}">informatika</td>
 		        <td th:text="${f.id}">1</td>
 		      </tr>
@@ -240,7 +242,7 @@
 		    </table>
 		   </div>
 	    <div class="actions">
-	      <button type="submit">Gorde aktiboak</button>
+	      <button type="submit">Gorde aldaketak</button>
 	    </div>
 	  </form>
 	

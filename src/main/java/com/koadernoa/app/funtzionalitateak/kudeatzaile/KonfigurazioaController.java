@@ -134,12 +134,22 @@ public class KonfigurazioaController {
 
     // ---- FAMILIAK: aktibo/desaktibo bulk ----
     @PostMapping("/familiak/aktiboak")
-    public String gordeFamiliaAktiboak(@ModelAttribute("activeFamiliaForm") ActiveFamiliakForm form) {
+    public String gordeFamiliaAktiboak(@ModelAttribute("activeFamiliaForm") ActiveFamiliakForm form,
+                                      HttpServletRequest request) {
         List<Long> aktiboIds = form.getAktiboIds() != null ? form.getAktiboIds() : List.of();
         List<Familia> denak = familiaRepository.findAll();
         for (Familia f : denak) {
             boolean aktibo = aktiboIds.contains(f.getId());
             if (f.isAktibo() != aktibo) f.setAktibo(aktibo);
+
+            String izenaParam = request.getParameter("izena_" + f.getId());
+            if (izenaParam != null) {
+                String izena = izenaParam.trim();
+                if (!izena.isBlank()) {
+                    f.setIzena(izena);
+                    f.setSlug(slugify(izena));
+                }
+            }
         }
         familiaRepository.saveAll(denak);
         return "redirect:/kudeatzaile/konfigurazioa#familiak";
@@ -212,7 +222,6 @@ public class KonfigurazioaController {
             return false;
         }
     }
-
     // ===== Ebaluazio Momentuak =====
  // GET: zerrenda + formularioa
     @GetMapping("/mailak/{mailaId}/ebaluazioak")

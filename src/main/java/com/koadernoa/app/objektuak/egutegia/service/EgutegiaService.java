@@ -34,25 +34,28 @@ public class EgutegiaService {
 	private final EgutegiaRepository egutegiaRepository;
 
 	public void sortuLektiboEgunak(Egutegia egutegia) {
-	    List<EgunBerezi> egunBereziak = new ArrayList<>();
+	    List<EgunBerezi> egunBereziak = egutegia.getEgunBereziak() != null
+	            ? egutegia.getEgunBereziak()
+	            : new ArrayList<>();
+	    egunBereziak.clear();
 	    LocalDate eguna = egutegia.getHasieraData();
 	    LocalDate bukaera = egutegia.getBukaeraData();
 
 	    while (!eguna.isAfter(bukaera)) {
 	        DayOfWeek asteEguna = eguna.getDayOfWeek();
-	        // Astelehena - Ostirala = Lektibo
 	        if (asteEguna != DayOfWeek.SATURDAY && asteEguna != DayOfWeek.SUNDAY) {
 	            EgunBerezi lektiboa = new EgunBerezi();
 	            lektiboa.setData(eguna);
 	            lektiboa.setMota(EgunMota.LEKTIBOA);
-	            //lektiboa.setDeskribapena("Lektiboa"); Deskribapena kudeatzaileak jartzeko oharretarako da
 	            lektiboa.setEgutegia(egutegia);
 	            egunBereziak.add(lektiboa);
 	        }
 	        eguna = eguna.plusDays(1);
 	    }
 
-	    egutegia.setEgunBereziak(egunBereziak);
+	    if (egutegia.getEgunBereziak() == null) {
+	        egutegia.setEgunBereziak(egunBereziak);
+	    }
 	    egutegiaRepository.save(egutegia);
 	}
 	
@@ -159,6 +162,54 @@ public class EgutegiaService {
         egutegia.getEgunBereziak().add(berria);
     }
 	
+
+	@Transactional
+	public void eguneratuEgutegia(Egutegia input, boolean berrezarriEgunGuztiak) {
+	    Egutegia exist = getById(input.getId());
+	    exist.setMaila(input.getMaila());
+	    exist.setHasieraData(input.getHasieraData());
+	    exist.setBukaeraData(input.getBukaeraData());
+	    exist.setLehenEbalBukaera(input.getLehenEbalBukaera());
+	    exist.setBigarrenEbalBukaera(input.getBigarrenEbalBukaera());
+
+	    if (berrezarriEgunGuztiak) {
+	        sortuLektiboEgunak(exist);
+	        return;
+	    }
+
+	    if (exist.getEgunBereziak() == null) {
+        exist.setEgunBereziak(new ArrayList<>());
+    }
+    List<EgunBerezi> daudenak = exist.getEgunBereziak();
+	    LocalDate has = exist.getHasieraData();
+	    LocalDate buk = exist.getBukaeraData();
+
+	    List<EgunBerezi> filtratuak = daudenak.stream()
+	            .filter(e -> e.getData() != null && !e.getData().isBefore(has) && !e.getData().isAfter(buk))
+	            .collect(Collectors.toCollection(ArrayList::new));
+
+	    Map<LocalDate, EgunBerezi> map = filtratuak.stream()
+	            .collect(Collectors.toMap(EgunBerezi::getData, Function.identity(), (a, b) -> a));
+
+	    for (LocalDate d = has; !d.isAfter(buk); d = d.plusDays(1)) {
+	        if (d.getDayOfWeek() == DayOfWeek.SATURDAY || d.getDayOfWeek() == DayOfWeek.SUNDAY) {
+	            continue;
+	        }
+	        if (!map.containsKey(d)) {
+	            EgunBerezi lektiboa = new EgunBerezi();
+	            lektiboa.setData(d);
+	            lektiboa.setMota(EgunMota.LEKTIBOA);
+	            lektiboa.setEgutegia(exist);
+	            filtratuak.add(lektiboa);
+	            map.put(d, lektiboa);
+	        }
+	    }
+
+	    daudenak.clear();
+	    daudenak.addAll(filtratuak);
+	    egutegiaRepository.save(exist);
+	}
+
 	public Egutegia getById(Long id) {
 	    return egutegiaRepository.findById(id).orElseThrow(() ->
 	        new IllegalArgumentException("Egutegia ez da aurkitu: " + id));
