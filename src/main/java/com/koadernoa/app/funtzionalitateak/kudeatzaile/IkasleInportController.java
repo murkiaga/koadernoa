@@ -38,7 +38,6 @@ public class IkasleInportController {
 			"Inportazioa ondo: berriak=" + tx.getSortuak() +
 			", eguneratuak=" + tx.getEguneratuak() +
 			", baztertuak=" + tx.getBaztertuak() +
-			(tx.getOharrak().isEmpty() ? "" : " (oharrak: " + String.join("; ", tx.getOharrak()) + ")") +
 			" | Koadernoen sinkronizazioa: gehitu=" + syncRes.sortuak()
 			);
 		
