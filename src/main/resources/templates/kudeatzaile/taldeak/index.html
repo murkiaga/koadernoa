@@ -31,7 +31,7 @@
 	<div th:if="${msg}" style="color:green" th:text="${msg}"></div>
 	<div th:if="${errorea}" style="color:red" th:text="${errorea}"></div>
 	
-	<a class="btn btn-primary" th:href="@{/kudeatzaile/taldeak/sortu}">➕ Sortu talde berria</a>
+	<a class="btn btn-primary" th:href="${zikloaId != null} ? @{/kudeatzaile/taldeak/sortu(zikloaId=${zikloaId})} : @{/kudeatzaile/taldeak/sortu}">➕ Sortu talde berria</a>
 	
 	<form method="get" th:action="@{/kudeatzaile/taldeak}" style="margin: 1em 0;">
 	  <label for="zikloaId">Zikloa:</label>
@@ -59,7 +59,7 @@
 		    </tr>
 		  </thead>
 		  <tbody>
-		    <tr th:each="taldea : ${taldeak}">
+		    <tr th:each="taldea : ${taldeak}" th:id="${'taldea-' + taldea.id}">
 		      <td th:text="${taldea.id}">1</td>
 		      <td>
 		        <a th:href="@{/kudeatzaile/moduloak(taldeaId=${taldea.id})}"
@@ -84,7 +84,7 @@
 		
 		      <td class="actions-cell">
 		        <button type="button"
-		                th:attr="data-taldea-id=${taldea.id}"
+		                th:attr="data-taldea-id=${taldea.id},data-anchor=${'taldea-' + taldea.id}"
 		                onclick="openImportModal(this)">⬆️ Inportatu</button>
 		
 		        <a th:href="@{/kudeatzaile/taldeak/{id}/argazkiak(id=${taldea.id})}"
@@ -115,6 +115,8 @@
 	      <input type="hidden" id="csrfName" th:if="${csrf != null}" th:value="${csrf.parameterName}">
 	      <input type="hidden" id="csrfToken" th:if="${csrf != null}" th:value="${csrf.token}">
 	      <input type="hidden" name="taldeaId" id="taldeaIdHidden">
+          <input type="hidden" name="zikloaId" id="zikloaIdHidden" th:value="${zikloaId}">
+          <input type="hidden" name="anchor" id="anchorHidden">
 	
 	      <div id="dropzone" class="dropzone" aria-live="polite">
 	        <!-- Egoera hutsa -->
@@ -149,10 +151,16 @@
 </main>
 <script>
   let currentTaldeaId = null;
+  let currentAnchor = null;
 
   function openImportModal(btn){
     currentTaldeaId = btn.getAttribute('data-taldea-id');
+    currentAnchor = btn.getAttribute('data-anchor');
     document.getElementById('taldeaIdHidden').value = currentTaldeaId;
+    document.getElementById('anchorHidden').value = currentAnchor || '';
+
+    const selectedZikloaId = document.getElementById('zikloaId')?.value || '';
+    document.getElementById('zikloaIdHidden').value = selectedZikloaId;
 
     const form = document.getElementById('importForm');
     form.action = `/kudeatzaile/taldeak/${currentTaldeaId}/inportatu-ikasleak`;
