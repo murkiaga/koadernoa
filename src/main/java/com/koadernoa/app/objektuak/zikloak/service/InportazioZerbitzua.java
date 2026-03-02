@@ -2,15 +2,18 @@ package com.koadernoa.app.objektuak.zikloak.service;
 
 import java.io.IOException;
 import java.text.Normalizer;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -38,6 +41,12 @@ public class InportazioZerbitzua {
     private final KoadernoaRepository koadernoaRepo;
     private final IkasleaRepository ikasleaRepo;
     private final MatrikulaRepository matrikulaRepo;
+
+    @Value("${koadernoa.uploads.dir}")
+    private String uploadsDir;
+
+    @Value("${koadernoa.uploads.ikasleak-subdir:ikasleak}")
+    private String ikasleakSubdir;
 
     private static final String SHEET_NAME = "Zerrenda";
 
@@ -102,6 +111,11 @@ public class InportazioZerbitzua {
 
                 // Talde esleipena: inportatutako GUZTIEI talde hau ezarri
                 ik.setTaldea(taldea);
+
+                String argazkiPath = kalkulatuArgazkiPath(hna);
+                if (argazkiPath != null) {
+                    ik.setArgazkiPath(argazkiPath);
+                }
 
                 ikasleaRepo.save(ik);
                 if (berria) tx.setSortuak(tx.getSortuak() + 1);
@@ -221,6 +235,13 @@ public class InportazioZerbitzua {
         } catch (Exception ex) {
             return blankToNull(c.toString());
         }
+    }
+
+    private String kalkulatuArgazkiPath(String hna) {
+        if (isBlank(hna)) return null;
+        Path base = Paths.get(uploadsDir).toAbsolutePath().normalize();
+        Path fitxategia = base.resolve(ikasleakSubdir).resolve(hna + ".jpeg").normalize();
+        return Files.exists(fitxategia) ? "/uploads/" + ikasleakSubdir + "/" + hna + ".jpeg" : null;
     }
 
     private String blankToNull(String s) { return (s == null || s.trim().isBlank()) ? null : s.trim(); }

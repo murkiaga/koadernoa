@@ -1,26 +1,17 @@
 package com.koadernoa.app.funtzionalitateak.kudeatzaile;
 
-import java.util.ArrayList;
-
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.util.UriUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.koadernoa.app.objektuak.egutegia.repository.MailaRepository;
-import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
 import com.koadernoa.app.objektuak.modulua.service.IkasleaService;
-import com.koadernoa.app.objektuak.modulua.service.ModuloaService;
 import com.koadernoa.app.objektuak.zikloak.entitateak.InportazioTxostena;
-import com.koadernoa.app.objektuak.zikloak.repository.FamiliaRepository;
 import com.koadernoa.app.objektuak.zikloak.service.InportazioZerbitzua;
-import com.koadernoa.app.objektuak.zikloak.service.TaldeaService;
-import com.koadernoa.app.objektuak.zikloak.service.ZikloaService;
-
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
 @Controller
@@ -34,6 +25,8 @@ public class IkasleInportController {
 	@PostMapping("{taldeaId}/inportatu-ikasleak")
 	public String inportatuIkasleak(@PathVariable Long taldeaId,
             @RequestParam("fitxategia") MultipartFile fitxategia,
+            @RequestParam(name = "zikloaId", required = false) Long zikloaId,
+            @RequestParam(name = "anchor", required = false) String anchor,
             RedirectAttributes ra) {
 		try {
 			InportazioTxostena tx = inportazioZerbitzua.inportatuTaldekoXlsx(taldeaId, fitxategia);
@@ -45,7 +38,6 @@ public class IkasleInportController {
 			"Inportazioa ondo: berriak=" + tx.getSortuak() +
 			", eguneratuak=" + tx.getEguneratuak() +
 			", baztertuak=" + tx.getBaztertuak() +
-			(tx.getOharrak().isEmpty() ? "" : " (oharrak: " + String.join("; ", tx.getOharrak()) + ")") +
 			" | Koadernoen sinkronizazioa: gehitu=" + syncRes.sortuak()
 			);
 		
@@ -54,7 +46,14 @@ public class IkasleInportController {
 		} catch (Exception e) {
 			ra.addFlashAttribute("errorea", "Ezin izan da inportatu: " + e.getMessage());
 		}
-		return "redirect:/kudeatzaile/taldeak";
+		StringBuilder target = new StringBuilder("redirect:/kudeatzaile/taldeak");
+		if (zikloaId != null) {
+			target.append("?zikloaId=").append(zikloaId);
+		}
+		if (anchor != null && !anchor.isBlank()) {
+			target.append("#").append(UriUtils.encodePathSegment(anchor, java.nio.charset.StandardCharsets.UTF_8));
+		}
+		return target.toString();
 	}
 	
 }

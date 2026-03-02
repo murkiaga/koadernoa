@@ -136,8 +136,13 @@ public class KudeatzaileController {
 	}
 
     @GetMapping("/taldeak/sortu")
-    public String taldeaSortuForm(Model model) {
-        model.addAttribute("taldea", new Taldea());
+    public String taldeaSortuForm(@RequestParam(name = "zikloaId", required = false) Long zikloaId,
+                                  Model model) {
+        Taldea taldea = new Taldea();
+        if (zikloaId != null) {
+            zikloaService.getById(zikloaId).ifPresent(taldea::setZikloa);
+        }
+        model.addAttribute("taldea", taldea);
         model.addAttribute("zikloak", zikloaService.getAll());
         return "kudeatzaile/taldeak/taldea-form";
     }
