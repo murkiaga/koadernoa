@@ -27,6 +27,10 @@
 		                <td>
 		                    <a class="btn btn-secondary" th:href="@{'/kudeatzaile/egutegia/' + ${egutegia.id}}">Ikusi</a>
                             <a class="btn btn-primary" style="margin-left:.5rem;" th:href="@{'/kudeatzaile/egutegia/editatu/' + ${egutegia.id}}">Editatu</a>
+                            <form th:action="@{|/kudeatzaile/egutegia/ezabatu/${egutegia.id}|}" method="post" style="display:inline-block;margin-left:.5rem;" onsubmit="return confirm('Ziur zaude egutegia ezabatu nahi duzula?');">
+                                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                <button type="submit" class="btn btn-danger">Ezabatu</button>
+                            </form>
 		                </td>
 		            </tr>
 		            <tr th:if="${egutegiak == null or egutegiak.isEmpty()}">

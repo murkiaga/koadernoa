@@ -18,6 +18,9 @@ public class ModuloaFormDto {
     private String eeiKodea;
 
     @NotNull
+    private Integer orduak;
+
+    @NotNull
     private Long mailaId;
 
     @NotNull

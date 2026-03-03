@@ -53,8 +53,21 @@
         </select>
       </label>
 
-      <button type="submit">Filtratu</button>
-    </div>
+
+      <label>
+        <span>Irakaslea</span>
+        <select name="irakasleId">
+          <option value="" th:selected="${irakasleId == null}">(Irakasle guztiak)</option>
+          <option th:each="ir : ${irakasleak}"
+                  th:value="${ir.id}"
+                  th:text="${ir.izena}"
+                  th:selected="${irakasleId != null and irakasleId == ir.id}">
+            Mikel
+          </option>
+        </select>
+      </label>
+
+      <button type="submit">Filtratu</button>    </div>
   </form>
 
   <!-- Koaderno zerrenda hutsa -->

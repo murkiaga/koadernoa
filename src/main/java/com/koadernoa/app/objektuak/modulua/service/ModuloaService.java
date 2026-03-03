@@ -65,6 +65,7 @@ public class ModuloaService {
         target.setIzena(dto.getIzena().trim());
         target.setKodea(dto.getKodea().trim());
         target.setEeiKodea(dto.getEeiKodea().trim());
+        target.setOrduak(dto.getOrduak());
         target.setMaila(maila);
         target.setTaldea(taldea);
 

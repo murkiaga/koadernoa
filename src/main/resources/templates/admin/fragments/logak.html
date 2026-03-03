@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<body>
+<div th:fragment="logak-panel">
+  <h2>Logak</h2>
+  <p class="muted">Sistemako gertaeren erregistro orokorra.</p>
+
+  <form method="get" th:action="@{/admin}" class="form" style="margin-bottom:1rem;">
+    <input type="hidden" name="tab" value="logak"/>
+
+    <label>Mota</label>
+    <select name="mota">
+      <option value="">(Mota guztiak)</option>
+      <option th:each="m : ${logMotaGuztiak}"
+              th:value="${m.name()}"
+              th:text="${m.name()}"
+              th:selected="${mota != null and mota == m.name()}"></option>
+    </select>
+
+    <label>Eragilea (izena/emaila)</label>
+    <input type="text" name="eragilea" th:value="${eragilea}" placeholder="Mikel edo mikel@..."/>
+
+    <label>Noiztik</label>
+    <input type="date" name="from" th:value="${from}"/>
+
+    <label>Nora arte</label>
+    <input type="date" name="to" th:value="${to}"/>
+
+    <button type="submit" class="btn btn-primary">Filtratu</button>
+    <a th:href="@{/admin(tab='logak')}" class="btn btn-secondary">Garbitu</a>
+  </form>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+      <tr>
+        <th>Data</th>
+        <th>Mota</th>
+        <th>Eragilea</th>
+        <th>Entitatea</th>
+        <th>Deskribapena</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:each="l : ${logak}">
+        <td th:text="${l.data != null ? #temporals.format(l.data, 'yyyy-MM-dd HH:mm:ss') : '-'}">2026-01-01 12:00:00</td>
+        <td th:text="${l.mota}">KOADERNO_EZABAKETA</td>
+        <td th:text="${l.eragileaIzena != null ? l.eragileaIzena + ' (' + l.eragileaEmaila + ')' : '-'}">admin</td>
+        <td th:text="${(l.entitateMota != null ? l.entitateMota : '-') + ' #' + (l.entitateId != null ? l.entitateId : '-')}">Koadernoa #1</td>
+        <td th:text="${l.deskribapena}">Koadernoa ezabatuta...</td>
+      </tr>
+      <tr th:if="${#lists.isEmpty(logak)}">
+        <td colspan="5">Ez dago logik hautatutako filtroekin.</td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+</body>
+</html>
