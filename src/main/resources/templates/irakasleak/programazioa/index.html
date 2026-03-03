@@ -212,18 +212,15 @@
           <h1 style="margin:0; display:flex; align-items:baseline; gap:.5rem;">
             <span>Programazioa</span>
           </h1>
-          <div class="muted"
-               th:with="mod=${koadernoAktiboa != null and koadernoAktiboa.moduloa != null ? koadernoAktiboa.moduloa.orduak : null},
-                        guztira=${totalUdHours},
-                        diff=${mod != null ? mod - guztira : null}">
+          <div class="muted">
             <span th:text="${'Koadernoa: ' + (koadernoAktiboa != null ? koadernoAktiboa.izena : '—')}">Koadernoa: —</span>
-            <span th:if="${mod != null}"
-                  th:classappend="${diff != 0} ? ' hours-warn' : ''"
-                  th:text="| · Orduak: ${mod}|">
+            <span th:if="${moduloOrduak != null}"
+                  th:classappend="${moduloOrduDiff != null and moduloOrduDiff != 0} ? ' hours-warn' : ''"
+                  th:text="| · Orduak: ${moduloOrduak}|">
               · Orduak: 0
             </span>
-            <span th:if="${diff != null and diff gt 0}" class="hours-warn"> (orduak falta)</span>
-            <span th:if="${diff != null and diff lt 0}" class="hours-warn"> (orduak sobera)</span>
+            <span th:if="${moduloOrduEgoera == 'falta'}" class="hours-warn"> (orduak falta)</span>
+            <span th:if="${moduloOrduEgoera == 'sobera'}" class="hours-warn"> (orduak sobera)</span>
           </div>
         </div>
         <div style="margin-left:auto; display:flex; gap:.5rem;">
