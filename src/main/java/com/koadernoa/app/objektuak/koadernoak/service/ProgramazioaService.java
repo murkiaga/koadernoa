@@ -547,22 +547,14 @@ public class ProgramazioaService {
             Programazioa programazioa,
             Egutegia egutegia,
             Map<DayOfWeek, Integer> baseWeekHours) {
-
-        Map<DayOfWeek, Integer> weekHours = new java.util.EnumMap<>(DayOfWeek.class);
-        weekHours.putAll(baseWeekHours);
-        applyOrdezkatuWeeklyRules(weekHours, egutegia.getEgunBereziak(), baseWeekHours);
-
-        // EZ_LEKTIBOA/JAIEGUNA bakarrik baztertu
-        java.util.Set<java.time.LocalDate> ezLektiboak = java.util.Optional.ofNullable(egutegia.getEgunBereziak())
+        Map<LocalDate, EgunBerezi> egunBereziakMap = java.util.Optional.ofNullable(egutegia.getEgunBereziak())
             .orElse(java.util.List.of()).stream()
-            .filter(eb -> eb.getMota() == EgunMota.JAIEGUNA || eb.getMota() == EgunMota.EZ_LEKTIBOA)
-            .map(EgunBerezi::getData)
-            .filter(java.util.Objects::nonNull)
-            .collect(java.util.stream.Collectors.toSet());
-
-        // ORDEZKATUA: “toDate”ri gehitzeko orduak
-        java.util.Map<java.time.LocalDate, Integer> mapDailyOverrides = new java.util.HashMap<>();
-        buildDateSpecificOverrides_ADD_ONLY(mapDailyOverrides, baseWeekHours, egutegia.getEgunBereziak());
+            .filter(eb -> eb.getData() != null)
+            .collect(java.util.stream.Collectors.toMap(
+                EgunBerezi::getData,
+                eb -> eb,
+                (a, b) -> a
+            ));
 
         java.time.LocalDate egHas = egutegia.getHasieraData();
         java.time.LocalDate egBuk = egutegia.getBukaeraData();
@@ -578,18 +570,33 @@ public class ProgramazioaService {
 
             int sum = 0;
             for (java.time.LocalDate d = start; !d.isAfter(end); d = d.plusDays(1)) {
-                java.time.DayOfWeek dow = d.getDayOfWeek();
-                if (dow == java.time.DayOfWeek.SATURDAY || dow == java.time.DayOfWeek.SUNDAY) continue;
-                if (ezLektiboak.contains(d)) continue;
+                DayOfWeek astegunEraginkorra = astegunEraginkorra(d, egunBereziakMap);
+                if (astegunEraginkorra == null) continue;
 
-                // Lehenik override-ak (adib. asteartea -> astelehena modura)
-                Integer override = mapDailyOverrides.get(d);
-                int base = weekHours.getOrDefault(dow, 0);
-                sum += base + (override == null ? 0 : override);
+                sum += baseWeekHours.getOrDefault(astegunEraginkorra, 0);
             }
             out.put(e.getId(), sum);
         }
         return out;
+    }
+
+    private DayOfWeek astegunEraginkorra(LocalDate data, Map<LocalDate, EgunBerezi> egunBereziakMap) {
+        EgunBerezi eb = egunBereziakMap.get(data);
+        if (eb != null) {
+            EgunMota mota = eb.getMota();
+            if (mota == EgunMota.JAIEGUNA || mota == EgunMota.EZ_LEKTIBOA) {
+                return null;
+            }
+            if (mota == EgunMota.ORDEZKATUA && eb.getOrdezkatua() != null) {
+                return toDow(eb.getOrdezkatua());
+            }
+        }
+
+        DayOfWeek dow = data.getDayOfWeek();
+        return switch (dow) {
+            case MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY -> dow;
+            default -> null;
+        };
     }
     
     
