@@ -61,12 +61,7 @@ public class AdminController {
         LocalDateTime fromDt = from != null ? from.atStartOfDay() : null;
         LocalDateTime toDt = to != null ? to.plusDays(1).atStartOfDay() : null;
 
-        LogMota motaEnum = null;
-        if (mota != null && !mota.isBlank()) {
-            try {
-                motaEnum = LogMota.valueOf(mota);
-            } catch (IllegalArgumentException ignored) {}
-        }
+        final LogMota motaEnum = parseMota(mota);
 
         String eragileaQ = eragilea != null ? eragilea.trim().toLowerCase() : "";
 
@@ -90,6 +85,15 @@ public class AdminController {
         model.addAttribute("to", to);
 
         return "admin/index";
+    }
+
+    private LogMota parseMota(String mota) {
+        if (mota == null || mota.isBlank()) return null;
+        try {
+            return LogMota.valueOf(mota);
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
     }
 
     @PostMapping("/ebalu-koloreak")
