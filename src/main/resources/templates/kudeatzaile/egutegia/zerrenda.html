@@ -10,6 +10,8 @@
 <body>
     <div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
 	<main class="page">
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
 	    <h1 th:text="'Ikasturte aktiboa: ' + ${ikasturtea.izena}"></h1>
 	
 	    <h2>Egutegiak</h2>

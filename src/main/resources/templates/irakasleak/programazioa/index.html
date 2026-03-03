@@ -213,7 +213,7 @@
             <span>Programazioa</span>
           </h1>
           <div class="muted"
-               th:text="'Koadernoa: ' + ${koadernoAktiboa != null ? koadernoAktiboa.izena : '—'} + (${koadernoAktiboa != null and koadernoAktiboa.moduloa != null and koadernoAktiboa.moduloa.orduak != null} ? (' · Orduak: ' + koadernoAktiboa.moduloa.orduak) : '')">
+               th:text="${'Koadernoa: ' + (koadernoAktiboa != null ? koadernoAktiboa.izena : '—') + (koadernoAktiboa != null and koadernoAktiboa.moduloa != null and koadernoAktiboa.moduloa.orduak != null ? ' · Orduak: ' + koadernoAktiboa.moduloa.orduak : '')}">
           </div>
         </div>
         <div style="margin-left:auto; display:flex; gap:.5rem;">
