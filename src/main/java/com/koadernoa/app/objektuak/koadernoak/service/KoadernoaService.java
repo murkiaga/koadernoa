@@ -45,6 +45,8 @@ import com.koadernoa.app.objektuak.koadernoak.repository.ProgramazioaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.SaioaRepository;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 import com.koadernoa.app.objektuak.modulua.repository.MatrikulaRepository;
+import com.koadernoa.app.objektuak.logak.entitateak.LogMota;
+import com.koadernoa.app.objektuak.logak.service.LogService;
 import com.koadernoa.app.objektuak.modulua.repository.ModuloaRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -60,6 +62,7 @@ public class KoadernoaService {
     private final JardueraRepository jardueraRepository;
     private final EbaluazioMomentuaRepository ebaluazioMomentuaRepository;
     private final ProgramazioaRepository programazioaRepository;
+    private final LogService logService;
     private final EstatistikaEbaluazioanRepository estatistikaRepository;
     private final SaioaRepository saioaRepository;
     private final MatrikulaRepository matrikulaRepository;
@@ -452,7 +455,7 @@ public class KoadernoaService {
     }
     
     @Transactional
-    public void ezabatuKoadernoa(Koadernoa koadernoa) {
+    public void ezabatuKoadernoa(Koadernoa koadernoa, Irakaslea ezabatzailea) {
         if (koadernoa == null || koadernoa.getId() == null) return;
         Long id = koadernoa.getId();
 
@@ -491,7 +494,15 @@ public class KoadernoaService {
         // 8) Programazioa
         programazioaRepository.deleteByKoadernoaId(id);
 
-        // 9) Koadernoa bera
+        // 9) Ezabaketa loga (orokorra)
+        String deskribapena = "Koadernoa ezabatuta: " + koadernoa.getIzena()
+                + " | modulua=" + (koadernoa.getModuloa() != null ? koadernoa.getModuloa().getKodea() : "-")
+                + " | ikasturtea=" + (koadernoa.getEgutegia() != null && koadernoa.getEgutegia().getIkasturtea() != null
+                        ? koadernoa.getEgutegia().getIkasturtea().getIzena()
+                        : "-");
+        logService.gorde(LogMota.KOADERNO_EZABAKETA, ezabatzailea, "Koadernoa", id, deskribapena);
+
+        // 10) Koadernoa bera
         koadernoaRepository.delete(koadernoa);
     }
     

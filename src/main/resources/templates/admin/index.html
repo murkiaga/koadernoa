@@ -42,6 +42,14 @@
             id="tab-auth">
       Autentikazioa
     </button>
+
+    <button type="button" class="tab-btn"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-logak"
+            id="tab-logak">
+      Logak
+    </button>
   </div>
 
   <!-- LOGOA PANELA -->
@@ -60,6 +68,10 @@
   <section id="panel-auth" class="tab-panel" role="tabpanel"
            aria-labelledby="tab-auth" tabindex="0" aria-hidden="true">
     <div th:replace="~{admin/fragments/auth-providers :: auth-providers-panel}"></div>
+  </section>
+  <section id="panel-logak" class="tab-panel" role="tabpanel"
+           aria-labelledby="tab-logak" tabindex="0" aria-hidden="true">
+    <div th:replace="~{admin/fragments/logak :: logak-panel}"></div>
   </section>
 </main>
 
@@ -94,7 +106,15 @@
 
     tabs.forEach(btn => btn.addEventListener('click', () => activateTab(btn)));
 
-    // Hash bidez hasieratu (#logoa edo #koloreak)
+    // Hash edo ?tab bidez hasieratu
+    const params = new URLSearchParams(location.search);
+    const tabFromQuery = params.get('tab');
+    if (tabFromQuery) {
+      const to = document.getElementById('tab-' + tabFromQuery);
+      if (to) activateTab(to);
+      return;
+    }
+
     const hash = location.hash.replace('#','');
     if (hash) {
       const to = document.getElementById('tab-' + hash);

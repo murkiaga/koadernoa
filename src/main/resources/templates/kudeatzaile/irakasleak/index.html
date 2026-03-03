@@ -24,7 +24,7 @@
 		    </thead>
 		    <tbody>
 		      <tr th:each="irakasle : ${irakasleak}">
-		        <td th:text="${irakasle.izena}">Izena</td>
+		        <td><a th:href="@{/kudeatzaile/koadernoak(irakasleId=${irakasle.id})}" th:text="${irakasle.izena}">Izena</a></td>
 		        <td th:text="${irakasle.emaila}">Emaila</td>
 		        <td th:text="${irakasle.rola}">Rola</td>
 		        <td>

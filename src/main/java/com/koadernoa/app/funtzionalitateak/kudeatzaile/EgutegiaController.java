@@ -176,6 +176,19 @@ public class EgutegiaController {
 	    return "kudeatzaile/egutegia/form";
 	}
 
+	@PostMapping("/ezabatu/{egutegiaId}")
+	public String ezabatuEgutegia(@PathVariable Long egutegiaId,
+	                             org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
+	    if (koadernoaRepository.existsByEgutegia_Id(egutegiaId)) {
+	        ra.addFlashAttribute("error", "Ezin da egutegia ezabatu: koadernoek erabiltzen dute.");
+	        return "redirect:/kudeatzaile/egutegia";
+	    }
+	    egutegiaService.ezabatu(egutegiaId);
+	    ra.addFlashAttribute("success", "Egutegia ondo ezabatu da.");
+	    return "redirect:/kudeatzaile/egutegia";
+	}
+
+
 	@PostMapping("/gorde")
 	public String gordeEgutegia(@ModelAttribute Egutegia egutegia) {
 	    egutegiaService.sortuLektiboEgunak(egutegia);

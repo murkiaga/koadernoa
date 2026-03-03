@@ -116,8 +116,19 @@ public class ProgramazioaController {
       model.addAttribute("programazioa", programazioa);
       model.addAttribute("unitateak", unitateak);
       model.addAttribute("jpOrduakMap", programazioaService.planifikatutakoOrduakMap(unitateak));
+      Integer moduloOrduak = (k.getModuloa() != null) ? k.getModuloa().getOrduak() : null;
+      Integer moduloOrduDiff = (moduloOrduak != null) ? (moduloOrduak - totalUdHours) : null;
+      String moduloOrduEgoera = null;
+      if (moduloOrduDiff != null) {
+          if (moduloOrduDiff > 0) moduloOrduEgoera = "falta";
+          else if (moduloOrduDiff < 0) moduloOrduEgoera = "sobera";
+      }
+
       model.addAttribute("canBulk", canBulk);
       model.addAttribute("totalUdHours", totalUdHours);
+      model.addAttribute("moduloOrduak", moduloOrduak);
+      model.addAttribute("moduloOrduDiff", moduloOrduDiff);
+      model.addAttribute("moduloOrduEgoera", moduloOrduEgoera);
       model.addAttribute("ebaluaketak", programazioa.getEbaluaketak());
       model.addAttribute("ebalDispon", ebalDispon);
       model.addAttribute("ebalUdOrduak", ebalUdOrduak);

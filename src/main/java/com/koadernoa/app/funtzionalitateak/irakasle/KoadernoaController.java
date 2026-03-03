@@ -17,6 +17,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
+import com.koadernoa.app.objektuak.irakasleak.entitateak.Rola;
 import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoaSortuDto;
@@ -309,6 +310,43 @@ public class KoadernoaController {
 
 
 	
+	@PostMapping("/{id}/irakasle/{irakasleId}/kendu")
+	public String kenduIrakasleaKoadernotik(@PathVariable Long id,
+	                                    @PathVariable Long irakasleId,
+	                                    Authentication auth,
+	                                    RedirectAttributes ra) {
+
+	    Irakaslea ni = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+	    Koadernoa k = koadernoaService.findById(id);
+	    if (k == null) {
+	        ra.addFlashAttribute("error", "Koadernoa ez da existitzen.");
+	        return "redirect:/irakasle";
+	    }
+
+	    boolean sarbidea = koadernoaService.irakasleakBadaukaSarbidea(ni, k);
+	    boolean adminEdoKudeatzaile = ni.getRola() == Rola.ADMIN || ni.getRola() == Rola.KUDEATZAILEA;
+	    if (!sarbidea || !adminEdoKudeatzaile) {
+	        ra.addFlashAttribute("error", "Ez duzu baimenik irakasleak kentzeko.");
+	        return "redirect:/irakasle/koadernoa/" + id;
+	    }
+
+	    if (k.getIrakasleak() == null || k.getIrakasleak().stream().noneMatch(ir -> ir.getId().equals(irakasleId))) {
+	        ra.addFlashAttribute("error", "Irakaslea ez dago koaderno honetan.");
+	        return "redirect:/irakasle/koadernoa/" + id;
+	    }
+
+	    if (k.getIrakasleak().size() <= 1) {
+	        ra.addFlashAttribute("error", "Ezin da azken irakaslea kendu.");
+	        return "redirect:/irakasle/koadernoa/" + id;
+	    }
+
+	    k.getIrakasleak().removeIf(ir -> ir.getId().equals(irakasleId));
+	    koadernoaRepository.save(k);
+	    ra.addFlashAttribute("success", "Irakaslea koadernotik kendu da.");
+	    return "redirect:/irakasle/koadernoa/" + id;
+	}
+
+
 	@PostMapping("/{id}/ezabatu")
 	public String ezabatuKoadernoa(@PathVariable Long id,
 	                               @RequestParam("confirmIzena") String confirmIzena,
@@ -355,7 +393,7 @@ public class KoadernoaController {
 	        System.out.println(">>> KOADERNOA EZABATZEN: id=" + k.getId()
 	                + ", izena=" + izenaEsperotakoa);
 
-	        koadernoaService.ezabatuKoadernoa(k);
+	        koadernoaService.ezabatuKoadernoa(k, irakaslea);
 
 	        ra.addFlashAttribute("success", "Koadernoa ondo ezabatu da.");
 	    } catch (org.springframework.dao.DataIntegrityViolationException ex) {

@@ -210,6 +210,10 @@ public class EgutegiaService {
 	    egutegiaRepository.save(exist);
 	}
 
+	public void ezabatu(Long id) {
+	    egutegiaRepository.deleteById(id);
+	}
+
 	public Egutegia getById(Long id) {
 	    return egutegiaRepository.findById(id).orElseThrow(() ->
 	        new IllegalArgumentException("Egutegia ez da aurkitu: " + id));

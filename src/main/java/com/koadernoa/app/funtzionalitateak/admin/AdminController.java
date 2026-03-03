@@ -2,6 +2,9 @@ package com.koadernoa.app.funtzionalitateak.admin;
 
 import java.io.IOException;
 import java.nio.file.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.koadernoa.app.objektuak.konfigurazioa.service.AplikazioAukeraService;
+import com.koadernoa.app.objektuak.logak.entitateak.LogMota;
+import com.koadernoa.app.objektuak.logak.service.LogService;
 import com.koadernoa.app.security.AuthProviderStatusService;
 
 import lombok.RequiredArgsConstructor;
@@ -23,6 +28,7 @@ public class AdminController {
 
     private final AplikazioAukeraService aukService;
     private final AuthProviderStatusService statusService;
+    private final LogService logService;
 
     @Value("${koadernoa.uploads.dir:uploads}")
     private String baseDir;
@@ -34,7 +40,11 @@ public class AdminController {
     private static final long MAX_BYTES = 300_000; // 300KB
 
     @GetMapping({"", "/"})
-    public String editForm(Model model) {
+    public String editForm(@RequestParam(name = "mota", required = false) String mota,
+                           @RequestParam(name = "eragilea", required = false) String eragilea,
+                           @RequestParam(name = "from", required = false) LocalDate from,
+                           @RequestParam(name = "to", required = false) LocalDate to,
+                           Model model) {
         model.addAttribute("ebal1Kolore", aukService.get(AplikazioAukeraService.EBAL1_KOLORE, "#b3d9ff"));
         model.addAttribute("ebal2Kolore", aukService.get(AplikazioAukeraService.EBAL2_KOLORE, "#ffd699"));
         model.addAttribute("ebal3Kolore", aukService.get(AplikazioAukeraService.EBAL3_KOLORE, "#b2f2bb"));
@@ -48,7 +58,42 @@ public class AdminController {
         model.addAttribute("ldapEnabled", statusService.isLdapEnabled());
         model.addAttribute("ldapConfigured", statusService.isLdapConfigured());
 
+        LocalDateTime fromDt = from != null ? from.atStartOfDay() : null;
+        LocalDateTime toDt = to != null ? to.plusDays(1).atStartOfDay() : null;
+
+        final LogMota motaEnum = parseMota(mota);
+
+        String eragileaQ = eragilea != null ? eragilea.trim().toLowerCase() : "";
+
+        var logak = logService.findAllOrderByDataDesc().stream()
+                .filter(l -> motaEnum == null || motaEnum == l.getMota())
+                .filter(l -> fromDt == null || (l.getData() != null && !l.getData().isBefore(fromDt)))
+                .filter(l -> toDt == null || (l.getData() != null && l.getData().isBefore(toDt)))
+                .filter(l -> {
+                    if (eragileaQ.isBlank()) return true;
+                    String izena = l.getEragileaIzena() != null ? l.getEragileaIzena().toLowerCase() : "";
+                    String emaila = l.getEragileaEmaila() != null ? l.getEragileaEmaila().toLowerCase() : "";
+                    return izena.contains(eragileaQ) || emaila.contains(eragileaQ);
+                })
+                .toList();
+
+        model.addAttribute("logak", logak);
+        model.addAttribute("logMotaGuztiak", Arrays.asList(LogMota.values()));
+        model.addAttribute("mota", mota);
+        model.addAttribute("eragilea", eragilea);
+        model.addAttribute("from", from);
+        model.addAttribute("to", to);
+
         return "admin/index";
+    }
+
+    private LogMota parseMota(String mota) {
+        if (mota == null || mota.isBlank()) return null;
+        try {
+            return LogMota.valueOf(mota);
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
     }
 
     @PostMapping("/ebalu-koloreak")

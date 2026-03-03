@@ -16,6 +16,7 @@ import com.koadernoa.app.objektuak.egutegia.service.IkasturteaService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
+import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Familia;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Taldea;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Zikloa;
@@ -33,6 +34,7 @@ public class KoadernoaControllerKudeatzaile {
     private final KoadernoaService koadernoaService;
     private final FamiliaRepository familiaRepository;
     private final TaldeaRepository taldeaRepository;
+    private final IrakasleaRepository irakasleaRepository;
 
     /**
      * Kudeatzaileko koaderno zerrenda:
@@ -43,6 +45,7 @@ public class KoadernoaControllerKudeatzaile {
     public String index(
             @RequestParam(required = false) Long familiaId,
             @RequestParam(required = false) Long taldeaId,
+            @RequestParam(required = false) Long irakasleId,
             Model model) {
 
         // 1) Familia eta talde zerrendak (filtro dropdown-entzat)
@@ -90,6 +93,13 @@ public class KoadernoaControllerKudeatzaile {
                     .collect(Collectors.toList());
         }
 
+
+        if (irakasleId != null) {
+            koadernoak = koadernoak.stream()
+                    .filter(k -> k.getIrakasleak() != null && k.getIrakasleak().stream().anyMatch(ir -> irakasleId.equals(ir.getId())))
+                    .collect(Collectors.toList());
+        }
+
         // 5) Ordenatu: Familia → Taldea → Moduloa
         Comparator<Koadernoa> cmp = Comparator
                 .comparing((Koadernoa k) -> {
@@ -114,6 +124,8 @@ public class KoadernoaControllerKudeatzaile {
         model.addAttribute("koadernoak", koadernoak);
         model.addAttribute("familiaId", familiaId);
         model.addAttribute("taldeaId", taldeaId);
+        model.addAttribute("irakasleId", irakasleId);
+        model.addAttribute("irakasleak", irakasleaRepository.findAll());
 
         return "kudeatzaile/koadernoak/index";
     }

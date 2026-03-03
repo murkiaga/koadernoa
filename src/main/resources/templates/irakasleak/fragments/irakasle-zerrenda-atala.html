@@ -56,6 +56,25 @@
           </button>
         </form>
 
+        <form th:if="${ir.id != irakaslea.id and #lists.size(koadernoa.irakasleak) > 1 and (irakaslea.rola.name() == 'ADMIN' or irakaslea.rola.name() == 'KUDEATZAILEA')}"
+              th:action="@{|/irakasle/koadernoa/${koadernoa.id}/irakasle/${ir.id}/kendu|}"
+              method="post"
+              class="teacher-leave-form"
+              onsubmit="return confirm('Ziur zaude irakasle hau koadernotik kendu nahi duzula?');">
+
+          <input type="hidden"
+                 th:if="${_csrf != null}"
+                 th:name="${_csrf.parameterName}"
+                 th:value="${_csrf.token}"/>
+
+          <button type="submit"
+                  class="btn-icon"
+                  title="Irakaslea kendu"
+                  aria-label="Irakaslea kendu">
+            ✕
+          </button>
+        </form>
+
       </li>
     </ul>
 

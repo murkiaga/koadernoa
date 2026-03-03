@@ -27,6 +27,8 @@ public class Moduloa {
     private String kodea; //"RELO"
     @Column(name = "eei_kodea")
     private String eeiKodea; //"0225" kode honek RELO eta SALO lotu
+
+    private Integer orduak;
     
     @ManyToOne(optional=false)
     private Maila maila;
