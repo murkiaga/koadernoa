@@ -338,7 +338,6 @@
   const berriaBtn = document.getElementById('ordutegiBerriaBtn');
   const schedules = /*[[${ordutegiTabs}]]*/ {};
   const info = /*[[${ordutegiInfo}]]*/ [];
-  const multipleSchedules = tabsWrap?.dataset.multiple === 'true';
   let activeScheduleStartDate = tabsWrap ? tabsWrap.dataset.active : null;
 
   const toggle = document.getElementById('KoadernoakConfigPortadaContentButton');
@@ -408,6 +407,32 @@
   }
 
 
+  function minusOneDay(isoDate) {
+    const d = new Date(`${isoDate}T00:00:00`);
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().slice(0, 10);
+  }
+
+  function scheduleIsMultiple() {
+    return Array.isArray(info) && info.length > 1;
+  }
+
+  function recomputeScheduleMeta() {
+    info.sort((a, b) => (a.key || '').localeCompare(b.key || ''));
+
+    info.forEach((item, idx) => {
+      item.label = scheduleIsMultiple() ? `${idx + 1}. ordutegia` : 'Ordutegia';
+      const next = info[idx + 1];
+      item.from = item.from || item.key;
+      item.to = next?.from ? minusOneDay(next.from) : '';
+
+      const btn = tabsWrap?.querySelector(`.ordutegi-tab[data-key=\"${item.key}\"]`);
+      if (btn) {
+        btn.dataset.baseLabel = item.label;
+      }
+    });
+  }
+
   function renderSchedule(key) {
     activeScheduleStartDate = key;
     const selectedSet = new Set((schedules[key] || []));
@@ -420,7 +445,7 @@
         const isActive = btn.dataset.key === key;
         btn.classList.toggle('active', isActive);
         const baseLabel = btn.dataset.baseLabel || 'Ordutegia';
-        btn.textContent = (multipleSchedules && isActive) ? `${baseLabel} (aktibo)` : baseLabel;
+        btn.textContent = (scheduleIsMultiple() && isActive) ? `${baseLabel} (aktibo)` : baseLabel;
       });
     }
     const currentInfo = info.find(i => i.key === key);
@@ -436,6 +461,7 @@
   berriaBtn?.addEventListener('click', async () => {
     const hasieraData = prompt('Sartu ordutegi berriaren hasiera data (YYYY-MM-DD):');
     if (!hasieraData) return;
+
     const koadernoId = table.dataset.koadernoId;
     const params = new URLSearchParams({ hasieraData });
     const res = await fetch(`/irakasle/koadernoa/${koadernoId}/ordutegia/berria`, {
@@ -446,13 +472,34 @@
       ),
       body: params
     });
+
     if (!res.ok) {
       alert('Ezin izan da ordutegi berria sortu');
       return;
     }
-    window.location.reload();
+
+    const json = await res.json().catch(() => ({}));
+    const key = json.hasieraData || hasieraData;
+
+    if (!schedules[key]) schedules[key] = [];
+
+    if (!info.find(i => i.key === key)) {
+      info.push({ key, from: key, to: '', label: 'Ordutegia' });
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'ordutegi-tab';
+      btn.dataset.key = key;
+      btn.dataset.baseLabel = 'Ordutegia';
+      btn.addEventListener('click', () => renderSchedule(key));
+      tabsWrap?.insertBefore(btn, rangeEl);
+    }
+
+    recomputeScheduleMeta();
+    renderSchedule(key);
   });
 
+  recomputeScheduleMeta();
   if (activeScheduleStartDate) renderSchedule(activeScheduleStartDate);
 })();
 </script>
