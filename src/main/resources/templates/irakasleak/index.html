@@ -338,7 +338,8 @@
   const berriaBtn = document.getElementById('ordutegiBerriaBtn');
   const schedules = /*[[${ordutegiTabs}]]*/ {};
   const info = /*[[${ordutegiInfo}]]*/ [];
-  let activeScheduleStartDate = tabsWrap ? tabsWrap.dataset.active : null;
+  const todayActiveScheduleStartDate = tabsWrap ? tabsWrap.dataset.active : null;
+  let selectedScheduleStartDate = todayActiveScheduleStartDate;
 
   const toggle = document.getElementById('KoadernoakConfigPortadaContentButton');
 
@@ -384,7 +385,7 @@
     const koadernoId = table.dataset.koadernoId;
 
     try {
-      const params = new URLSearchParams({ col, row, selected: String(nowSelected), scheduleStartDate: activeScheduleStartDate });
+      const params = new URLSearchParams({ col, row, selected: String(nowSelected), scheduleStartDate: selectedScheduleStartDate });
       const res = await fetch(`/irakasle/koadernoa/${koadernoId}/ordutegia/cell`, {
         method: 'POST',
         headers: Object.assign(
@@ -398,9 +399,24 @@
       const json = await res.json().catch(() => ({ ok: true }));
       if (!json.ok) throw new Error(json.error || 'Errorea gordetzean');
 
+      const key = `${col}-${row}`;
+      if (!Array.isArray(schedules[selectedScheduleStartDate])) schedules[selectedScheduleStartDate] = [];
+      if (nowSelected) {
+        if (!schedules[selectedScheduleStartDate].includes(key)) schedules[selectedScheduleStartDate].push(key);
+      } else {
+        schedules[selectedScheduleStartDate] = schedules[selectedScheduleStartDate].filter(k => k !== key);
+      }
+
     } catch (err) {
       // Revert optimistic change
       td.classList.toggle('selected');
+      const key = `${col}-${row}`;
+      if (!Array.isArray(schedules[selectedScheduleStartDate])) schedules[selectedScheduleStartDate] = [];
+      if (nowSelected) {
+        schedules[selectedScheduleStartDate] = schedules[selectedScheduleStartDate].filter(k => k !== key);
+      } else if (!schedules[selectedScheduleStartDate].includes(key)) {
+        schedules[selectedScheduleStartDate].push(key);
+      }
       console.error('Ezin izan da gorde slot-a:', err);
       alert('Ezin izan da gorde. Saiatu berriro, mesedez.');
     }
@@ -415,6 +431,22 @@
 
   function scheduleIsMultiple() {
     return Array.isArray(info) && info.length > 1;
+  }
+
+  function getTodayIso() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function getEffectiveActiveKey() {
+    if (!Array.isArray(info) || info.length === 0) return todayActiveScheduleStartDate;
+    const today = getTodayIso();
+    const keys = info.map(i => i.key).filter(Boolean).sort();
+    let effective = keys[0] || todayActiveScheduleStartDate;
+    for (const k of keys) {
+      if (k <= today) effective = k;
+      if (k > today) break;
+    }
+    return effective;
   }
 
   function recomputeScheduleMeta() {
@@ -434,18 +466,20 @@
   }
 
   function renderSchedule(key) {
-    activeScheduleStartDate = key;
+    selectedScheduleStartDate = key;
     const selectedSet = new Set((schedules[key] || []));
     table.querySelectorAll('td').forEach(td => {
       const cellKey = `${td.dataset.col}-${td.dataset.row}`;
       td.classList.toggle('selected', selectedSet.has(cellKey));
     });
+    const activeKeyByToday = getEffectiveActiveKey();
     if (tabsWrap) {
       tabsWrap.querySelectorAll('.ordutegi-tab[data-key]').forEach(btn => {
-        const isActive = btn.dataset.key === key;
-        btn.classList.toggle('active', isActive);
+        const isSelected = btn.dataset.key === key;
+        btn.classList.toggle('active', isSelected);
         const baseLabel = btn.dataset.baseLabel || 'Ordutegia';
-        btn.textContent = (scheduleIsMultiple() && isActive) ? `${baseLabel} (aktibo)` : baseLabel;
+        const isTodayActive = btn.dataset.key === activeKeyByToday;
+        btn.textContent = (scheduleIsMultiple() && isTodayActive) ? `${baseLabel} (aktibo)` : baseLabel;
       });
     }
     const currentInfo = info.find(i => i.key === key);
@@ -500,7 +534,7 @@
   });
 
   recomputeScheduleMeta();
-  if (activeScheduleStartDate) renderSchedule(activeScheduleStartDate);
+  if (selectedScheduleStartDate) renderSchedule(selectedScheduleStartDate);
 })();
 </script>
 <script th:src="@{/js/irakasle-partekatu.js}"></script>
