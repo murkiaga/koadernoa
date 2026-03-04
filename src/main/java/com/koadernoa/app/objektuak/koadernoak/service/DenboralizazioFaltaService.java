@@ -55,11 +55,13 @@ public class DenboralizazioFaltaService {
         List<KoadernoOrdutegiBlokea> blokak =
                 koadernoOrdutegiBlokeaRepository.findByKoadernoa_Id(koadernoId);
 
-        Map<Astegunak,Integer> orduakAstegunaka = blokak.stream()
-                .collect(Collectors.groupingBy(
-                        KoadernoOrdutegiBlokea::getAsteguna,
-                        Collectors.summingInt(KoadernoOrdutegiBlokea::getIraupenaSlot)
-                ));
+        LocalDate ikastHas = egutegia.getHasieraData();
+        java.util.NavigableMap<LocalDate, Map<Astegunak, Integer>> orduakByDate = new java.util.TreeMap<>();
+        for (KoadernoOrdutegiBlokea b : blokak) {
+            LocalDate has = b.getHasieraData() != null ? b.getHasieraData() : ikastHas;
+            orduakByDate.computeIfAbsent(has, __ -> new java.util.EnumMap<>(Astegunak.class))
+                    .merge(b.getAsteguna(), b.getIraupenaSlot(), Integer::sum);
+        }
 
         List<EgunBerezi> egunBereziak = egutegia.getEgunBereziak();
         if (egunBereziak == null) {
@@ -76,12 +78,12 @@ public class DenboralizazioFaltaService {
                         ));
 
         Map<LocalDate,Integer> egunekoOrduak =
-                kalkulatuEgunekoOrduakHilabetean(egutegia, orduakAstegunaka, bereziMap, from, to);
+                kalkulatuEgunekoOrduakHilabetean(egutegia, orduakByDate, bereziMap, from, to);
 
         List<LocalDate> egunak = new ArrayList<>(egunekoOrduak.keySet());
 
         // Programatutako ordu GUZTIAK (ikasturte osoan) → 2. puntuan komentatuko dugu
-        int programaOrduak = kalkulatuProgramaOrduakUrteOsoan(egutegia, orduakAstegunaka, bereziMap);
+        int programaOrduak = kalkulatuProgramaOrduakUrteOsoan(egutegia, orduakByDate, bereziMap);
 
         // Koaderno honetako MATRIKULATUAK
         List<Matrikula> matrikulak =
@@ -171,7 +173,7 @@ public class DenboralizazioFaltaService {
     /** Hilabete jakin bateko egunak + ordu kopurua, Egutegia + ordutegia kontuan hartuta */
     private Map<LocalDate,Integer> kalkulatuEgunekoOrduakHilabetean(
             Egutegia egutegia,
-            Map<Astegunak,Integer> orduakAstegunaka,
+            java.util.NavigableMap<LocalDate, Map<Astegunak,Integer>> orduakByDate,
             Map<LocalDate,EgunBerezi> bereziMap,
             LocalDate from,
             LocalDate to) {
@@ -189,7 +191,8 @@ public class DenboralizazioFaltaService {
             Astegunak ag = astegunEraginkorra(d, bereziMap);
             if (ag == null) continue;
 
-            int ordu = orduakAstegunaka.getOrDefault(ag, 0);
+            var ordutegia = orduakByDate.floorEntry(d) != null ? orduakByDate.floorEntry(d).getValue() : Map.<Astegunak,Integer>of();
+            int ordu = ordutegia.getOrDefault(ag, 0);
             if (ordu > 0) {
                 ema.put(d, ordu);
             }
@@ -201,7 +204,7 @@ public class DenboralizazioFaltaService {
     /** Ikasturte osoan programan dauden orduak (3 ebaluazio guztiak) */
     private int kalkulatuProgramaOrduakUrteOsoan(
             Egutegia egutegia,
-            Map<Astegunak,Integer> orduakAstegunaka,
+            java.util.NavigableMap<LocalDate, Map<Astegunak,Integer>> orduakByDate,
             Map<LocalDate,EgunBerezi> bereziMap) {
 
         LocalDate ikastHasiera = egutegia.getHasieraData();
@@ -214,7 +217,8 @@ public class DenboralizazioFaltaService {
             Astegunak ag = astegunEraginkorra(d, bereziMap);
             if (ag == null) continue;
 
-            total += orduakAstegunaka.getOrDefault(ag, 0);
+            var ordutegia = orduakByDate.floorEntry(d) != null ? orduakByDate.floorEntry(d).getValue() : Map.<Astegunak,Integer>of();
+            total += ordutegia.getOrDefault(ag, 0);
         }
         return total;
     }

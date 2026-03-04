@@ -532,13 +532,16 @@ public class ProgramazioaService {
 
         if (programazioa == null || egutegia == null || blokeak == null) return Map.of();
 
-        Map<Astegunak, Integer> orduakAstegunaka = blokeak.stream()
-            .collect(java.util.stream.Collectors.groupingBy(
-                KoadernoOrdutegiBlokea::getAsteguna,
-                java.util.stream.Collectors.summingInt(KoadernoOrdutegiBlokea::getIraupenaSlot)
-            ));
+        LocalDate ikastHas = egutegia.getHasieraData();
+        java.util.NavigableMap<LocalDate, Map<Astegunak, Integer>> ordutegiaka = new java.util.TreeMap<>();
 
-        return ebalOrduErabilgarriakCore(programazioa, egutegia, orduakAstegunaka);
+        for (KoadernoOrdutegiBlokea b : blokeak) {
+            LocalDate has = b.getHasieraData() != null ? b.getHasieraData() : ikastHas;
+            ordutegiaka.computeIfAbsent(has, __ -> new java.util.EnumMap<>(Astegunak.class))
+                    .merge(b.getAsteguna(), b.getIraupenaSlot(), Integer::sum);
+        }
+
+        return ebalOrduErabilgarriakCore(programazioa, egutegia, ordutegiaka);
     }
 	
 	/* ============ Core kalkulua (ORDEZKATUA konponduta) ============ */
@@ -546,7 +549,7 @@ public class ProgramazioaService {
     private Map<Long, Integer> ebalOrduErabilgarriakCore(
             Programazioa programazioa,
             Egutegia egutegia,
-            Map<Astegunak, Integer> orduakAstegunaka) {
+            java.util.NavigableMap<LocalDate, Map<Astegunak, Integer>> ordutegiaka) {
         Map<LocalDate, EgunBerezi> egunBereziakMap = java.util.Optional.ofNullable(egutegia.getEgunBereziak())
             .orElse(java.util.List.of()).stream()
             .filter(eb -> eb.getData() != null)
@@ -558,7 +561,7 @@ public class ProgramazioaService {
 
         Map<LocalDate, Integer> egunekoOrduakIkasturtean = kalkulatuEgunekoOrduakIkasturtean(
             egutegia,
-            orduakAstegunaka,
+            ordutegiaka,
             egunBereziakMap
         );
 
@@ -588,7 +591,7 @@ public class ProgramazioaService {
 
     private Map<LocalDate, Integer> kalkulatuEgunekoOrduakIkasturtean(
             Egutegia egutegia,
-            Map<Astegunak, Integer> orduakAstegunaka,
+            java.util.NavigableMap<LocalDate, Map<Astegunak, Integer>> ordutegiaka,
             Map<LocalDate, EgunBerezi> egunBereziakMap) {
 
         Map<LocalDate, Integer> emaitza = new java.util.LinkedHashMap<>();
@@ -603,7 +606,8 @@ public class ProgramazioaService {
             Astegunak ag = astegunEraginkorra(d, egunBereziakMap);
             if (ag == null) continue;
 
-            int ordu = orduakAstegunaka.getOrDefault(ag, 0);
+            var egunekoOrdutegia = ordutegiaka.floorEntry(d) != null ? ordutegiaka.floorEntry(d).getValue() : Map.<Astegunak,Integer>of();
+            int ordu = egunekoOrdutegia.getOrDefault(ag, 0);
             if (ordu > 0) {
                 emaitza.put(d, ordu);
             }

@@ -194,6 +194,14 @@
       background:#2563eb;
       transform:translateY(-1px);
     }
+
+    .ordutegi-tabs{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;}
+    .ordutegi-tab{border:none;background:transparent;color:#dc2626;font-weight:700;cursor:pointer;}
+    .ordutegi-tab.active{color:#111827;text-decoration:underline;}
+    .ordutegi-date-range{color:#dc2626;font-size:1.8rem;font-weight:500;margin-left:auto;}
+    .ordutegi-new{margin-top:10px;display:flex;justify-content:flex-end;}
+    .ordutegi-new button{border:2px solid #ef4444;border-radius:999px;background:#fff;padding:.4rem 1.2rem;color:#dc2626;font-weight:700;cursor:pointer;}
+
   </style>
 </head>
 <body>
@@ -242,6 +250,15 @@
       </div>
 
       <!-- Ordutegia -->
+
+      <div class="ordutegi-tabs" id="ordutegiTabs" th:attr="data-active=${activeScheduleStartDate}">
+        <button type="button" class="ordutegi-tab"
+                th:each="tab : ${ordutegiInfo}"
+                th:attr="data-key=${tab.key}"
+                th:text="${tab.label}">1. ordutegia</button>
+        <span class="ordutegi-tab active">Ordutegi aktiboa</span>
+        <span id="ordutegiRange" class="ordutegi-date-range"></span>
+      </div>
       <div class="grid-viewport">
         <form th:action="@{|/irakasle/koadernoa/${koadernoAktiboa.id}/ordutegia|}"
               method="post"
@@ -291,6 +308,10 @@
         </form>
       </div>
 
+      <div class="ordutegi-new">
+        <button type="button" id="ordutegiBerriaBtn">Ordutegi berria</button>
+      </div>
+
       <!-- Irakasle zerrenda + partekatu atala (fragment berria) -->
       <div th:replace="~{irakasleak/fragments/irakasle-zerrenda-atala :: irakasleZerrenda(${koadernoAktiboa}, ${irakaslea})}"></div>
 
@@ -308,10 +329,17 @@
   <div th:replace="~{irakasleak/fragments/koadernoa-ezabatu :: koadernoa-ezabatu-fragment(${koadernoAktiboa})}"></div>
 </th:block>
 
-<script>
+<script th:inline="javascript">
 (function () {
   const table = document.getElementById('ordutegiTaula');
   if (!table) return; // nothing to wire
+
+  const tabsWrap = document.getElementById('ordutegiTabs');
+  const rangeEl = document.getElementById('ordutegiRange');
+  const berriaBtn = document.getElementById('ordutegiBerriaBtn');
+  const schedules = /*[[${ordutegiTabs}]]*/ {};
+  const info = /*[[${ordutegiInfo}]]*/ [];
+  let activeScheduleStartDate = tabsWrap ? tabsWrap.dataset.active : null;
 
   const toggle = document.getElementById('KoadernoakConfigPortadaContentButton');
 
@@ -357,7 +385,7 @@
     const koadernoId = table.dataset.koadernoId;
 
     try {
-      const params = new URLSearchParams({ col, row, selected: String(nowSelected) });
+      const params = new URLSearchParams({ col, row, selected: String(nowSelected), scheduleStartDate: activeScheduleStartDate });
       const res = await fetch(`/irakasle/koadernoa/${koadernoId}/ordutegia/cell`, {
         method: 'POST',
         headers: Object.assign(
@@ -378,6 +406,51 @@
       alert('Ezin izan da gorde. Saiatu berriro, mesedez.');
     }
   }
+
+
+  function renderSchedule(key) {
+    activeScheduleStartDate = key;
+    const selectedSet = new Set((schedules[key] || []));
+    table.querySelectorAll('td').forEach(td => {
+      const cellKey = `${td.dataset.col}-${td.dataset.row}`;
+      td.classList.toggle('selected', selectedSet.has(cellKey));
+    });
+    if (tabsWrap) {
+      tabsWrap.querySelectorAll('.ordutegi-tab[data-key]').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.key === key);
+      });
+    }
+    const currentInfo = info.find(i => i.key === key);
+    if (rangeEl && currentInfo) {
+      rangeEl.textContent = `Noiztik: ${currentInfo.from}` + (currentInfo.to ? ` / Noizra: ${currentInfo.to}` : '');
+    }
+  }
+
+  tabsWrap?.querySelectorAll('.ordutegi-tab[data-key]').forEach(btn => {
+    btn.addEventListener('click', () => renderSchedule(btn.dataset.key));
+  });
+
+  berriaBtn?.addEventListener('click', async () => {
+    const hasieraData = prompt('Sartu ordutegi berriaren hasiera data (YYYY-MM-DD):');
+    if (!hasieraData) return;
+    const koadernoId = table.dataset.koadernoId;
+    const params = new URLSearchParams({ hasieraData });
+    const res = await fetch(`/irakasle/koadernoa/${koadernoId}/ordutegia/berria`, {
+      method: 'POST',
+      headers: Object.assign(
+        { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+        CSRF_TOKEN ? { [CSRF_HEADER]: CSRF_TOKEN } : {}
+      ),
+      body: params
+    });
+    if (!res.ok) {
+      alert('Ezin izan da ordutegi berria sortu');
+      return;
+    }
+    window.location.reload();
+  });
+
+  if (activeScheduleStartDate) renderSchedule(activeScheduleStartDate);
 })();
 </script>
 <script th:src="@{/js/irakasle-partekatu.js}"></script>

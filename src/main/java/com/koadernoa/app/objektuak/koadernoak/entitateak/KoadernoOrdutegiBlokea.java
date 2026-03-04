@@ -2,6 +2,8 @@ package com.koadernoa.app.objektuak.koadernoak.entitateak;
 
 import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
 
+import java.time.LocalDate;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -29,6 +31,7 @@ public class KoadernoOrdutegiBlokea {
 
     private int hasieraSlot;     // 1..12
     private int iraupenaSlot;    // zenbat slot jarraian (>=1)
+    private LocalDate hasieraData;
 
     public int bukaeraSlot() {
         return hasieraSlot + iraupenaSlot - 1;

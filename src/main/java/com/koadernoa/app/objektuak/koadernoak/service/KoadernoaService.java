@@ -341,21 +341,34 @@ public class KoadernoaService {
         b.setAsteguna(ASTE_ORDENA.get(col - 1)); // 1->ASTELEHENA ... 5->OSTIRALA
         b.setHasieraSlot(start);
         b.setIraupenaSlot(end - start + 1);
+        if (k.getEgutegia() != null) {
+            b.setHasieraData(k.getEgutegia().getHasieraData());
+        }
         return b;
     }
     
     @Transactional
-    public void setSlotSelected(Long koadernoId, int col, int row, boolean selected){
+    public void setSlotSelected(Long koadernoId, int col, int row, boolean selected, LocalDate scheduleStartDate){
         if (col < 1 || col > ASTE_ORDENA.size()) throw new IllegalArgumentException("Egun baliogabea");
         if (row < 1 || row > 12) throw new IllegalArgumentException("Slot baliogabea");
 
         Koadernoa k = koadernoaRepository.findWithOrdutegiaById(koadernoId).orElseThrow();
         Astegunak eguna = ASTE_ORDENA.get(col - 1);
+        LocalDate activeFrom = scheduleStartDate;
+        if (activeFrom == null) {
+            activeFrom = k.getEgutegia() != null ? k.getEgutegia().getHasieraData() : LocalDate.now();
+        }
+
+        for (KoadernoOrdutegiBlokea b : k.getOrdutegiak()) {
+            if (b.getHasieraData() == null && k.getEgutegia() != null) {
+                b.setHasieraData(k.getEgutegia().getHasieraData());
+            }
+        }
 
         // Egun honetako blokeak
         List<KoadernoOrdutegiBlokea> dayBlocks = new ArrayList<>();
         for (KoadernoOrdutegiBlokea b : new ArrayList<>(k.getOrdutegiak())) {
-            if (b.getAsteguna() == eguna) dayBlocks.add(b);
+            if (b.getAsteguna() == eguna && java.util.Objects.equals(b.getHasieraData(), activeFrom)) dayBlocks.add(b);
         }
         // sort by start
         dayBlocks.sort(Comparator.comparingInt(KoadernoOrdutegiBlokea::getHasieraSlot));
@@ -383,6 +396,7 @@ public class KoadernoaService {
                 nb.setAsteguna(eguna);
                 nb.setHasieraSlot(row);
                 nb.setIraupenaSlot(1);
+                nb.setHasieraData(activeFrom);
                 k.getOrdutegiak().add(nb);
             }
         } else {
@@ -417,12 +431,50 @@ public class KoadernoaService {
                 right.setAsteguna(eguna);
                 right.setHasieraSlot(rightStart);
                 right.setIraupenaSlot(rightEnd - rightStart + 1);
+                right.setHasieraData(activeFrom);
                 k.getOrdutegiak().add(right);
             }
         }
         // flush/commit @Transactional bidez
     }
     
+    @Transactional(readOnly = true)
+    public java.util.NavigableMap<LocalDate, List<KoadernoOrdutegiBlokea>> getOrdutegiakByHasieraData(Long koadernoId) {
+        Koadernoa k = koadernoaRepository.findWithOrdutegiaById(koadernoId).orElseThrow();
+        LocalDate first = k.getEgutegia() != null ? k.getEgutegia().getHasieraData() : LocalDate.now();
+
+        return java.util.Optional.ofNullable(k.getOrdutegiak()).orElse(List.of()).stream()
+                .peek(b -> {
+                    if (b.getHasieraData() == null) {
+                        b.setHasieraData(first);
+                    }
+                })
+                .sorted(Comparator.comparing(KoadernoOrdutegiBlokea::getHasieraData)
+                        .thenComparing(KoadernoOrdutegiBlokea::getAsteguna)
+                        .thenComparingInt(KoadernoOrdutegiBlokea::getHasieraSlot))
+                .collect(Collectors.groupingBy(KoadernoOrdutegiBlokea::getHasieraData,
+                        java.util.TreeMap::new,
+                        Collectors.toList()));
+    }
+
+    @Transactional
+    public LocalDate sortuOrdutegiBerria(Long koadernoId, LocalDate hasieraData) {
+        Koadernoa k = koadernoaRepository.findWithOrdutegiaById(koadernoId).orElseThrow();
+        LocalDate ikastHas = k.getEgutegia() != null ? k.getEgutegia().getHasieraData() : null;
+        LocalDate ikastBuk = k.getEgutegia() != null ? k.getEgutegia().getBukaeraData() : null;
+        if (hasieraData == null) throw new IllegalArgumentException("Hasiera data beharrezkoa da");
+        if (ikastHas != null && hasieraData.isBefore(ikastHas)) throw new IllegalArgumentException("Hasiera data ikasturtea baino lehenago da");
+        if (ikastBuk != null && hasieraData.isAfter(ikastBuk)) throw new IllegalArgumentException("Hasiera data ikasturtea baino beranduago da");
+
+        for (KoadernoOrdutegiBlokea b : java.util.Optional.ofNullable(k.getOrdutegiak()).orElse(List.of())) {
+            if (b.getHasieraData() == null) b.setHasieraData(ikastHas);
+            if (java.util.Objects.equals(b.getHasieraData(), hasieraData)) {
+                return hasieraData;
+            }
+        }
+        return hasieraData;
+    }
+
     private KoadernoOrdutegiBlokea findCovering(List<KoadernoOrdutegiBlokea> blocks, int slot){
         for (KoadernoOrdutegiBlokea b : blocks){
             if (slot >= b.getHasieraSlot() && slot <= b.bukaeraSlot()) return b;
