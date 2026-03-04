@@ -129,6 +129,7 @@ public class IrakasleController {
 	    Map<String, Set<String>> ordutegiTabs = new java.util.LinkedHashMap<>();
 	    List<Map<String, String>> ordutegiInfo = new ArrayList<>();
 	    List<LocalDate> hasieraDatak = new ArrayList<>(ordutegiakByDate.keySet());
+	    boolean ordutegiAnitz = hasieraDatak.size() > 1;
 	    for (int i = 0; i < hasieraDatak.size(); i++) {
 	        LocalDate has = hasieraDatak.get(i);
 	        LocalDate buk = (i + 1 < hasieraDatak.size()) ? hasieraDatak.get(i + 1).minusDays(1)
@@ -145,7 +146,7 @@ public class IrakasleController {
 
 	        Map<String, String> info = new java.util.LinkedHashMap<>();
 	        info.put("key", has.toString());
-	        info.put("label", (i + 1) + ". ordutegia");
+	        info.put("label", ordutegiAnitz ? (i + 1) + ". ordutegia" : "Ordutegia");
 	        info.put("from", has.toString());
 	        info.put("to", buk != null ? buk.toString() : "");
 	        ordutegiInfo.add(info);
@@ -153,6 +154,7 @@ public class IrakasleController {
 
 	    model.addAttribute("ordutegiTabs", ordutegiTabs);
 	    model.addAttribute("ordutegiInfo", ordutegiInfo);
+	    model.addAttribute("ordutegiAnitz", ordutegiAnitz);
 	    model.addAttribute("activeScheduleStartDate", activeDate != null ? activeDate.toString() : null);
 	    model.addAttribute("selected", ordutegiTabs.getOrDefault(activeDate != null ? activeDate.toString() : "", Set.of()));
 	    model.addAttribute("editable", false); // defektuz blokeatuta

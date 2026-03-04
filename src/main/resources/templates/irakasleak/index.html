@@ -195,12 +195,12 @@
       transform:translateY(-1px);
     }
 
-    .ordutegi-tabs{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;}
-    .ordutegi-tab{border:none;background:transparent;color:#dc2626;font-weight:700;cursor:pointer;}
-    .ordutegi-tab.active{color:#111827;text-decoration:underline;}
-    .ordutegi-date-range{color:#dc2626;font-size:1.8rem;font-weight:500;margin-left:auto;}
+    .ordutegi-tabs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0 8px;}
+    .ordutegi-tab{border:none;background:transparent;color:#475569;font-weight:600;cursor:pointer;font-size:.9rem;padding:0 .15rem;}
+    .ordutegi-tab:hover{color:#0f172a;}
+    .ordutegi-tab.active{color:#0f172a;text-decoration:underline;text-underline-offset:3px;}
+    .ordutegi-date-range{color:#64748b;font-size:.82rem;font-weight:500;margin-left:auto;}
     .ordutegi-new{margin-top:10px;display:flex;justify-content:flex-end;}
-    .ordutegi-new button{border:2px solid #ef4444;border-radius:999px;background:#fff;padding:.4rem 1.2rem;color:#dc2626;font-weight:700;cursor:pointer;}
 
   </style>
 </head>
@@ -251,12 +251,11 @@
 
       <!-- Ordutegia -->
 
-      <div class="ordutegi-tabs" id="ordutegiTabs" th:attr="data-active=${activeScheduleStartDate}">
+      <div class="ordutegi-tabs" id="ordutegiTabs" th:attr="data-active=${activeScheduleStartDate}, data-multiple=${ordutegiAnitz}">
         <button type="button" class="ordutegi-tab"
                 th:each="tab : ${ordutegiInfo}"
-                th:attr="data-key=${tab.key}"
-                th:text="${tab.label}">1. ordutegia</button>
-        <span class="ordutegi-tab active">Ordutegi aktiboa</span>
+                th:attr="data-key=${tab.key}, data-base-label=${tab.label}"
+                th:text="${tab.label}">Ordutegia</button>
         <span id="ordutegiRange" class="ordutegi-date-range"></span>
       </div>
       <div class="grid-viewport">
@@ -309,7 +308,7 @@
       </div>
 
       <div class="ordutegi-new">
-        <button type="button" id="ordutegiBerriaBtn">Ordutegi berria</button>
+        <button type="button" id="ordutegiBerriaBtn" class="btn btn-secondary">Ordutegi berria</button>
       </div>
 
       <!-- Irakasle zerrenda + partekatu atala (fragment berria) -->
@@ -339,6 +338,7 @@
   const berriaBtn = document.getElementById('ordutegiBerriaBtn');
   const schedules = /*[[${ordutegiTabs}]]*/ {};
   const info = /*[[${ordutegiInfo}]]*/ [];
+  const multipleSchedules = tabsWrap?.dataset.multiple === 'true';
   let activeScheduleStartDate = tabsWrap ? tabsWrap.dataset.active : null;
 
   const toggle = document.getElementById('KoadernoakConfigPortadaContentButton');
@@ -417,7 +417,10 @@
     });
     if (tabsWrap) {
       tabsWrap.querySelectorAll('.ordutegi-tab[data-key]').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.key === key);
+        const isActive = btn.dataset.key === key;
+        btn.classList.toggle('active', isActive);
+        const baseLabel = btn.dataset.baseLabel || 'Ordutegia';
+        btn.textContent = (multipleSchedules && isActive) ? `${baseLabel} (aktibo)` : baseLabel;
       });
     }
     const currentInfo = info.find(i => i.key === key);
