@@ -52,6 +52,7 @@ public class EstatistikakKudeatzaileService {
 	        f.getZikloaId(),
 	        f.getTaldeaId(),
 	        f.getMailaId(),
+            nullIfBlank("DENAK".equalsIgnoreCase(f.getEzadostasuna()) ? null : f.getEzadostasuna()),
 	        pageable
 	    );
 	}
