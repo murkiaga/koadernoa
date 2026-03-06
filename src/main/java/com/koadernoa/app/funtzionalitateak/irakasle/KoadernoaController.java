@@ -28,6 +28,7 @@ import com.koadernoa.app.objektuak.zikloak.service.FamiliaService;
 
 import jakarta.transaction.Transactional;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -180,13 +181,24 @@ public class KoadernoaController {
     public ResponseEntity<?> toggleCell(@PathVariable Long id,
                                         @RequestParam int col,
                                         @RequestParam int row,
-                                        @RequestParam boolean selected) {
-        koadernoaService.setSlotSelected(id, col, row, selected);
+                                        @RequestParam boolean selected,
+                                        @RequestParam(required = false) LocalDate scheduleStartDate) {
+        koadernoaService.setSlotSelected(id, col, row, selected, scheduleStartDate);
         return ResponseEntity.ok(Map.of("ok", true));
     }
 
 
 	
+
+	@PostMapping("/{id}/ordutegia/berria")
+    @ResponseBody
+    public ResponseEntity<?> ordutegiBerria(@PathVariable Long id,
+                                            @RequestParam LocalDate hasieraData) {
+        LocalDate created = koadernoaService.sortuOrdutegiBerria(id, hasieraData);
+        return ResponseEntity.ok(Map.of("ok", true, "hasieraData", created.toString()));
+    }
+
+
 	@PostMapping("/{id}/inportatu-taldetik")
 	public String inportatuTaldekoIkasleakKoadernoan(@PathVariable("id") Long koadernoaId,
 	                                                 RedirectAttributes ra) {

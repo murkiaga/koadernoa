@@ -156,12 +156,15 @@ public class DenboralizazioaController {
 	            koadernoaService.lortuJarduerakDataTartean(kargatutakoKoadernoa, hasiera, amaiera);
 
 	    // Lortu asistentzia egunak
-	    List<Astegunak> astegunak =
-	            koadernoOrdutegiBlokeaRepository.findAstegunakByKoadernoaId(kargatutakoKoadernoa.getId());
-	    Set<Astegunak> blokAstegunak = new HashSet<>(astegunak);
+	    LocalDate ikastHasiera = egutegia.getHasieraData();
+	    java.util.NavigableMap<LocalDate, Set<Astegunak>> blokAstegunakByDate = new java.util.TreeMap<>();
+	    for (var b : koadernoOrdutegiBlokeaRepository.findByKoadernoa_Id(kargatutakoKoadernoa.getId())) {
+	        LocalDate has = b.getHasieraData() != null ? b.getHasieraData() : ikastHasiera;
+	        blokAstegunakByDate.computeIfAbsent(has, __ -> new HashSet<>()).add(b.getAsteguna());
+	    }
 
 	    Map<String, Boolean> asistentziaEgunMap =
-	            asistentziaService.kalkulatuAsistentziaEgunak(blokAstegunak, egutegia, unekoUrtea, unekoHilabetea);
+	            asistentziaService.kalkulatuAsistentziaEgunak(blokAstegunakByDate, egutegia, unekoUrtea, unekoHilabetea);
 
 	    Map<LocalDate, List<Jarduera>> jardueraMap = jarduerak.stream()
 	            .filter(j -> j.getData() != null) // segurtasun gehigarria

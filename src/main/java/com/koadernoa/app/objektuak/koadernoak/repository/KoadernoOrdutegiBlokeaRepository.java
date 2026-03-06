@@ -1,5 +1,6 @@
 package com.koadernoa.app.objektuak.koadernoak.repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,6 +13,10 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoOrdutegiBlokea;
 public interface KoadernoOrdutegiBlokeaRepository extends JpaRepository<KoadernoOrdutegiBlokea, Long>{
 	List<KoadernoOrdutegiBlokea> findByKoadernoaIdAndAsteguna(Long koadernoaId, Astegunak asteguna);
 	
+
+	List<KoadernoOrdutegiBlokea> findByKoadernoaIdAndAstegunaAndHasieraDataLessThanEqual(Long koadernoaId, Astegunak asteguna, LocalDate data);
+	
+	List<KoadernoOrdutegiBlokea> findByKoadernoa_IdAndHasieraDataLessThanEqual(Long koadernoaId, LocalDate data);
 	@Query("select b.asteguna from KoadernoOrdutegiBlokea b where b.koadernoa.id = :koadernoaId")
 	List<Astegunak> findAstegunakByKoadernoaId(@Param("koadernoaId") Long koadernoaId);
 	

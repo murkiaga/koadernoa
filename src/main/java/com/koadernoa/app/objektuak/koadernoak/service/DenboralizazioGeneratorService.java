@@ -158,14 +158,18 @@ public class DenboralizazioGeneratorService {
 	        .filter(eb -> eb.getData() != null && eb.getMota() == EgunMota.ORDEZKATUA && eb.getOrdezkatua() != null)
 	        .collect(Collectors.toMap(EgunBerezi::getData, EgunBerezi::getOrdezkatua, (a, b) -> a));
 
-	    // 2) Koadernoaren ordutegia: astegun bakoitzean zenbat slot (ordu) dauden
-	    Map<Astegunak, Integer> slotsByWeekday = Optional.ofNullable(k.getOrdutegiak()).orElse(List.of()).stream()
-	        .collect(Collectors.groupingBy(KoadernoOrdutegiBlokea::getAsteguna,
-	            Collectors.summingInt(KoadernoOrdutegiBlokea::getIraupenaSlot)));
+	    // 2) Koadernoaren ordutegiak: hasiera-data bakoitzeko asteguneko slotak
+    LocalDate ikastHas = e.getHasieraData();
+    java.util.NavigableMap<LocalDate, Map<Astegunak, Integer>> slotsByDate = new java.util.TreeMap<>();
+    for (KoadernoOrdutegiBlokea b : Optional.ofNullable(k.getOrdutegiak()).orElse(List.of())) {
+        LocalDate has = b.getHasieraData() != null ? b.getHasieraData() : ikastHas;
+        slotsByDate.computeIfAbsent(has, __ -> new java.util.EnumMap<>(Astegunak.class))
+            .merge(b.getAsteguna(), b.getIraupenaSlot(), Integer::sum);
+    }
 
-	    if (slotsByWeekday.isEmpty()) return List.of();
+    if (slotsByDate.isEmpty()) return List.of();
 
-	    // 3) Egun bakoitzerako slot eraginkorrak sortu
+    // 3) Egun bakoitzerako slot eraginkorrak sortu
 	    List<SessionSlot> out = new ArrayList<>();
 	    LocalDate d = e.getHasieraData();
 	    while (!d.isAfter(e.getBukaeraData())) {
@@ -175,7 +179,8 @@ public class DenboralizazioGeneratorService {
 	        Astegunak effective = ordezkapenak.getOrDefault(d, nominal);
 
 	        // c) Egun horretan zenbat slot dauden (astegun eraginkorraren arabera)
-	        int dailySlots = slotsByWeekday.getOrDefault(effective, 0);
+	        var ordutegia = slotsByDate.floorEntry(d) != null ? slotsByDate.floorEntry(d).getValue() : Map.<Astegunak,Integer>of();
+        int dailySlots = ordutegia.getOrDefault(effective, 0);
 
 	        if (dailySlots > 0) {
 	            // d) Egun hori lectiboa den ala ez

@@ -1,11 +1,11 @@
 package com.koadernoa.app.funtzionalitateak.irakasle;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.springframework.security.core.Authentication;
@@ -27,6 +27,7 @@ import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoOrdutegiBlokea;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
+import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -40,6 +41,7 @@ public class IrakasleController {
 	private final KoadernoaRepository koadernoaRepository;
 	private final EgutegiaService egutegiaService;
 	private final IrakasleModelAttributes irakasleModelAttributes;
+	private final KoadernoaService koadernoaService;
 	
 	private static final List<Astegunak> ASTE_ORDENA = List.of(
             Astegunak.ASTELEHENA, Astegunak.ASTEARTEA, Astegunak.ASTEAZKENA,
@@ -118,16 +120,43 @@ public class IrakasleController {
 	    model.addAttribute("rows", IntStream.rangeClosed(1, 12).boxed().toList());
 	    model.addAttribute("cols", ASTE_ORDENA);
 
-	    Set<String> selected = new HashSet<>();
-	    if (koadernoa.getOrdutegiak() != null) {
-	        for (KoadernoOrdutegiBlokea b : koadernoa.getOrdutegiak()) {
+	    var ordutegiakByDate = koadernoaService.getOrdutegiakByHasieraData(koadernoa.getId());
+	    LocalDate today = LocalDate.now();
+	    LocalDate activeDate = ordutegiakByDate.isEmpty()
+	            ? (koadernoa.getEgutegia() != null ? koadernoa.getEgutegia().getHasieraData() : today)
+	            : ordutegiakByDate.floorKey(today) != null ? ordutegiakByDate.floorKey(today) : ordutegiakByDate.firstKey();
+
+	    Map<String, Set<String>> ordutegiTabs = new java.util.LinkedHashMap<>();
+	    List<Map<String, String>> ordutegiInfo = new ArrayList<>();
+	    List<LocalDate> hasieraDatak = new ArrayList<>(ordutegiakByDate.keySet());
+	    boolean ordutegiAnitz = hasieraDatak.size() > 1;
+	    for (int i = 0; i < hasieraDatak.size(); i++) {
+	        LocalDate has = hasieraDatak.get(i);
+	        LocalDate buk = (i + 1 < hasieraDatak.size()) ? hasieraDatak.get(i + 1).minusDays(1)
+	                : (koadernoa.getEgutegia() != null ? koadernoa.getEgutegia().getBukaeraData() : null);
+	
+	        Set<String> selected = new HashSet<>();
+	        for (KoadernoOrdutegiBlokea b : ordutegiakByDate.get(has)) {
 	            int col = ASTE_ORDENA.indexOf(b.getAsteguna()) + 1;
-	            for (int s = b.getHasieraSlot(); s <= b.bukaeraSlot(); s++) {
-	                selected.add(col + "-" + s);
+	            for (int slot = b.getHasieraSlot(); slot <= b.bukaeraSlot(); slot++) {
+	                selected.add(col + "-" + slot);
 	            }
 	        }
+	        ordutegiTabs.put(has.toString(), selected);
+
+	        Map<String, String> info = new java.util.LinkedHashMap<>();
+	        info.put("key", has.toString());
+	        info.put("label", ordutegiAnitz ? (i + 1) + ". ordutegia" : "Ordutegia");
+	        info.put("from", has.toString());
+	        info.put("to", buk != null ? buk.toString() : "");
+	        ordutegiInfo.add(info);
 	    }
-	    model.addAttribute("selected", selected);
+
+	    model.addAttribute("ordutegiTabs", ordutegiTabs);
+	    model.addAttribute("ordutegiInfo", ordutegiInfo);
+	    model.addAttribute("ordutegiAnitz", ordutegiAnitz);
+	    model.addAttribute("activeScheduleStartDate", activeDate != null ? activeDate.toString() : null);
+	    model.addAttribute("selected", ordutegiTabs.getOrDefault(activeDate != null ? activeDate.toString() : "", Set.of()));
 	    model.addAttribute("editable", false); // defektuz blokeatuta
 
 	    model.addAttribute("koadernoAktiboDago", koadernoAktiboDago);

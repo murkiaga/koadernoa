@@ -64,8 +64,16 @@ public class AsistentziaService {
 	  //asteguna eraginkorra (ORDEZKATUA kontuan)
 	  var asteGunaEraginkorra = effectiveAsteguna(koadernoa.getEgutegia(), data);
 
-	  var blokeak = koadernoOrdutegiBlokeaRepository
-	      .findByKoadernoaIdAndAsteguna(koadernoa.getId(), asteGunaEraginkorra);
+	  var historikoa = koadernoOrdutegiBlokeaRepository
+	      .findByKoadernoaIdAndAstegunaAndHasieraDataLessThanEqual(koadernoa.getId(), asteGunaEraginkorra, data);
+
+	  LocalDate ikastHas = koadernoa.getEgutegia() != null ? koadernoa.getEgutegia().getHasieraData() : data;
+	  java.util.NavigableMap<LocalDate, java.util.List<KoadernoOrdutegiBlokea>> byStart = new java.util.TreeMap<>();
+	  for (KoadernoOrdutegiBlokea b : historikoa) {
+	    LocalDate has = b.getHasieraData() != null ? b.getHasieraData() : ikastHas;
+	    byStart.computeIfAbsent(has, __ -> new java.util.ArrayList<>()).add(b);
+	  }
+	  var blokeak = byStart.floorEntry(data) != null ? byStart.floorEntry(data).getValue() : java.util.List.<KoadernoOrdutegiBlokea>of();
 
 	  for (var b : blokeak) {
 	    // slot bakoitzeko saio bana (orduak banaka)
@@ -138,57 +146,52 @@ public class AsistentziaService {
   }
   
   public Map<String, Boolean> kalkulatuAsistentziaEgunak(
-	        Set<Astegunak> blokAstegunak,
-	        Egutegia egutegia, int urtea, int hilabetea) {
+                java.util.NavigableMap<LocalDate, Set<Astegunak>> blokAstegunakByDate,
+                Egutegia egutegia, int urtea, int hilabetea) {
 
-	    Map<String, Boolean> map = new HashMap<>();
+            Map<String, Boolean> map = new HashMap<>();
 
-	    LocalDate hasieraHil = LocalDate.of(urtea, hilabetea, 1);
-	    LocalDate amaieraHil = hasieraHil.withDayOfMonth(hasieraHil.lengthOfMonth());
+            LocalDate hasieraHil = LocalDate.of(urtea, hilabetea, 1);
+            LocalDate amaieraHil = hasieraHil.withDayOfMonth(hasieraHil.lengthOfMonth());
 
-	    // Egutegiaren muga-datak (defentsiboa)
-	    LocalDate egHas = egutegia.getHasieraData();
-	    LocalDate egBuk = egutegia.getBukaeraData();
+            LocalDate egHas = egutegia.getHasieraData();
+            LocalDate egBuk = egutegia.getBukaeraData();
 
-	    Map<LocalDate, EgunBerezi> bereziak = egutegia.getEgunBereziak() == null
-	        ? Map.of()
-	        : egutegia.getEgunBereziak().stream()
-	            .collect(Collectors.toMap(EgunBerezi::getData, eb -> eb, (a,b)->a));
+            Map<LocalDate, EgunBerezi> bereziak = egutegia.getEgunBereziak() == null
+                ? Map.of()
+                : egutegia.getEgunBereziak().stream()
+                    .collect(Collectors.toMap(EgunBerezi::getData, eb -> eb, (a,b)->a));
 
-	    for (LocalDate d = hasieraHil; !d.isAfter(amaieraHil); d = d.plusDays(1)) {
+            for (LocalDate d = hasieraHil; !d.isAfter(amaieraHil); d = d.plusDays(1)) {
+                if ((egHas != null && d.isBefore(egHas)) || (egBuk != null && d.isAfter(egBuk))) {
+                    map.put(d.toString(), false);
+                    continue;
+                }
+                if (d.getDayOfWeek().getValue() >= 6) {
+                    map.put(d.toString(), false);
+                    continue;
+                }
 
-	        // 0) Egutegiaren muga: kanpoan bada, EZ
-	        if ((egHas != null && d.isBefore(egHas)) || (egBuk != null && d.isAfter(egBuk))) {
-	            map.put(d.toString(), false);
-	            continue;
-	        }
+                EgunBerezi eb = bereziak.get(d);
+                if (eb != null && (eb.getMota() == EgunMota.EZ_LEKTIBOA || eb.getMota() == EgunMota.JAIEGUNA)) {
+                    map.put(d.toString(), false);
+                    continue;
+                }
 
-	        // 1) Asteburuak EZ
-	        if (d.getDayOfWeek().getValue() >= 6) {
-	            map.put(d.toString(), false);
-	            continue;
-	        }
+                Astegunak asteguna = mapAsteguna(d.getDayOfWeek());
+                if (eb != null && eb.getMota() == EgunMota.ORDEZKATUA && eb.getOrdezkatua() != null) {
+                    asteguna = eb.getOrdezkatua();
+                }
 
-	        // 2) Egun bereziak: EZ_LEKTIBOA/JAIEGUNA bada, EZ
-	        EgunBerezi eb = bereziak.get(d);
-	        if (eb != null && (eb.getMota() == EgunMota.EZ_LEKTIBOA || eb.getMota() == EgunMota.JAIEGUNA)) {
-	            map.put(d.toString(), false);
-	            continue;
-	        }
+                Set<Astegunak> blokAstegunak = blokAstegunakByDate.floorEntry(d) != null
+                        ? blokAstegunakByDate.floorEntry(d).getValue()
+                        : Set.of();
+                boolean badago = blokAstegunak.contains(asteguna);
+                map.put(d.toString(), badago);
+            }
+            return map;
+        }
 
-	        // 3) Ordezkatua bada, ordezkatutako asteguna hartu
-	        Astegunak asteguna = mapAsteguna(d.getDayOfWeek());
-	        if (eb != null && eb.getMota() == EgunMota.ORDEZKATUA && eb.getOrdezkatua() != null) {
-	            asteguna = eb.getOrdezkatua();
-	        }
-
-	        // 4) Koadernoaren ordutegiak astegun horretan badu blokerik?
-	        boolean badago = blokAstegunak.contains(asteguna);
-	        map.put(d.toString(), badago);
-	    }
-	    return map;
-	}
-  
   	/** Egun ordezkatuen jatorrizko ordutegia jasotzeko */
   	public Optional<EgunBerezi> getEgunBerezi(Egutegia egutegia, LocalDate data){
 	  if (egutegia == null || egutegia.getEgunBereziak() == null) return Optional.empty();
