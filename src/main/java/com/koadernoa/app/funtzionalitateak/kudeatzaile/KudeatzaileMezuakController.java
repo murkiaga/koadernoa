@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 @Controller
 @RequestMapping("/kudeatzaile/mezuak")
 @RequiredArgsConstructor
-public class MezuakController {
+public class KudeatzaileMezuakController {
 
     private final MezuaService mezuaService;
     private final IrakasleaService irakasleaService;
