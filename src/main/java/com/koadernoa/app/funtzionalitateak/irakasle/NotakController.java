@@ -94,6 +94,12 @@ public class NotakController {
         List<Matrikula> matrikulak =
                 matrikulaRepository.findByKoadernoaIdAndEgoera(koadernoa.getId(), MatrikulaEgoera.MATRIKULATUA);
 
+        for (Matrikula m : matrikulak) {
+            String oh = request.getParameter("oharra_" + m.getId());
+            m.setOharra(oh != null ? oh.trim() : null);
+        }
+        matrikulaRepository.saveAll(matrikulak);
+
         String errorHtml = ebaluazioNotaService.gordeNotak(koadernoa, momentuak, matrikulak, request);
 
         if (errorHtml != null && !errorHtml.isBlank()) {

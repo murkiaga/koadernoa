@@ -9,6 +9,7 @@ public class EstatistikakFiltroa {
     private String ebaluazioKodea; // adib: 1_EBAL, 2_EBAL...
     private Boolean kalkulatua;
     private Boolean gainditua;     // null=denak, true/false
+    private String ezadostasuna;    // DENAK / BAI / EZ
 
     // getters/setters
     public Long getFamiliaId() { return familiaId; }
@@ -25,4 +26,6 @@ public class EstatistikakFiltroa {
     public void setKalkulatua(Boolean kalkulatua) { this.kalkulatua = kalkulatua; }
     public Boolean getGainditua() { return gainditua; }
     public void setGainditua(Boolean gainditua) { this.gainditua = gainditua; }
+    public String getEzadostasuna() { return ezadostasuna; }
+    public void setEzadostasuna(String ezadostasuna) { this.ezadostasuna = ezadostasuna; }
 }

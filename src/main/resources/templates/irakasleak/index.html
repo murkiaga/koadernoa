@@ -531,6 +531,12 @@
 
     recomputeScheduleMeta();
     renderSchedule(key);
+    setEditable(true);
+    const unlockBtn = toggle ? toggle.querySelector('.btn-toggle-option[data-action="unlock"]') : null;
+    if (unlockBtn) {
+      toggle.querySelectorAll('.btn-toggle-option').forEach(o => o.classList.remove('selected'));
+      unlockBtn.classList.add('selected');
+    }
   });
 
   recomputeScheduleMeta();

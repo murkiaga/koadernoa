@@ -117,7 +117,8 @@ public class ProgramazioaController {
       model.addAttribute("unitateak", unitateak);
       model.addAttribute("jpOrduakMap", programazioaService.planifikatutakoOrduakMap(unitateak));
       Integer moduloOrduak = (k.getModuloa() != null) ? k.getModuloa().getOrduak() : null;
-      Integer moduloOrduDiff = (moduloOrduak != null) ? (moduloOrduak - totalUdHours) : null;
+      int ebalAurreikusiOrduak = ebalDispon.values().stream().mapToInt(Integer::intValue).sum();
+      Integer moduloOrduDiff = (moduloOrduak != null) ? (moduloOrduak - ebalAurreikusiOrduak) : null;
       String moduloOrduEgoera = null;
       if (moduloOrduDiff != null) {
           if (moduloOrduDiff > 0) moduloOrduEgoera = "falta";

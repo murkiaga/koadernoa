@@ -17,6 +17,8 @@ public class AplikazioAukeraSeedConfig {
             ensure(repo, AplikazioAukeraService.AUTH_GOOGLE_ENABLED, "true");
             ensure(repo, AplikazioAukeraService.AUTH_LDAP_ENABLED, "false");
             ensure(repo, AplikazioAukeraService.AUTH_DEFAULT, "google");
+            ensure(repo, AplikazioAukeraService.KOADERNO_BIKOIZTUAK_BAIMENDU, "true");
+            ensure(repo, AplikazioAukeraService.KOADERNO_BESTE_MINTEGIA_BAIMENDU, "false");
         };
     }
 

@@ -21,6 +21,8 @@ public class AplikazioAukeraService {
     public static final String AUTH_GOOGLE_ENABLED = "auth.google.enabled";
     public static final String AUTH_LDAP_ENABLED = "auth.ldap.enabled";
     public static final String AUTH_DEFAULT = "auth.default";
+    public static final String KOADERNO_BESTE_MINTEGIA_BAIMENDU = "koadernoak.beste.mintegia.baimendu";
+    public static final String KOADERNO_BIKOIZTUAK_BAIMENDU = "koadernoak.bikoiztuak.baimendu";
     
     private final AplikazioAukeraRepository repo;
 

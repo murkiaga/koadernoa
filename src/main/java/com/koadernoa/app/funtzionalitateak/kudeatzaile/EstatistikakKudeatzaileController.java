@@ -1,6 +1,9 @@
 package com.koadernoa.app.funtzionalitateak.kudeatzaile;
 
 import com.koadernoa.app.objektuak.koadernoak.service.EstatistikakKudeatzaileService;
+import com.koadernoa.app.objektuak.mezuak.service.MezuaService;
+import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
+import org.springframework.security.core.Authentication;
 import com.koadernoa.app.funtzionalitateak.kudeatzaile.EstatistikaDashboard.*;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.EstatistikaEbaluazioan;
 import com.koadernoa.app.objektuak.koadernoak.repository.EstatistikaEbaluazioanRepository;
@@ -39,6 +42,8 @@ public class EstatistikakKudeatzaileController {
     private final EstatistikakKudeatzaileService estatistikakService;
     private final EstatistikaEbaluazioanRepository estatistikaEbaluazioanRepository;
     private final EzadostasunFitxaRepository ezadostasunFitxaRepository;
+    private final MezuaService mezuaService;
+    private final IrakasleaService irakasleaService;
 
     @GetMapping
     public String index(
@@ -157,6 +162,27 @@ public class EstatistikakKudeatzaileController {
     }
     
     
+
+    @PostMapping("/mezuak/bidali")
+    public String bidaliMezua(
+            @ModelAttribute("filtro") EstatistikakFiltroa filtro,
+            @RequestParam("edukia") String edukia,
+            Authentication auth,
+            RedirectAttributes ra
+    ) {
+        String testua = edukia == null ? "" : edukia.trim();
+        if (testua.isBlank()) {
+            ra.addFlashAttribute("error", "Mezua hutsik dago.");
+            return "redirect:/kudeatzaile/estatistikak";
+        }
+
+        var ir = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+        var guztiak = estatistikakService.bilatuOrrikatuta(filtro, Pageable.unpaged()).getContent();
+        int bidaliak = mezuaService.bidaliEstatistikaFiltrotik(ir, guztiak, testua);
+        ra.addFlashAttribute("success", "Mezuak bidalita: " + bidaliak);
+        return "redirect:/kudeatzaile/estatistikak";
+    }
+
     /************************** CSV Deskargatzeko *******************************/
     @GetMapping(value = "/csv", produces = "text/csv")
     public ResponseEntity<StreamingResponseBody> exportCsv(

@@ -152,28 +152,27 @@ public class KoadernoaController {
 	@PostMapping("/berria")
 	public String submit(@ModelAttribute("koadernoaDto") KoadernoaSortuDto dto,
 	                     Authentication auth,
+                     RedirectAttributes ra,
 	                     @RequestParam(name = "cells", required = false) List<String> cells) {
 
 	    Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
 
-	    // 1) Koadernoa sortu
-	    Koadernoa berria = koadernoaService.sortuKoadernoa(
-	            dto,
-	            irakaslea,
-	            cells == null ? List.of() : cells
-	    );
+        try {
+	        Koadernoa berria = koadernoaService.sortuKoadernoa(
+	                dto,
+	                irakaslea,
+	                cells == null ? List.of() : cells
+	        );
 
-	    // 2) Taldeko ikasleak automatikoki sinkronizatu (badagoenik balego)
-	    try {
-	        ikasleaService.syncKoadernoBakarra(berria.getId());
-	    } catch (Exception e) {
-	        // nahi baduzu, log-ean utzi; baina ez bota koadernoaren sorrera atzera
-	        // log.error("Ezin izan dira taldeko ikasleak inportatu automatikoki", e);
-	    }
-	    
-	    //Sortu berri den koadernoa kargatu
-	    return "redirect:/irakasle/koadernoa/" + berria.getId() + "?next='/irakasle'";
-	  
+	        try {
+	            ikasleaService.syncKoadernoBakarra(berria.getId());
+	        } catch (Exception e) {
+	        }
+	        return "redirect:/irakasle/koadernoa/" + berria.getId() + "?next='/irakasle'";
+        } catch (Exception ex) {
+            ra.addFlashAttribute("error", ex.getMessage());
+            return "redirect:/irakasle/koadernoa/berria";
+        }
 	}
 	
 	@PostMapping("/{id}/ordutegia/cell")

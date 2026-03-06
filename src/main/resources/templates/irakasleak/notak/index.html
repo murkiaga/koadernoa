@@ -31,6 +31,7 @@
     }
 
     .actions { margin-top: 16px; display:flex; gap:8px; }
+    .oharra-input{width:120px;min-height:30px;max-width:260px;resize:both;padding:4px 6px;border:1px solid var(--b);border-radius:6px;font-size:.88rem;}
 
     /* Notak orriko '+' egoera menuaren estilo espezifikoa */
     .nota-wrap {
@@ -118,7 +119,7 @@
           <td th:text="${mat.ikaslea != null ? mat.ikaslea.izenOsoa : ''}">
 		   Abizenak, Izena
 		  </td>
-          <td th:text="${mat.oharra}">Oharra</td>
+          <td><textarea class="oharra-input" th:name="${'oharra_' + mat.id}" th:text="${mat.oharra}"></textarea></td>
 
           <!-- Nota input-ak dinamikoki, ebaluazio momentu bakoitzerako -->
           <td th:each="em : ${momentuak}">
@@ -195,6 +196,25 @@
     if (!e.target.closest('.nota-wrap')) {
       document.querySelectorAll('.nota-egoera-menu').forEach(m => m.style.display = 'none');
     }
+  });
+  // TAB sakatzean notetan behera mugitu
+  document.querySelectorAll('.nota-wrap input[type="text"]').forEach(inp => {
+    inp.addEventListener('keydown', function(e){
+      if (e.key !== 'Tab' || e.shiftKey) return;
+      const currentTd = this.closest('td');
+      const currentTr = this.closest('tr');
+      if (!currentTd || !currentTr) return;
+      const cellIndex = Array.from(currentTr.children).indexOf(currentTd);
+      const nextTr = currentTr.nextElementSibling;
+      if (!nextTr) return;
+      const targetTd = nextTr.children[cellIndex];
+      const targetInput = targetTd ? targetTd.querySelector('.nota-wrap input[type="text"]') : null;
+      if (targetInput) {
+        e.preventDefault();
+        targetInput.focus();
+        targetInput.select();
+      }
+    });
   });
 </script>
 

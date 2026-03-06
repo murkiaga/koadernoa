@@ -51,6 +51,13 @@
 	          id="tab-ezadostasunak">
 	    Ezadostasunak
 	  </button>
+  <button type="button" class="tab-btn"
+          role="tab"
+          aria-selected="false"
+          aria-controls="panel-koadernoak"
+          id="tab-koadernoak">
+    Koadernoak
+  </button>
 	</div>
 	
 	<!-- Mailak PANELA -->
@@ -340,7 +347,26 @@
 	  <!-- Modal fragment-a -->
 	  <div th:replace="~{kudeatzaile/konfigurazioa/ezadostasun-konfig-berria :: ezadostasun-konfig-berria-modal}"></div>
 	</section>
-</main>
+
+	<section id="panel-koadernoak" class="tab-panel" role="tabpanel"
+	         aria-labelledby="tab-koadernoak" tabindex="0" aria-hidden="true">
+	  <h2>Koadernoak</h2>
+	  <form th:action="@{/kudeatzaile/konfigurazioa/koadernoak/gorde}" th:object="${koadernoKonfigForm}" method="post">
+	    <label style="display:flex;align-items:center;gap:8px;margin:8px 0;">
+	      <input type="checkbox" th:field="*{bikoiztuakBaimendu}">
+	      Koaderno bikoiztuak baimendu
+	    </label>
+	    <label style="display:flex;align-items:center;gap:8px;margin:8px 0;">
+	      <input type="checkbox" th:field="*{besteMintegiaBaimendu}">
+	      Beste mintegi bateko koadernoak sortzea baimendu
+	    </label>
+	    <div class="actions">
+	      <button type="submit">Gorde aldaketak</button>
+	    </div>
+	  </form>
+	</section>
+
+</main
 
 
 <script>

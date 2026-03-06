@@ -48,6 +48,7 @@ import com.koadernoa.app.objektuak.modulua.repository.MatrikulaRepository;
 import com.koadernoa.app.objektuak.logak.entitateak.LogMota;
 import com.koadernoa.app.objektuak.logak.service.LogService;
 import com.koadernoa.app.objektuak.modulua.repository.ModuloaRepository;
+import com.koadernoa.app.objektuak.konfigurazioa.service.AplikazioAukeraService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -70,6 +71,7 @@ public class KoadernoaService {
     private final AsistentziaRepository asistentziaRepository;
     private final EbaluazioNotaRepository ebaluazioNotaRepository;
     private final KoadernoOrdutegiBlokeaRepository koadernoOrdutegiBlokeaRepository;
+    private final AplikazioAukeraService aplikazioAukeraService;
     
     //Aste-orden estandarra (astelehen-ostiral)
     private static final List<Astegunak> ASTE_ORDENA = List.of(
@@ -135,12 +137,24 @@ public class KoadernoaService {
     	            .orElseThrow(() -> new IllegalStateException(
     	                "Ez da egutegirik aurkitu aktibo dagoen ikasturterako eta maila horretarako."));
 
-    	    if (!moduloa.getTaldea().getZikloa().getFamilia().equals(irakaslea.getMintegia())) {
-    	        throw new AccessDeniedException("Beste familiako modulua aukeratu da.");
-    	    }
-    	    if (!java.util.Objects.equals(moduloa.getMaila().getId(), egutegia.getMaila().getId())) {
-    	        throw new IllegalArgumentException("Moduluaren eta egutegiaren maila ez datoz bat.");
-    	    }
+        boolean besteMintegiaBaimendu = aplikazioAukeraService.getBool(
+                AplikazioAukeraService.KOADERNO_BESTE_MINTEGIA_BAIMENDU, false);
+        if (!besteMintegiaBaimendu && !moduloa.getTaldea().getZikloa().getFamilia().equals(irakaslea.getMintegia())) {
+            throw new AccessDeniedException("Beste familiako modulua aukeratu da.");
+        }
+        if (!java.util.Objects.equals(moduloa.getMaila().getId(), egutegia.getMaila().getId())) {
+            throw new IllegalArgumentException("Moduluaren eta egutegiaren maila ez datoz bat.");
+        }
+
+        boolean bikoiztuakBaimendu = aplikazioAukeraService.getBool(
+                AplikazioAukeraService.KOADERNO_BIKOIZTUAK_BAIMENDU, true);
+        if (!bikoiztuakBaimendu && koadernoaRepository.existsByModuloa_IdAndEgutegia_Id(moduloa.getId(), egutegia.getId())) {
+            String sortzailea = koadernoaRepository.findFirstByModuloa_IdAndEgutegia_IdOrderByIdAsc(moduloa.getId(), egutegia.getId())
+                    .flatMap(k0 -> k0.getIrakasleak() == null ? java.util.Optional.empty() : k0.getIrakasleak().stream().findFirst())
+                    .map(i -> i.getIzena() + " (" + i.getEmaila() + ")")
+                    .orElse("ezezaguna");
+            throw new IllegalArgumentException("Koaderno bikoiztua ezin da sortu. Lehendik sortua: " + sortzailea);
+        }
 
     	    List<Irakaslea> irakasleak = new ArrayList<>();
     	    irakasleak.add(irakaslea);

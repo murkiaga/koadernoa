@@ -76,6 +76,15 @@ public interface EstatistikaEbaluazioanRepository extends JpaRepository<Estatist
               and (:zikloaId is null or z.id = :zikloaId)
               and (:taldeaId is null or t.id = :taldeaId)
               and (:mailaId is null or e.maila.id = :mailaId)
+              and (
+                    :ezadostasuna is null
+                    or (:ezadostasuna = 'BAI' and exists (
+                        select fz.id from EzadostasunFitxa fz where fz.estatistika = es
+                    ))
+                    or (:ezadostasuna = 'EZ' and not exists (
+                        select fz.id from EzadostasunFitxa fz where fz.estatistika = es
+                    ))
+                  )
         """,
         countQuery = """
             select count(es)
@@ -95,6 +104,15 @@ public interface EstatistikaEbaluazioanRepository extends JpaRepository<Estatist
               and (:zikloaId is null or z.id = :zikloaId)
               and (:taldeaId is null or t.id = :taldeaId)
               and (:mailaId is null or e.maila.id = :mailaId)
+              and (
+                    :ezadostasuna is null
+                    or (:ezadostasuna = 'BAI' and exists (
+                        select fz.id from EzadostasunFitxa fz where fz.estatistika = es
+                    ))
+                    or (:ezadostasuna = 'EZ' and not exists (
+                        select fz.id from EzadostasunFitxa fz where fz.estatistika = es
+                    ))
+                  )
         """
     )
     Page<EstatistikaEbaluazioan> bilatuDashboarderako(
@@ -104,6 +122,7 @@ public interface EstatistikaEbaluazioanRepository extends JpaRepository<Estatist
         @Param("zikloaId") Long zikloaId,
         @Param("taldeaId") Long taldeaId,
         @Param("mailaId") Long mailaId,
+        @Param("ezadostasuna") String ezadostasuna,
         Pageable pageable
     );
 

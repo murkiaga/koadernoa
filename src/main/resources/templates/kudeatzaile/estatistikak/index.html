@@ -42,7 +42,7 @@
 
     .filters {
       display: grid;
-      grid-template-columns: repeat(6, minmax(160px, 1fr));
+      grid-template-columns: repeat(7, minmax(160px, 1fr));
       gap: 10px;
       margin-top: 16px;
       padding: 12px;
@@ -347,6 +347,15 @@
       </select>
     </div>
 
+    <div>
+      <label>Ezadostasuna</label>
+      <select th:field="*{ezadostasuna}">
+        <option value="DENAK">Denak</option>
+        <option value="BAI">Ezadostasuna dutenak</option>
+        <option value="EZ">Ezadostasunik ez dutenak</option>
+      </select>
+    </div>
+
     <div class="actions">
 	  <button class="btn btn-primary" type="submit">Aplikatu filtroak</button>
 	
@@ -364,8 +373,28 @@
 	     )}">
 	    CSV deskargatu
 	  </a>
-	</div>
+	  <button class="btn" type="button" onclick="document.getElementById('mezuaModal').showModal()">Hauei mezua bidali</button>
+</div>
   </form>
+
+  <dialog id="mezuaModal">
+    <form method="post" th:action="@{/kudeatzaile/estatistikak/mezuak/bidali}">
+      <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+      <input type="hidden" name="familiaId" th:value="${filtro.familiaId}">
+      <input type="hidden" name="zikloaId" th:value="${filtro.zikloaId}">
+      <input type="hidden" name="taldeaId" th:value="${filtro.taldeaId}">
+      <input type="hidden" name="mailaId" th:value="${filtro.mailaId}">
+      <input type="hidden" name="ebaluazioKodea" th:value="${filtro.ebaluazioKodea}">
+      <input type="hidden" name="kalkulatua" th:value="${filtro.kalkulatua}">
+      <input type="hidden" name="ezadostasuna" th:value="${filtro.ezadostasuna}">
+      <h3>Mezua bidali</h3>
+      <textarea name="edukia" rows="6" style="width:100%;" placeholder="Idatzi mezua..." required></textarea>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+        <button type="button" class="btn" onclick="document.getElementById('mezuaModal').close()">Ezeztatu</button>
+        <button type="submit" class="btn btn-primary">Bidali</button>
+      </div>
+    </form>
+  </dialog>
 
   <h2 style="margin-top:18px;">Zerrenda</h2>
 
@@ -393,7 +422,8 @@
                 taldeaId=${filtro.taldeaId},
                 mailaId=${filtro.mailaId},
                 ebaluazioKodea=${filtro.ebaluazioKodea},
-                kalkulatua=${filtro.kalkulatua}
+                kalkulatua=${filtro.kalkulatua},
+                ezadostasuna=${filtro.ezadostasuna}
              )}">
             <span class="sort-ico" th:classappend="${active} ? ('active ' + sortDir) : ''"></span>
             <span>ID</span>
@@ -415,7 +445,8 @@
                 taldeaId=${filtro.taldeaId},
                 mailaId=${filtro.mailaId},
                 ebaluazioKodea=${filtro.ebaluazioKodea},
-                kalkulatua=${filtro.kalkulatua}
+                kalkulatua=${filtro.kalkulatua},
+                ezadostasuna=${filtro.ezadostasuna}
              )}">
             <span class="sort-ico" th:classappend="${active} ? ('active ' + sortDir) : ''"></span>
             <span>Ebaluazioa</span>
@@ -437,7 +468,8 @@
                 taldeaId=${filtro.taldeaId},
                 mailaId=${filtro.mailaId},
                 ebaluazioKodea=${filtro.ebaluazioKodea},
-                kalkulatua=${filtro.kalkulatua}
+                kalkulatua=${filtro.kalkulatua},
+                ezadostasuna=${filtro.ezadostasuna}
              )}">
             <span class="sort-ico" th:classappend="${active} ? ('active ' + sortDir) : ''"></span>
             <span>Taldea</span>
@@ -459,7 +491,8 @@
                 taldeaId=${filtro.taldeaId},
                 mailaId=${filtro.mailaId},
                 ebaluazioKodea=${filtro.ebaluazioKodea},
-                kalkulatua=${filtro.kalkulatua}
+                kalkulatua=${filtro.kalkulatua},
+                ezadostasuna=${filtro.ezadostasuna}
              )}">
             <span class="sort-ico" th:classappend="${active} ? ('active ' + sortDir) : ''"></span>
             <span>Moduloa</span>
@@ -484,7 +517,8 @@
                 taldeaId=${filtro.taldeaId},
                 mailaId=${filtro.mailaId},
                 ebaluazioKodea=${filtro.ebaluazioKodea},
-                kalkulatua=${filtro.kalkulatua}
+                kalkulatua=${filtro.kalkulatua},
+                ezadostasuna=${filtro.ezadostasuna}
              )}">
             <span class="sort-ico" th:classappend="${active} ? ('active ' + sortDir) : ''"></span>
             <span>Maila</span>
@@ -530,7 +564,8 @@
                 taldeaId=${filtro.taldeaId},
                 mailaId=${filtro.mailaId},
                 ebaluazioKodea=${filtro.ebaluazioKodea},
-                kalkulatua=${filtro.kalkulatua}
+                kalkulatua=${filtro.kalkulatua},
+                ezadostasuna=${filtro.ezadostasuna}
              )}">
             <span class="sort-ico" th:classappend="${active} ? ('active ' + sortDir) : ''"></span>
             <span>Kalkulatua</span>
@@ -552,7 +587,8 @@
                 taldeaId=${filtro.taldeaId},
                 mailaId=${filtro.mailaId},
                 ebaluazioKodea=${filtro.ebaluazioKodea},
-                kalkulatua=${filtro.kalkulatua}
+                kalkulatua=${filtro.kalkulatua},
+                ezadostasuna=${filtro.ezadostasuna}
              )}">
             <span class="sort-ico" th:classappend="${active} ? ('active ' + sortDir) : ''"></span>
             <span>Azken kalkulua</span>

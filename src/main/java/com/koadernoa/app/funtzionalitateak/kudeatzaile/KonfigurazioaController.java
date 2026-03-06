@@ -24,6 +24,7 @@ import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
 import com.koadernoa.app.objektuak.egutegia.repository.MailaRepository;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Familia;
 import com.koadernoa.app.objektuak.zikloak.repository.FamiliaRepository;
+import com.koadernoa.app.objektuak.konfigurazioa.service.AplikazioAukeraService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
@@ -43,6 +44,7 @@ public class KonfigurazioaController {
     private final EbaluazioEgoeraRepository ebaluazioEgoeraRepository;
     private final EbaluazioNotaRepository ebaluazioNotaRepository;
     private final EzadostasunKonfigRepository ezadostasunKonfigRepository;
+    private final AplikazioAukeraService aplikazioAukeraService;
 
     // ---- GET: orria ----
     @GetMapping
@@ -78,6 +80,11 @@ public class KonfigurazioaController {
         model.addAttribute("sortuEgoeraForm", new SortuEbaluazioEgoeraForm());
         
         model.addAttribute("ezadostasunKonfigList", ezadKonfigList);
+
+        KoadernoKonfigForm koadernoKonfigForm = new KoadernoKonfigForm();
+        koadernoKonfigForm.setBikoiztuakBaimendu(aplikazioAukeraService.getBool(AplikazioAukeraService.KOADERNO_BIKOIZTUAK_BAIMENDU, true));
+        koadernoKonfigForm.setBesteMintegiaBaimendu(aplikazioAukeraService.getBool(AplikazioAukeraService.KOADERNO_BESTE_MINTEGIA_BAIMENDU, false));
+        model.addAttribute("koadernoKonfigForm", koadernoKonfigForm);
 
         return "kudeatzaile/konfigurazioa/index";
     }
@@ -695,6 +702,20 @@ public class KonfigurazioaController {
     @Data
     public static class ActiveFamiliakForm {
         private List<Long> aktiboIds;
+    }
+
+
+    @PostMapping("/koadernoak/gorde")
+    public String gordeKoadernoAukerak(@ModelAttribute("koadernoKonfigForm") KoadernoKonfigForm form) {
+        aplikazioAukeraService.setBool(AplikazioAukeraService.KOADERNO_BIKOIZTUAK_BAIMENDU, form.isBikoiztuakBaimendu());
+        aplikazioAukeraService.setBool(AplikazioAukeraService.KOADERNO_BESTE_MINTEGIA_BAIMENDU, form.isBesteMintegiaBaimendu());
+        return "redirect:/kudeatzaile/konfigurazioa#koadernoak";
+    }
+
+    @Data
+    public static class KoadernoKonfigForm {
+        private boolean bikoiztuakBaimendu;
+        private boolean besteMintegiaBaimendu;
     }
 
     @Data
