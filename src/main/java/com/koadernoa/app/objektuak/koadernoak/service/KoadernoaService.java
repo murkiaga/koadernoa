@@ -151,9 +151,12 @@ public class KoadernoaService {
         if (!bikoiztuakBaimendu && koadernoaRepository.existsByModuloa_IdAndEgutegia_Id(moduloa.getId(), egutegia.getId())) {
             String sortzailea = koadernoaRepository.findFirstByModuloa_IdAndEgutegia_IdOrderByIdAsc(moduloa.getId(), egutegia.getId())
                     .flatMap(k0 -> k0.getIrakasleak() == null ? java.util.Optional.empty() : k0.getIrakasleak().stream().findFirst())
-                    .map(i -> i.getIzena() + " (" + i.getEmaila() + ")")
+                    .map(i -> i.getIzena() != null && !i.getIzena().isBlank() ? i.getIzena() : i.getEmaila())
                     .orElse("ezezaguna");
-            throw new IllegalArgumentException("Koaderno bikoiztua ezin da sortu. Lehendik sortua: " + sortzailea);
+            String ikasturtea = egutegia.getIkasturtea() != null ? egutegia.getIkasturtea().getIzena() : "ikasturte honetan";
+            throw new IllegalArgumentException(
+                    ikasturtea + "rako " + moduloa.getIzena() + " irakasgairako badago koadernoa sortuta. "
+                            + sortzailea + " irakasleak sortuta.");
         }
 
     	    List<Irakaslea> irakasleak = new ArrayList<>();

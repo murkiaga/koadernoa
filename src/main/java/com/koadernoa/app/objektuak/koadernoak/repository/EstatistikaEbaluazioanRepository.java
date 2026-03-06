@@ -63,6 +63,7 @@ public interface EstatistikaEbaluazioanRepository extends JpaRepository<Estatist
             select es
             from EstatistikaEbaluazioan es
               join es.ebaluazioMomentua em
+              left join em.ezadostasunKonfig cfg
               join es.koadernoa k
               join k.egutegia e
               join e.ikasturtea ik
@@ -79,18 +80,25 @@ public interface EstatistikaEbaluazioanRepository extends JpaRepository<Estatist
               and (:mailaId is null or e.maila.id = :mailaId)
               and (
                     :ezadostasuna is null
-                    or (:ezadostasuna = 'BAI' and exists (
-                        select fz.id from EzadostasunFitxa fz where fz.estatistika = es
+                    or (:ezadostasuna = 'BAI' and cfg is not null and (
+                        (es.unitateakAurreikusiak > 0 and (100.0 * es.unitateakEmanda / es.unitateakAurreikusiak) < cfg.minBlokePortzentaia)
+                        or (es.orduakAurreikusiak > 0 and (100.0 * es.orduakEmanda / es.orduakAurreikusiak) < cfg.minOrduPortzentaia)
+                        or (es.ebaluatuak > 0 and (100.0 * es.aprobatuak / es.ebaluatuak) < cfg.minGaindituPortzentaia)
+                        or (es.ebaluatuak > 0 and es.orduakAurreikusiak > 0 and (100.0 * (1.0 - (1.0 * es.hutsegiteOrduak) / (es.ebaluatuak * es.orduakAurreikusiak))) < cfg.minBertaratzePortzentaia)
                     ))
-                    or (:ezadostasuna = 'EZ' and not exists (
-                        select fz.id from EzadostasunFitxa fz where fz.estatistika = es
-                    ))
+                    or (:ezadostasuna = 'EZ' and not (cfg is not null and (
+                        (es.unitateakAurreikusiak > 0 and (100.0 * es.unitateakEmanda / es.unitateakAurreikusiak) < cfg.minBlokePortzentaia)
+                        or (es.orduakAurreikusiak > 0 and (100.0 * es.orduakEmanda / es.orduakAurreikusiak) < cfg.minOrduPortzentaia)
+                        or (es.ebaluatuak > 0 and (100.0 * es.aprobatuak / es.ebaluatuak) < cfg.minGaindituPortzentaia)
+                        or (es.ebaluatuak > 0 and es.orduakAurreikusiak > 0 and (100.0 * (1.0 - (1.0 * es.hutsegiteOrduak) / (es.ebaluatuak * es.orduakAurreikusiak))) < cfg.minBertaratzePortzentaia)
+                    )))
                   )
         """,
         countQuery = """
             select count(es)
             from EstatistikaEbaluazioan es
               join es.ebaluazioMomentua em
+              left join em.ezadostasunKonfig cfg
               join es.koadernoa k
               join k.egutegia e
               join e.ikasturtea ik
@@ -107,12 +115,18 @@ public interface EstatistikaEbaluazioanRepository extends JpaRepository<Estatist
               and (:mailaId is null or e.maila.id = :mailaId)
               and (
                     :ezadostasuna is null
-                    or (:ezadostasuna = 'BAI' and exists (
-                        select fz.id from EzadostasunFitxa fz where fz.estatistika = es
+                    or (:ezadostasuna = 'BAI' and cfg is not null and (
+                        (es.unitateakAurreikusiak > 0 and (100.0 * es.unitateakEmanda / es.unitateakAurreikusiak) < cfg.minBlokePortzentaia)
+                        or (es.orduakAurreikusiak > 0 and (100.0 * es.orduakEmanda / es.orduakAurreikusiak) < cfg.minOrduPortzentaia)
+                        or (es.ebaluatuak > 0 and (100.0 * es.aprobatuak / es.ebaluatuak) < cfg.minGaindituPortzentaia)
+                        or (es.ebaluatuak > 0 and es.orduakAurreikusiak > 0 and (100.0 * (1.0 - (1.0 * es.hutsegiteOrduak) / (es.ebaluatuak * es.orduakAurreikusiak))) < cfg.minBertaratzePortzentaia)
                     ))
-                    or (:ezadostasuna = 'EZ' and not exists (
-                        select fz.id from EzadostasunFitxa fz where fz.estatistika = es
-                    ))
+                    or (:ezadostasuna = 'EZ' and not (cfg is not null and (
+                        (es.unitateakAurreikusiak > 0 and (100.0 * es.unitateakEmanda / es.unitateakAurreikusiak) < cfg.minBlokePortzentaia)
+                        or (es.orduakAurreikusiak > 0 and (100.0 * es.orduakEmanda / es.orduakAurreikusiak) < cfg.minOrduPortzentaia)
+                        or (es.ebaluatuak > 0 and (100.0 * es.aprobatuak / es.ebaluatuak) < cfg.minGaindituPortzentaia)
+                        or (es.ebaluatuak > 0 and es.orduakAurreikusiak > 0 and (100.0 * (1.0 - (1.0 * es.hutsegiteOrduak) / (es.ebaluatuak * es.orduakAurreikusiak))) < cfg.minBertaratzePortzentaia)
+                    )))
                   )
         """
     )
@@ -141,6 +155,7 @@ public interface EstatistikaEbaluazioanRepository extends JpaRepository<Estatist
             select es
             from EstatistikaEbaluazioan es
               join es.ebaluazioMomentua em
+              left join em.ezadostasunKonfig cfg
               join es.koadernoa k
               join k.egutegia e
               join e.ikasturtea ik
@@ -157,12 +172,18 @@ public interface EstatistikaEbaluazioanRepository extends JpaRepository<Estatist
               and (:mailaId is null or e.maila.id = :mailaId)
               and (
                     :ezadostasuna is null
-                    or (:ezadostasuna = 'BAI' and exists (
-                        select fz.id from EzadostasunFitxa fz where fz.estatistika = es
+                    or (:ezadostasuna = 'BAI' and cfg is not null and (
+                        (es.unitateakAurreikusiak > 0 and (100.0 * es.unitateakEmanda / es.unitateakAurreikusiak) < cfg.minBlokePortzentaia)
+                        or (es.orduakAurreikusiak > 0 and (100.0 * es.orduakEmanda / es.orduakAurreikusiak) < cfg.minOrduPortzentaia)
+                        or (es.ebaluatuak > 0 and (100.0 * es.aprobatuak / es.ebaluatuak) < cfg.minGaindituPortzentaia)
+                        or (es.ebaluatuak > 0 and es.orduakAurreikusiak > 0 and (100.0 * (1.0 - (1.0 * es.hutsegiteOrduak) / (es.ebaluatuak * es.orduakAurreikusiak))) < cfg.minBertaratzePortzentaia)
                     ))
-                    or (:ezadostasuna = 'EZ' and not exists (
-                        select fz.id from EzadostasunFitxa fz where fz.estatistika = es
-                    ))
+                    or (:ezadostasuna = 'EZ' and not (cfg is not null and (
+                        (es.unitateakAurreikusiak > 0 and (100.0 * es.unitateakEmanda / es.unitateakAurreikusiak) < cfg.minBlokePortzentaia)
+                        or (es.orduakAurreikusiak > 0 and (100.0 * es.orduakEmanda / es.orduakAurreikusiak) < cfg.minOrduPortzentaia)
+                        or (es.ebaluatuak > 0 and (100.0 * es.aprobatuak / es.ebaluatuak) < cfg.minGaindituPortzentaia)
+                        or (es.ebaluatuak > 0 and es.orduakAurreikusiak > 0 and (100.0 * (1.0 - (1.0 * es.hutsegiteOrduak) / (es.ebaluatuak * es.orduakAurreikusiak))) < cfg.minBertaratzePortzentaia)
+                    )))
                   )
         """)
     List<EstatistikaEbaluazioan> bilatuDashboarderakoZerrenda(

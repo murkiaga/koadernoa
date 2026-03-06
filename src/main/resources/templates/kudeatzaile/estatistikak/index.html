@@ -373,21 +373,14 @@
 	     )}">
 	    CSV deskargatu
 	  </a>
-	  <button class="btn" type="button" onclick="document.getElementById('mezuaModal').showModal()">Hauei mezua bidali</button>
+	  <button class="btn" type="button" onclick="document.getElementById('mezuaModal').showModal()">Hautatutakoei mezua bidali</button>
 </div>
   </form>
 
   <dialog id="mezuaModal">
-    <form method="post" th:action="@{/kudeatzaile/estatistikak/mezuak/bidali}">
+    <form id="mezuaBidaliForm" method="post" th:action="@{/kudeatzaile/estatistikak/mezuak/bidali}">
       <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-      <input type="hidden" name="familiaId" th:value="${filtro.familiaId}">
-      <input type="hidden" name="zikloaId" th:value="${filtro.zikloaId}">
-      <input type="hidden" name="taldeaId" th:value="${filtro.taldeaId}">
-      <input type="hidden" name="mailaId" th:value="${filtro.mailaId}">
-      <input type="hidden" name="ebaluazioKodea" th:value="${filtro.ebaluazioKodea}">
-      <input type="hidden" name="kalkulatua" th:value="${filtro.kalkulatua}">
-      <input type="hidden" name="ezadostasuna" th:value="${filtro.ezadostasuna}">
-      <h3>Mezua bidali</h3>
+                                                <h3>Mezua bidali</h3>
       <textarea name="edukia" rows="6" style="width:100%;" placeholder="Idatzi mezua..." required></textarea>
       <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
         <button type="button" class="btn" onclick="document.getElementById('mezuaModal').close()">Ezeztatu</button>
@@ -407,6 +400,7 @@
     <table>
       <thead>
       <tr>
+        <th><input type="checkbox" id="hautatuDenak" checked></th>
         <!-- ID -->
         <th class="sortable"
             th:with="field='id',
@@ -600,7 +594,7 @@
       <tbody>
       <tr th:if="${estatistikaRows == null or #lists.isEmpty(estatistikaRows)}">
         <!-- zutabe kopurua: 12 -->
-        <td colspan="12" class="muted">
+        <td colspan="13" class="muted">
           Ez dago emaitzarik filtro hauekin (edo ez dago estatistikarik ikasturte aktiboan).
         </td>
       </tr>
@@ -614,6 +608,7 @@
                    orduEzadostasun=${e.orduPortzentaia != null and e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null and e.orduPortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minOrduPortzentaia},
                    gaindituEzadostasun=${e.gaindituPortzentaia != null and e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null and e.gaindituPortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minGaindituPortzentaia},
                    bertaratzeEzadostasun=${e.bertaratzePortzentaia != null and e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null and e.bertaratzePortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minBertaratzePortzentaia}">
+        <td><input type="checkbox" class="estat-check" name="estatistikaIds" th:value="${e.id}" form="mezuaBidaliForm" checked></td>
         <td th:text="${e.id}">1</td>
 
         <td>
@@ -882,6 +877,13 @@
       btn.addEventListener('click', () => activateTab(btn));
     });
 
+
+  const hautatuDenak = document.getElementById('hautatuDenak');
+  if (hautatuDenak) {
+    hautatuDenak.addEventListener('change', function(){
+      document.querySelectorAll('.estat-check').forEach(ch => ch.checked = hautatuDenak.checked);
+    });
+  }
     const hash = location.hash.replace('#', '');
     if (hash) {
       const to = document.getElementById('tab-' + hash);

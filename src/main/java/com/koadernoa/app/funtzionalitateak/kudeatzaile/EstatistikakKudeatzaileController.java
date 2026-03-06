@@ -170,7 +170,7 @@ public class EstatistikakKudeatzaileController {
 
     @PostMapping("/mezuak/bidali")
     public String bidaliMezua(
-            @ModelAttribute("filtro") EstatistikakFiltroa filtro,
+            @RequestParam(name = "estatistikaIds", required = false) List<Long> estatistikaIds,
             @RequestParam("edukia") String edukia,
             Authentication auth,
             RedirectAttributes ra
@@ -180,10 +180,14 @@ public class EstatistikakKudeatzaileController {
             ra.addFlashAttribute("error", "Mezua hutsik dago.");
             return "redirect:/kudeatzaile/estatistikak";
         }
+        if (estatistikaIds == null || estatistikaIds.isEmpty()) {
+            ra.addFlashAttribute("error", "Ez duzu lerro bakar bat ere hautatu.");
+            return "redirect:/kudeatzaile/estatistikak";
+        }
 
         var ir = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
-        var guztiak = estatistikakService.bilatuOrrikatuta(filtro, Pageable.unpaged()).getContent();
-        int bidaliak = mezuaService.bidaliEstatistikaFiltrotik(ir, guztiak, testua);
+        var hautatuak = estatistikaEbaluazioanRepository.findAllById(estatistikaIds);
+        int bidaliak = mezuaService.bidaliEstatistikaFiltrotik(ir, hautatuak, testua);
         ra.addFlashAttribute("success", "Mezuak bidalita: " + bidaliak);
         return "redirect:/kudeatzaile/estatistikak";
     }

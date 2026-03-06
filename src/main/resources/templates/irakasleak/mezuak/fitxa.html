@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <title>Mezua</title>
+  <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/irakasle-common.css}">
+</head>
+<body>
+<div th:replace="~{irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})}"></div>
+<main style="max-width:850px;margin:24px auto;padding:0 16px;">
+  <a th:href="@{/irakasle/mezuak}">← Zerrendara itzuli</a>
+  <h1>Mezua</h1>
+  <p><b>Bidaltzailea:</b> <span th:text="${mezua.bidaltzailea != null ? mezua.bidaltzailea.izena : '-'}"></span></p>
+  <p><b>Noiz:</b> <span th:text="${#temporals.format(mezua.bidalketaData, 'yyyy-MM-dd HH:mm')}"></span></p>
+  <article style="white-space:pre-wrap;border:1px solid var(--b);border-radius:12px;padding:16px;background:#fff;" th:text="${mezua.edukia}"></article>
+</main>
+</body>
+</html>
