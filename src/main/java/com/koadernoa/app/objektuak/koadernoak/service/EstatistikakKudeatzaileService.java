@@ -57,6 +57,20 @@ public class EstatistikakKudeatzaileService {
 	    );
 	}
 
+
+	public List<EstatistikaEbaluazioan> bilatuZerrenda(EstatistikakFiltroa f, Sort sort) {
+	    return estatistikaRepo.bilatuDashboarderakoZerrenda(
+	        nullIfBlank(f.getEbaluazioKodea()),
+	        f.getKalkulatua(),
+	        f.getFamiliaId(),
+	        f.getZikloaId(),
+	        f.getTaldeaId(),
+	        f.getMailaId(),
+            nullIfBlank("DENAK".equalsIgnoreCase(f.getEzadostasuna()) ? null : f.getEzadostasuna()),
+	        sort == null || sort.isUnsorted() ? Sort.by("ebaluazioMomentua.ordena").ascending().and(Sort.by("id")) : sort
+	    );
+	}
+
     public Page<EzadostasunFitxa> bilatuEzadostasunOrrikatuta(EstatistikakFiltroa f, Pageable pageable) {
         return ezadostasunFitxaRepository.bilatuDashboarderako(
             nullIfBlank(f.getEbaluazioKodea()),

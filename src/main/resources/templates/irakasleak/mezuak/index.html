@@ -3,24 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <title>Mezuak</title>
-  <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
+  <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/irakasle-common.css}">
 </head>
 <body>
-<div th:if="${#authorization.expression('hasAnyRole(''KUDEATZAILEA'',''ADMIN'')')}" th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
-<div th:if="${#authorization.expression('hasRole(''IRAKASLEA'')')}" th:replace="~{irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})}"></div>
+<div th:replace="~{irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})}"></div>
 <main style="max-width:1000px;margin:24px auto;padding:0 16px;">
   <h1>Mezuak</h1>
   <table>
-    <thead><tr><th>Noiz</th><th>Nork</th><th>Nori</th><th>Egoera</th><th>Edukia</th><th></th></tr></thead>
+    <thead><tr><th>Noiz</th><th>Bidaltzailea</th><th>Egoera</th><th>Edukia</th><th></th></tr></thead>
     <tbody>
       <tr th:each="m : ${mezuak}">
         <td th:text="${#temporals.format(m.bidalketaData, 'yyyy-MM-dd HH:mm')}"></td>
         <td th:text="${m.bidaltzailea != null ? m.bidaltzailea.izena : '-'}"></td>
-        <td th:text="${m.hartzailea != null ? m.hartzailea.izena : '-'}"></td>
         <td th:text="${m.irakurrita ? '📭 Irakurrita' : '✉️ Ez irakurrita'}"></td>
         <td style="white-space:pre-wrap;" th:text="${m.edukia}"></td>
         <td>
-          <form th:if="${!m.irakurrita}" th:action="@{|/mezuak/${m.id}/irakurri|}" method="post">
+          <form th:if="${!m.irakurrita}" th:action="@{|/irakasle/mezuak/${m.id}/irakurri|}" method="post">
             <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
             <button type="submit">Irakurri</button>
           </form>

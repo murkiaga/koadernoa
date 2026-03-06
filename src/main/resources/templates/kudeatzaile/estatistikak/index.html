@@ -598,14 +598,14 @@
       </thead>
 
       <tbody>
-      <tr th:if="${orria == null or orria.totalElements == 0}">
+      <tr th:if="${estatistikaRows == null or #lists.isEmpty(estatistikaRows)}">
         <!-- zutabe kopurua: 12 -->
         <td colspan="12" class="muted">
           Ez dago emaitzarik filtro hauekin (edo ez dago estatistikarik ikasturte aktiboan).
         </td>
       </tr>
 
-      <tr th:each="e : ${orria.content}"
+      <tr th:each="e : ${estatistikaRows}"
           th:with="fitxaUdBeteta=${e.hasEzadostasunFitxa(T(com.koadernoa.app.objektuak.koadernoak.entitateak.EzadostasunMota).UD_EMANDA)},
                    fitxaOrduBeteta=${e.hasEzadostasunFitxa(T(com.koadernoa.app.objektuak.koadernoak.entitateak.EzadostasunMota).ORDU_EMANDA)},
                    fitxaGaindituBeteta=${e.hasEzadostasunFitxa(T(com.koadernoa.app.objektuak.koadernoak.entitateak.EzadostasunMota).GAINDITU)},

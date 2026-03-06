@@ -126,7 +126,55 @@ public interface EstatistikaEbaluazioanRepository extends JpaRepository<Estatist
         Pageable pageable
     );
 
-    // -------------------------------------------------------------------------
+
+    @EntityGraph(attributePaths = {
+            "koadernoa",
+            "koadernoa.irakasleak",
+            "koadernoa.moduloa",
+            "koadernoa.moduloa.taldea",
+            "koadernoa.egutegia",
+            "koadernoa.egutegia.maila",
+            "ebaluazioMomentua"
+        })
+    @Query("""
+            select es
+            from EstatistikaEbaluazioan es
+              join es.ebaluazioMomentua em
+              join es.koadernoa k
+              join k.egutegia e
+              join e.ikasturtea ik
+              join k.moduloa m
+              join m.taldea t
+              join t.zikloa z
+              join z.familia f
+            where ik.aktiboa = true
+              and (:ebaluazioKodea is null or em.kodea = :ebaluazioKodea)
+              and (:kalkulatua is null or es.kalkulatua = :kalkulatua)
+              and (:familiaId is null or f.id = :familiaId)
+              and (:zikloaId is null or z.id = :zikloaId)
+              and (:taldeaId is null or t.id = :taldeaId)
+              and (:mailaId is null or e.maila.id = :mailaId)
+              and (
+                    :ezadostasuna is null
+                    or (:ezadostasuna = 'BAI' and exists (
+                        select fz.id from EzadostasunFitxa fz where fz.estatistika = es
+                    ))
+                    or (:ezadostasuna = 'EZ' and not exists (
+                        select fz.id from EzadostasunFitxa fz where fz.estatistika = es
+                    ))
+                  )
+        """)
+    List<EstatistikaEbaluazioan> bilatuDashboarderakoZerrenda(
+        @Param("ebaluazioKodea") String ebaluazioKodea,
+        @Param("kalkulatua") Boolean kalkulatua,
+        @Param("familiaId") Long familiaId,
+        @Param("zikloaId") Long zikloaId,
+        @Param("taldeaId") Long taldeaId,
+        @Param("mailaId") Long mailaId,
+        @Param("ezadostasuna") String ezadostasuna,
+        Sort sort
+    );
+// -------------------------------------------------------------------------
     // Txartelak: ebaluazio-kode bakoitzeko kalkulatu gabe daudenak
     // -------------------------------------------------------------------------
 
@@ -161,7 +209,7 @@ public interface EstatistikaEbaluazioanRepository extends JpaRepository<Estatist
     // Totala: count orokorra filtroekin (ikasturte aktiboan)
     // -------------------------------------------------------------------------
 
-    
+
 
     // -------------------------------------------------------------------------
     // SELECT-ak betetzeko (dropdown-ak)

@@ -1,4 +1,4 @@
-package com.koadernoa.app.funtzionalitateak.shared;
+package com.koadernoa.app.funtzionalitateak.irakasle;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -16,7 +16,7 @@ import com.koadernoa.app.objektuak.mezuak.service.MezuaService;
 import lombok.RequiredArgsConstructor;
 
 @Controller
-@RequestMapping("/mezuak")
+@RequestMapping("/irakasle/mezuak")
 @RequiredArgsConstructor
 public class MezuakController {
 
@@ -26,8 +26,8 @@ public class MezuakController {
     @GetMapping
     public String index(Authentication auth, Model model) {
         Irakaslea ir = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
-        model.addAttribute("mezuak", mezuaService.bidaliEtaJasotakoak(ir.getId()));
-        return "mezuak/index";
+        model.addAttribute("mezuak", mezuaService.jasotakoak(ir.getId()));
+        return "irakasleak/mezuak/index";
     }
 
     @PostMapping("/{id}/irakurri")
@@ -40,6 +40,6 @@ public class MezuakController {
         } catch (Exception ex) {
             ra.addFlashAttribute("error", ex.getMessage());
         }
-        return "redirect:/mezuak";
+        return "redirect:/irakasle/mezuak";
     }
 }

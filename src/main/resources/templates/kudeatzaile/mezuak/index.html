@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <title>Mezuak</title>
+  <link rel="stylesheet" th:href="@{/css/navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
+</head>
+<body>
+<div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+<main style="max-width:1100px;margin:24px auto;padding:0 16px;">
+  <h1>Mezuak</h1>
+  <table>
+    <thead><tr><th>Noiz</th><th>Nork</th><th>Nori</th><th>Egoera</th><th>Edukia</th></tr></thead>
+    <tbody>
+      <tr th:each="m : ${mezuak}">
+        <td th:text="${#temporals.format(m.bidalketaData, 'yyyy-MM-dd HH:mm')}"></td>
+        <td th:text="${m.bidaltzailea != null ? m.bidaltzailea.izena : '-'}"></td>
+        <td th:text="${m.hartzailea != null ? m.hartzailea.izena : '-'}"></td>
+        <td th:text="${m.irakurrita ? '📭 Irakurrita' : '✉️ Ez irakurrita'}"></td>
+        <td style="white-space:pre-wrap;" th:text="${m.edukia}"></td>
+      </tr>
+    </tbody>
+  </table>
+</main>
+</body>
+</html>

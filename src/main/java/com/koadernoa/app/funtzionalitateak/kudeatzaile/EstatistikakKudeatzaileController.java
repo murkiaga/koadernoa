@@ -75,6 +75,11 @@ public class EstatistikakKudeatzaileController {
         // Orrikatutako zerrenda (defektuz: filtroaren arabera; nahi baduzu defektuz "kalkulatu gabe" jarri filtro.kalkulatua=false hasieratik)
         Page<EstatistikaEbaluazioan> orria = estatistikakService.bilatuOrrikatuta(filtro, pageable);
         model.addAttribute("orria", orria);
+        List<EstatistikaEbaluazioan> estatistikaRows = orria.getContent();
+        if ((estatistikaRows == null || estatistikaRows.isEmpty()) && orria.getTotalElements() > 0) {
+            estatistikaRows = estatistikakService.bilatuZerrenda(filtro, pageable.getSort());
+        }
+        model.addAttribute("estatistikaRows", estatistikaRows);
 
         Pageable ezadostasunPageable = PageRequest.of(
                 pageable.getPageNumber(),

@@ -64,7 +64,7 @@
           <li th:if="${#authorization.expression('hasAnyRole(''KUDEATZAILEA'',''ADMIN'')')}">
             <a th:href="@{/kudeatzaile}">Kudeaketa</a>
           </li>
-          <li><a th:href="@{/mezuak}" th:classappend="${currentPath == '/mezuak'} ? 'active'">🔔 <span th:if="${irakurriGabekoMezuKop > 0}" th:text="${irakurriGabekoMezuKop}"></span></a></li>
+          <li><a th:href="@{/irakasle/mezuak}" th:classappend="${currentPath == '/irakasle/mezuak'} ? 'active'">🔔 <span th:if="${irakurriGabekoMezuKop > 0}" th:text="${irakurriGabekoMezuKop}"></span></a></li>
           <li>
             <form th:action="@{/logout}" method="post" style="display:inline">
               <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
@@ -104,7 +104,7 @@
           <li th:if="${#authorization.expression('hasAnyRole(''KUDEATZAILEA'',''ADMIN'')')}">
             <a th:href="@{/kudeatzaile}">Kudeaketa</a>
           </li>
-          <li><a th:href="@{/mezuak}" th:classappend="${currentPath == '/mezuak'} ? 'active'">🔔 <span th:if="${irakurriGabekoMezuKop > 0}" th:text="${irakurriGabekoMezuKop}"></span></a></li>
+          <li><a th:href="@{/irakasle/mezuak}" th:classappend="${currentPath == '/irakasle/mezuak'} ? 'active'">🔔 <span th:if="${irakurriGabekoMezuKop > 0}" th:text="${irakurriGabekoMezuKop}"></span></a></li>
           <li>
             <form th:action="@{/logout}" method="post">
               <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
