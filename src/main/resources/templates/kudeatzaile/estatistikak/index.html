@@ -592,7 +592,7 @@
       </thead>
 
       <tbody>
-      <tr th:if="${estatistikaRows == null or #lists.isEmpty(estatistikaRows)}">
+      <tr th:if="${estatistikaRows == null or estatistikaRows.isEmpty()}">
         <!-- zutabe kopurua: 12 -->
         <td colspan="13" class="muted">
           Ez dago emaitzarik filtro hauekin (edo ez dago estatistikarik ikasturte aktiboan).

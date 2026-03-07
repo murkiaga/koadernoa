@@ -5,6 +5,9 @@
   <title>Mezuak</title>
   <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
   <link rel="stylesheet" th:href="@{/css/irakasle-common.css}">
+  <style>
+    .read-btn{min-width:96px;text-decoration:none;font-weight:600;}
+  </style>
 </head>
 <body>
 <div th:replace="~{irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})}"></div>
@@ -18,7 +21,7 @@
         <td th:text="${#temporals.format(m.bidalketaData, 'yyyy-MM-dd HH:mm')}"></td>
         <td th:text="${m.bidaltzailea != null ? m.bidaltzailea.izena : '-'}"></td>
         <td th:text="${m.irakurrita ? '📨 Irakurrita' : '✉️ Ez irakurrita'}"></td>
-        <td><a class="btn-primary" th:href="@{|/irakasle/mezuak/${m.id}|}">Irakurri</a></td>
+        <td><a class="btn btn-primary read-btn" th:href="@{|/irakasle/mezuak/${m.id}|}">Irakurri</a></td>
       </tr>
     </tbody>
   </table>

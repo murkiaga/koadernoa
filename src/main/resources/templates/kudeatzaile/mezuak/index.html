@@ -6,30 +6,39 @@
   <link rel="stylesheet" th:href="@{/css/navbar.css}">
   <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
   <style>
-    .msg-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;margin-top:14px}
-    .msg-card{border:1px solid var(--b);border-radius:14px;padding:14px;background:#fff;box-shadow:0 6px 18px rgba(15,23,42,.06)}
-    .msg-head{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:8px}
-    .badge{padding:2px 8px;border-radius:999px;border:1px solid var(--b);font-size:.78rem;background:#f8fafc}
-    .meta{font-size:.9rem;color:#475569;margin-bottom:8px}
-    .body{white-space:pre-wrap;background:#f8fafc;border-radius:10px;padding:10px}
+    .table-wrap{margin-top:14px;overflow:auto}
+    .message-body{white-space:pre-wrap;max-width:580px}
   </style>
 </head>
 <body>
 <div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
 <main style="max-width:1200px;margin:24px auto;padding:0 16px;">
   <h1>Mezuak</h1>
-  <div class="msg-grid">
-    <article class="msg-card" th:each="m : ${mezuak}">
-      <div class="msg-head">
-        <strong th:text="${m.bidaltzailea != null ? m.bidaltzailea.izena : '-'}">Nork</strong>
-        <span class="badge" th:text="${m.irakurrita ? '📨 Irakurrita' : '✉️ Ez irakurrita'}"></span>
-      </div>
-      <div class="meta">
-        Nori: <b th:text="${m.hartzailea != null ? m.hartzailea.izena : '-'}"></b><br>
-        <span th:text="${#temporals.format(m.bidalketaData, 'yyyy-MM-dd HH:mm')}"></span>
-      </div>
-      <div class="body" th:text="${m.edukia}"></div>
-    </article>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+      <tr>
+        <th>Noiz</th>
+        <th>Bidaltzailea</th>
+        <th>Hartzailea</th>
+        <th>Egoera</th>
+        <th>Edukia</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:if="${mezuak == null or #lists.isEmpty(mezuak)}">
+        <td colspan="5">Ez dago mezurik oraindik.</td>
+      </tr>
+      <tr th:each="m : ${mezuak}">
+        <td th:text="${#temporals.format(m.bidalketaData, 'yyyy-MM-dd HH:mm')}"></td>
+        <td th:text="${m.bidaltzailea != null ? m.bidaltzailea.izena : '-'}"></td>
+        <td th:text="${m.hartzailea != null ? m.hartzailea.izena : '-'}"></td>
+        <td th:text="${m.irakurrita ? '📨 Irakurrita' : '✉️ Ez irakurrita'}"></td>
+        <td class="message-body" th:text="${m.edukia}"></td>
+      </tr>
+      </tbody>
+    </table>
   </div>
 </main>
 </body>
