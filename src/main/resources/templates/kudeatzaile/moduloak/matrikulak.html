@@ -78,7 +78,20 @@
       const b = document.createElement('button');
       b.type = 'button';
       b.textContent = `${i.izena} (${i.hna || '-'})`;
-      b.onclick = () => {
+      b.onclick = async () => {
+        let mezua = 'Ikasle hau matrikulatu nahi duzu?';
+        try {
+          const aurre = await fetch(`/kudeatzaile/moduloa/${moduloId}/matrikula-aurreikuspena?ikasleaId=${i.id}`);
+          if (aurre.ok) {
+            const data = await aurre.json();
+            if (data?.mezua) mezua = data.mezua;
+          }
+        } catch (_) {
+          // fallback: mezu lehenetsia
+        }
+
+        if (!confirm(mezua)) return;
+
         const f = document.createElement('form');
         f.method = 'POST';
         f.action = `/kudeatzaile/moduloa/${moduloId}/matrikulak`;

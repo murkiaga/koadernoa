@@ -65,6 +65,20 @@ public interface MatrikulaRepository extends JpaRepository<Matrikula, Long> {
 	                                                                     @Param("eeiKodea") String eeiKodea,
 	                                                                     @Param("koadernoId") Long koadernoId);
 
+
+
+	@Query("""
+	    select distinct m.koadernoa.moduloa.izena
+	    from Matrikula m
+	    where m.ikaslea.id = :ikasleaId
+	      and m.koadernoa.egutegia.ikasturtea.id = :ikasturteaId
+	      and m.koadernoa.moduloa.eeiKodea = :eeiKodea
+	      and m.koadernoa.id <> :koadernoId
+	""")
+	List<String> findConflictModuloIzenakByIkasleaAndIkasturteaAndEeiKodeDifferentKoaderno(@Param("ikasleaId") Long ikasleaId,
+	                                                                                         @Param("ikasturteaId") Long ikasturteaId,
+	                                                                                         @Param("eeiKodea") String eeiKodea,
+	                                                                                         @Param("koadernoId") Long koadernoId);
 	@Query("""
 	    select i from Ikaslea i
 	    where lower(concat(coalesce(i.abizena1, ''), ' ', coalesce(i.abizena2, ''), ' ', coalesce(i.izena, ''))) like lower(concat('%', :term, '%'))

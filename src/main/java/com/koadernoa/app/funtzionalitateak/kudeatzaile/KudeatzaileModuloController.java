@@ -166,6 +166,50 @@ public class KudeatzaileModuloController {
                 .toList();
     }
 
+
+    @GetMapping("/{id}/matrikula-aurreikuspena")
+    @ResponseBody
+    public ResponseEntity<?> aurreikusiMatrikula(@PathVariable("id") Long moduloId,
+                                                 @RequestParam("ikasleaId") Long ikasleaId) {
+        List<Koadernoa> koadernoak = koadernoaRepository.findByModuloaIdInAktiboIkasturtea(moduloId);
+        if (koadernoak.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("ok", false, "msg", "Ez dago koaderno aktiborik"));
+        }
+        if (ikasleaRepository.findById(ikasleaId).isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("ok", false, "msg", "Ikaslea ez da aurkitu"));
+        }
+
+        Koadernoa koadernoa = koadernoak.get(0);
+        String eeiKodea = koadernoa.getModuloa().getEeiKodea();
+        if (eeiKodea == null || eeiKodea.isBlank()) {
+            return ResponseEntity.ok(Map.of(
+                    "ok", true,
+                    "badago", false,
+                    "mezua", "Ikasle hau matrikulatu nahi duzu?"
+            ));
+        }
+
+        Long ikasturteaId = koadernoa.getEgutegia().getIkasturtea().getId();
+        List<String> moduloIzenak = matrikulaRepository
+                .findConflictModuloIzenakByIkasleaAndIkasturteaAndEeiKodeDifferentKoaderno(ikasleaId, ikasturteaId, eeiKodea, koadernoa.getId());
+
+        if (moduloIzenak.isEmpty()) {
+            return ResponseEntity.ok(Map.of(
+                    "ok", true,
+                    "badago", false,
+                    "mezua", "Ikasle hau matrikulatu nahi duzu?"
+            ));
+        }
+
+        String izenak = String.join(", ", moduloIzenak);
+        return ResponseEntity.ok(Map.of(
+                "ok", true,
+                "badago", true,
+                "moduloak", moduloIzenak,
+                "mezua", izenak + "(e)an matrikulatuta dago eta kendu egingo zaio. Jarraitu nahi duzu?"
+        ));
+    }
+
     @PostMapping("/{id}/matrikulak")
     public String gehituMatrikula(@PathVariable("id") Long moduloId,
                                   @RequestParam("ikasleaId") Long ikasleaId) {
