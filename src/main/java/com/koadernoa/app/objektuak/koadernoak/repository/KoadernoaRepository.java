@@ -71,6 +71,14 @@ public interface KoadernoaRepository extends JpaRepository<Koadernoa, Long>{
     boolean existsByModuloa_IdAndEgutegia_Id(Long moduloaId, Long egutegiaId);
 
     java.util.Optional<Koadernoa> findFirstByModuloa_IdAndEgutegia_IdOrderByIdAsc(Long moduloaId, Long egutegiaId);
+
+    @Query("""
+          select k from Koadernoa k
+          where k.moduloa.id = :moduloaId
+            and k.egutegia.ikasturtea.aktiboa = true
+          order by k.id asc
+        """)
+    List<Koadernoa> findByModuloaIdInAktiboIkasturtea(@Param("moduloaId") Long moduloaId);
     
     
     //Kudeatzaileak koadernoak kontsultatzeko

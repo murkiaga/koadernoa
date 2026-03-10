@@ -62,7 +62,7 @@
 		    <tr th:each="taldea : ${taldeak}" th:id="${'taldea-' + taldea.id}">
 		      <td th:text="${taldea.id}">1</td>
 		      <td>
-		        <a th:href="@{/kudeatzaile/moduloak(taldeaId=${taldea.id})}"
+		        <a th:href="@{/kudeatzaile/moduloa(taldeaId=${taldea.id})}"
 		           th:text="${taldea.izena}">1SMA</a>
 		      </td>
 		      <td th:text="${taldea.zikloa != null ? taldea.zikloa.izena : '-'}">Informatika</td>
