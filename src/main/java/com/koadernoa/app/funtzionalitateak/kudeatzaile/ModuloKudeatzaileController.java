@@ -36,7 +36,7 @@ import lombok.RequiredArgsConstructor;
 @Controller
 @RequestMapping("/kudeatzaile/moduloa")
 @RequiredArgsConstructor
-public class KudeatzaileModuloController {
+public class ModuloKudeatzaileController {
 
     private final ModuloaService moduloaService;
     private final TaldeaService taldeaService;
