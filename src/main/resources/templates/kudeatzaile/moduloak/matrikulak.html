@@ -17,7 +17,7 @@
 </head>
 <body>
 <div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
-<main class="page">
+<main class="page" th:attr="data-modulo-id=${moduloa.id}">
   <h1 th:text="${moduloa.izena} + ' - matrikulak'">Matrikulak</h1>
 
   <div class="table-wrap">
@@ -49,11 +49,12 @@
     <div id="ikasle-emaitzak"></div>
   </div>
 
-  <a class="btn btn-secondary" th:href="@{/kudeatzaile/moduloa(taldeaId=${moduloa.taldea != null ? moduloa.taldea.id : null})}">Itzuli</a>
+  <a class="btn btn-secondary" th:if="${moduloa.taldea != null}" th:href="@{/kudeatzaile/moduloa(taldeaId=${moduloa.taldea.id})}">Itzuli</a>
+  <a class="btn btn-secondary" th:if="${moduloa.taldea == null}" th:href="@{/kudeatzaile/moduloa}">Itzuli</a>
 </main>
 
-<script th:inline="javascript">
-  const moduloId = [[${moduloa.id}]];
+<script>
+  const moduloId = document.querySelector('main.page')?.dataset.moduloId;
   const csrf = document.querySelector('meta[name="_csrf"]')?.content || '';
   const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
 
