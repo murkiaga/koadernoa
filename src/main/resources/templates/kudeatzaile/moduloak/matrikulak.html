@@ -27,6 +27,7 @@
         <th>Ikaslea</th>
         <th>HNA</th>
         <th>Egoera</th>
+        <th style="width:70px; text-align:center;">Ezabatu</th>
       </tr>
       </thead>
       <tbody>
@@ -37,6 +38,15 @@
           <select th:attr="data-matrikula-id=${m.id}" class="egoera-select">
             <option th:each="e : ${egoerak}" th:value="${e.name()}" th:text="${e.name()}" th:selected="${e == m.egoera}"></option>
           </select>
+        </td>
+        <td style="text-align:center;">
+          <form th:action="@{/kudeatzaile/moduloa/{id}/matrikulak/{matrikulaId}/ezabatu(id=${moduloa.id},matrikulaId=${m.id})}"
+                method="post"
+                onsubmit="return confirm('Matrikula hau ezabatu nahi duzu? Lotutako asistentziak eta notak ere ezabatuko dira.');"
+                style="display:inline;">
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <button type="submit" class="btn btn-danger" title="Matrikula ezabatu" style="padding:.25rem .5rem;">✕</button>
+          </form>
         </td>
       </tr>
       </tbody>

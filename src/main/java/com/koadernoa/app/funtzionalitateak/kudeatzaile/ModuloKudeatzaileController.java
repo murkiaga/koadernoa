@@ -245,6 +245,27 @@ public class ModuloKudeatzaileController {
         return "redirect:/kudeatzaile/moduloa/" + moduloId + "/matrikulak";
     }
 
+
+    @PostMapping("/{id}/matrikulak/{matrikulaId}/ezabatu")
+    public String ezabatuMatrikula(@PathVariable("id") Long moduloId,
+                                   @PathVariable Long matrikulaId) {
+        Optional<Matrikula> opt = matrikulaRepository.findById(matrikulaId);
+        if (opt.isEmpty()) {
+            return "redirect:/kudeatzaile/moduloa/" + moduloId + "/matrikulak";
+        }
+
+        Matrikula matrikula = opt.get();
+        if (!matrikula.getKoadernoa().getModuloa().getId().equals(moduloId)) {
+            return "redirect:/kudeatzaile/moduloa/" + moduloId + "/matrikulak";
+        }
+
+        // Inportazio sinkronizazioan bezala deleteAll erabiltzen dugu,
+        // eta kaskadaz lotutako asistentziak/notak ere ezabatzen dira.
+        matrikulaRepository.deleteAll(List.of(matrikula));
+
+        return "redirect:/kudeatzaile/moduloa/" + moduloId + "/matrikulak";
+    }
+
     @GetMapping("/ezabatu/{id}")
     public String moduloaEzabatu(@PathVariable("id") Long id) {
         moduloaService.delete(id);
