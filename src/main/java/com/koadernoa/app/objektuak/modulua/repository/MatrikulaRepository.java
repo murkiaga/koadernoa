@@ -52,6 +52,44 @@ public interface MatrikulaRepository extends JpaRepository<Matrikula, Long> {
 	                                                       @Param("hnasExcel") List<String> hnasExcel);
     
 	List<Matrikula> findByKoadernoa_Id(Long koadernoId);
+
+	@Query("""
+	    select m from Matrikula m
+	    where m.ikaslea.id = :ikasleaId
+	      and m.koadernoa.egutegia.ikasturtea.id = :ikasturteaId
+	      and m.koadernoa.moduloa.eeiKodea = :eeiKodea
+	      and m.koadernoa.id <> :koadernoId
+	""")
+	List<Matrikula> findByIkasleaAndIkasturteaAndEeiKodeDifferentKoaderno(@Param("ikasleaId") Long ikasleaId,
+	                                                                     @Param("ikasturteaId") Long ikasturteaId,
+	                                                                     @Param("eeiKodea") String eeiKodea,
+	                                                                     @Param("koadernoId") Long koadernoId);
+
+
+
+	@Query("""
+	    select distinct m.koadernoa.moduloa.izena
+	    from Matrikula m
+	    where m.ikaslea.id = :ikasleaId
+	      and m.koadernoa.egutegia.ikasturtea.id = :ikasturteaId
+	      and m.koadernoa.moduloa.eeiKodea = :eeiKodea
+	      and m.koadernoa.id <> :koadernoId
+	""")
+	List<String> findConflictModuloIzenakByIkasleaAndIkasturteaAndEeiKodeDifferentKoaderno(@Param("ikasleaId") Long ikasleaId,
+	                                                                                         @Param("ikasturteaId") Long ikasturteaId,
+	                                                                                         @Param("eeiKodea") String eeiKodea,
+	                                                                                         @Param("koadernoId") Long koadernoId);
+	@Query("""
+	    select i from Ikaslea i
+	    where lower(concat(coalesce(i.abizena1, ''), ' ', coalesce(i.abizena2, ''), ' ', coalesce(i.izena, ''))) like lower(concat('%', :term, '%'))
+	      and i.id not in (
+	          select m.ikaslea.id from Matrikula m
+	          where m.koadernoa.id = :koadernoId
+	      )
+	    order by i.abizena1 asc, i.abizena2 asc, i.izena asc
+	""")
+	List<com.koadernoa.app.objektuak.modulua.entitateak.Ikaslea> bilatuIkasleMatrikulatuGabeakKoadernoan(@Param("koadernoId") Long koadernoId,
+	                                                                                                      @Param("term") String term);
 	
 	void deleteByKoadernoa_Id(Long koadernoId);
 }

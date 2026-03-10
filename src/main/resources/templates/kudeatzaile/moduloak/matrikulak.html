@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Matrikulak</title>
+  <link rel="stylesheet" th:href="@{/css/navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
+  <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
+  <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}"/>
+  <style>
+    .search-wrap{max-width:540px;margin-top:1rem;position:relative}
+    #ikasle-emaitzak{border:1px solid #e5e7eb;border-radius:.5rem;margin-top:.4rem;max-height:220px;overflow:auto}
+    #ikasle-emaitzak button{display:block;width:100%;text-align:left;border:0;background:white;padding:.55rem .7rem;cursor:pointer}
+    #ikasle-emaitzak button:hover{background:#f3f4f6}
+  </style>
+</head>
+<body>
+<div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+<main class="page" th:attr="data-modulo-id=${moduloa.id}">
+  <h1 th:text="${moduloa.izena} + ' - matrikulak'">Matrikulak</h1>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+      <tr>
+        <th>Ikaslea</th>
+        <th>HNA</th>
+        <th>Egoera</th>
+        <th style="width:70px; text-align:center;">Ezabatu</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:each="m : ${matrikulak}">
+        <td th:text="${m.ikaslea.izenOsoa}">Abizena, Izena</td>
+        <td th:text="${m.ikaslea.hna}">X000</td>
+        <td>
+          <select th:attr="data-matrikula-id=${m.id}" class="egoera-select">
+            <option th:each="e : ${egoerak}" th:value="${e.name()}" th:text="${e.name()}" th:selected="${e == m.egoera}"></option>
+          </select>
+        </td>
+        <td style="text-align:center;">
+          <form th:action="@{/kudeatzaile/moduloa/{id}/matrikulak/{matrikulaId}/ezabatu(id=${moduloa.id},matrikulaId=${m.id})}"
+                method="post"
+                onsubmit="return confirm('Matrikula hau ezabatu nahi duzu? Lotutako asistentziak eta notak ere ezabatuko dira.');"
+                style="display:inline;">
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <button type="submit" class="btn btn-danger" title="Matrikula ezabatu" style="padding:.25rem .5rem;">✕</button>
+          </form>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="search-wrap">
+    <label for="ikasle-bilatu">Ikasle berria matrikulatu</label>
+    <input id="ikasle-bilatu" type="text" placeholder="Idatzi izena (gutxienez 3 karaktere)">
+    <div id="ikasle-emaitzak"></div>
+  </div>
+
+  <a class="btn btn-secondary" th:if="${moduloa.taldea != null}" th:href="@{/kudeatzaile/moduloa(taldeaId=${moduloa.taldea.id})}">Itzuli</a>
+  <a class="btn btn-secondary" th:if="${moduloa.taldea == null}" th:href="@{/kudeatzaile/moduloa}">Itzuli</a>
+</main>
+
+<script>
+  const moduloId = document.querySelector('main.page')?.dataset.moduloId;
+  const csrf = document.querySelector('meta[name="_csrf"]')?.content || '';
+  const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
+
+  document.querySelectorAll('.egoera-select').forEach(sel => {
+    sel.addEventListener('change', async () => {
+      const id = sel.dataset.matrikulaId;
+      await fetch(`/kudeatzaile/moduloa/${moduloId}/matrikulak/${id}/egoera`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', [csrfHeader]: csrf },
+        body: new URLSearchParams({ egoera: sel.value })
+      });
+    });
+  });
+
+  const input = document.getElementById('ikasle-bilatu');
+  const emaitzak = document.getElementById('ikasle-emaitzak');
+
+  function render(items){
+    emaitzak.innerHTML = '';
+    items.forEach(i => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = `${i.izena} (${i.hna || '-'})`;
+      b.onclick = async () => {
+        let mezua = 'Ikasle hau matrikulatu nahi duzu?';
+        try {
+          const aurre = await fetch(`/kudeatzaile/moduloa/${moduloId}/matrikula-aurreikuspena?ikasleaId=${i.id}`);
+          if (aurre.ok) {
+            const data = await aurre.json();
+            if (data?.mezua) mezua = data.mezua;
+          }
+        } catch (_) {
+          // fallback: mezu lehenetsia
+        }
+
+        if (!confirm(mezua)) return;
+
+        const f = document.createElement('form');
+        f.method = 'POST';
+        f.action = `/kudeatzaile/moduloa/${moduloId}/matrikulak`;
+        f.innerHTML = `<input type="hidden" name="ikasleaId" value="${i.id}">` +
+                `<input type="hidden" name="_csrf" value="${csrf}">`;
+        document.body.appendChild(f);
+        f.submit();
+      };
+      emaitzak.appendChild(b);
+    });
+  }
+
+  let t;
+  input.addEventListener('input', () => {
+    clearTimeout(t);
+    const q = input.value.trim();
+    if (q.length < 3){ emaitzak.innerHTML=''; return; }
+    t = setTimeout(async () => {
+      const res = await fetch(`/kudeatzaile/moduloa/${moduloId}/ikasleak-bilatu?q=${encodeURIComponent(q)}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      render(data || []);
+    }, 250);
+  });
+</script>
+<script th:src="@{/js/kudeatzaile-nav.js}"></script>
+</body>
+</html>

@@ -7,7 +7,6 @@ import java.util.Map;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,13 +18,9 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.koadernoa.app.objektuak.egutegia.repository.IkasturteaRepository;
-import com.koadernoa.app.objektuak.egutegia.repository.MailaRepository;
 import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
-import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
-import com.koadernoa.app.objektuak.modulua.entitateak.ModuloaFormDto;
 import com.koadernoa.app.objektuak.modulua.repository.IkasleaRepository;
 import com.koadernoa.app.objektuak.modulua.service.IkasleArgazkiService;
-import com.koadernoa.app.objektuak.modulua.service.ModuloaService;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Taldea;
 import com.koadernoa.app.objektuak.zikloak.entitateak.ZikloMaila;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Zikloa;
@@ -35,7 +30,6 @@ import com.koadernoa.app.objektuak.zikloak.service.ZikloaService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 
@@ -46,8 +40,6 @@ public class KudeatzaileController {
 	
 	private final ZikloaService zikloaService;
 	private final TaldeaService taldeaService;
-    private final ModuloaService moduloaService;
-    private final MailaRepository mailaRepository;
     private final IrakasleaRepository irakasleaRepository;
     private final FamiliaRepository familiaRepository;
     private final IkasleaRepository ikasleaRepository;
@@ -224,75 +216,5 @@ public class KudeatzaileController {
             out.put("errorea", e.getMessage());
         }
         return out;
-    }
-
-	
-//----MODULOAK
-    @GetMapping("/moduloak")
-    public String moduloZerrenda(@RequestParam(name = "taldeaId", required = false) Long taldeaId, 
-    							Model model) {
-    	List<Moduloa> moduluak;
-        if (taldeaId != null) {
-            moduluak = moduloaService.getByTaldeaId(taldeaId);
-            // Ikasle zerrenda gehitu modelera
-            model.addAttribute("ikasleak",
-                ikasleaRepository.findByTaldea_IdOrderByAbizena1AscAbizena2AscIzenaAsc(taldeaId));
-        } else {
-            moduluak = moduloaService.getAll();
-        }
-        model.addAttribute("taldeaId", taldeaId);
-        model.addAttribute("moduluak", moduluak);
-        model.addAttribute("taldeak", taldeaService.getAll());
-        
-        return "kudeatzaile/moduloak/index";
-    }
-    
-    @PostMapping("/moduloak/gorde")
-    public String gordeModuloa(@Valid @ModelAttribute("moduloaForm") ModuloaFormDto form,
-                               BindingResult br,
-                               Model model) {
-        if (br.hasErrors()) {
-            // berriz kargatu aukerak
-            model.addAttribute("taldeak", taldeaService.getAll());
-            model.addAttribute("mailak", mailaRepository.findAllByAktiboTrueOrderByOrdenaAscIzenaAsc());
-            return "kudeatzaile/moduloak/moduloa-form";
-        }
-        moduloaService.saveFromDto(form);
-        return "redirect:/kudeatzaile/moduloak";
-    }
-
-    @GetMapping("/moduloak/sortu")
-    public String sortuModuloaForm(@RequestParam(name = "taldeaId", required = false) Long taldeaId,
-                                   Model model) {
-        ModuloaFormDto form = new ModuloaFormDto();
-        if (taldeaId != null) form.setTaldeaId(taldeaId); // aurrez hautatu
-        model.addAttribute("moduloaForm", form);
-        model.addAttribute("taldeak", taldeaService.getAll());
-        model.addAttribute("mailak", mailaRepository.findAllByAktiboTrueOrderByOrdenaAscIzenaAsc());
-        return "kudeatzaile/moduloak/moduloa-form";
-    }
-
-    @GetMapping("/moduloak/editatu/{id}")
-    public String editatuModuloa(@PathVariable Long id, Model model) {
-        Moduloa m = moduloaService.getById(id).orElseThrow();
-        ModuloaFormDto form = new ModuloaFormDto();
-        form.setId(m.getId());
-        form.setIzena(m.getIzena());
-        form.setKodea(m.getKodea());
-        form.setEeiKodea(m.getEeiKodea());
-        form.setOrduak(m.getOrduak());
-        form.setMailaId(m.getMaila() != null ? m.getMaila().getId() : null);
-        form.setTaldeaId(m.getTaldea() != null ? m.getTaldea().getId() : null);
-
-        model.addAttribute("moduloaForm", form);
-        model.addAttribute("taldeak", taldeaService.getAll());
-        model.addAttribute("mailak", mailaRepository.findAllByAktiboTrueOrderByOrdenaAscIzenaAsc());
-        return "kudeatzaile/moduloak/moduloa-form";
-    }
-
-    @GetMapping("/moduloak/ezabatu/{id}")
-    public String moduloaEzabatu(@PathVariable("id") Long id) {
-        moduloaService.delete(id);
-        return "redirect:/kudeatzaile/moduloak";
     }
 }

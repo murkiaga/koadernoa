@@ -12,7 +12,7 @@
 	<main class="page">
 		<h1>Moduluen Zerrenda</h1>
 		
-		<form class="form" th:action="@{/kudeatzaile/moduloak}" method="get">
+		<form class="form" th:action="@{/kudeatzaile/moduloa}" method="get">
 		    <label>Taldea:</label>
 		    <select name="taldeaId" onchange="this.form.submit()">
 		        <option value="">GUZTIAK</option>
@@ -25,7 +25,7 @@
 		</form>
 		
 		
-		<a class="btn btn-primary" th:href="@{/kudeatzaile/moduloak/sortu(taldeaId=${param.taldeaId})}">Sortu Modulo Berria</a>
+		<a class="btn btn-primary" th:href="@{/kudeatzaile/moduloa/sortu(taldeaId=${param.taldeaId})}">Sortu Modulo Berria</a>
 		
 		<div class="table-wrap">
 			<table>
@@ -46,13 +46,13 @@
 			            <td th:text="${moduloa.id}">1</td>
 			            <td th:text="${moduloa.eeiKodea}">0225</td>
 			            <td th:text="${moduloa.kodea}">ADAT</td>
-			            <td th:text="${moduloa.izena}">Datuen Atzipena</td>
+			            <td><a th:href="@{/kudeatzaile/moduloa/{id}/matrikulak(id=${moduloa.id})}" th:text="${moduloa.izena}">Datuen Atzipena</a></td>
                         <td th:text="${moduloa.orduak}">165</td>
 			            <td th:text="${moduloa.maila.getKodea}">LEHENENGOA</td>
 			            <td th:text="${moduloa.taldea.izena}">2AM3</td>
 			            <td class="actions-cell">
-			                <a th:href="@{/kudeatzaile/moduloak/editatu/{id}(id=${moduloa.id})}" class="btn btn-secondary">Editatu</a>
-			                <a th:href="@{/kudeatzaile/moduloak/ezabatu/{id}(id=${moduloa.id})}" class="btn btn-danger">Ezabatu</a>
+			                <a th:href="@{/kudeatzaile/moduloa/editatu/{id}(id=${moduloa.id})}" class="btn btn-secondary">Editatu</a>
+			                <a th:href="@{/kudeatzaile/moduloa/ezabatu/{id}(id=${moduloa.id})}" class="btn btn-danger">Ezabatu</a>
 			            </td>
 			        </tr>
 			    </tbody>
