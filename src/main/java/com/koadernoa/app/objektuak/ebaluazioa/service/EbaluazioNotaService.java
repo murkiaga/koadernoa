@@ -98,15 +98,15 @@ public class EbaluazioNotaService {
                         continue;
                     }
 
-                    // 0–10 tartea
-                    if (notaZenbaki < 0 || notaZenbaki > 10) {
+                    // 1–10 tartea
+                    if (notaZenbaki < 1 || notaZenbaki > 10) {
                         errorBuilder.append("Ikaslea ")
                                 .append(ikasleIzena)
                                 .append(", \"")
                                 .append(momentua.getIzena())
                                 .append("\" momentuan: nota ")
                                 .append(value)
-                                .append(" ez da baliozkoa (0–10 artekoa izan behar du).")
+                                .append(" ez da baliozkoa (1–10 artekoa izan behar du).")
                                 .append('\n');
                         continue;
                     }
