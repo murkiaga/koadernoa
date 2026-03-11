@@ -84,11 +84,11 @@
 		    </thead>
 		    <tbody>
 		      <tr th:each="ik : ${ikasleak}" th:onclick="|window.location='@{/kudeatzaile/ikaslea/{id}(id=${ik.id})}'|" style="cursor:pointer;">
-		        <td th:text="${ik.hna}">HNA</td>
+		        <td><a th:href="@{/kudeatzaile/ikaslea/{id}(id=${ik.id})}" th:text="${ik.hna}">HNA</a></td>
 		        <td th:text="${ik.nan != null ? ik.nan : '-'}">NAN</td>
 		        <td th:text="${ik.abizena1 != null ? ik.abizena1 : '-'}">Abizena 1</td>
 		        <td th:text="${ik.abizena2 != null ? ik.abizena2 : '-'}">Abizena 2</td>
-		        <td><a th:href="@{/kudeatzaile/ikaslea/{id}(id=${ik.id})}" th:text="${ik.izena != null ? ik.izena : '-'}">Izena</a></td>
+		        <td th:text="${ik.izena != null ? ik.izena : '-'}">Izena</td>
 		      </tr>
 		      <tr th:if="${#lists.isEmpty(ikasleak)}">
 		        <td colspan="5" style="text-align:center; color:#6b7280;">Ez dago ikaslerik talde honetan oraindik.</td>

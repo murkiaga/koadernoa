@@ -48,6 +48,6 @@ public class IkasleaKudeatzaileController {
         model.addAttribute("hautatutakoIkasturteaId", hautatutakoIkasturteaId);
         model.addAttribute("matrikulak", matrikulak);
 
-        return "kudeatzaile/ikasleak/fitxa";
+        return "kudeatzaile/ikaslea/fitxa";
     }
 }
