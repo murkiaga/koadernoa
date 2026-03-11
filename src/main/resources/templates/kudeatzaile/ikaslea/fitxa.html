@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ikaslearen fitxa</title>
+  <link rel="stylesheet" th:href="@{/css/navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
+</head>
+<body>
+<div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+
+<main class="page">
+  <h1>Ikaslearen fitxa</h1>
+
+  <div class="table-wrap" style="margin-bottom:1rem;">
+    <table>
+      <tbody>
+      <tr><th>Izena</th><td th:text="${ikaslea.izena != null ? ikaslea.izena : '-'}">-</td></tr>
+      <tr><th>Abizena 1</th><td th:text="${ikaslea.abizena1 != null ? ikaslea.abizena1 : '-'}">-</td></tr>
+      <tr><th>Abizena 2</th><td th:text="${ikaslea.abizena2 != null ? ikaslea.abizena2 : '-'}">-</td></tr>
+      <tr><th>HNA (DIE)</th><td th:text="${ikaslea.hna != null ? ikaslea.hna : '-'}">-</td></tr>
+      <tr><th>NAN (DNI)</th><td th:text="${ikaslea.nan != null ? ikaslea.nan : '-'}">-</td></tr>
+      <tr><th>Taldea</th><td th:text="${ikaslea.taldea != null ? ikaslea.taldea.izena : '-'}">-</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <form class="form" method="get" th:action="@{/kudeatzaile/ikaslea/{id}(id=${ikaslea.id})}">
+    <label for="ikasturteaId">Ikasturtea:</label>
+    <select id="ikasturteaId" name="ikasturteaId" onchange="this.form.submit()">
+      <option th:each="ik : ${ikasturteak}"
+              th:value="${ik.id}"
+              th:text="${ik.izena}"
+              th:selected="${ik.id == hautatutakoIkasturteaId}">
+      </option>
+    </select>
+  </form>
+
+  <h2>Matrikulak</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+      <tr>
+        <th>Koadernoa</th>
+        <th>Moduloa</th>
+        <th>EEI kodea</th>
+        <th>Egoera</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:each="m : ${matrikulak}">
+        <td th:text="${m.koadernoa != null ? m.koadernoa.izena : '-'}">-</td>
+        <td th:text="${m.koadernoa != null and m.koadernoa.moduloa != null ? m.koadernoa.moduloa.izena : '-'}">-</td>
+        <td th:text="${m.koadernoa != null and m.koadernoa.moduloa != null ? m.koadernoa.moduloa.eeiKodea : '-'}">-</td>
+        <td th:text="${m.egoera}">MATRIKULATUA</td>
+      </tr>
+      <tr th:if="${#lists.isEmpty(matrikulak)}">
+        <td colspan="4" style="text-align:center;color:#6b7280;">Ez dago matrikularik ikasturte honetan.</td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <a class="btn btn-secondary" th:if="${ikaslea.taldea != null}" th:href="@{/kudeatzaile/moduloa(taldeaId=${ikaslea.taldea.id})}">Itzuli</a>
+  <a class="btn btn-secondary" th:if="${ikaslea.taldea == null}" th:href="@{/kudeatzaile/moduloa}">Itzuli</a>
+</main>
+
+<script th:src="@{/js/kudeatzaile-nav.js}"></script>
+</body>
+</html>

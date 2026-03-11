@@ -200,14 +200,16 @@
   // TAB sakatzean notetan behera mugitu
   document.querySelectorAll('.nota-wrap input[type="text"]').forEach(inp => {
     inp.addEventListener('keydown', function(e){
-      if (e.key !== 'Tab' || e.shiftKey) return;
+      if (e.key !== 'Tab') return;
       const currentTd = this.closest('td');
       const currentTr = this.closest('tr');
       if (!currentTd || !currentTr) return;
       const cellIndex = Array.from(currentTr.children).indexOf(currentTd);
-      const nextTr = currentTr.nextElementSibling;
-      if (!nextTr) return;
-      const targetTd = nextTr.children[cellIndex];
+
+      const targetTr = e.shiftKey ? currentTr.previousElementSibling : currentTr.nextElementSibling;
+      if (!targetTr) return;
+
+      const targetTd = targetTr.children[cellIndex];
       const targetInput = targetTd ? targetTd.querySelector('.nota-wrap input[type="text"]') : null;
       if (targetInput) {
         e.preventDefault();

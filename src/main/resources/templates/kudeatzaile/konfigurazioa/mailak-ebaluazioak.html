@@ -74,6 +74,25 @@
     (<span th:text="${maila.kodea}">LEHENENGOA</span>)
   </p>
 
+
+  <div style="margin-top:.5rem;">
+    <a class="btn btn-secondary" th:href="@{/kudeatzaile/konfigurazioa}">Atzera</a>
+  </div>
+
+  <div class="section">
+    <h3>Mailaren datuak</h3>
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;max-width:460px;">
+      <label style="display:grid;gap:.25rem;min-width:220px;">
+        Izena
+        <input type="text" name="mailaIzena" th:form="'ebal-form'" th:value="${maila.izena}"/>
+      </label>
+      <label style="display:grid;gap:.25rem;min-width:120px;">
+        Ordena
+        <input type="number" name="mailaOrdena" th:form="'ebal-form'" th:value="${maila.ordena}"/>
+      </label>
+    </div>
+  </div>
+
   <!-- Flash mezuak -->
   <div th:if="${success}" class="flash flash-success"
        th:text="${success}">Success mezua</div>
@@ -83,6 +102,7 @@
   <div class="section">
     <form th:action="@{|/kudeatzaile/konfigurazioa/mailak/${maila.id}/ebaluazioak|}"
           method="post"
+          id="ebal-form"
           style="margin-top:1rem;">
 
       <!-- CSRF -->
@@ -105,7 +125,7 @@
 	          <th>Kodea</th>
 	          <th>Izena</th>
 	          <th>Ordena</th>
-	          <th>0–10 nota?</th>
+	          <th>1–10 nota?</th>
 	          <th>Urte osoko datuak?</th>
 	          <th>Egoera bereziak</th>
 	          <th>Ezadostasun konfigurazioa</th>

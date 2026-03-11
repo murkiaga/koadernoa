@@ -128,7 +128,7 @@
         <div class="field">
           <label>
             <input type="checkbox" name="onartuNotaZenbakizkoa" checked/>
-            0–10 nota zenbakizkoa onartu
+            1–10 nota zenbakizkoa onartu
           </label>
         </div>
 
@@ -181,7 +181,7 @@
             if (form) {
               form.reset();
             }
-            // Lehenespenez aktibo + 0-10 onartua markatu
+            // Lehenespenez aktibo + 1-10 onartua markatu
             const aktibo = modal.querySelector('input[name="aktibo"]');
             const onartu = modal.querySelector('input[name="onartuNotaZenbakizkoa"]');
             if (aktibo) aktibo.checked = true;

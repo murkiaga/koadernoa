@@ -273,6 +273,18 @@ public class KonfigurazioaController {
             return "redirect:/kudeatzaile/konfigurazioa#mailak";
         }
 
+        String mailaIzena = request.getParameter("mailaIzena");
+        if (mailaIzena != null && !mailaIzena.trim().isBlank()) {
+            maila.setIzena(mailaIzena.trim());
+        }
+        String mailaOrdena = request.getParameter("mailaOrdena");
+        if (mailaOrdena != null && !mailaOrdena.isBlank()) {
+            try {
+                maila.setOrdena(Integer.valueOf(mailaOrdena.trim()));
+            } catch (NumberFormatException ignored) {}
+        }
+        mailaRepository.save(maila);
+
         // ======== EXISTENTEAK EGUNERATU / EZABATU =========
         String[] idParamArray   = request.getParameterValues("ids");
         String[] deleteIdsArray = request.getParameterValues("deleteIds");

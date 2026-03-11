@@ -4,59 +4,90 @@
     <meta charset="UTF-8">
     <title>Egutegia</title>
     <link rel="stylesheet" th:href="@{/css/navbar.css}">
+    <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        .lektibo1   { background-color: #b3d9ff; }  /* urdin argia */
-        .lektibo2   { background-color: #ffd699; }  /* laranja argia */
-        .lektibo3   { background-color: #b2f2bb; }  /* berde argia */
-        .jaieguna   { color: red; font-weight: bold; }
-        .ezlektiboa { background-color: black; color: white; }
-        .ordezkatua { background-color: yellow; }
-        .blank      { background-color: #f0f0f0; }
-        table       { border-collapse: collapse; margin-bottom: 2rem; }
-        th, td      { border: 1px solid #ccc; padding: 4px; text-align: center; width: 30px; height: 30px; }
-        .oharra { box-shadow: inset 0 0 0 2px #444; }
+        .egutegi-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:1.25rem; align-items:flex-start; }
+        @media (max-width:1024px){ .egutegi-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+        @media (max-width:700px){ .egutegi-grid{ grid-template-columns:1fr; } }
+
+        .hilabete-card{
+            background:#fff; border:1px solid #e5e7eb; border-radius:.75rem;
+            box-shadow:0 1px 3px rgba(15,23,42,.08); padding:.75rem .75rem 1rem;
+        }
+        .hilabete-card h3{ margin:0 0 .5rem; font-size:.95rem; text-align:center; text-transform:capitalize; }
+        .hilabete-card table{ width:100%; border-collapse:collapse; font-size:.75rem; }
+        .hilabete-card thead th{ background:#f3f4f6; font-weight:600; }
+        .hilabete-card th,.hilabete-card td{ border:1px solid #d1d5db; padding:3px; text-align:center; width:26px; height:26px; }
+        .hilabete-card tbody tr:nth-child(even){ background:transparent; }
+
+        .blank{ background-color:#f3f4f6; }
+        .lektibo1{ background-color:#bfdbfe; }
+        .lektibo2{ background-color:#fed7aa; }
+        .lektibo3{ background-color:#bbf7d0; }
+        .jaieguna{ background-color:#fff; color:#b91c1c; font-weight:600; }
+        .ezlektiboa{ background-color:#111827; color:#fff; }
+        .ordezkatua{ background-color:#fef3c7; }
+        .oharra{ box-shadow: inset 0 0 0 2px #444; }
+
+        .hilabete-card td{ font-size:.72rem; cursor:pointer; }
+        .hilabete-card td.blank{ cursor:default; }
+
+        .fitxa-goiburua{ display:flex; justify-content:space-between; gap:1rem; align-items:center; flex-wrap:wrap; margin-bottom:1rem; }
+        .legend{ display:flex; gap:.6rem; flex-wrap:wrap; font-size:.82rem; color:#374151; }
+        .legend span{ display:inline-flex; align-items:center; gap:.35rem; }
+        .legend i{ width:12px; height:12px; border-radius:3px; border:1px solid #d1d5db; display:inline-block; }
     </style>
 </head>
 <body>
-	<div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+<div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
 
-<h2 th:text="${ikasturtea.izena}">Ikasturtea</h2>
-<h3 th:text="|Maila: ${egutegia.maila.izena} (${egutegia.maila.kodea})|">Maila</h3>
+<main class="page">
+    <div class="fitxa-goiburua">
+        <div>
+            <h2 th:text="${ikasturtea.izena}">Ikasturtea</h2>
+            <p th:text="|Maila: ${egutegia.maila.izena} (${egutegia.maila.kodea})|">Maila</p>
+        </div>
+        <div class="legend">
+            <span><i class="lektibo1"></i>Lektibo 1</span>
+            <span><i class="lektibo2"></i>Lektibo 2</span>
+            <span><i class="lektibo3"></i>Lektibo 3</span>
+            <span><i class="ordezkatua"></i>Ordezkatua</span>
+            <span><i class="ezlektiboa"></i>Ez-lektiboa</span>
+        </div>
+    </div>
 
-<div th:each="entry, stat : ${hilabeteka}"
-     class="hilabete-blokea"
-     th:id="'hilabete-' + ${stat.index}"
-     th:attr="data-hilabete='hilabete-' + ${stat.index}">
-    <h3 th:text="${entry.key}">Hilabetea</h3>
-    <table>
-	    <thead>
-	        <tr>
-	            <th>Al</th><th>Ar</th><th>Az</th><th>Og</th><th>Or</th><th>Lr</th><th>Ig</th>
-	        </tr>
-	    </thead>
-	    <tbody>
-	        <tr th:each="astea : ${entry.value}">
-	            <td th:each="egun : ${astea}"
-				    th:attr="data-eguna=${egun},
-				             data-mota=${egun != null ? motaMap[egun.toString()] : ''},
-				             data-ordezkatua=${egun != null ? ordezkatuaMap[egun.toString()] : ''},
-				             data-oharra=${egun != null ? oharraMap[egun.toString()] : ''}"
-				    th:class="${egun == null ? 'blank' :
-				              ((klaseMap[egun.toString()] != null ? klaseMap[egun.toString()] : '') +
-				               (oharraMap[egun.toString()] != null ? ' oharra' : ''))}"
-				    th:text="${egun != null ? egun.dayOfMonth : ''}"
-				    th:title="${egun != null ?
-				              (deskribapenaMap[egun.toString()] != null ? deskribapenaMap[egun.toString()] : '') : ''}">
-				</td>
-	        </tr>
-	    </tbody>
-	</table>
-</div>
+    <div class="egutegi-grid">
+        <section th:each="entry, stat : ${hilabeteka}"
+                 class="hilabete-card hilabete-blokea"
+                 th:id="'hilabete-' + ${stat.index}"
+                 th:attr="data-hilabete='hilabete-' + ${stat.index}">
+            <h3 th:text="${entry.key}">Hilabetea</h3>
+            <table>
+                <thead>
+                <tr><th>Al</th><th>Ar</th><th>Az</th><th>Og</th><th>Or</th><th>Lr</th><th>Ig</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="astea : ${entry.value}">
+                    <td th:each="egun : ${astea}"
+                        th:attr="data-eguna=${egun},
+                                 data-mota=${egun != null ? motaMap[egun.toString()] : ''},
+                                 data-ordezkatua=${egun != null ? ordezkatuaMap[egun.toString()] : ''},
+                                 data-oharra=${egun != null ? oharraMap[egun.toString()] : ''}"
+                        th:class="${egun == null ? 'blank' :
+                                  ((klaseMap[egun.toString()] != null ? klaseMap[egun.toString()] : '') +
+                                   (oharraMap[egun.toString()] != null ? ' oharra' : ''))}"
+                        th:text="${egun != null ? egun.dayOfMonth : ''}"
+                        th:title="${egun != null ?
+                                  (deskribapenaMap[egun.toString()] != null ? deskribapenaMap[egun.toString()] : '') : ''}">
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </section>
+    </div>
+</main>
 
-
-
-<!-- Popup formularioa -->
 <div id="egunAldaketaForm"
      style="display:none; position:absolute; background:#fff; border:1px solid #ccc; padding:1rem; z-index:1000; border-radius:10px; box-shadow:0 6px 20px rgba(0,0,0,.15);">
   <p id="egunDataText" style="margin:0 0 .5rem 0; font-weight:600;"></p>
@@ -72,8 +103,7 @@
       <label style="font-size:.85rem;">Mota:</label>
       <select name="mota" style="padding:4px 6px;">
         <option th:each="m : ${T(com.koadernoa.app.objektuak.egutegia.entitateak.EgunMota).values()}"
-                th:value="${m}" th:text="${m}">
-        </option>
+                th:value="${m}" th:text="${m}"></option>
       </select>
 
       <label style="font-size:.85rem;">Ordezkatua:</label>
@@ -101,7 +131,6 @@
   </form>
 </div>
 
-
 <script>
 (function(){
   const popup = document.getElementById("egunAldaketaForm");
@@ -114,9 +143,7 @@
   const ordezkatuaSelect = document.querySelector('#egunAldaketaForm select[name="ordezkatua"]');
   const itxiBtn = document.getElementById("popupItxiBtn");
 
-  function itxiPopup(){
-    popup.style.display = "none";
-  }
+  function itxiPopup(){ popup.style.display = "none"; }
 
   function toggleOrdezkatua() {
     const show = (motaSelect.value === 'ORDEZKATUA');
@@ -125,65 +152,37 @@
   }
 
   motaSelect.addEventListener('change', toggleOrdezkatua);
-
-  if (itxiBtn) {
-    itxiBtn.addEventListener("click", function(e){
-      e.preventDefault();
-      itxiPopup();
-    });
-  }
+  if (itxiBtn) itxiBtn.addEventListener("click", function(e){ e.preventDefault(); itxiPopup(); });
 
   function irekituPopup(td, ev){
     const data = td.dataset.eguna;
     if (!data) return;
-
-    const mota = td.dataset.mota || 'LEKTIBOA';
-    const ordez = td.dataset.ordezkatua || '';
-    const oharra = td.dataset.oharra || '';
-
     txt.textContent = "Eguna: " + data;
     input.value = data;
-
-    motaSelect.value = mota;
+    motaSelect.value = td.dataset.mota || 'LEKTIBOA';
     toggleOrdezkatua();
-    ordezkatuaSelect.value = ordez;
-    oharraInput.value = oharra;
+    ordezkatuaSelect.value = td.dataset.ordezkatua || '';
+    oharraInput.value = td.dataset.oharra || '';
     if (anchorInput) {
       const hilabeteBlokea = td.closest('.hilabete-blokea');
       anchorInput.value = hilabeteBlokea ? hilabeteBlokea.dataset.hilabete : '';
     }
-
     popup.style.left = (ev.pageX + 10) + "px";
     popup.style.top  = (ev.pageY + 10) + "px";
     popup.style.display = "block";
   }
 
-  // Klik bakarra kudeatzeko: TD klik -> ireki, bestela (kanpoan) -> itxi
   document.addEventListener('click', function(e){
     const td = e.target.closest('td[data-eguna]');
-
-    // 1) Egun batean klik egin bada: ireki eta KITTO (ez itxi)
-    if (td && td.dataset.eguna && td.dataset.eguna !== 'null') {
-      irekituPopup(td, e);
-      return;
-    }
-
-    // 2) Popup kanpoan klik egin bada: itxi
-    if (popup.style.display === "block" && !popup.contains(e.target)) {
-      itxiPopup();
-    }
+    if (td && td.dataset.eguna && td.dataset.eguna !== 'null') { irekituPopup(td, e); return; }
+    if (popup.style.display === "block" && !popup.contains(e.target)) itxiPopup();
   });
 
-  // ESC -> itxi (aukerakoa baina erabilgarria)
   document.addEventListener('keydown', function(e){
     if (e.key === "Escape" && popup.style.display === "block") itxiPopup();
   });
-
 })();
 </script>
-
-	
-
-
+<script th:src="@{/js/kudeatzaile-nav.js}"></script>
 </body>
 </html>
