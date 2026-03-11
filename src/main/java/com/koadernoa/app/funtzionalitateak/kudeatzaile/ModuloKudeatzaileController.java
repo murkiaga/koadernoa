@@ -5,6 +5,8 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -18,8 +20,12 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.koadernoa.app.objektuak.egutegia.repository.IkasturteaRepository;
 import com.koadernoa.app.objektuak.egutegia.repository.MailaRepository;
+import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
+import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
+import com.koadernoa.app.objektuak.logak.entitateak.LogMota;
+import com.koadernoa.app.objektuak.logak.service.LogService;
 import com.koadernoa.app.objektuak.modulua.entitateak.Ikaslea;
 import com.koadernoa.app.objektuak.modulua.entitateak.Matrikula;
 import com.koadernoa.app.objektuak.modulua.entitateak.MatrikulaEgoera;
@@ -45,6 +51,8 @@ public class ModuloKudeatzaileController {
     private final IkasleaRepository ikasleaRepository;
     private final KoadernoaRepository koadernoaRepository;
     private final MatrikulaRepository matrikulaRepository;
+    private final IrakasleaRepository irakasleaRepository;
+    private final LogService logService;
 
     @ModelAttribute("ikasturteAktiboa")
     public com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea ikasturteAktiboa() {
@@ -227,10 +235,19 @@ public class ModuloKudeatzaileController {
         Ikaslea ikaslea = ikasleaOpt.get();
         Long ikasturteaId = koadernoa.getEgutegia().getIkasturtea().getId();
         String eeiKodea = koadernoa.getModuloa().getEeiKodea();
+        Irakaslea eragilea = unekoEragilea();
 
         if (eeiKodea != null && !eeiKodea.isBlank()) {
             List<Matrikula> desmatrikulatzekoak = matrikulaRepository
                     .findByIkasleaAndIkasturteaAndEeiKodeDifferentKoaderno(ikasleaId, ikasturteaId, eeiKodea, koadernoa.getId());
+            for (Matrikula zaharra : desmatrikulatzekoak) {
+                String deskribapena = "Ikaslea desmatrikulatuta (eskuz): " + ikaslea.getIzenOsoa()
+                        + " | HNA=" + (ikaslea.getHna() != null ? ikaslea.getHna() : "-")
+                        + " | koadernoa=" + (zaharra.getKoadernoa() != null ? zaharra.getKoadernoa().getIzena() : "-");
+                logService.gorde(LogMota.DESMATRIKULATZEA, eragilea, "Koadernoa",
+                        zaharra.getKoadernoa() != null ? zaharra.getKoadernoa().getId() : null,
+                        deskribapena);
+            }
             matrikulaRepository.deleteAll(desmatrikulatzekoak);
         }
 
@@ -240,6 +257,11 @@ public class ModuloKudeatzaileController {
             m.setIkaslea(ikaslea);
             m.setEgoera(MatrikulaEgoera.MATRIKULATUA);
             matrikulaRepository.save(m);
+
+            String deskribapena = "Ikaslea matrikulatuta (eskuz): " + ikaslea.getIzenOsoa()
+                    + " | HNA=" + (ikaslea.getHna() != null ? ikaslea.getHna() : "-")
+                    + " | koadernoa=" + koadernoa.getIzena();
+            logService.gorde(LogMota.MATRIKULATZEA, eragilea, "Koadernoa", koadernoa.getId(), deskribapena);
         }
 
         return "redirect:/kudeatzaile/moduloa/" + moduloId + "/matrikulak";
@@ -270,5 +292,16 @@ public class ModuloKudeatzaileController {
     public String moduloaEzabatu(@PathVariable("id") Long id) {
         moduloaService.delete(id);
         return "redirect:/kudeatzaile/moduloa";
+    }
+
+    private Irakaslea unekoEragilea() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null) {
+            return null;
+        }
+        String erabiltzailea = auth.getName();
+        return irakasleaRepository.findByEmailaIgnoreCase(erabiltzailea)
+                .or(() -> irakasleaRepository.findByIzenaIgnoreCase(erabiltzailea))
+                .orElse(null);
     }
 }

@@ -32,7 +32,7 @@
       </thead>
       <tbody>
       <tr th:each="m : ${matrikulak}">
-        <td th:text="${m.ikaslea.izenOsoa}">Abizena, Izena</td>
+        <td><a th:href="@{/kudeatzaile/ikaslea/{id}(id=${m.ikaslea.id})}" th:text="${m.ikaslea.izenOsoa}">Abizena, Izena</a></td>
         <td th:text="${m.ikaslea.hna}">X000</td>
         <td>
           <select th:attr="data-matrikula-id=${m.id}" class="egoera-select">

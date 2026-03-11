@@ -13,6 +13,12 @@
 .k-nav .k-desktop a.active,
 .k-nav .k-desktop a:hover{ background:#2b455a; }
 
+.k-nav .k-desktop .logout-btn{
+  color:#fff; background:transparent; border:0; cursor:pointer;
+  padding:.45rem .6rem; border-radius:.5rem; white-space:nowrap; display:inline-block;
+}
+.k-nav .k-desktop .logout-btn:hover{ background:#2b455a; }
+
 .k-nav .k-hamb{ display:none !important; }          /* desktop-ean ez */
 .k-nav .k-panel{ display:none !important; }         /* panel mugikorra ezkutuan (beti) */
 
@@ -63,4 +69,10 @@
     color:#111827; text-decoration:none; line-height:1.25;
   }
   .k-nav .k-list a.active{ border-color:#2563eb; background:#eff6ff; }
+
+  .k-nav .k-list .logout-btn{
+    display:block; width:100%; text-align:left;
+    padding:.7rem .9rem; border:1px solid #e5e7eb; border-radius:.5rem; background:#fff;
+    color:#111827; line-height:1.25; cursor:pointer;
+  }
 }

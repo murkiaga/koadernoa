@@ -110,19 +110,19 @@
 		  <tr>
 		    <th>Ebaluazioa</th>
 		    <th>
-		      UD-ak
+		      UD-ak / Erronkak
 		      <span class="sub">emanda / aurreikusita</span>
 		    </th>
 		    <th>
-		      Orduak
+		      Saioak
 		      <span class="sub">emanda / aurreikusita</span>
 		    </th>
 		    <th>
-		      Aprobatuak
+		      Gaindituak
 		      <span class="sub">gainditu / ebaluatu</span>
 		    </th>
 		    <th>
-		      Hutsegite orduak
+		      Ikasleen bertaratzea
 		      <span class="sub">(HUTS + JUSTIFIKATUA)</span>
 		    </th>
 		    <th>Ekintzak</th>
@@ -202,7 +202,7 @@
 		      </div>
 		    </td>
 		
-		    <!-- Aprobatuak: gainditu / ebaluatu + %ak -->
+		    <!-- Gaindituak: gainditu / ebaluatu + %ak -->
 		    <td>
 		      <div th:text="|${e.aprobatuak} / ${e.ebaluatuak}|">
 		        0 / 0
@@ -227,7 +227,7 @@
 		      </div>
 		    </td>
 		
-		    <!-- Hutsegite orduak + bertaratze % -->
+		    <!-- Ikasleen bertaratzea + bertaratze % -->
 		    <td>
 		      <div th:text="${e.hutsegiteOrduak}">
 		        0
