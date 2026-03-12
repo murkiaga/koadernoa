@@ -46,7 +46,15 @@
 			            <td th:text="${moduloa.id}">1</td>
 			            <td th:text="${moduloa.eeiKodea}">0225</td>
 			            <td th:text="${moduloa.kodea}">ADAT</td>
-			            <td><a th:href="@{/kudeatzaile/moduloa/{id}/matrikulak(id=${moduloa.id})}" th:text="${moduloa.izena}">Datuen Atzipena</a></td>
+			            <td>
+                            <a th:if="${#lists.contains(moduloKlikagarriak, moduloa.id)}"
+                               th:href="@{/kudeatzaile/moduloa/{id}/matrikulak(id=${moduloa.id})}"
+                               th:text="${moduloa.izena}">Datuen Atzipena</a>
+                            <span th:if="${!#lists.contains(moduloKlikagarriak, moduloa.id)}"
+                                  th:text="${moduloa.izena}"
+                                  style="color:#6b7280;cursor:not-allowed;"
+                                  title="Ez dago ikasturte aktiboko koadernoarik modulo honetan">Datuen Atzipena</span>
+                        </td>
                         <td th:text="${moduloa.orduak}">165</td>
 			            <td th:text="${moduloa.maila.getKodea}">LEHENENGOA</td>
 			            <td th:text="${moduloa.taldea.izena}">2AM3</td>

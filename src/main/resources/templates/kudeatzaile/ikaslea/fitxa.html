@@ -13,6 +13,11 @@
 <main class="page">
   <h1>Ikaslearen fitxa</h1>
 
+  <div th:if="${successMessage}" class="alert-success" style="margin-bottom:1rem;padding:.65rem .8rem;border-radius:.5rem;background:#ecfdf5;color:#065f46;"
+       th:text="${successMessage}">Ondo</div>
+  <div th:if="${errorMessage}" class="alert-error" style="margin-bottom:1rem;padding:.65rem .8rem;border-radius:.5rem;background:#fef2f2;color:#991b1b;"
+       th:text="${errorMessage}">Errorea</div>
+
   <div class="table-wrap" style="margin-bottom:1rem;">
     <table>
       <tbody>
@@ -21,7 +26,29 @@
       <tr><th>Abizena 2</th><td th:text="${ikaslea.abizena2 != null ? ikaslea.abizena2 : '-'}">-</td></tr>
       <tr><th>HNA (DIE)</th><td th:text="${ikaslea.hna != null ? ikaslea.hna : '-'}">-</td></tr>
       <tr><th>NAN (DNI)</th><td th:text="${ikaslea.nan != null ? ikaslea.nan : '-'}">-</td></tr>
-      <tr><th>Taldea</th><td th:text="${ikaslea.taldea != null ? ikaslea.taldea.izena : '-'}">-</td></tr>
+      <tr>
+        <th>Taldea</th>
+        <td>
+          <div style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;">
+            <span th:text="${ikaslea.taldea != null ? ikaslea.taldea.izena : '-'}">-</span>
+            <form th:action="@{/kudeatzaile/ikaslea/{id}/taldea(id=${ikaslea.id})}" method="post"
+                  onsubmit="return confirm('Ziur zaude taldea aldatu nahi diozula? Aurtengo matrikulei eragingo die.');"
+                  style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+              <input id="taldeaBilatu" type="text" placeholder="Taldea bilatu..." oninput="iragaziTaldeak(this.value)"
+                     style="min-width:180px;">
+              <select id="taldeaId" name="taldeaId" required style="min-width:180px;max-width:320px;">
+                <option value="" disabled selected>Hautatu taldea</option>
+                <option th:each="t : ${taldeak}"
+                        th:value="${t.id}"
+                        th:text="${t.izena}"
+                        th:selected="${ikaslea.taldea != null and t.id == ikaslea.taldea.id}">
+                </option>
+              </select>
+              <button type="submit" class="btn btn-primary">Taldea aldatu</button>
+            </form>
+          </div>
+        </td>
+      </tr>
       </tbody>
     </table>
   </div>
@@ -67,5 +94,16 @@
 </main>
 
 <script th:src="@{/js/kudeatzaile-nav.js}"></script>
+<script>
+  function iragaziTaldeak(testua) {
+    const select = document.getElementById('taldeaId');
+    const q = (testua || '').toLocaleLowerCase();
+    for (const option of select.options) {
+      if (!option.value) continue;
+      const ikusgai = option.text.toLocaleLowerCase().includes(q);
+      option.hidden = !ikusgai;
+    }
+  }
+</script>
 </body>
 </html>
