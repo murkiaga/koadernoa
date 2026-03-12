@@ -44,21 +44,21 @@ public class ZikloEtaTaldeSeedConfig {
             // 3) ZIKLOAK (INFORMATIKA familiakoak)
             Zikloa zikloSmr = ensureZikloa(
                     zikloRepo,
-                    "MIKROINFORMATIKA-SISTEMETAKO ETA SAREETAKO TEKNIKARIA",
+                    "MIKROINFORMATIKA-SISTEMAK ETA SAREAK",
                     ZikloMaila.ErdiMaila,
                     informatika
             );
 
             Zikloa zikloDam = ensureZikloa(
                     zikloRepo,
-                    "PLATAFORMA ANITZEKO APLIKAZIOAK GARATZEKO GOI-MAILAKO TEKNIKARIA",
+                    "PLATAFORMA ANITZEKO APLIKAZIOEN GARAPENA",
                     ZikloMaila.GoiMaila,
                     informatika
             );
 
             Zikloa zikloDaw = ensureZikloa(
                     zikloRepo,
-                    "WEB APLIKAZIOEN GARAPENEKO GOI-MAILAKO TEKNIKARIA",
+                    "WEB APLIKAZIOEN GARAPENA",
                     ZikloMaila.GoiMaila,
                     informatika
             );
