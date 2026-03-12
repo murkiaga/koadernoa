@@ -18,7 +18,6 @@ import com.koadernoa.app.objektuak.modulua.entitateak.Matrikula;
 import com.koadernoa.app.objektuak.modulua.repository.IkasleaRepository;
 import com.koadernoa.app.objektuak.modulua.repository.MatrikulaRepository;
 import com.koadernoa.app.objektuak.modulua.service.IkasleaService;
-import com.koadernoa.app.objektuak.zikloak.repository.TaldeaRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -30,7 +29,6 @@ public class IkasleaKudeatzaileController {
     private final IkasleaRepository ikasleaRepository;
     private final MatrikulaRepository matrikulaRepository;
     private final IkasturteaRepository ikasturteaRepository;
-    private final TaldeaRepository taldeaRepository;
     private final IkasleaService ikasleaService;
 
     @GetMapping("/{id}")
@@ -53,7 +51,6 @@ public class IkasleaKudeatzaileController {
         model.addAttribute("ikasturteak", ikasturteak);
         model.addAttribute("hautatutakoIkasturteaId", hautatutakoIkasturteaId);
         model.addAttribute("matrikulak", matrikulak);
-        model.addAttribute("taldeak", taldeaRepository.findAllByOrderByIzenaAsc());
 
         return "kudeatzaile/ikaslea/fitxa";
     }
@@ -64,9 +61,12 @@ public class IkasleaKudeatzaileController {
                                      RedirectAttributes redirectAttributes) {
         try {
             var emaitza = ikasleaService.aldatuIkaslearenTaldea(id, taldeaId);
-            redirectAttributes.addFlashAttribute("successMessage",
-                    "Taldea eguneratuta. " + emaitza.kendutakoMatrikulak() + " matrikula kendu eta "
-                            + emaitza.sortutakoMatrikulak() + " matrikula sortu dira ikasturte aktiboan.");
+            if (emaitza.aldaketaEginDa()) {
+                redirectAttributes.addFlashAttribute("successMessage",
+                        "Ikaslea " + emaitza.aurrekoTaldea() + " taldetik " + emaitza.taldeBerria() + " taldera pasatu da.");
+            } else {
+                redirectAttributes.addFlashAttribute("successMessage", "Ikaslea dagoeneko hautatutako taldean dago.");
+            }
         } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }

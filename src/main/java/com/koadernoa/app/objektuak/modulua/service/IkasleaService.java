@@ -29,7 +29,7 @@ public class IkasleaService {
     private final IkasturteaRepository ikasturteaRepository;
 
     public static record ImportResult(int sortuak, int baztertuak, String ohartarazpena) {}
-    public static record TaldeAldaketaEmaitza(int kendutakoMatrikulak, int sortutakoMatrikulak) {}
+    public static record TaldeAldaketaEmaitza(boolean aldaketaEginDa, String aurrekoTaldea, String taldeBerria, int kendutakoMatrikulak, int sortutakoMatrikulak) {}
 
     /**
      * KOADERNO BAKARRA sinkronizatu:
@@ -107,8 +107,9 @@ public class IkasleaService {
                 .orElseThrow(() -> new IllegalArgumentException("Talde berria ez da aurkitu: " + taldeaBerriaId));
 
         Long unekoTaldeaId = ikaslea.getTaldea() != null ? ikaslea.getTaldea().getId() : null;
+        String aurrekoTaldeIzena = ikaslea.getTaldea() != null ? ikaslea.getTaldea().getIzena() : "-";
         if (unekoTaldeaId != null && unekoTaldeaId.equals(taldeaBerriaId)) {
-            return new TaldeAldaketaEmaitza(0, 0);
+            return new TaldeAldaketaEmaitza(false, aurrekoTaldeIzena, taldeaBerria.getIzena(), 0, 0);
         }
 
         ikasturteaRepository.findByAktiboaTrue()
@@ -143,6 +144,6 @@ public class IkasleaService {
         ikaslea.setTaldea(taldeaBerria);
         ikasleaRepo.save(ikaslea);
 
-        return new TaldeAldaketaEmaitza(kenduak, sortuak);
+        return new TaldeAldaketaEmaitza(true, aurrekoTaldeIzena, taldeaBerria.getIzena(), kenduak, sortuak);
     }
 }
