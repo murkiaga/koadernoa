@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.koadernoa.app.objektuak.egutegia.repository.IkasturteaRepository;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.modulua.entitateak.Ikaslea;
@@ -11,6 +12,8 @@ import com.koadernoa.app.objektuak.modulua.entitateak.Matrikula;
 import com.koadernoa.app.objektuak.modulua.entitateak.MatrikulaEgoera;
 import com.koadernoa.app.objektuak.modulua.repository.IkasleaRepository;
 import com.koadernoa.app.objektuak.modulua.repository.MatrikulaRepository;
+import com.koadernoa.app.objektuak.zikloak.entitateak.Taldea;
+import com.koadernoa.app.objektuak.zikloak.repository.TaldeaRepository;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -22,8 +25,11 @@ public class IkasleaService {
     private final KoadernoaRepository koadernoaRepo;
     private final IkasleaRepository ikasleaRepo;
     private final MatrikulaRepository matrikulaRepo;
+    private final TaldeaRepository taldeaRepository;
+    private final IkasturteaRepository ikasturteaRepository;
 
     public static record ImportResult(int sortuak, int baztertuak, String ohartarazpena) {}
+    public static record TaldeAldaketaEmaitza(boolean aldaketaEginDa, String aurrekoTaldea, String taldeBerria, int kendutakoMatrikulak, int sortutakoMatrikulak) {}
 
     /**
      * KOADERNO BAKARRA sinkronizatu:
@@ -93,5 +99,51 @@ public class IkasleaService {
         return new ImportResult(sortuakGuztira, 0, null);
     }
 
-}
+    @Transactional
+    public TaldeAldaketaEmaitza aldatuIkaslearenTaldea(Long ikasleaId, Long taldeaBerriaId) {
+        Ikaslea ikaslea = ikasleaRepo.findById(ikasleaId)
+                .orElseThrow(() -> new IllegalArgumentException("Ikaslea ez da aurkitu: " + ikasleaId));
+        Taldea taldeaBerria = taldeaRepository.findById(taldeaBerriaId)
+                .orElseThrow(() -> new IllegalArgumentException("Talde berria ez da aurkitu: " + taldeaBerriaId));
 
+        Long unekoTaldeaId = ikaslea.getTaldea() != null ? ikaslea.getTaldea().getId() : null;
+        String aurrekoTaldeIzena = ikaslea.getTaldea() != null ? ikaslea.getTaldea().getIzena() : "-";
+        if (unekoTaldeaId != null && unekoTaldeaId.equals(taldeaBerriaId)) {
+            return new TaldeAldaketaEmaitza(false, aurrekoTaldeIzena, taldeaBerria.getIzena(), 0, 0);
+        }
+
+        ikasturteaRepository.findByAktiboaTrue()
+                .orElseThrow(() -> new IllegalStateException("Ez dago ikasturte aktiborik."));
+
+        List<Long> zaharrekoKoadernoak = unekoTaldeaId == null
+                ? List.of()
+                : koadernoaRepo.findActiveYearKoadernoIdsByTaldea(unekoTaldeaId);
+        List<Long> berrikoKoadernoak = koadernoaRepo.findActiveYearKoadernoIdsByTaldea(taldeaBerriaId);
+
+        int kenduak = 0;
+        if (!zaharrekoKoadernoak.isEmpty()) {
+            List<Matrikula> kenduBeharrak = matrikulaRepo.findByIkasleaIdAndKoadernoaIdIn(ikasleaId, zaharrekoKoadernoak);
+            kenduak = kenduBeharrak.size();
+            if (!kenduBeharrak.isEmpty()) {
+                matrikulaRepo.deleteAll(kenduBeharrak);
+            }
+        }
+
+        int sortuak = 0;
+        for (Koadernoa koadernoa : koadernoaRepo.findAllById(berrikoKoadernoak)) {
+            if (!matrikulaRepo.existsByIkasleaIdAndKoadernoaId(ikasleaId, koadernoa.getId())) {
+                Matrikula matrikula = new Matrikula();
+                matrikula.setIkaslea(ikaslea);
+                matrikula.setKoadernoa(koadernoa);
+                matrikula.setEgoera(MatrikulaEgoera.MATRIKULATUA);
+                matrikulaRepo.save(matrikula);
+                sortuak++;
+            }
+        }
+
+        ikaslea.setTaldea(taldeaBerria);
+        ikasleaRepo.save(ikaslea);
+
+        return new TaldeAldaketaEmaitza(true, aurrekoTaldeIzena, taldeaBerria.getIzena(), kenduak, sortuak);
+    }
+}

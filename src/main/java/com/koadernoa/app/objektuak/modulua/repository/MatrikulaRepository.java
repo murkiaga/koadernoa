@@ -53,6 +53,9 @@ public interface MatrikulaRepository extends JpaRepository<Matrikula, Long> {
     
 	List<Matrikula> findByKoadernoa_Id(Long koadernoId);
 
+
+	List<Matrikula> findByIkasleaIdAndKoadernoaIdIn(Long ikasleaId, List<Long> koadernoIds);
+
 	@Query("""
 	    select m from Matrikula m
 	    where m.ikaslea.id = :ikasleaId

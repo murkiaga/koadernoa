@@ -73,6 +73,7 @@ public class ModuloKudeatzaileController {
         model.addAttribute("taldeaId", taldeaId);
         model.addAttribute("moduluak", moduluak);
         model.addAttribute("taldeak", taldeaService.getAll());
+        model.addAttribute("moduloKlikagarriak", koadernoaRepository.findModuloIdsInAktiboIkasturtea());
 
         return "kudeatzaile/moduloak/index";
     }

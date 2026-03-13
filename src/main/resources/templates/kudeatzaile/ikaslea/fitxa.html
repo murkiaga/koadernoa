@@ -6,12 +6,30 @@
   <title>Ikaslearen fitxa</title>
   <link rel="stylesheet" th:href="@{/css/navbar.css}">
   <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
+  <style>
+    .talde-row{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;}
+    .talde-badge{background:#eef2ff;color:#3730a3;padding:.25rem .6rem;border-radius:999px;font-weight:600;}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;z-index:50;}
+    .talde-modal-card{background:#fff;width:min(680px,92vw);border-radius:.75rem;padding:1rem;box-shadow:0 24px 60px rgba(2,6,23,.25);}
+    .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;}
+    .modal-close{border:none;background:transparent;font-size:1.3rem;cursor:pointer;}
+    .autocomplete-list{max-height:280px;overflow:auto;border:1px solid #d1d5db;border-radius:.5rem;margin-top:.5rem;}
+    .autocomplete-item{padding:.6rem .7rem;cursor:pointer;border-bottom:1px solid #f1f5f9;}
+    .autocomplete-item:last-child{border-bottom:none;}
+    .autocomplete-item:hover,.autocomplete-item.active{background:#eef2ff;}
+    .autocomplete-meta{color:#475569;font-size:.88rem;}
+  </style>
 </head>
 <body>
 <div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
 
 <main class="page">
   <h1>Ikaslearen fitxa</h1>
+
+  <div th:if="${successMessage}" class="alert-success" style="margin-bottom:1rem;padding:.65rem .8rem;border-radius:.5rem;background:#ecfdf5;color:#065f46;"
+       th:text="${successMessage}">Ondo</div>
+  <div th:if="${errorMessage}" class="alert-error" style="margin-bottom:1rem;padding:.65rem .8rem;border-radius:.5rem;background:#fef2f2;color:#991b1b;"
+       th:text="${errorMessage}">Errorea</div>
 
   <div class="table-wrap" style="margin-bottom:1rem;">
     <table>
@@ -21,7 +39,15 @@
       <tr><th>Abizena 2</th><td th:text="${ikaslea.abizena2 != null ? ikaslea.abizena2 : '-'}">-</td></tr>
       <tr><th>HNA (DIE)</th><td th:text="${ikaslea.hna != null ? ikaslea.hna : '-'}">-</td></tr>
       <tr><th>NAN (DNI)</th><td th:text="${ikaslea.nan != null ? ikaslea.nan : '-'}">-</td></tr>
-      <tr><th>Taldea</th><td th:text="${ikaslea.taldea != null ? ikaslea.taldea.izena : '-'}">-</td></tr>
+      <tr>
+        <th>Taldea</th>
+        <td>
+          <div class="talde-row">
+            <span class="talde-badge" th:text="${ikaslea.taldea != null ? ikaslea.taldea.izena : '-'}">-</span>
+            <button type="button" class="btn btn-primary" id="openTaldeModal">Aldatu taldea</button>
+          </div>
+        </td>
+      </tr>
       </tbody>
     </table>
   </div>
@@ -66,6 +92,156 @@
   <a class="btn btn-secondary" th:if="${ikaslea.taldea == null}" th:href="@{/kudeatzaile/moduloa}">Itzuli</a>
 </main>
 
+<div id="taldeModalBackdrop" class="modal-backdrop" aria-hidden="true">
+  <div class="talde-modal-card" role="dialog" aria-modal="true" aria-labelledby="taldeModalTitle">
+    <div class="modal-header">
+      <h3 id="taldeModalTitle" style="margin:0;">Taldea aldatu</h3>
+      <button type="button" class="modal-close" id="closeTaldeModal" aria-label="Itxi">×</button>
+    </div>
+
+    <form th:action="@{/kudeatzaile/ikaslea/{id}/taldea(id=${ikaslea.id})}" method="post" id="taldeaAldatuForm">
+      <input type="hidden" name="taldeaId" id="selectedTaldeaId" required>
+
+      <label for="taldeBilaketaInput" style="display:block;font-weight:600;">Bilatu taldea kodez, zikloz edo mailaz...</label>
+      <input id="taldeBilaketaInput" type="text" autocomplete="off" placeholder="Bilatu taldea kodez, zikloz edo mailaz..." style="width:100%;margin-top:.4rem;">
+      <p id="bilaketaInfo" style="margin:.4rem 0;color:#64748b;font-size:.9rem;">Idatzi gutxienez 2 karaktere.</p>
+
+      <div id="autocompleteList" class="autocomplete-list" hidden></div>
+
+      <div style="margin-top:.9rem;display:flex;justify-content:flex-end;gap:.5rem;">
+        <button type="button" class="btn btn-secondary" id="cancelTaldeModal">Utzi</button>
+        <button type="submit" class="btn btn-primary" id="confirmTaldeAldatuBtn" disabled>Berretsi aldaketa</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script th:src="@{/js/kudeatzaile-nav.js}"></script>
+<script>
+(() => {
+  const backdrop = document.getElementById('taldeModalBackdrop');
+  const openBtn = document.getElementById('openTaldeModal');
+  const closeBtn = document.getElementById('closeTaldeModal');
+  const cancelBtn = document.getElementById('cancelTaldeModal');
+  const input = document.getElementById('taldeBilaketaInput');
+  const list = document.getElementById('autocompleteList');
+  const info = document.getElementById('bilaketaInfo');
+  const hiddenId = document.getElementById('selectedTaldeaId');
+  const confirmBtn = document.getElementById('confirmTaldeAldatuBtn');
+  const form = document.getElementById('taldeaAldatuForm');
+
+  let debounceTimer;
+  let selectedLabel = null;
+
+  function openModal() {
+    backdrop.style.display = 'flex';
+    backdrop.setAttribute('aria-hidden', 'false');
+    input.value = '';
+    hiddenId.value = '';
+    selectedLabel = null;
+    confirmBtn.disabled = true;
+    info.textContent = 'Idatzi gutxienez 2 karaktere.';
+    list.hidden = true;
+    list.innerHTML = '';
+    setTimeout(() => input.focus(), 0);
+  }
+
+  function closeModal() {
+    backdrop.style.display = 'none';
+    backdrop.setAttribute('aria-hidden', 'true');
+  }
+
+  function renderResults(items) {
+    list.innerHTML = '';
+    if (!items.length) {
+      list.hidden = true;
+      info.textContent = 'Ez da talderik aurkitu.';
+      return;
+    }
+
+    list.hidden = false;
+    info.textContent = 'Aukeratu talde bat emaitzetatik.';
+
+    items.forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'autocomplete-item';
+      row.dataset.id = item.id;
+      row.dataset.label = item.kodea;
+      row.innerHTML = `
+        <div><strong>${item.kodea}</strong></div>
+        <div class="autocomplete-meta">${item.kodea} — ${item.zikloa} — ${item.maila} — ${item.txanda}</div>
+      `;
+      row.addEventListener('click', () => {
+        list.querySelectorAll('.autocomplete-item').forEach(x => x.classList.remove('active'));
+        row.classList.add('active');
+        hiddenId.value = item.id;
+        selectedLabel = item.kodea;
+        confirmBtn.disabled = false;
+        info.textContent = `Hautatuta: ${item.kodea}. Sakatu "Berretsi aldaketa".`;
+      });
+      list.appendChild(row);
+    });
+  }
+
+  async function searchTaldeak(term) {
+    const res = await fetch(`/kudeatzaile/api/taldeak/bilatu?q=${encodeURIComponent(term)}&limit=10`, {
+      headers: { 'Accept': 'application/json' }
+    });
+    if (!res.ok) throw new Error('Bilaketak huts egin du');
+    return res.json();
+  }
+
+  input.addEventListener('input', () => {
+    const term = input.value.trim();
+    hiddenId.value = '';
+    selectedLabel = null;
+    confirmBtn.disabled = true;
+
+    if (term.length < 2) {
+      info.textContent = 'Idatzi gutxienez 2 karaktere.';
+      list.hidden = true;
+      list.innerHTML = '';
+      return;
+    }
+
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(async () => {
+      info.textContent = 'Bilatzen...';
+      try {
+        const items = await searchTaldeak(term);
+        renderResults(items);
+      } catch (e) {
+        list.hidden = true;
+        list.innerHTML = '';
+        info.textContent = 'Errorea bilaketan. Saiatu berriro.';
+      }
+    }, 250);
+  });
+
+  form.addEventListener('submit', (e) => {
+    if (!hiddenId.value || !selectedLabel) {
+      e.preventDefault();
+      info.textContent = 'Lehenik talde bat hautatu behar duzu.';
+      return;
+    }
+    const ok = confirm('Ziur zaude taldea aldatu nahi diozula? Aurtengo matrikulei eragingo die.');
+    if (!ok) {
+      e.preventDefault();
+    }
+  });
+
+  openBtn?.addEventListener('click', openModal);
+  closeBtn?.addEventListener('click', closeModal);
+  cancelBtn?.addEventListener('click', closeModal);
+  backdrop?.addEventListener('click', (e) => {
+    if (e.target === backdrop) closeModal();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && backdrop.getAttribute('aria-hidden') === 'false') {
+      closeModal();
+    }
+  });
+})();
+</script>
 </body>
 </html>

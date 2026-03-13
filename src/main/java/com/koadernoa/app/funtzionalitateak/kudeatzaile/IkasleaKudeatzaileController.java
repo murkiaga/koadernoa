@@ -6,8 +6,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
 import com.koadernoa.app.objektuak.egutegia.repository.IkasturteaRepository;
@@ -15,6 +17,7 @@ import com.koadernoa.app.objektuak.modulua.entitateak.Ikaslea;
 import com.koadernoa.app.objektuak.modulua.entitateak.Matrikula;
 import com.koadernoa.app.objektuak.modulua.repository.IkasleaRepository;
 import com.koadernoa.app.objektuak.modulua.repository.MatrikulaRepository;
+import com.koadernoa.app.objektuak.modulua.service.IkasleaService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -26,6 +29,7 @@ public class IkasleaKudeatzaileController {
     private final IkasleaRepository ikasleaRepository;
     private final MatrikulaRepository matrikulaRepository;
     private final IkasturteaRepository ikasturteaRepository;
+    private final IkasleaService ikasleaService;
 
     @GetMapping("/{id}")
     public String ikasleFitxa(@PathVariable Long id,
@@ -49,5 +53,23 @@ public class IkasleaKudeatzaileController {
         model.addAttribute("matrikulak", matrikulak);
 
         return "kudeatzaile/ikaslea/fitxa";
+    }
+
+    @PostMapping("/{id}/taldea")
+    public String aldatuIkasleTaldea(@PathVariable Long id,
+                                     @RequestParam("taldeaId") Long taldeaId,
+                                     RedirectAttributes redirectAttributes) {
+        try {
+            var emaitza = ikasleaService.aldatuIkaslearenTaldea(id, taldeaId);
+            if (emaitza.aldaketaEginDa()) {
+                redirectAttributes.addFlashAttribute("successMessage",
+                        "Ikaslea " + emaitza.aurrekoTaldea() + " taldetik " + emaitza.taldeBerria() + " taldera pasatu da.");
+            } else {
+                redirectAttributes.addFlashAttribute("successMessage", "Ikaslea dagoeneko hautatutako taldean dago.");
+            }
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/kudeatzaile/ikaslea/" + id;
     }
 }
