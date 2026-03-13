@@ -10,7 +10,7 @@
     .talde-row{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;}
     .talde-badge{background:#eef2ff;color:#3730a3;padding:.25rem .6rem;border-radius:999px;font-weight:600;}
     .modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;z-index:50;}
-    .modal{background:#fff;width:min(680px,92vw);border-radius:.75rem;padding:1rem;box-shadow:0 24px 60px rgba(2,6,23,.25);}
+    .talde-modal-card{background:#fff;width:min(680px,92vw);border-radius:.75rem;padding:1rem;box-shadow:0 24px 60px rgba(2,6,23,.25);}
     .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;}
     .modal-close{border:none;background:transparent;font-size:1.3rem;cursor:pointer;}
     .autocomplete-list{max-height:280px;overflow:auto;border:1px solid #d1d5db;border-radius:.5rem;margin-top:.5rem;}
@@ -93,7 +93,7 @@
 </main>
 
 <div id="taldeModalBackdrop" class="modal-backdrop" aria-hidden="true">
-  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="taldeModalTitle">
+  <div class="talde-modal-card" role="dialog" aria-modal="true" aria-labelledby="taldeModalTitle">
     <div class="modal-header">
       <h3 id="taldeModalTitle" style="margin:0;">Taldea aldatu</h3>
       <button type="button" class="modal-close" id="closeTaldeModal" aria-label="Itxi">×</button>
