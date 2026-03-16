@@ -12,20 +12,35 @@
 	<main class="page">
 		<h1>Moduluen Zerrenda</h1>
 		
-		<form class="form" th:action="@{/kudeatzaile/moduloa}" method="get">
-		    <label>Taldea:</label>
-		    <select name="taldeaId" onchange="this.form.submit()">
-		        <option value="">GUZTIAK</option>
-		        <option th:each="t : ${taldeak}"
-		                th:value="${t.id}"
-		                th:text="${t.izena}"
-		                th:selected="${t.id == taldeaId}">
-		        </option>
-		    </select>
-		</form>
-		
-		
-		<a class="btn btn-primary" th:href="@{/kudeatzaile/moduloa/sortu(taldeaId=${param.taldeaId})}">Sortu Modulo Berria</a>
+		<div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:nowrap; margin-bottom:1rem;">
+			<form class="form" th:action="@{/kudeatzaile/moduloa}" method="get" style="display:flex; align-items:center; gap:.75rem; margin:0; flex-wrap:nowrap; max-width:none;">
+			    <input type="hidden" name="page" value="0">
+			    <div style="display:flex; align-items:center; gap:.4rem; white-space:nowrap;">
+			      <label style="margin:0;">Taldea:</label>
+			      <select name="taldeaId" style="width:auto; min-width:180px; max-width:220px;" onchange="this.form.submit()">
+			        <option value="">GUZTIAK</option>
+			        <option th:each="t : ${taldeak}"
+			                th:value="${t.id}"
+			                th:text="${t.izena}"
+			                th:selected="${t.id == taldeaId}">
+			        </option>
+			      </select>
+			    </div>
+
+			    <div style="display:flex; align-items:center; gap:.4rem; white-space:nowrap;">
+			      <label style="margin:0;">Orri bakoitzean:</label>
+			      <select name="size" style="width:auto; min-width:130px;" onchange="this.form.submit()">
+			        <option th:each="s : ${pageSizes}"
+			                th:value="${s}"
+			                th:text="${s}"
+			                th:selected="${s == pageSize}">
+			        </option>
+			      </select>
+			    </div>
+			</form>
+
+			<a class="btn btn-primary" th:href="@{/kudeatzaile/moduloa/sortu(taldeaId=${param.taldeaId})}">Sortu Modulo Berria</a>
+		</div>
 		
 		<div class="table-wrap">
 			<table>
@@ -65,6 +80,16 @@
 			        </tr>
 			    </tbody>
 			</table>
+		</div>
+
+		<div style="margin: 1rem 0; display:flex; align-items:center; gap:.75rem;" th:if="${totalPages > 0}">
+		  <a class="btn btn-secondary"
+		     th:if="${currentPage > 0}"
+		     th:href="@{/kudeatzaile/moduloa(taldeaId=${taldeaId},page=${currentPage - 1},size=${pageSize})}">Aurrekoa</a>
+		  <span th:text="|Orria ${currentPage + 1} / ${totalPages} (${totalItems} modulo)|">Orria 1 / 1</span>
+		  <a class="btn btn-secondary"
+		     th:if="${currentPage + 1 < totalPages}"
+		     th:href="@{/kudeatzaile/moduloa(taldeaId=${taldeaId},page=${currentPage + 1},size=${pageSize})}">Hurrengoa</a>
 		</div>
 		<div th:if="${taldeaId != null}" style="margin:.75rem 0 1rem;">
 		  <a th:href="@{/kudeatzaile/taldeak/{id}/argazkiak(id=${taldeaId})}"

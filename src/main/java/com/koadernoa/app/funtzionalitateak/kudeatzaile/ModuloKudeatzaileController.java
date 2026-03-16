@@ -4,6 +4,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -61,19 +64,30 @@ public class ModuloKudeatzaileController {
 
     @GetMapping({"", "/"})
     public String moduloZerrenda(@RequestParam(name = "taldeaId", required = false) Long taldeaId,
+                                 @RequestParam(name = "page", defaultValue = "0") int page,
+                                 @RequestParam(name = "size", defaultValue = "20") int size,
                                  Model model) {
-        List<Moduloa> moduluak;
+        int tamaina = Math.min(100, Math.max(20, size));
+        int orria = Math.max(0, page);
+        PageRequest pageable = PageRequest.of(orria, tamaina, Sort.by("izena").ascending());
+
+        Page<Moduloa> moduluak;
         if (taldeaId != null) {
-            moduluak = moduloaService.getByTaldeaId(taldeaId);
+            moduluak = moduloaService.getByTaldeaId(taldeaId, pageable);
             model.addAttribute("ikasleak",
                 ikasleaRepository.findByTaldea_IdOrderByAbizena1AscAbizena2AscIzenaAsc(taldeaId));
         } else {
-            moduluak = moduloaService.getAll();
+            moduluak = moduloaService.getAll(pageable);
         }
         model.addAttribute("taldeaId", taldeaId);
-        model.addAttribute("moduluak", moduluak);
+        model.addAttribute("moduluak", moduluak.getContent());
         model.addAttribute("taldeak", taldeaService.getAll());
         model.addAttribute("moduloKlikagarriak", koadernoaRepository.findModuloIdsInAktiboIkasturtea());
+        model.addAttribute("currentPage", moduluak.getNumber());
+        model.addAttribute("totalPages", moduluak.getTotalPages());
+        model.addAttribute("pageSize", tamaina);
+        model.addAttribute("totalItems", moduluak.getTotalElements());
+        model.addAttribute("pageSizes", List.of(20, 40, 60, 80, 100));
 
         return "kudeatzaile/moduloak/index";
     }

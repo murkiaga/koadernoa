@@ -31,21 +31,38 @@
 	<div th:if="${msg}" style="color:green" th:text="${msg}"></div>
 	<div th:if="${errorea}" style="color:red" th:text="${errorea}"></div>
 	
-	<a class="btn btn-primary" th:href="${zikloaId != null} ? @{/kudeatzaile/taldeak/sortu(zikloaId=${zikloaId})} : @{/kudeatzaile/taldeak/sortu}">➕ Sortu talde berria</a>
-	
-	<form method="get" th:action="@{/kudeatzaile/taldeak}" style="margin: 1em 0;">
-	  <label for="zikloaId">Zikloa:</label>
-	  <select id="zikloaId" name="zikloaId" onchange="this.form.submit()">
-	    <option value="" th:selected="${zikloaId == null}">— Guztiak —</option>
-	    <option th:each="z : ${zikloak}"
-	            th:value="${z.id}"
-	            th:text="${z.izena + ' (' + z.maila + ', ' + z.familia + ')'}"
-	            th:selected="${zikloaId != null and z.id == zikloaId}">
-	    </option>
-	  </select>
-	  <noscript><button type="submit">Iragazi</button></noscript>
-	  <a class="btn btn-secondary" th:if="${zikloaId != null}" th:href="@{/kudeatzaile/taldeak}" style="margin-left: .5em;">Guztiak ikusi</a>
-	</form>
+	<div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:nowrap; margin: 1em 0;">
+	  <form method="get" th:action="@{/kudeatzaile/taldeak}" style="display:flex; align-items:center; gap:.75rem; margin:0; flex-wrap:nowrap; max-width:none;">
+	    <input type="hidden" name="page" value="0">
+	    <div style="display:flex; align-items:center; gap:.4rem; white-space:nowrap;">
+	      <label for="zikloaId" style="margin:0;">Zikloa:</label>
+	      <select id="zikloaId" name="zikloaId" style="width:auto; min-width:220px; max-width:320px;" onchange="this.form.submit()">
+	        <option value="" th:selected="${zikloaId == null}">— Guztiak —</option>
+	        <option th:each="z : ${zikloak}"
+	                th:value="${z.id}"
+	                th:text="${z.izena + ' (' + z.maila + ', ' + z.familia + ')'}"
+	                th:selected="${zikloaId != null and z.id == zikloaId}">
+	        </option>
+	      </select>
+	    </div>
+
+	    <div style="display:flex; align-items:center; gap:.4rem; white-space:nowrap;">
+	      <label style="margin:0;">Orri bakoitzean:</label>
+	      <select name="size" style="width:auto; min-width:130px;" onchange="this.form.submit()">
+	        <option th:each="s : ${pageSizes}"
+	                th:value="${s}"
+	                th:text="${s}"
+	                th:selected="${s == pageSize}">
+	        </option>
+	      </select>
+	    </div>
+
+	    <noscript><button type="submit">Iragazi</button></noscript>
+	    <a class="btn btn-secondary" th:if="${zikloaId != null}" th:href="@{/kudeatzaile/taldeak(size=${pageSize})}" style="margin-left: .5em;">Guztiak ikusi</a>
+	  </form>
+
+	  <a class="btn btn-primary" th:href="${zikloaId != null} ? @{/kudeatzaile/taldeak/sortu(zikloaId=${zikloaId})} : @{/kudeatzaile/taldeak/sortu}">➕ Sortu talde berria</a>
+	</div>
 	<div class="table-wrap">
 		<table cellpadding="8" cellspacing="0">
 		  <thead>
@@ -104,6 +121,15 @@
 		    </tr>
 		  </tbody>
 		</table>
+	</div>
+	<div style="margin: 1rem 0; display:flex; align-items:center; gap:.75rem;" th:if="${totalPages > 0}">
+	  <a class="btn btn-secondary"
+	     th:if="${currentPage > 0}"
+	     th:href="@{/kudeatzaile/taldeak(zikloaId=${zikloaId},page=${currentPage - 1},size=${pageSize})}">Aurrekoa</a>
+	  <span th:text="|Orria ${currentPage + 1} / ${totalPages} (${totalItems} talde)|">Orria 1 / 1</span>
+	  <a class="btn btn-secondary"
+	     th:if="${currentPage + 1 < totalPages}"
+	     th:href="@{/kudeatzaile/taldeak(zikloaId=${zikloaId},page=${currentPage + 1},size=${pageSize})}">Hurrengoa</a>
 	</div>
 	
 	<!-- INPORT MODALA -->

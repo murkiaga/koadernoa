@@ -4,6 +4,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -99,11 +102,18 @@ public class KudeatzaileController {
 //----TALDEAK
 	@GetMapping("/taldeak")
 	public String taldeZerrenda(@RequestParam(name = "zikloaId", required = false) Long zikloaId,
+	                            @RequestParam(name = "page", defaultValue = "0") int page,
+	                            @RequestParam(name = "size", defaultValue = "20") int size,
 	                            Model model,
 	                            HttpServletRequest request) { // csrf-a baduzu model-era gehitzen jarrai dezakezu, aukeran
-	    List<Taldea> taldeak = (zikloaId != null)
-	            ? taldeaService.getByZikloaId(zikloaId)
-	            : taldeaService.getAll();
+	    int tamaina = Math.min(100, Math.max(20, size));
+	    int orria = Math.max(0, page);
+	    PageRequest pageable = PageRequest.of(orria, tamaina, Sort.by("izena").ascending());
+
+	    Page<Taldea> taldeakPage = (zikloaId != null)
+	            ? taldeaService.getByZikloaId(zikloaId, pageable)
+	            : taldeaService.getAll(pageable);
+	    List<Taldea> taldeak = taldeakPage.getContent();
 	    
 	    //Taldeetako ikasle kopurua jasotzeko
 	    List<Long> ids = taldeak.stream().map(Taldea::getId).toList();
@@ -119,6 +129,11 @@ public class KudeatzaileController {
 	    model.addAttribute("irakasleak", irakasleaRepository.findAll());
 	    model.addAttribute("zikloak", zikloaService.getAll()); // dropdown-erako
 	    model.addAttribute("zikloaId", zikloaId);              // aukeratutako balioa
+	    model.addAttribute("currentPage", taldeakPage.getNumber());
+	    model.addAttribute("totalPages", taldeakPage.getTotalPages());
+	    model.addAttribute("pageSize", tamaina);
+	    model.addAttribute("totalItems", taldeakPage.getTotalElements());
+	    model.addAttribute("pageSizes", List.of(20, 40, 60, 80, 100));
 
 	    // (aukeran) CSRF model-era gehitzen jarrai dezakezu:
 	    CsrfToken csrf = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
