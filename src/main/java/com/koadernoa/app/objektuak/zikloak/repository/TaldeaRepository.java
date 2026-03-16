@@ -3,6 +3,7 @@ package com.koadernoa.app.objektuak.zikloak.repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -20,6 +21,7 @@ public interface TaldeaRepository extends JpaRepository<Taldea, Long> {
     //zikloaren arabera taldeak
     List<Taldea> findByZikloa_Id(Long zikloaId);
     List<Taldea> findByZikloa_IdOrderByIzenaAsc(Long zikloaId);
+    Page<Taldea> findByZikloa_Id(Long zikloaId, Pageable pageable);
     
     Optional<Taldea> findByIzenaIgnoreCaseAndZikloa(String izena, Zikloa zikloa);
     

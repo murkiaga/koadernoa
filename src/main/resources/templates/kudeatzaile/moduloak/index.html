@@ -12,30 +12,31 @@
 	<main class="page">
 		<h1>Moduluen Zerrenda</h1>
 		
-		<form class="form" th:action="@{/kudeatzaile/moduloa}" method="get">
-		    <input type="hidden" name="page" value="0">
-		    <label>Taldea:</label>
-		    <select name="taldeaId" style="max-width: 220px;" onchange="this.form.submit()">
-		        <option value="">GUZTIAK</option>
-		        <option th:each="t : ${taldeak}"
-		                th:value="${t.id}"
-		                th:text="${t.izena}"
-		                th:selected="${t.id == taldeaId}">
-		        </option>
-		    </select>
+		<div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:1rem;">
+			<form class="form" th:action="@{/kudeatzaile/moduloa}" method="get" style="display:flex; align-items:center; gap:.5rem; margin:0; flex-wrap:wrap;">
+			    <input type="hidden" name="page" value="0">
+			    <label>Taldea:</label>
+			    <select name="taldeaId" style="max-width: 220px;" onchange="this.form.submit()">
+			        <option value="">GUZTIAK</option>
+			        <option th:each="t : ${taldeak}"
+			                th:value="${t.id}"
+			                th:text="${t.izena}"
+			                th:selected="${t.id == taldeaId}">
+			        </option>
+			    </select>
 
-		    <label>Orri bakoitzeko:</label>
-		    <select name="size" onchange="this.form.submit()">
-		        <option th:each="s : ${pageSizes}"
-		                th:value="${s}"
-		                th:text="${s}"
-		                th:selected="${s == pageSize}">
-		        </option>
-		    </select>
-		</form>
-		
-		
-		<a class="btn btn-primary" th:href="@{/kudeatzaile/moduloa/sortu(taldeaId=${param.taldeaId})}">Sortu Modulo Berria</a>
+			    <label>Orri bakoitzeko:</label>
+			    <select name="size" onchange="this.form.submit()">
+			        <option th:each="s : ${pageSizes}"
+			                th:value="${s}"
+			                th:text="${s}"
+			                th:selected="${s == pageSize}">
+			        </option>
+			    </select>
+			</form>
+
+			<a class="btn btn-primary" th:href="@{/kudeatzaile/moduloa/sortu(taldeaId=${param.taldeaId})}">Sortu Modulo Berria</a>
+		</div>
 		
 		<div class="table-wrap">
 			<table>
