@@ -3,7 +3,8 @@ package com.koadernoa.app.objektuak.modulua.service;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
@@ -31,6 +32,10 @@ public class ModuloaService {
         return moduloaRepository.findAll();
     }
 
+    public Page<Moduloa> getAll(Pageable pageable) {
+        return moduloaRepository.findAll(pageable);
+    }
+
     public Optional<Moduloa> getById(Long id) {
         return moduloaRepository.findById(id);
     }
@@ -45,6 +50,10 @@ public class ModuloaService {
     
     public List<Moduloa> getByTaldeaId(Long taldeaId) {
         return moduloaRepository.findByTaldeaId(taldeaId);
+    }
+
+    public Page<Moduloa> getByTaldeaId(Long taldeaId, Pageable pageable) {
+        return moduloaRepository.findByTaldeaId(taldeaId, pageable);
     }
     
     @Transactional

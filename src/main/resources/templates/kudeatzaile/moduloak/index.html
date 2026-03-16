@@ -13,13 +13,23 @@
 		<h1>Moduluen Zerrenda</h1>
 		
 		<form class="form" th:action="@{/kudeatzaile/moduloa}" method="get">
+		    <input type="hidden" name="page" value="0">
 		    <label>Taldea:</label>
-		    <select name="taldeaId" onchange="this.form.submit()">
+		    <select name="taldeaId" style="max-width: 220px;" onchange="this.form.submit()">
 		        <option value="">GUZTIAK</option>
 		        <option th:each="t : ${taldeak}"
 		                th:value="${t.id}"
 		                th:text="${t.izena}"
 		                th:selected="${t.id == taldeaId}">
+		        </option>
+		    </select>
+
+		    <label>Orri bakoitzeko:</label>
+		    <select name="size" onchange="this.form.submit()">
+		        <option th:each="s : ${pageSizes}"
+		                th:value="${s}"
+		                th:text="${s}"
+		                th:selected="${s == pageSize}">
 		        </option>
 		    </select>
 		</form>
@@ -65,6 +75,16 @@
 			        </tr>
 			    </tbody>
 			</table>
+		</div>
+
+		<div style="margin: 1rem 0; display:flex; align-items:center; gap:.75rem;" th:if="${totalPages > 0}">
+		  <a class="btn btn-secondary"
+		     th:if="${currentPage > 0}"
+		     th:href="@{/kudeatzaile/moduloa(taldeaId=${taldeaId},page=${currentPage - 1},size=${pageSize})}">Aurrekoa</a>
+		  <span th:text="|Orria ${currentPage + 1} / ${totalPages} (${totalItems} modulo)|">Orria 1 / 1</span>
+		  <a class="btn btn-secondary"
+		     th:if="${currentPage + 1 < totalPages}"
+		     th:href="@{/kudeatzaile/moduloa(taldeaId=${taldeaId},page=${currentPage + 1},size=${pageSize})}">Hurrengoa</a>
 		</div>
 		<div th:if="${taldeaId != null}" style="margin:.75rem 0 1rem;">
 		  <a th:href="@{/kudeatzaile/taldeak/{id}/argazkiak(id=${taldeaId})}"
