@@ -359,11 +359,8 @@ public class EstatistikaService {
     /**
      * Ebaluatuak kalkulatu:
      *
-     *  - em.getUrteOsoa() == true:
-     *      Koaderno honetako MATRIKULATUA egoeran dauden matrikulak (orain arte bezala).
-     *
-     *  - em.getUrteOsoa() == false:
-     *      Ebaluazio momentu HONETAN ebaluatutzat jotako matrikulak bakarrik: 
+     *  - Ebaluazio momentu guztietan (urte osokoetan barne),
+     *      ebaluazio momentu HONETAN ebaluatutzat jotako matrikulak bakarrik:
      *      1-10 arteko nota zenbakizkoa dutenak EDO ebaluatua=true duten egoera dutenak.
      */
     public int kalkulatuEbaluatuak(Koadernoa k, EbaluazioMomentua em) {
@@ -380,16 +377,8 @@ public class EstatistikaService {
             return (int) cnt;
         }
 
-        // URTE OSOKO momentua → logika zaharra: MATRIKULATUTA dauden guztiak
-        if (Boolean.TRUE.equals(em.getUrteOsoa())) {
-            long cnt = matrikulaRepository.countByKoadernoa_IdAndEgoera(
-                    k.getId(),
-                    MatrikulaEgoera.MATRIKULATUA
-            );
-            return (int) cnt;
-        }
-
-        // Bestela: ebaluazio momentu honetarako nota zenbakizkoa dutenak bakarrik
+        // Ebaluazio momentu guztietan (urte osokoetan ere),
+        // momentu honetako benetako ebaluazioak bakarrik zenbatzen dira.
         List<Matrikula> matrikulak = matrikulaRepository
                 .findByKoadernoa_IdAndEgoera(k.getId(), MatrikulaEgoera.MATRIKULATUA);
 
@@ -400,23 +389,29 @@ public class EstatistikaService {
                 continue;
             }
 
-            boolean duNotaZenbakizkoaMomentuHonetan = m.getNotak().stream()
+            boolean ebaluatutaDagoMomentuHonetan = m.getNotak().stream()
                     .filter(n -> n.getEbaluazioMomentua() != null &&
                                  Objects.equals(n.getEbaluazioMomentua().getId(), em.getId()))
-                    .anyMatch(n -> {
-                        Double nota = n.getNota();
-                        if (nota != null && nota >= 1.0 && nota <= 10.0) {
-                            return true;
-                        }
-                        return n.getEgoera() != null && n.getEgoera().isEbaluatua();
-                    });
+                    .anyMatch(this::daNotaEdoEgoeraEbaluatua);
 
-            if (duNotaZenbakizkoaMomentuHonetan) {
+            if (ebaluatutaDagoMomentuHonetan) {
                 ebaluatuak++;
             }
         }
 
         return ebaluatuak;
+    }
+
+
+    private boolean daNotaEdoEgoeraEbaluatua(EbaluazioNota nota) {
+        if (nota == null) return false;
+
+        Double notaZenbakia = nota.getNota();
+        if (notaZenbakia != null && notaZenbakia >= 1.0 && notaZenbakia <= 10.0) {
+            return true;
+        }
+
+        return nota.getEgoera() != null && nota.getEgoera().isEbaluatua();
     }
 
     /**
