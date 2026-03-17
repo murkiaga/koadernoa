@@ -142,6 +142,22 @@ public class EstatistikaService {
         estatRepo.save(est);
     }
 
+
+    @Transactional(readOnly = true)
+    public boolean badagoEbaluatuGaberik(Koadernoa koadernoa, EbaluazioMomentua em) {
+        if (koadernoa == null || koadernoa.getId() == null || em == null || !Boolean.TRUE.equals(em.getUrteOsoa())) {
+            return false;
+        }
+
+        long matrikulatuak = matrikulaRepository.countByKoadernoa_IdAndEgoera(
+                koadernoa.getId(),
+                MatrikulaEgoera.MATRIKULATUA
+        );
+
+        int ebaluatuak = kalkulatuEbaluatuak(koadernoa, em);
+        return ebaluatuak < matrikulatuak;
+    }
+
     // ============================================================
     //  TARTEAK: EbaluazioMomentua -> DateRange
     // ============================================================

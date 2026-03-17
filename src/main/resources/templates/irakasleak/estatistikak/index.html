@@ -74,6 +74,17 @@
       font-weight:600;
       text-decoration:underline;
     }
+
+    .ebaluatu-gabe-abisua{
+      margin-top:.25rem;
+      font-size:.78rem;
+      color:#92400e;
+      background:#ffedd5;
+      border:1px solid #fdba74;
+      border-radius:6px;
+      padding:.2rem .4rem;
+      display:inline-block;
+    }
   </style>
 </head>
 <body>
@@ -206,6 +217,10 @@
 		    <td>
 		      <div th:text="|${e.aprobatuak} / ${e.ebaluatuak}|">
 		        0 / 0
+		      </div>
+		      <div th:if="${ebaluatuGabeAbisuEstatIdak != null and ebaluatuGabeAbisuEstatIdak.contains(e.id)}"
+		           class="ebaluatu-gabe-abisua">
+		        Ikasleren bat gutxienez ebaluatu gabe dago
 		      </div>
 		      <div class="muted" style="font-size:.75rem;margin-top:0.1rem;">
 		        <span th:if="${e.gaindituPortzentaia != null}">
