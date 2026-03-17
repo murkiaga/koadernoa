@@ -218,7 +218,7 @@
 		      <div th:text="|${e.aprobatuak} / ${e.ebaluatuak}|">
 		        0 / 0
 		      </div>
-		      <div th:if="${ebaluatuGabeAbisuEstatIdak != null and ebaluatuGabeAbisuEstatIdak.contains(e.id)}"
+		      <div th:if="${e.kalkulatua and ebaluatuGabeAbisuEstatIdak != null and ebaluatuGabeAbisuEstatIdak.contains(e.id)}"
 		           class="ebaluatu-gabe-abisua">
 		        Ikasleren bat gutxienez ebaluatu gabe dago
 		      </div>
