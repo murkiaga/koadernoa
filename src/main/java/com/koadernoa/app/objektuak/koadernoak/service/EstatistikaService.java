@@ -149,13 +149,21 @@ public class EstatistikaService {
             return false;
         }
 
-        long matrikulatuak = matrikulaRepository.countByKoadernoa_IdAndEgoera(
-                koadernoa.getId(),
-                MatrikulaEgoera.MATRIKULATUA
-        );
+        List<Matrikula> matrikulak = matrikulaRepository
+                .findByKoadernoa_IdAndEgoera(koadernoa.getId(), MatrikulaEgoera.MATRIKULATUA);
 
-        int ebaluatuak = kalkulatuEbaluatuak(koadernoa, em);
-        return ebaluatuak < matrikulatuak;
+        for (Matrikula m : matrikulak) {
+            boolean baduBalioaMomentuHonetan = m.getNotak() != null && m.getNotak().stream()
+                    .filter(n -> n.getEbaluazioMomentua() != null
+                            && Objects.equals(n.getEbaluazioMomentua().getId(), em.getId()))
+                    .anyMatch(n -> n.getNota() != null || n.getEgoera() != null);
+
+            if (!baduBalioaMomentuHonetan) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     // ============================================================
