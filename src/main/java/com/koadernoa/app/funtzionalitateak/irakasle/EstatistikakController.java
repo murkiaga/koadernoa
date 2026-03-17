@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,9 +55,16 @@ public class EstatistikakController {
         List<EstatistikaEbaluazioan> estatistikak =
                 estatistikaService.lortuKoadernoarenEstatistikak(koadernoAktiboa);
 
+        Set<Long> ebaluatuGabeAbisuEstatIdak = estatistikak.stream()
+                .filter(e -> e.getId() != null && e.getEbaluazioMomentua() != null)
+                .filter(e -> estatistikaService.badagoEbaluatuGaberik(koadernoAktiboa, e.getEbaluazioMomentua()))
+                .map(EstatistikaEbaluazioan::getId)
+                .collect(Collectors.toSet());
+
         model.addAttribute("koadernoAktiboDago", true);
         model.addAttribute("koadernoAktiboa", koadernoAktiboa);
         model.addAttribute("estatistikak", estatistikak);
+        model.addAttribute("ebaluatuGabeAbisuEstatIdak", ebaluatuGabeAbisuEstatIdak);
 
         return "irakasleak/estatistikak/index";
     }

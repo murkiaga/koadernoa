@@ -154,6 +154,7 @@
 		      <tr>
 		        <th>Kodea</th>
 		        <th>Izena</th>
+		        <th>Ebaluatua</th>
 		        <th>ID</th>
 		        <th>Ezabatu</th>
 		      </tr>
@@ -173,6 +174,11 @@
 		                 th:name="|izena_${e.id}|"
 		                 th:value="${e.izena}"
 		                 style="width:100%;">
+		        </td>
+		        <td style="text-align:center;">
+		          <input type="checkbox"
+		                 th:name="|ebaluatua_${e.id}|"
+		                 th:checked="${e.ebaluatua}">
 		        </td>
 		        <td th:text="${e.id}">1</td>
 		        <td style="text-align:center;">
@@ -200,6 +206,10 @@
 	      <label>
 	        <div class="muted">Izena</div>
 	        <input type="text" th:field="*{izena}" placeholder="Ez aurkeztua" required>
+	      </label>
+	      <label style="align-self:end; display:flex; gap:8px; align-items:center;">
+	        <input type="checkbox" th:field="*{ebaluatua}">
+	        <span>Ebaluatua</span>
 	      </label>
 	      <div style="align-self:end;">
 	        <button type="submit">Sortu</button>

@@ -503,10 +503,10 @@ public class KonfigurazioaController {
                     continue;
                 }
 
-                // 2) Bestela: eguneratu kodea, izena eta notaBeharDu
+                // 2) Bestela: eguneratu kodea, izena eta ebaluatua
                 String kodeaParam = request.getParameter("kodea_" + id);
                 String izenaParam = request.getParameter("izena_" + id);
-                boolean notaBeharDu = request.getParameter("notaBeharDu_" + id) != null;
+                boolean ebaluatua = request.getParameter("ebaluatua_" + id) != null;
 
                 if (kodeaParam == null || kodeaParam.isBlank()
                         || izenaParam == null || izenaParam.isBlank()) {
@@ -530,6 +530,7 @@ public class KonfigurazioaController {
 
                 egoera.setKodea(kodea);
                 egoera.setIzena(izena);
+                egoera.setEbaluatua(ebaluatua);
 
                 ebaluazioEgoeraRepository.save(egoera);
             }
@@ -564,6 +565,7 @@ public class KonfigurazioaController {
         EbaluazioEgoera egoera = new EbaluazioEgoera();
         egoera.setKodea(kodea);
         egoera.setIzena(izena);
+        egoera.setEbaluatua(Boolean.TRUE.equals(form.getEbaluatua()));
 
         ebaluazioEgoeraRepository.save(egoera);
 
@@ -739,6 +741,6 @@ public class KonfigurazioaController {
     public static class SortuEbaluazioEgoeraForm {
         @NotBlank private String kodea;
         @NotBlank private String izena;
-        private Boolean notaBeharDu = false;
+        private Boolean ebaluatua = false;
     }
 }
