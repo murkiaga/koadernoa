@@ -8,5 +8,5 @@ import lombok.Setter;
 public class SortuEbaluazioEgoeraForm {
 	private String kodea;
     private String izena;
-    private Boolean notaBeharDu = false;
+    private Boolean ebaluatua = false;
 }

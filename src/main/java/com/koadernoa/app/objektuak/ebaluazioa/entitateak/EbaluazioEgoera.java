@@ -30,5 +30,8 @@ public class EbaluazioEgoera {
     @Column(nullable = false)
     private String izena; // "Ez aurkeztua", "Ez ebaluatua faltengatik"...
 
+    @Column(nullable = false)
+    private boolean ebaluatua = false;
+
     // Etorkizunerako beste flag batzuk jar zenezake (agerian/notetan kontatu, etab.)
 }

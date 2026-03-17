@@ -363,9 +363,8 @@ public class EstatistikaService {
      *      Koaderno honetako MATRIKULATUA egoeran dauden matrikulak (orain arte bezala).
      *
      *  - em.getUrteOsoa() == false:
-     *      Ebaluazio momentu HONETAN nota zenbakizkoa (nota != null) duten matrikulak bakarrik.
-     *      EZ dira zenbatzen "EZ_AURKEZTUA", "EZ_EBALUATUA_FALTAK" eta abar,
-     *      normalean nota = null dutelako.
+     *      Ebaluazio momentu HONETAN ebaluatutzat jotako matrikulak bakarrik: 
+     *      1-10 arteko nota zenbakizkoa dutenak EDO ebaluatua=true duten egoera dutenak.
      */
     public int kalkulatuEbaluatuak(Koadernoa k, EbaluazioMomentua em) {
         if (k == null || k.getId() == null) {
@@ -404,8 +403,13 @@ public class EstatistikaService {
             boolean duNotaZenbakizkoaMomentuHonetan = m.getNotak().stream()
                     .filter(n -> n.getEbaluazioMomentua() != null &&
                                  Objects.equals(n.getEbaluazioMomentua().getId(), em.getId()))
-                    .map(EbaluazioNota::getNota)
-                    .anyMatch(Objects::nonNull); // nota != null → zenbakizkoa
+                    .anyMatch(n -> {
+                        Double nota = n.getNota();
+                        if (nota != null && nota >= 1.0 && nota <= 10.0) {
+                            return true;
+                        }
+                        return n.getEgoera() != null && n.getEgoera().isEbaluatua();
+                    });
 
             if (duNotaZenbakizkoaMomentuHonetan) {
                 ebaluatuak++;
