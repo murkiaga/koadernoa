@@ -61,6 +61,13 @@ public class EbaluazioNotaService {
                 var existingOpt = ebaluazioNotaRepository
                         .findByMatrikulaAndEbaluazioMomentua(matrikula, momentua);
 
+                if (existingOpt.isPresent()
+                        && existingOpt.get().getEgoera() != null
+                        && "UKO_EGINDA".equalsIgnoreCase(existingOpt.get().getEgoera().getKodea())) {
+                    // UKO markatutako finalak ez dira editagarriak.
+                    continue;
+                }
+
                 if (egoeraOpt.isPresent()) {
                     EbaluazioNota nota = existingOpt.orElseGet(() -> {
                         EbaluazioNota berria = new EbaluazioNota();
