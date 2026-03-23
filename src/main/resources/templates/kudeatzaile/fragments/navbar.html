@@ -17,6 +17,7 @@
           <li><a th:href="@{/kudeatzaile/egutegia}" th:classappend="${currentPath.startsWith('/kudeatzaile/egutegia')} ? 'active'">Egutegiak</a></li>
           <li><a th:href="@{/kudeatzaile/konfigurazioa}" th:classappend="${currentPath == '/kudeatzaile/konfigurazioa'} ? 'active'">Konfigurazioa</a></li>
           <li><a th:href="@{/kudeatzaile/koadernoak}" th:classappend="${currentPath == '/kudeatzaile/koadernoak'} ? 'active'">Koadernoak</a></li>
+          <li><a th:href="@{/kudeatzaile/ikasleak}" th:classappend="${currentPath.startsWith('/kudeatzaile/ikasleak') or currentPath.startsWith('/kudeatzaile/ikaslea/')} ? 'active'">Ikasleak</a></li>
           <li><a th:href="@{/kudeatzaile/estatistikak}" th:classappend="${currentPath == '/kudeatzaile/estatistikak'} ? 'active'">Estatistikak</a></li>
           <li><a th:href="@{/kudeatzaile/mezuak}" th:classappend="${currentPath == '/kudeatzaile/mezuak'} ? 'active'">Mezuak</a></li>
           <li><a th:href="@{/irakasle}">Irakasle ikuspegia</a></li>
@@ -47,6 +48,7 @@
           <li><a th:href="@{/kudeatzaile/egutegia}" th:classappend="${currentPath.startsWith('/kudeatzaile/egutegia')} ? 'active'">Egutegiak</a></li>
           <li><a th:href="@{/kudeatzaile/konfigurazioa}" th:classappend="${currentPath == '/kudeatzaile/konfigurazioa'} ? 'active'">Konfigurazioa</a></li>
           <li><a th:href="@{/kudeatzaile/koadernoak}" th:classappend="${currentPath == '/kudeatzaile/koadernoak'} ? 'active'">Koadernoak</a></li>
+          <li><a th:href="@{/kudeatzaile/ikasleak}" th:classappend="${currentPath.startsWith('/kudeatzaile/ikasleak') or currentPath.startsWith('/kudeatzaile/ikaslea/')} ? 'active'">Ikasleak</a></li>
           <li><a th:href="@{/kudeatzaile/estatistikak}" th:classappend="${currentPath == '/kudeatzaile/estatistikak'} ? 'active'">Estatistikak</a></li>
           <li><a th:href="@{/kudeatzaile/mezuak}" th:classappend="${currentPath == '/kudeatzaile/mezuak'} ? 'active'">Mezuak</a></li>
           <li><a th:href="@{/irakasle}">Irakasle ikuspegia</a></li>
