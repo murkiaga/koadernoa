@@ -1,14 +1,17 @@
 package com.koadernoa.app.funtzionalitateak.kudeatzaile;
 
 import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -333,17 +336,39 @@ public class IkasleaKudeatzaileController {
         if (auth == null) {
             return null;
         }
-        String erabiltzailea;
+        Set<String> identak = new LinkedHashSet<>();
+        if (auth.getName() != null && !auth.getName().isBlank()) {
+            identak.add(auth.getName().trim());
+        }
+
         if (auth.getPrincipal() instanceof OAuth2User oAuth2User) {
-            erabiltzailea = oAuth2User.getAttribute("email");
-        } else {
-            erabiltzailea = auth.getName();
+            gehituIdent(identak, oAuth2User.getAttribute("email"));
+            gehituIdent(identak, oAuth2User.getAttribute("preferred_username"));
+            gehituIdent(identak, oAuth2User.getAttribute("upn"));
         }
-        if (erabiltzailea == null || erabiltzailea.isBlank()) {
-            return null;
+        if (auth.getPrincipal() instanceof UserDetails userDetails) {
+            gehituIdent(identak, userDetails.getUsername());
         }
-        return irakasleaRepository.findByEmailaIgnoreCase(erabiltzailea)
-                .or(() -> irakasleaRepository.findByIzenaIgnoreCase(erabiltzailea))
-                .orElse(null);
+
+        for (String ident : identak) {
+            Optional<Irakaslea> irakaslea = irakasleaRepository.findByEmailaIgnoreCase(ident)
+                    .or(() -> irakasleaRepository.findByIzenaIgnoreCase(ident));
+            if (irakaslea.isPresent()) {
+                return irakaslea.get();
+            }
+        }
+        return null;
+    }
+
+    private void gehituIdent(Set<String> identak, String balioa) {
+        if (balioa == null || balioa.isBlank()) return;
+        String v = balioa.trim();
+        identak.add(v);
+        if (v.contains("\\")) {
+            identak.add(v.substring(v.lastIndexOf('\\') + 1));
+        }
+        if (v.contains("@")) {
+            identak.add(v.substring(0, v.indexOf('@')));
+        }
     }
 }
