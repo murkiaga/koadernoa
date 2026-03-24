@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
@@ -329,10 +330,18 @@ public class IkasleaKudeatzaileController {
     }
 
     private Irakaslea unekoEragilea(Authentication auth) {
-        if (auth == null || auth.getName() == null) {
+        if (auth == null) {
             return null;
         }
-        String erabiltzailea = auth.getName();
+        String erabiltzailea;
+        if (auth.getPrincipal() instanceof OAuth2User oAuth2User) {
+            erabiltzailea = oAuth2User.getAttribute("email");
+        } else {
+            erabiltzailea = auth.getName();
+        }
+        if (erabiltzailea == null || erabiltzailea.isBlank()) {
+            return null;
+        }
         return irakasleaRepository.findByEmailaIgnoreCase(erabiltzailea)
                 .or(() -> irakasleaRepository.findByIzenaIgnoreCase(erabiltzailea))
                 .orElse(null);
