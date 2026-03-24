@@ -19,6 +19,12 @@
 <div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
 <main class="page" th:attr="data-modulo-id=${moduloa.id}">
   <h1 th:text="${moduloa.izena} + ' - matrikulak'">Matrikulak</h1>
+  <div style="margin:0 0 1rem 0;">
+    <a class="btn btn-primary"
+       th:href="@{|/irakasle/koadernoa/${koadernoa.id}?next=/irakasle|}">
+      Koadernoa ikusi
+    </a>
+  </div>
 
   <div class="table-wrap">
     <table>

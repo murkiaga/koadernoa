@@ -125,6 +125,9 @@
           <td th:each="em : ${momentuak}">
             <div class="nota-wrap">
               <input type="text"
+                     th:if="${!(#maps.containsKey(notaMap, mat.id + '_' + em.id)
+                              and notaMap[mat.id + '_' + em.id].egoera != null
+                              and notaMap[mat.id + '_' + em.id].egoera.kodea == 'UKO_EGINDA')}"
                      th:name="${'nota_' + mat.id + '_' + em.id}"
                      placeholder="nota"
                      th:value="${
@@ -136,16 +139,28 @@
                            )
                          : ''
                      }"/>
+              <span th:if="${#maps.containsKey(notaMap, mat.id + '_' + em.id)
+                              and notaMap[mat.id + '_' + em.id].egoera != null
+                              and notaMap[mat.id + '_' + em.id].egoera.kodea == 'UKO_EGINDA'}"
+                    style="font-weight:700;color:#991b1b;">
+                Uko Eginda
+              </span>
 
               <!-- '+' botoia: egoera berezien menu desplegablea -->
               <button type="button"
                       class="nota-egoera-btn"
-                      th:if="${!#lists.isEmpty(em.egoeraOnartuak)}">
+                      th:if="${!#lists.isEmpty(em.egoeraOnartuak)
+                              and !(#maps.containsKey(notaMap, mat.id + '_' + em.id)
+                                  and notaMap[mat.id + '_' + em.id].egoera != null
+                                  and notaMap[mat.id + '_' + em.id].egoera.kodea == 'UKO_EGINDA')}">
                 +
               </button>
 
               <div class="nota-egoera-menu" style="display:none;"
-                   th:if="${!#lists.isEmpty(em.egoeraOnartuak)}">
+                   th:if="${!#lists.isEmpty(em.egoeraOnartuak)
+                           and !(#maps.containsKey(notaMap, mat.id + '_' + em.id)
+                               and notaMap[mat.id + '_' + em.id].egoera != null
+                               and notaMap[mat.id + '_' + em.id].egoera.kodea == 'UKO_EGINDA')}">
                 <button type="button"
                         class="nota-egoera-op"
                         th:each="ego : ${em.egoeraOnartuak}"

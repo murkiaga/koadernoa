@@ -4,6 +4,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -70,4 +72,38 @@ public interface IkasleaRepository extends JpaRepository<Ikaslea, Long> {
               and i.hna is not null and i.hna <> ''
         """)
         List<String> findHnasByTaldeaId(@Param("taldeaId") Long taldeaId);
+
+    @Query(
+        value = """
+            select i
+            from Ikaslea i
+            left join fetch i.taldea t
+            left join fetch t.zikloa z
+            where (:zikloaId is null or z.id = :zikloaId)
+              and (:taldeaId is null or t.id = :taldeaId)
+            """,
+        countQuery = """
+            select count(i)
+            from Ikaslea i
+            left join i.taldea t
+            left join t.zikloa z
+            where (:zikloaId is null or z.id = :zikloaId)
+              and (:taldeaId is null or t.id = :taldeaId)
+            """
+    )
+    Page<Ikaslea> bilatuKudeatzaile(@Param("zikloaId") Long zikloaId,
+                                    @Param("taldeaId") Long taldeaId,
+                                    Pageable pageable);
+
+    @Query("""
+        select i
+        from Ikaslea i
+        left join i.taldea t
+        left join t.zikloa z
+        where lower(coalesce(i.izena, '')) like lower(concat('%', :q, '%'))
+           or lower(coalesce(i.abizena1, '')) like lower(concat('%', :q, '%'))
+           or lower(coalesce(i.abizena2, '')) like lower(concat('%', :q, '%'))
+        order by i.abizena1 asc, i.abizena2 asc, i.izena asc
+    """)
+    List<Ikaslea> bilatuAutocomplete(@Param("q") String q, Pageable pageable);
 }

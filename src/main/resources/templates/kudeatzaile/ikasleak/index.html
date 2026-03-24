@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Ikasleak kudeatu</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" th:href="@{/css/navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
+</head>
+<body>
+<div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+
+<main class="page">
+  <h1>Ikasleak</h1>
+
+  <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; flex-wrap:wrap; margin: 1em 0;">
+    <form method="get" th:action="@{/kudeatzaile/ikasleak}" style="display:flex; align-items:center; gap:.75rem; margin:0; flex-wrap:wrap; max-width:none;">
+      <input type="hidden" name="page" value="0">
+      <div style="display:flex; align-items:center; gap:.4rem; white-space:nowrap;">
+        <label for="zikloaId" style="margin:0;">Zikloa:</label>
+        <select id="zikloaId" name="zikloaId" style="width:auto; min-width:220px; max-width:320px;" onchange="this.form.submit()">
+          <option value="" th:selected="${zikloaId == null}">— Guztiak —</option>
+          <option th:each="z : ${zikloak}"
+                  th:value="${z.id}"
+                  th:text="${z.izena}"
+                  th:selected="${zikloaId != null and z.id == zikloaId}">
+          </option>
+        </select>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:.4rem; white-space:nowrap;">
+        <label for="taldeaId" style="margin:0;">Taldea:</label>
+        <select id="taldeaId" name="taldeaId" style="width:auto; min-width:180px; max-width:260px;" onchange="this.form.submit()">
+          <option value="" th:selected="${taldeaId == null}">— Guztiak —</option>
+          <option th:each="t : ${taldeak}"
+                  th:value="${t.id}"
+                  th:text="${t.izena}"
+                  th:selected="${taldeaId != null and t.id == taldeaId}">
+          </option>
+        </select>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:.4rem; white-space:nowrap;">
+        <label style="margin:0;">Orri bakoitzean:</label>
+        <select name="size" style="width:auto; min-width:130px;" onchange="this.form.submit()">
+          <option th:each="s : ${pageSizes}"
+                  th:value="${s}"
+                  th:text="${s}"
+                  th:selected="${s == pageSize}">
+          </option>
+        </select>
+      </div>
+      <noscript><button type="submit">Iragazi</button></noscript>
+    </form>
+
+    <div style="position:relative; min-width:320px;">
+      <label for="ikasleBilaketa" style="display:block; margin-bottom:.3rem;">Ikaslea bilatu (ajax)</label>
+      <input id="ikasleBilaketa"
+             type="text"
+             placeholder="Gutxienez 3 karaktere (izena edo abizena)"
+             autocomplete="off">
+      <div id="ikasleSuggest" class="suggestions" style="display:none; position:absolute; z-index:10; left:0; right:0; background:#fff; border:1px solid #d1d5db; border-radius:.45rem; box-shadow:0 8px 20px rgba(0,0,0,.08); max-height:280px; overflow:auto;"></div>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table cellpadding="8" cellspacing="0">
+      <thead>
+      <tr>
+        <th>ID</th>
+        <th>HNA</th>
+        <th>Izen-abizenak</th>
+        <th>Taldea</th>
+        <th>Zikloa</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:each="ik : ${ikasleak}" th:onclick="|window.location='@{/kudeatzaile/ikaslea/{id}(id=${ik.id})}'|" style="cursor:pointer;">
+        <td th:text="${ik.id}">1</td>
+        <td><a th:href="@{/kudeatzaile/ikaslea/{id}(id=${ik.id})}" th:text="${ik.hna != null ? ik.hna : '-'}">HNA</a></td>
+        <td th:text="${ik.izenOsoa}">Abizena, Izena</td>
+        <td th:text="${ik.taldea != null ? ik.taldea.izena : '-'}">1SMA</td>
+        <td th:text="${ik.taldea != null and ik.taldea.zikloa != null ? ik.taldea.zikloa.izena : '-'}">SMR</td>
+      </tr>
+      <tr th:if="${#lists.isEmpty(ikasleak)}">
+        <td colspan="5">Ez da ikaslerik aurkitu aukeratutako iragazkiekin.</td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="margin: 1rem 0; display:flex; align-items:center; gap:.75rem;" th:if="${totalPages > 0}">
+    <a class="btn btn-secondary"
+       th:if="${currentPage > 0}"
+       th:href="@{/kudeatzaile/ikasleak(zikloaId=${zikloaId},taldeaId=${taldeaId},page=${currentPage - 1},size=${pageSize})}">Aurrekoa</a>
+    <span th:text="|Orria ${currentPage + 1} / ${totalPages} (${totalItems} ikasle)|">Orria 1 / 1</span>
+    <a class="btn btn-secondary"
+       th:if="${currentPage + 1 < totalPages}"
+       th:href="@{/kudeatzaile/ikasleak(zikloaId=${zikloaId},taldeaId=${taldeaId},page=${currentPage + 1},size=${pageSize})}">Hurrengoa</a>
+  </div>
+</main>
+
+<script th:src="@{/js/kudeatzaile-nav.js}"></script>
+<script>
+  const input = document.getElementById('ikasleBilaketa');
+  const box = document.getElementById('ikasleSuggest');
+  let azkenKontsulta = '';
+  let timer = null;
+
+  function ezkutatu() {
+    box.style.display = 'none';
+    box.innerHTML = '';
+  }
+
+  function render(items) {
+    if (!items.length) {
+      ezkutatu();
+      return;
+    }
+    box.innerHTML = items.map(i => `
+      <a href="/kudeatzaile/ikaslea/${i.id}" style="display:block; padding:.55rem .7rem; border-bottom:1px solid #f1f5f9; text-decoration:none; color:#111827;">
+        <strong>${i.izena}</strong>
+        <div style="font-size:.88em; color:#6b7280;">${i.hna || '-'} ${i.taldea ? '· ' + i.taldea : ''}</div>
+      </a>
+    `).join('');
+    box.style.display = 'block';
+  }
+
+  async function bilatu(q) {
+    if (q.length < 3) {
+      ezkutatu();
+      return;
+    }
+    azkenKontsulta = q;
+    const erantzuna = await fetch(`/kudeatzaile/ikasleak/bilatu?q=${encodeURIComponent(q)}`);
+    if (!erantzuna.ok) {
+      ezkutatu();
+      return;
+    }
+    const datuak = await erantzuna.json();
+    if (azkenKontsulta === q) {
+      render(datuak);
+    }
+  }
+
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    const q = input.value.trim();
+    timer = setTimeout(() => bilatu(q), 200);
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!box.contains(e.target) && e.target !== input) {
+      ezkutatu();
+    }
+  });
+</script>
+</body>
+</html>
