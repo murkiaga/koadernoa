@@ -28,7 +28,7 @@ public class LogSchemaUpdater {
 
             jdbcTemplate.execute("""
                 ALTER TABLE log_sarrera
-                MODIFY COLUMN mota ENUM('KOADERNO_EZABAKETA','DESMATRIKULATZEA','MATRIKULATZEA')
+                MODIFY COLUMN mota ENUM('KOADERNO_EZABAKETA','DESMATRIKULATZEA','MATRIKULATZEA','UKO_EGITEA')
                 """);
         } catch (Exception ignored) {
             // Beste DB batean edo jada bateragarria bada, ez dugu aplikazioa gelditu nahi.

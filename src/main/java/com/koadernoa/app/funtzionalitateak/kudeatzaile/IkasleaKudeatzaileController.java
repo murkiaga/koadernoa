@@ -29,6 +29,8 @@ import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
 import com.koadernoa.app.objektuak.egutegia.repository.IkasturteaRepository;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
+import com.koadernoa.app.objektuak.logak.entitateak.LogMota;
+import com.koadernoa.app.objektuak.logak.service.LogService;
 import com.koadernoa.app.objektuak.mezuak.entitateak.Mezua;
 import com.koadernoa.app.objektuak.mezuak.repository.MezuaRepository;
 import com.koadernoa.app.objektuak.modulua.entitateak.Ikaslea;
@@ -57,6 +59,7 @@ public class IkasleaKudeatzaileController {
     private final IrakasleaRepository irakasleaRepository;
     private final ZikloaRepository zikloaRepository;
     private final TaldeaRepository taldeaRepository;
+    private final LogService logService;
 
     @GetMapping("/kudeatzaile/ikasleak")
     public String ikasleZerrenda(@RequestParam(name = "zikloaId", required = false) Long zikloaId,
@@ -255,6 +258,15 @@ public class IkasleaKudeatzaileController {
         nota.setEgoera(ukoEgoera);
         ebaluazioNotaRepository.save(nota);
 
+        Irakaslea eragilea = unekoEragilea(auth);
+        String ikasleIzena = matrikula.getIkaslea() != null ? matrikula.getIkaslea().getIzenOsoa() : "ikasle ezezaguna";
+        String koadernoIzena = matrikula.getKoadernoa() != null ? matrikula.getKoadernoa().getIzena() : "koaderno ezezaguna";
+        String deskribapena = "UKO markatua: " + finalLabela
+                + " | ikaslea=" + ikasleIzena
+                + " | HNA=" + (matrikula.getIkaslea() != null ? matrikula.getIkaslea().getHna() : "-")
+                + " | koadernoa=" + koadernoIzena;
+        logService.gorde(LogMota.UKO_EGITEA, eragilea, "Matrikula", matrikula.getId(), deskribapena);
+
         bidaliUkoMezua(matrikula, finalLabela, auth);
         redirectAttributes.addFlashAttribute("successMessage", "UKO markatu da " + finalLabela);
         return redirectIkasleFitxara(ikasleaId, ikasturteaId);
@@ -314,5 +326,15 @@ public class IkasleaKudeatzaileController {
                 .filter(n -> finalKodea.equalsIgnoreCase(n.getEbaluazioMomentua().getKodea()))
                 .filter(n -> n.getEgoera() != null && "UKO_EGINDA".equalsIgnoreCase(n.getEgoera().getKodea()))
                 .collect(Collectors.toMap(n -> n.getMatrikula().getId(), n -> n.getEgoera().getKodea(), (a, b) -> a));
+    }
+
+    private Irakaslea unekoEragilea(Authentication auth) {
+        if (auth == null || auth.getName() == null) {
+            return null;
+        }
+        String erabiltzailea = auth.getName();
+        return irakasleaRepository.findByEmailaIgnoreCase(erabiltzailea)
+                .or(() -> irakasleaRepository.findByIzenaIgnoreCase(erabiltzailea))
+                .orElse(null);
     }
 }

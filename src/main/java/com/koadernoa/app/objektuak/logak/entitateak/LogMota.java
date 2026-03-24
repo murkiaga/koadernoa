@@ -3,5 +3,6 @@ package com.koadernoa.app.objektuak.logak.entitateak;
 public enum LogMota {
     KOADERNO_EZABAKETA,
     DESMATRIKULATZEA,
-    MATRIKULATZEA
+    MATRIKULATZEA,
+    UKO_EGITEA
 }
