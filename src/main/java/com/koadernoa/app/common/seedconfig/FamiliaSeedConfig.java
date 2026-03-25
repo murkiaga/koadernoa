@@ -13,7 +13,11 @@ public class FamiliaSeedConfig {
     CommandLineRunner seedFamilia(FamiliaRepository repo) {
         return args -> {
             for (String iz : new String[]{
-                "INFORMATIKA", "MERKATARITZA", "FABRIKAZIO_MEKANIKOA", "OSASUNGINTZA"
+                "INFORMATIKA ETA KOMUNIKAZIOAK", 
+                "MERKATARITZA ETA MARKETINA", 
+                "FABRIKAZIO MEKANIKOA", 
+                "OSASUNGINTZA", 
+                "INSTALATZE ETA MANTENTZE LANAK"
             }) {
                 if (!repo.existsByIzenaIgnoreCase(iz)) {
                     repo.save(Familia.builder().izena(iz).slug(iz.toLowerCase()).aktibo(true).build());

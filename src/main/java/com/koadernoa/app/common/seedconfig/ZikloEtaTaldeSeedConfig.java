@@ -24,7 +24,11 @@ public class ZikloEtaTaldeSeedConfig {
         return args -> {
             // 1) FAMILIAK (zure jatorrizko logika mantentzen dugu)
             for (String iz : new String[]{
-                    "INFORMATIKA", "MERKATARITZA", "FABRIKAZIO_MEKANIKOA", "OSASUNGINTZA"
+            		"INFORMATIKA ETA KOMUNIKAZIOAK", 
+                    "MERKATARITZA ETA MARKETINA", 
+                    "FABRIKAZIO MEKANIKOA", 
+                    "OSASUNGINTZA", 
+                    "INSTALATZE ETA MANTENTZE LANAK"
             }) {
                 if (!familiaRepo.existsByIzenaIgnoreCase(iz)) {
                     Familia f = Familia.builder()
@@ -37,9 +41,9 @@ public class ZikloEtaTaldeSeedConfig {
             }
 
             // 2) INFORMATIKA familia hartu
-            Familia informatika = familiaRepo.findByIzenaIgnoreCase("INFORMATIKA")
+            Familia informatika = familiaRepo.findByIzenaIgnoreCase("INFORMATIKA ETA KOMUNIKAZIOAK")
                     .orElseThrow(() -> new IllegalStateException(
-                            "INFORMATIKA familia ez da aurkitu seed-ean."));
+                            "INFORMATIKA ETA KOMUNIKAZIOAK familia ez da aurkitu seed-ean."));
 
             // 3) ZIKLOAK (INFORMATIKA familiakoak)
             Zikloa zikloSmr = ensureZikloa(
@@ -79,7 +83,8 @@ public class ZikloEtaTaldeSeedConfig {
             // ensureTaldea(taldeaRepo, "2DAM", zikloDam);
 
             // WEB APLIKAZIOEN GARAPENA
-            ensureTaldea(taldeaRepo, "1AW3", zikloDaw);
+            ensureTaldea(taldeaRepo, "1AWA", zikloDaw);
+            ensureTaldea(taldeaRepo, "1AWD", zikloDaw);
             ensureTaldea(taldeaRepo, "2AW3", zikloDaw);
             
             // MULTI
