@@ -567,4 +567,79 @@ public class EstatistikaService {
 	     }
 	     return estatRepo.findByKoadernoaIdOrderByEbaluazioMomentua_OrdenaAscIdAsc(koadernoa.getId());
 	 }
+
+    @Transactional(readOnly = true)
+    public LaburpenEstatistikaDto kalkulatuLaburpena(Koadernoa koadernoa) {
+        if (koadernoa == null || koadernoa.getId() == null) {
+            return null;
+        }
+
+        List<EstatistikaEbaluazioan> estatistikak = lortuKoadernoarenEstatistikak(koadernoa);
+        EstatistikaEbaluazioan lehenFinala = estatistikak.stream()
+                .filter(e -> e.getEbaluazioMomentua() != null
+                        && "1_FINAL".equalsIgnoreCase(e.getEbaluazioMomentua().getKodea()))
+                .findFirst()
+                .orElse(null);
+        EstatistikaEbaluazioan bigarrenFinala = estatistikak.stream()
+                .filter(e -> e.getEbaluazioMomentua() != null
+                        && "2_FINAL".equalsIgnoreCase(e.getEbaluazioMomentua().getKodea()))
+                .findFirst()
+                .orElse(null);
+
+        if (lehenFinala == null || bigarrenFinala == null || !bigarrenFinala.isKalkulatua()) {
+            return null;
+        }
+
+        Long lehenFinalId = lehenFinala.getEbaluazioMomentua() != null ? lehenFinala.getEbaluazioMomentua().getId() : null;
+        Long bigarrenFinalId = bigarrenFinala.getEbaluazioMomentua() != null ? bigarrenFinala.getEbaluazioMomentua().getId() : null;
+        if (lehenFinalId == null || bigarrenFinalId == null) {
+            return null;
+        }
+
+        List<Matrikula> matrikulak = matrikulaRepository
+                .findByKoadernoa_IdAndEgoera(koadernoa.getId(), MatrikulaEgoera.MATRIKULATUA);
+
+        int ebaluatuak = 0;
+        int aprobatuak = 0;
+
+        for (Matrikula matrikula : matrikulak) {
+            EbaluazioNota nota1 = lortuNotaMomentuan(matrikula, lehenFinalId);
+            EbaluazioNota nota2 = lortuNotaMomentuan(matrikula, bigarrenFinalId);
+
+            boolean ebaluatuta = daNotaEdoEgoeraEbaluatua(nota1) || daNotaEdoEgoeraEbaluatua(nota2);
+            if (ebaluatuta) {
+                ebaluatuak++;
+            }
+
+            boolean gaindituta = daNotaGainditua(nota1) || daNotaGainditua(nota2);
+            if (gaindituta) {
+                aprobatuak++;
+            }
+        }
+
+        return new LaburpenEstatistikaDto(
+                lehenFinala.getUnitateakEmanda(),
+                lehenFinala.getUnitateakAurreikusiak(),
+                lehenFinala.getOrduakEmanda(),
+                lehenFinala.getOrduakAurreikusiak(),
+                aprobatuak,
+                ebaluatuak,
+                lehenFinala.getHutsegiteOrduak()
+        );
+    }
+
+    private EbaluazioNota lortuNotaMomentuan(Matrikula matrikula, Long momentuId) {
+        if (matrikula == null || momentuId == null || matrikula.getNotak() == null) {
+            return null;
+        }
+        return matrikula.getNotak().stream()
+                .filter(n -> n.getEbaluazioMomentua() != null
+                        && Objects.equals(n.getEbaluazioMomentua().getId(), momentuId))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private boolean daNotaGainditua(EbaluazioNota nota) {
+        return nota != null && nota.getNota() != null && nota.getNota() >= 5.0;
+    }
 }

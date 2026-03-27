@@ -280,6 +280,48 @@
 		      </button>
 		    </td>
 		  </tr>
+
+          <tr th:if="${laburpena != null}">
+            <td class="label">Laburpena</td>
+            <td>
+              <div>
+                <span th:text="${laburpena.unitateakEmanda}">0</span>
+                /
+                <span th:text="${laburpena.unitateakAurreikusiak}">0</span>
+              </div>
+              <div class="muted" style="font-size:.75rem;margin-top:0.1rem;">
+                <span th:if="${laburpena.udPortzentaia != null}"
+                      th:text="|${laburpena.udPortzentaia}%|">100%</span>
+              </div>
+            </td>
+            <td>
+              <div>
+                <span th:text="${laburpena.orduakEmanda}">0</span>
+                /
+                <span th:text="${laburpena.orduakAurreikusiak}">0</span>
+              </div>
+              <div class="muted" style="font-size:.75rem;margin-top:0.1rem;">
+                <span th:if="${laburpena.orduPortzentaia != null}"
+                      th:text="|${laburpena.orduPortzentaia}%|">100%</span>
+              </div>
+            </td>
+            <td>
+              <div th:text="|${laburpena.aprobatuak} / ${laburpena.ebaluatuak}|">0 / 0</div>
+              <div class="muted" style="font-size:.75rem;margin-top:0.1rem;">
+                <span th:if="${laburpena.gaindituPortzentaia != null}"
+                      th:text="|${laburpena.gaindituPortzentaia}%|">100%</span>
+              </div>
+            </td>
+            <td>
+              <div th:text="${laburpena.hutsegiteOrduak}">0</div>
+              <div class="muted" style="font-size:.75rem;margin-top:0.1rem;">
+                <span th:if="${laburpena.bertaratzePortzentaia != null}">
+                  <span th:text="${#numbers.formatDecimal(laburpena.bertaratzePortzentaia, 2, 2)}">96.21</span>%
+                </span>
+              </div>
+            </td>
+            <td>—</td>
+          </tr>
 		  </tbody>
 		</table>
 
