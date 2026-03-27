@@ -1,6 +1,9 @@
 package com.koadernoa.app.objektuak.ebaluazioa.service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -31,6 +34,8 @@ public class EbaluazioNotaService {
                              HttpServletRequest request) {
 
         StringBuilder errorBuilder = new StringBuilder();
+        Map<Long, Boolean> lehenFinalaGainditutaMap = matrikulak.stream()
+                .collect(Collectors.toMap(Matrikula::getId, this::dagoLehenFinalaGaindituta));
 
         for (Matrikula matrikula : matrikulak) {
             String ikasleIzena = matrikula.getIkaslea() != null
@@ -38,6 +43,14 @@ public class EbaluazioNotaService {
                     : ("Matrikula ID " + matrikula.getId());
 
             for (EbaluazioMomentua momentua : momentuak) {
+                if (daBigarrenFinala(momentua)
+                        && Boolean.TRUE.equals(lehenFinalaGainditutaMap.get(matrikula.getId()))) {
+                    ebaluazioNotaRepository
+                            .findByMatrikulaAndEbaluazioMomentua(matrikula, momentua)
+                            .ifPresent(ebaluazioNotaRepository::delete);
+                    continue;
+                }
+
                 String paramName = "nota_" + matrikula.getId() + "_" + momentua.getId();
                 String rawValue = request.getParameter(paramName);
 
@@ -49,6 +62,9 @@ public class EbaluazioNotaService {
                     ebaluazioNotaRepository
                             .findByMatrikulaAndEbaluazioMomentua(matrikula, momentua)
                             .ifPresent(ebaluazioNotaRepository::delete);
+                    if (daLehenFinala(momentua)) {
+                        lehenFinalaGainditutaMap.put(matrikula.getId(), false);
+                    }
                     continue;
                 }
 
@@ -79,6 +95,9 @@ public class EbaluazioNotaService {
                     nota.setEgoera(egoeraOpt.get());
                     nota.setNota(null); // egoera berezi gehienek ez dute nota zenbakizkorik
                     ebaluazioNotaRepository.save(nota);
+                    if (daLehenFinala(momentua)) {
+                        lehenFinalaGainditutaMap.put(matrikula.getId(), false);
+                    }
                     continue;
                 }
 
@@ -128,6 +147,9 @@ public class EbaluazioNotaService {
                     nota.setNota(notaZenbaki);
                     nota.setEgoera(null); // egoera berezirik ez
                     ebaluazioNotaRepository.save(nota);
+                    if (daLehenFinala(momentua)) {
+                        lehenFinalaGainditutaMap.put(matrikula.getId(), notaZenbaki >= 5.0);
+                    }
                 } else {
                     // ===== 3) Ez da egoera baliozkoa, ezta zenbaki egokia ere =====
                     errorBuilder.append("Ikaslea ")
@@ -147,5 +169,29 @@ public class EbaluazioNotaService {
         }
         // Lerro-jauziak HTML <br>-ekin
         return errorBuilder.toString();
+    }
+
+    private boolean dagoLehenFinalaGaindituta(Matrikula matrikula) {
+        if (matrikula == null || matrikula.getNotak() == null) {
+            return false;
+        }
+        return matrikula.getNotak().stream()
+                .filter(Objects::nonNull)
+                .filter(n -> daLehenFinala(n.getEbaluazioMomentua()))
+                .map(EbaluazioNota::getNota)
+                .filter(Objects::nonNull)
+                .anyMatch(n -> n >= 5.0);
+    }
+
+    private boolean daLehenFinala(EbaluazioMomentua momentua) {
+        return momentua != null
+                && momentua.getKodea() != null
+                && "1_FINAL".equalsIgnoreCase(momentua.getKodea());
+    }
+
+    private boolean daBigarrenFinala(EbaluazioMomentua momentua) {
+        return momentua != null
+                && momentua.getKodea() != null
+                && "2_FINAL".equalsIgnoreCase(momentua.getKodea());
     }
 }

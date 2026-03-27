@@ -2,6 +2,7 @@ package com.koadernoa.app.funtzionalitateak.irakasle;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.function.Function;
 
@@ -68,10 +69,20 @@ public class NotakController {
                         n -> buildKey(n.getMatrikula().getId(), n.getEbaluazioMomentua().getId()),
                         Function.identity()
                 ));
+        Map<Long, Boolean> lehenFinalaGainditutaMap = matrikulak.stream()
+                .collect(Collectors.toMap(Matrikula::getId,
+                        m -> m.getNotak() != null && m.getNotak().stream()
+                                .filter(Objects::nonNull)
+                                .filter(n -> n.getEbaluazioMomentua() != null
+                                        && "1_FINAL".equalsIgnoreCase(n.getEbaluazioMomentua().getKodea()))
+                                .map(EbaluazioNota::getNota)
+                                .filter(Objects::nonNull)
+                                .anyMatch(n -> n >= 5.0)));
 
         model.addAttribute("momentuak", momentuak);
         model.addAttribute("matrikulak", matrikulak);
         model.addAttribute("notaMap", notaMap);
+        model.addAttribute("lehenFinalaGainditutaMap", lehenFinalaGainditutaMap);
 
         return "irakasleak/notak/index";
     }

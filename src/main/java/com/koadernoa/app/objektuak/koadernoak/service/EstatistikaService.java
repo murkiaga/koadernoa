@@ -153,6 +153,9 @@ public class EstatistikaService {
                 .findByKoadernoa_IdAndEgoera(koadernoa.getId(), MatrikulaEgoera.MATRIKULATUA);
 
         for (Matrikula m : matrikulak) {
+            if (ezDuMomentuHauEbaluatuBehar(m, em)) {
+                continue;
+            }
             boolean baduBalioaMomentuHonetan = m.getNotak() != null && m.getNotak().stream()
                     .filter(n -> n.getEbaluazioMomentua() != null
                             && Objects.equals(n.getEbaluazioMomentua().getId(), em.getId()))
@@ -409,6 +412,9 @@ public class EstatistikaService {
         int ebaluatuak = 0;
 
         for (Matrikula m : matrikulak) {
+            if (ezDuMomentuHauEbaluatuBehar(m, em)) {
+                continue;
+            }
             if (m.getNotak() == null || m.getNotak().isEmpty()) {
                 continue;
             }
@@ -424,6 +430,25 @@ public class EstatistikaService {
         }
 
         return ebaluatuak;
+    }
+
+    private boolean ezDuMomentuHauEbaluatuBehar(Matrikula matrikula, EbaluazioMomentua em) {
+        if (matrikula == null || em == null || em.getKodea() == null) {
+            return false;
+        }
+        if (!"2_FINAL".equalsIgnoreCase(em.getKodea())) {
+            return false;
+        }
+        if (matrikula.getNotak() == null || matrikula.getNotak().isEmpty()) {
+            return false;
+        }
+
+        return matrikula.getNotak().stream()
+                .filter(n -> n.getEbaluazioMomentua() != null
+                        && "1_FINAL".equalsIgnoreCase(n.getEbaluazioMomentua().getKodea()))
+                .map(EbaluazioNota::getNota)
+                .filter(Objects::nonNull)
+                .anyMatch(n -> n >= 5.0);
     }
 
 
