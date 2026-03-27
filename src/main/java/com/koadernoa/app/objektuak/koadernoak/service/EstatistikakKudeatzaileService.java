@@ -5,8 +5,13 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -15,6 +20,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.koadernoa.app.funtzionalitateak.kudeatzaile.EstatistikaDashboard.EstatistikakFiltroa;
+import com.koadernoa.app.funtzionalitateak.kudeatzaile.EstatistikaDashboard.LaburpenKudeatzaileRow;
+import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioNota;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.EzadostasunFitxa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.EzadostasunMota;
@@ -22,6 +29,9 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.EstatistikaEbaluazioan;
 import com.koadernoa.app.objektuak.koadernoak.repository.EstatistikaEbaluazioanRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.EzadostasunFitxaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.projection.EbaluazioKodeKopuruaProjection;
+import com.koadernoa.app.objektuak.modulua.entitateak.Matrikula;
+import com.koadernoa.app.objektuak.modulua.entitateak.MatrikulaEgoera;
+import com.koadernoa.app.objektuak.modulua.repository.MatrikulaRepository;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Familia;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Taldea;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Zikloa;
@@ -33,6 +43,7 @@ import lombok.RequiredArgsConstructor;
 public class EstatistikakKudeatzaileService {
 	private final EstatistikaEbaluazioanRepository estatistikaRepo;
 	private final EzadostasunFitxaRepository ezadostasunFitxaRepository;
+    private final MatrikulaRepository matrikulaRepository;
 	
 	private String nullIfBlank(String s) {
 	    return (s == null || s.isBlank()) ? null : s;
@@ -363,6 +374,167 @@ public class EstatistikakKudeatzaileService {
                 page++;
             }
         }
+    }
+
+    public Page<LaburpenKudeatzaileRow> bilatuLaburpenakOrrikatuta(EstatistikakFiltroa f, Pageable pageable) {
+        List<LaburpenKudeatzaileRow> guztiak = bilatuLaburpenakZerrenda(f, pageable.getSort());
+        int from = (int) pageable.getOffset();
+        if (from >= guztiak.size()) {
+            return new org.springframework.data.domain.PageImpl<>(List.of(), pageable, guztiak.size());
+        }
+        int to = Math.min(from + pageable.getPageSize(), guztiak.size());
+        return new org.springframework.data.domain.PageImpl<>(guztiak.subList(from, to), pageable, guztiak.size());
+    }
+
+    public List<LaburpenKudeatzaileRow> bilatuLaburpenakZerrenda(EstatistikakFiltroa f, Sort sort) {
+        Sort baseSort = (sort == null || sort.isUnsorted())
+                ? Sort.by("taldea").ascending().and(Sort.by("moduloa")).and(Sort.by("koadernoId"))
+                : sort;
+
+        List<EstatistikaEbaluazioan> guztiak = estatistikaRepo.bilatuDashboarderakoZerrenda(
+                null, null, f.getFamiliaId(), f.getZikloaId(), f.getTaldeaId(), f.getMailaId(), null, Sort.by("id"));
+
+        Map<Long, EstatistikaEbaluazioan> lehenFinalaByKoadernoa = new HashMap<>();
+        Map<Long, EstatistikaEbaluazioan> bigarrenFinalaByKoadernoa = new HashMap<>();
+
+        for (EstatistikaEbaluazioan e : guztiak) {
+            if (e.getKoadernoa() == null || e.getKoadernoa().getId() == null || e.getEbaluazioMomentua() == null) continue;
+            String kodea = e.getEbaluazioMomentua().getKodea();
+            if ("1_FINAL".equalsIgnoreCase(kodea)) {
+                lehenFinalaByKoadernoa.put(e.getKoadernoa().getId(), e);
+            } else if ("2_FINAL".equalsIgnoreCase(kodea)) {
+                bigarrenFinalaByKoadernoa.put(e.getKoadernoa().getId(), e);
+            }
+        }
+
+        List<LaburpenKudeatzaileRow> rows = new java.util.ArrayList<>();
+        for (Map.Entry<Long, EstatistikaEbaluazioan> entry : lehenFinalaByKoadernoa.entrySet()) {
+            Long koadernoId = entry.getKey();
+            EstatistikaEbaluazioan lehenFinala = entry.getValue();
+            EstatistikaEbaluazioan bigarrenFinala = bigarrenFinalaByKoadernoa.get(koadernoId);
+            boolean kalkulatua = bigarrenFinala != null && bigarrenFinala.isKalkulatua();
+            if (f.getKalkulatua() != null && !Objects.equals(f.getKalkulatua(), kalkulatua)) {
+                continue;
+            }
+
+            Long lehenFinalMomentuId = lehenFinala.getEbaluazioMomentua() != null ? lehenFinala.getEbaluazioMomentua().getId() : null;
+            Long bigarrenFinalMomentuId = bigarrenFinala != null && bigarrenFinala.getEbaluazioMomentua() != null
+                    ? bigarrenFinala.getEbaluazioMomentua().getId() : null;
+
+            int ebaluatuak = 0;
+            int aprobatuak = 0;
+            List<Matrikula> matrikulak = matrikulaRepository.findByKoadernoa_IdAndEgoera(koadernoId, MatrikulaEgoera.MATRIKULATUA);
+            for (Matrikula m : matrikulak) {
+                EbaluazioNota n1 = lortuNotaMomentuan(m, lehenFinalMomentuId);
+                EbaluazioNota n2 = lortuNotaMomentuan(m, bigarrenFinalMomentuId);
+                if (daNotaEdoEgoeraEbaluatua(n1) || daNotaEdoEgoeraEbaluatua(n2)) ebaluatuak++;
+                if (daNotaGainditua(n1) || daNotaGainditua(n2)) aprobatuak++;
+            }
+
+            LocalDateTime azkenKalkulua = (bigarrenFinala != null && bigarrenFinala.getAzkenKalkulua() != null)
+                    ? bigarrenFinala.getAzkenKalkulua()
+                    : lehenFinala.getAzkenKalkulua();
+
+            rows.add(new LaburpenKudeatzaileRow(
+                    koadernoId,
+                    lehenFinala.getKoadernoa() != null && lehenFinala.getKoadernoa().getModuloa() != null
+                            && lehenFinala.getKoadernoa().getModuloa().getTaldea() != null
+                            ? nz(lehenFinala.getKoadernoa().getModuloa().getTaldea().getIzena()) : "",
+                    lehenFinala.getKoadernoa() != null && lehenFinala.getKoadernoa().getModuloa() != null
+                            ? nz(lehenFinala.getKoadernoa().getModuloa().getIzena()) : "",
+                    lehenFinala.getKoadernoa() != null && lehenFinala.getKoadernoa().getEgutegia() != null
+                            && lehenFinala.getKoadernoa().getEgutegia().getMaila() != null
+                            ? nz(lehenFinala.getKoadernoa().getEgutegia().getMaila().getIzena()) : "",
+                    lehenFinala.getKoadernoa() != null ? nz(lehenFinala.getKoadernoa().getIrakasleakLabur()) : "",
+                    lehenFinala.getUnitateakEmanda(),
+                    lehenFinala.getUnitateakAurreikusiak(),
+                    lehenFinala.getOrduakEmanda(),
+                    lehenFinala.getOrduakAurreikusiak(),
+                    aprobatuak,
+                    ebaluatuak,
+                    lehenFinala.getHutsegiteOrduak(),
+                    kalkulatua,
+                    azkenKalkulua
+            ));
+        }
+
+        rows.sort(buildLaburpenComparator(baseSort));
+        return rows;
+    }
+
+    public void exportLaburpenCsv(EstatistikakFiltroa f, Sort sort, OutputStream os) throws IOException {
+        try (BufferedWriter w = new BufferedWriter(new OutputStreamWriter(os, StandardCharsets.UTF_8))) {
+            w.write(String.join(";",
+                    "KoadernoId","Taldea","Moduloa","Maila","Irakasleak",
+                    "UD_Emanda","UD_Aurreikusiak","UD_%",
+                    "Ordu_Emanda","Ordu_Aurreikusiak","Ordu_%",
+                    "Aprobatuak","Ebaluatuak","Gainditu_%",
+                    "HutsegiteOrduak","Bertaratze_%","Kalkulatua","AzkenKalkulua"));
+            w.newLine();
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+            for (LaburpenKudeatzaileRow r : bilatuLaburpenakZerrenda(f, sort)) {
+                w.write(String.join(";",
+                        nz(String.valueOf(r.getKoadernoId())),
+                        csv(r.getTaldea()),
+                        csv(r.getModuloa()),
+                        csv(r.getMaila()),
+                        csv(r.getIrakasleak()),
+                        String.valueOf(r.getUnitateakEmanda()),
+                        String.valueOf(r.getUnitateakAurreikusiak()),
+                        r.getUdPortzentaia() == null ? "" : String.valueOf(r.getUdPortzentaia()),
+                        String.valueOf(r.getOrduakEmanda()),
+                        String.valueOf(r.getOrduakAurreikusiak()),
+                        r.getOrduPortzentaia() == null ? "" : String.valueOf(r.getOrduPortzentaia()),
+                        String.valueOf(r.getAprobatuak()),
+                        String.valueOf(r.getEbaluatuak()),
+                        r.getGaindituPortzentaia() == null ? "" : String.valueOf(r.getGaindituPortzentaia()),
+                        String.valueOf(r.getHutsegiteOrduak()),
+                        r.getBertaratzePortzentaia() == null ? "" : String.valueOf(r.getBertaratzePortzentaia()),
+                        String.valueOf(r.isKalkulatua()),
+                        r.getAzkenKalkulua() == null ? "" : r.getAzkenKalkulua().format(fmt)
+                ));
+                w.newLine();
+            }
+            w.flush();
+        }
+    }
+
+    private Comparator<LaburpenKudeatzaileRow> buildLaburpenComparator(Sort sort) {
+        Comparator<LaburpenKudeatzaileRow> comparator = Comparator.comparing(
+                LaburpenKudeatzaileRow::getKoadernoId, Comparator.nullsLast(Long::compareTo));
+        for (Sort.Order order : sort) {
+            Comparator<LaburpenKudeatzaileRow> next = switch (order.getProperty()) {
+                case "taldea" -> Comparator.comparing(LaburpenKudeatzaileRow::getTaldea, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+                case "moduloa" -> Comparator.comparing(LaburpenKudeatzaileRow::getModuloa, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+                case "maila" -> Comparator.comparing(LaburpenKudeatzaileRow::getMaila, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+                case "kalkulatua" -> Comparator.comparing(LaburpenKudeatzaileRow::isKalkulatua);
+                case "azkenKalkulua" -> Comparator.comparing(LaburpenKudeatzaileRow::getAzkenKalkulua, Comparator.nullsLast(LocalDateTime::compareTo));
+                case "gaindituPortzentaia" -> Comparator.comparing(LaburpenKudeatzaileRow::getGaindituPortzentaia, Comparator.nullsLast(Integer::compareTo));
+                default -> Comparator.comparing(LaburpenKudeatzaileRow::getKoadernoId, Comparator.nullsLast(Long::compareTo));
+            };
+            if (order.getDirection().isDescending()) next = next.reversed();
+            comparator = next.thenComparing(comparator);
+        }
+        return comparator;
+    }
+
+    private EbaluazioNota lortuNotaMomentuan(Matrikula matrikula, Long momentuId) {
+        if (matrikula == null || momentuId == null || matrikula.getNotak() == null) return null;
+        return matrikula.getNotak().stream()
+                .filter(n -> n.getEbaluazioMomentua() != null
+                        && Objects.equals(n.getEbaluazioMomentua().getId(), momentuId))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private boolean daNotaGainditua(EbaluazioNota nota) {
+        return nota != null && nota.getNota() != null && nota.getNota() >= 5.0;
+    }
+
+    private boolean daNotaEdoEgoeraEbaluatua(EbaluazioNota nota) {
+        if (nota == null) return false;
+        if (nota.getNota() != null && nota.getNota() >= 1.0 && nota.getNota() <= 10.0) return true;
+        return nota.getEgoera() != null && nota.getEgoera().isEbaluatua();
     }
 
     private String nz(String s) { return s == null ? "" : s; }

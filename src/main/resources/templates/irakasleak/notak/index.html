@@ -122,10 +122,12 @@
           <td><textarea class="oharra-input" th:name="${'oharra_' + mat.id}" th:text="${mat.oharra}"></textarea></td>
 
           <!-- Nota input-ak dinamikoki, ebaluazio momentu bakoitzerako -->
-          <td th:each="em : ${momentuak}">
+          <td th:each="em : ${momentuak}"
+              th:with="ezDaBigarrenFinalEbaluagarria=${em.kodea == '2_FINAL' and (bigarrenFinalaErakutsiMap == null or !bigarrenFinalaErakutsiMap[mat.id])}">
             <div class="nota-wrap">
               <input type="text"
-                     th:if="${!(#maps.containsKey(notaMap, mat.id + '_' + em.id)
+                     th:if="${!ezDaBigarrenFinalEbaluagarria
+                              and !(#maps.containsKey(notaMap, mat.id + '_' + em.id)
                               and notaMap[mat.id + '_' + em.id].egoera != null
                               and notaMap[mat.id + '_' + em.id].egoera.kodea == 'UKO_EGINDA')}"
                      th:name="${'nota_' + mat.id + '_' + em.id}"
@@ -140,6 +142,7 @@
                          : ''
                      }"/>
               <span th:if="${#maps.containsKey(notaMap, mat.id + '_' + em.id)
+                              and !ezDaBigarrenFinalEbaluagarria
                               and notaMap[mat.id + '_' + em.id].egoera != null
                               and notaMap[mat.id + '_' + em.id].egoera.kodea == 'UKO_EGINDA'}"
                     style="font-weight:700;color:#991b1b;">
@@ -149,7 +152,8 @@
               <!-- '+' botoia: egoera berezien menu desplegablea -->
               <button type="button"
                       class="nota-egoera-btn"
-                      th:if="${!#lists.isEmpty(em.egoeraOnartuak)
+                      th:if="${!ezDaBigarrenFinalEbaluagarria
+                              and !#lists.isEmpty(em.egoeraOnartuak)
                               and !(#maps.containsKey(notaMap, mat.id + '_' + em.id)
                                   and notaMap[mat.id + '_' + em.id].egoera != null
                                   and notaMap[mat.id + '_' + em.id].egoera.kodea == 'UKO_EGINDA')}">
@@ -157,7 +161,8 @@
               </button>
 
               <div class="nota-egoera-menu" style="display:none;"
-                   th:if="${!#lists.isEmpty(em.egoeraOnartuak)
+                   th:if="${!ezDaBigarrenFinalEbaluagarria
+                           and !#lists.isEmpty(em.egoeraOnartuak)
                            and !(#maps.containsKey(notaMap, mat.id + '_' + em.id)
                                and notaMap[mat.id + '_' + em.id].egoera != null
                                and notaMap[mat.id + '_' + em.id].egoera.kodea == 'UKO_EGINDA')}">

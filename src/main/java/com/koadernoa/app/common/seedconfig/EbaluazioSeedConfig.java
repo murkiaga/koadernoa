@@ -65,23 +65,33 @@ public class EbaluazioSeedConfig {
 
         ensureEgoera(egoeraRepo,
                 "EZ_AURKEZTUA",
-                "Ez aurkeztua");
+                "Ez aurkeztua",
+                true);
 
         ensureEgoera(egoeraRepo,
                 "EZ_EBALUATUA_FALTAK",
-                "Ez ebaluatua faltengatik");
+                "Ez ebaluatua faltengatik",
+                false);
     }
 
     private EbaluazioEgoera ensureEgoera(EbaluazioEgoeraRepository repo,
                                          String kodea,
-                                         String izena) {
+                                         String izena,
+                                         boolean ebaluatua) {
 
         return repo.findByKodea(kodea)
+                .map(existing -> {
+                    if (existing.isEbaluatua() != ebaluatua) {
+                        existing.setEbaluatua(ebaluatua);
+                        return repo.save(existing);
+                    }
+                    return existing;
+                })
                 .orElseGet(() -> {
                     EbaluazioEgoera e = new EbaluazioEgoera();
                     e.setKodea(kodea);
-                    // izena eremua baduzu:
                     e.setIzena(izena);
+                    e.setEbaluatua(ebaluatua);
                     return repo.save(e);
                 });
     }

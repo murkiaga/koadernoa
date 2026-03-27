@@ -49,6 +49,9 @@ public class EstatistikakKudeatzaileController {
     public String index(
             @ModelAttribute("filtro") EstatistikakFiltroa filtro,
             @PageableDefault(size = 20, sort = {"ebaluazioMomentua.ordena","id"}, direction = Sort.Direction.ASC) Pageable pageable,
+            @RequestParam(name = "labPage", defaultValue = "0") int labPage,
+            @RequestParam(name = "labSize", defaultValue = "20") int labSize,
+            @RequestParam(name = "labSort", required = false) String labSortParam,
             Model model,
             HttpServletRequest request
     ) {
@@ -108,6 +111,15 @@ public class EstatistikakKudeatzaileController {
         Page<EzadostasunFitxaRow> ezadostasunPage = new PageImpl<>(
                 ezadostasunRows, ezadostasunPageable, ezadostasunOrria.getTotalElements());
         model.addAttribute("ezadostasunOrria", ezadostasunPage);
+
+        Sort labSort = parseLaburpenSortOrDefault(labSortParam);
+        Pageable labPageable = PageRequest.of(Math.max(labPage, 0), Math.max(labSize, 1), labSort);
+        var laburpenOrria = estatistikakService.bilatuLaburpenakOrrikatuta(filtro, labPageable);
+        model.addAttribute("laburpenOrria", laburpenOrria);
+        String labSortBy = labSort.isSorted() ? labSort.iterator().next().getProperty() : "taldea";
+        String labSortDir = labSort.isSorted() ? labSort.iterator().next().getDirection().name().toLowerCase() : "asc";
+        model.addAttribute("labSortBy", labSortBy);
+        model.addAttribute("labSortDir", labSortDir);
 
         // Dropdown-entzako datuak (zure service propioetara egokitu)
         model.addAttribute("familiaList", estatistikakService.lortuFamiliak(filtro));
@@ -235,6 +247,24 @@ public class EstatistikakKudeatzaileController {
                 .body(body);
     }
 
+    @GetMapping(value = "/laburpenak/csv", produces = "text/csv")
+    public ResponseEntity<StreamingResponseBody> exportLaburpenCsv(
+            @ModelAttribute("filtro") EstatistikakFiltroa filtro,
+            @RequestParam(name = "sort", required = false) String sortParam
+    ) {
+        Sort sort = parseLaburpenSortOrDefault(sortParam);
+
+        StreamingResponseBody body = outputStream -> {
+            outputStream.write(new byte[] {(byte)0xEF, (byte)0xBB, (byte)0xBF});
+            estatistikakService.exportLaburpenCsv(filtro, sort, outputStream);
+        };
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"laburpenak.csv\"")
+                .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
+                .body(body);
+    }
+
     /**
      * UI-tik datozen sort field-ak whitelisteatu (seguruagoa + akats gutxiago).
      * sort param formatua: "field,asc" edo "field,desc"
@@ -292,6 +322,19 @@ public class EstatistikakKudeatzaileController {
                 .toList();
 
         return Sort.by(orders);
+    }
+
+    private Sort parseLaburpenSortOrDefault(String sortParam) {
+        String field = "taldea";
+        Sort.Direction dir = Sort.Direction.ASC;
+        if (sortParam != null && !sortParam.isBlank()) {
+            String[] parts = sortParam.split(",");
+            if (parts.length >= 1 && !parts[0].isBlank()) field = parts[0].trim();
+            if (parts.length >= 2 && "desc".equalsIgnoreCase(parts[1].trim())) dir = Sort.Direction.DESC;
+        }
+        Set<String> allowed = Set.of("koadernoId", "taldea", "moduloa", "maila", "gaindituPortzentaia", "kalkulatua", "azkenKalkulua");
+        if (!allowed.contains(field)) field = "taldea";
+        return Sort.by(dir, field);
     }
 
 }

@@ -264,6 +264,14 @@
             id="tab-ezadostasunak">
       Ezadostasunak
     </button>
+
+    <button type="button" class="tab-btn"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-laburpenak"
+            id="tab-laburpenak">
+      Laburpenak
+    </button>
   </div>
 
   <section id="panel-estatistikak" class="tab-panel active" role="tabpanel"
@@ -593,21 +601,12 @@
 
       <tbody>
       <tr th:if="${estatistikaRows == null or estatistikaRows.isEmpty()}">
-        <!-- zutabe kopurua: 12 -->
         <td colspan="13" class="muted">
           Ez dago emaitzarik filtro hauekin (edo ez dago estatistikarik ikasturte aktiboan).
         </td>
       </tr>
 
-      <tr th:each="e : ${estatistikaRows}"
-          th:with="fitxaUdBeteta=${e.hasEzadostasunFitxa(T(com.koadernoa.app.objektuak.koadernoak.entitateak.EzadostasunMota).UD_EMANDA)},
-                   fitxaOrduBeteta=${e.hasEzadostasunFitxa(T(com.koadernoa.app.objektuak.koadernoak.entitateak.EzadostasunMota).ORDU_EMANDA)},
-                   fitxaGaindituBeteta=${e.hasEzadostasunFitxa(T(com.koadernoa.app.objektuak.koadernoak.entitateak.EzadostasunMota).GAINDITU)},
-                   fitxaBertaratzeBeteta=${e.hasEzadostasunFitxa(T(com.koadernoa.app.objektuak.koadernoak.entitateak.EzadostasunMota).BERTARATZE)},
-                   udEzadostasun=${e.udPortzentaia != null and e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null and e.udPortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minBlokePortzentaia},
-                   orduEzadostasun=${e.orduPortzentaia != null and e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null and e.orduPortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minOrduPortzentaia},
-                   gaindituEzadostasun=${e.gaindituPortzentaia != null and e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null and e.gaindituPortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minGaindituPortzentaia},
-                   bertaratzeEzadostasun=${e.bertaratzePortzentaia != null and e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null and e.bertaratzePortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minBertaratzePortzentaia}">
+      <tr th:each="e : ${estatistikaRows}">
         <td><input type="checkbox" class="estat-check" name="estatistikaIds" th:value="${e.id}" form="mezuaBidaliForm" checked></td>
         <td th:text="${e.id}">1</td>
 
@@ -643,97 +642,36 @@
         </td>
 
         <!-- UD-ak / Erronkak -->
-        <td th:classappend="${
-              (e.udPortzentaia != null
-                and e.ebaluazioMomentua != null
-                and e.ebaluazioMomentua.ezadostasunKonfig != null
-                and e.udPortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minBlokePortzentaia)
-            } ? 'bad'">
+        <td>
           <div class="metric">
             <span class="main" th:text="|${e.unitateakEmanda} / ${e.unitateakAurreikusiak}|">0 / 0</span>
-            <span class="pct" th:if="${e.udPortzentaia != null}">
-              <a th:if="${udEzadostasun}"
-                 class="ezadostasun-link"
-                 th:classappend="${fitxaUdBeteta} ? ' filled' : ' pending'"
-                 th:href="@{/kudeatzaile/estatistikak/{id}/ezadostasuna(id=${e.id}, mota='UD_EMANDA')}"
-                 th:text="|${e.udPortzentaia}%|">0%</a>
-              <span th:if="${!udEzadostasun}" th:text="|${e.udPortzentaia}%|">0%</span>
-            </span>
-          </div>
-          <div class="limit" th:if="${e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null}">
-            (≥ <span th:text="${e.ebaluazioMomentua.ezadostasunKonfig.minBlokePortzentaia}">0</span>%)
+            <span class="pct" th:if="${e.udPortzentaia != null}" th:text="|${e.udPortzentaia}%|">0%</span>
           </div>
         </td>
 
         <!-- Saioak -->
-        <td th:classappend="${
-              (e.orduPortzentaia != null
-                and e.ebaluazioMomentua != null
-                and e.ebaluazioMomentua.ezadostasunKonfig != null
-                and e.orduPortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minOrduPortzentaia)
-            } ? 'bad'">
+        <td>
           <div class="metric">
             <span class="main" th:text="|${e.orduakEmanda} / ${e.orduakAurreikusiak}|">0 / 0</span>
-            <span class="pct" th:if="${e.orduPortzentaia != null}">
-              <a th:if="${orduEzadostasun}"
-                 class="ezadostasun-link"
-                 th:classappend="${fitxaOrduBeteta} ? ' filled' : ' pending'"
-                 th:href="@{/kudeatzaile/estatistikak/{id}/ezadostasuna(id=${e.id}, mota='ORDU_EMANDA')}"
-                 th:text="|${e.orduPortzentaia}%|">0%</a>
-              <span th:if="${!orduEzadostasun}" th:text="|${e.orduPortzentaia}%|">0%</span>
-            </span>
-          </div>
-          <div class="limit" th:if="${e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null}">
-            (≥ <span th:text="${e.ebaluazioMomentua.ezadostasunKonfig.minOrduPortzentaia}">0</span>%)
+            <span class="pct" th:if="${e.orduPortzentaia != null}" th:text="|${e.orduPortzentaia}%|">0%</span>
           </div>
         </td>
 
         <!-- Gaindituak -->
-        <td th:classappend="${
-              (e.gaindituPortzentaia != null
-                and e.ebaluazioMomentua != null
-                and e.ebaluazioMomentua.ezadostasunKonfig != null
-                and e.gaindituPortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minGaindituPortzentaia)
-            } ? 'bad'">
+        <td>
           <div class="metric">
             <span class="main" th:text="|${e.aprobatuak} / ${e.ebaluatuak}|">0 / 0</span>
-            <span class="pct" th:if="${e.gaindituPortzentaia != null}">
-              <a th:if="${gaindituEzadostasun}"
-                 class="ezadostasun-link"
-                 th:classappend="${fitxaGaindituBeteta} ? ' filled' : ' pending'"
-                 th:href="@{/kudeatzaile/estatistikak/{id}/ezadostasuna(id=${e.id}, mota='GAINDITU')}"
-                 th:text="|${e.gaindituPortzentaia}%|">0%</a>
-              <span th:if="${!gaindituEzadostasun}" th:text="|${e.gaindituPortzentaia}%|">0%</span>
-            </span>
-          </div>
-          <div class="limit" th:if="${e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null}">
-            (≥ <span th:text="${e.ebaluazioMomentua.ezadostasunKonfig.minGaindituPortzentaia}">0</span>%)
+            <span class="pct" th:if="${e.gaindituPortzentaia != null}" th:text="|${e.gaindituPortzentaia}%|">0%</span>
           </div>
         </td>
 
         <!-- Ikasleen bertaratzea / bertaratzea -->
-        <td th:classappend="${
-              (e.bertaratzePortzentaia != null
-                and e.ebaluazioMomentua != null
-                and e.ebaluazioMomentua.ezadostasunKonfig != null
-                and e.bertaratzePortzentaia < e.ebaluazioMomentua.ezadostasunKonfig.minBertaratzePortzentaia)
-            } ? 'bad'">
+        <td>
           <div class="metric">
             <span class="main" th:text="${e.hutsegiteOrduak}">0</span>
             <span class="pct" th:if="${e.bertaratzePortzentaia != null}">
-              <a th:if="${bertaratzeEzadostasun}"
-                 class="ezadostasun-link"
-                 th:classappend="${fitxaBertaratzeBeteta} ? ' filled' : ' pending'"
-                 th:href="@{/kudeatzaile/estatistikak/{id}/ezadostasuna(id=${e.id}, mota='BERTARATZE')}">
-                <span th:text="${#numbers.formatDecimal(e.bertaratzePortzentaia, 2, 2)}">0.00</span>%
-              </a>
-              <span th:if="${!bertaratzeEzadostasun}">
-                <span th:text="${#numbers.formatDecimal(e.bertaratzePortzentaia, 2, 2)}">0.00</span>%
-              </span>
+              <span th:text="${#numbers.formatDecimal(e.bertaratzePortzentaia, 2, 2)}">0.00</span>%
             </span>
-          </div>
-          <div class="limit" th:if="${e.ebaluazioMomentua != null and e.ebaluazioMomentua.ezadostasunKonfig != null}">
-            (≥ <span th:text="${e.ebaluazioMomentua.ezadostasunKonfig.minBertaratzePortzentaia}">0</span>%)
           </div>
         </td>
 
@@ -842,6 +780,138 @@
     </form>
 
     <div th:replace="~{kudeatzaile/estatistikak/ezadostasunak-fragment :: ezadostasunak-taula}"></div>
+  </section>
+
+  <section id="panel-laburpenak" class="tab-panel" role="tabpanel"
+           aria-labelledby="tab-laburpenak" tabindex="0" aria-hidden="true">
+    <h2 style="margin-top:18px;">Laburpenak</h2>
+    <p class="muted" style="margin-top:6px;">
+      Ikasturte aktiboko koaderno bakoitzeko 1_FINAL + 2_FINAL laburpena.
+    </p>
+
+    <form class="filters" method="get" th:object="${filtro}"
+          th:action="@{/kudeatzaile/estatistikak} + '#laburpenak'">
+      <div>
+        <label>Familia</label>
+        <select th:field="*{familiaId}">
+          <option value="">Denak</option>
+          <option th:each="f : ${familiaList}" th:value="${f.id}" th:text="${f.izena}"></option>
+        </select>
+      </div>
+      <div>
+        <label>Zikloa</label>
+        <select th:field="*{zikloaId}">
+          <option value="">Denak</option>
+          <option th:each="z : ${zikloaList}" th:value="${z.id}" th:text="${z.izena}"></option>
+        </select>
+      </div>
+      <div>
+        <label>Taldea</label>
+        <select th:field="*{taldeaId}">
+          <option value="">Denak</option>
+          <option th:each="t : ${taldeaList}" th:value="${t.id}" th:text="${t.izena}"></option>
+        </select>
+      </div>
+      <div>
+        <label>Maila</label>
+        <select th:field="*{mailaId}">
+          <option value="">Denak</option>
+          <option th:each="m : ${mailaList}" th:value="${m.id}" th:text="${m.izena}"></option>
+        </select>
+      </div>
+      <div>
+        <label>Egoera</label>
+        <select th:field="*{kalkulatua}">
+          <option value="">Denak</option>
+          <option value="false">2_FINAL kalkulatu gabe</option>
+          <option value="true">2_FINAL kalkulatuta</option>
+        </select>
+      </div>
+      <input type="hidden" name="labPage" value="0"/>
+      <input type="hidden" name="labSize" th:value="${laburpenOrria != null ? laburpenOrria.size : 20}"/>
+      <input type="hidden" name="labSort" th:value="|${labSortBy},${labSortDir}|"/>
+
+      <div class="actions">
+        <button class="btn btn-primary" type="submit">Aplikatu filtroak</button>
+        <a class="btn" th:href="@{/kudeatzaile/estatistikak} + '#laburpenak'">Garbitu</a>
+        <a class="btn btn-success"
+           th:href="@{/kudeatzaile/estatistikak/laburpenak/csv(
+              familiaId=${filtro.familiaId},
+              zikloaId=${filtro.zikloaId},
+              taldeaId=${filtro.taldeaId},
+              mailaId=${filtro.mailaId},
+              kalkulatua=${filtro.kalkulatua},
+              sort=|${labSortBy},${labSortDir}|
+           )}">
+          CSV deskargatu
+        </a>
+      </div>
+    </form>
+
+    <div class="muted" style="margin-top:6px;" th:if="${laburpenOrria != null}">
+      <span class="badge" th:text="'Emaitzak: ' + ${laburpenOrria.totalElements}">Emaitzak: 0</span>
+      <span class="badge" th:text="'Orria: ' + ${laburpenOrria.number + 1} + '/' + ${laburpenOrria.totalPages}">Orria: 1/1</span>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+        <tr>
+          <th>Koadernoa</th>
+          <th>Taldea</th>
+          <th>Moduloa</th>
+          <th>Maila</th>
+          <th>Irakasleak</th>
+          <th>UD-ak / Erronkak</th>
+          <th>Saioak</th>
+          <th>Gaindituak</th>
+          <th>Ikasleen bertaratzea</th>
+          <th>2_FINAL kalkulatua</th>
+          <th>Azken kalkulua</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:if="${laburpenOrria == null or laburpenOrria.totalElements == 0}">
+          <td colspan="11" class="muted">Ez dago laburpenik filtro hauekin.</td>
+        </tr>
+        <tr th:each="r : ${laburpenOrria.content}">
+          <td th:text="${r.koadernoId}">1</td>
+          <td th:text="${r.taldea}">1SMA</td>
+          <td th:text="${r.moduloa}">RELO</td>
+          <td th:text="${r.maila}">1. maila</td>
+          <td class="teachers-col"><span class="clip" th:text="${r.irakasleak}" th:title="${r.irakasleak}">-</span></td>
+          <td><span th:text="|${r.unitateakEmanda} / ${r.unitateakAurreikusiak}|">0 / 0</span>
+            <span class="sub" th:if="${r.udPortzentaia != null}" th:text="|${r.udPortzentaia}%|">0%</span></td>
+          <td><span th:text="|${r.orduakEmanda} / ${r.orduakAurreikusiak}|">0 / 0</span>
+            <span class="sub" th:if="${r.orduPortzentaia != null}" th:text="|${r.orduPortzentaia}%|">0%</span></td>
+          <td><span th:text="|${r.aprobatuak} / ${r.ebaluatuak}|">0 / 0</span>
+            <span class="sub" th:if="${r.gaindituPortzentaia != null}" th:text="|${r.gaindituPortzentaia}%|">0%</span></td>
+          <td><span th:text="${r.hutsegiteOrduak}">0</span>
+            <span class="sub" th:if="${r.bertaratzePortzentaia != null}">
+              <span th:text="${#numbers.formatDecimal(r.bertaratzePortzentaia, 2, 2)}">0.00</span>%
+            </span></td>
+          <td th:text="${r.kalkulatua} ? 'Bai' : 'Ez'">Ez</td>
+          <td th:text="${r.azkenKalkulua != null ? #temporals.format(r.azkenKalkulua, 'yyyy-MM-dd HH:mm') : '-'}">-</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pager" th:if="${laburpenOrria != null and laburpenOrria.totalPages > 1}">
+      <a th:each="i : ${#numbers.sequence(0, laburpenOrria.totalPages - 1)}"
+         th:classappend="${i == laburpenOrria.number} ? 'active'"
+         th:href="@{/kudeatzaile/estatistikak(
+            labPage=${i},
+            labSize=${laburpenOrria.size},
+            labSort=|${labSortBy},${labSortDir}|,
+            familiaId=${filtro.familiaId},
+            zikloaId=${filtro.zikloaId},
+            taldeaId=${filtro.taldeaId},
+            mailaId=${filtro.mailaId},
+            kalkulatua=${filtro.kalkulatua}
+         )} + '#laburpenak'"
+         th:text="${i + 1}">1</a>
+    </div>
   </section>
 
 </div>

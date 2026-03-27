@@ -18,6 +18,7 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.Asistentzia;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Asistentzia.AsistentziaEgoera;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Ebaluaketa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.EstatistikaEbaluazioan;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.EstatistikaLaburpenDto;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Jarduera;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Programazioa;
@@ -153,6 +154,9 @@ public class EstatistikaService {
                 .findByKoadernoa_IdAndEgoera(koadernoa.getId(), MatrikulaEgoera.MATRIKULATUA);
 
         for (Matrikula m : matrikulak) {
+            if (ezDuMomentuHauEbaluatuBehar(m, em)) {
+                continue;
+            }
             boolean baduBalioaMomentuHonetan = m.getNotak() != null && m.getNotak().stream()
                     .filter(n -> n.getEbaluazioMomentua() != null
                             && Objects.equals(n.getEbaluazioMomentua().getId(), em.getId()))
@@ -409,6 +413,9 @@ public class EstatistikaService {
         int ebaluatuak = 0;
 
         for (Matrikula m : matrikulak) {
+            if (ezDuMomentuHauEbaluatuBehar(m, em)) {
+                continue;
+            }
             if (m.getNotak() == null || m.getNotak().isEmpty()) {
                 continue;
             }
@@ -424,6 +431,34 @@ public class EstatistikaService {
         }
 
         return ebaluatuak;
+    }
+
+    private boolean ezDuMomentuHauEbaluatuBehar(Matrikula matrikula, EbaluazioMomentua em) {
+        if (matrikula == null || em == null || em.getKodea() == null) {
+            return false;
+        }
+        if (!"2_FINAL".equalsIgnoreCase(em.getKodea())) {
+            return false;
+        }
+        if (matrikula.getNotak() == null || matrikula.getNotak().isEmpty()) {
+            return true;
+        }
+
+        boolean lehenFinaleanBaliorikBadago = matrikula.getNotak().stream()
+                .filter(n -> n.getEbaluazioMomentua() != null
+                        && "1_FINAL".equalsIgnoreCase(n.getEbaluazioMomentua().getKodea()))
+                .anyMatch(n -> n.getNota() != null || n.getEgoera() != null);
+        if (!lehenFinaleanBaliorikBadago) {
+            return true;
+        }
+
+        boolean lehenFinalaGaindituta = matrikula.getNotak().stream()
+                .filter(n -> n.getEbaluazioMomentua() != null
+                        && "1_FINAL".equalsIgnoreCase(n.getEbaluazioMomentua().getKodea()))
+                .map(EbaluazioNota::getNota)
+                .filter(Objects::nonNull)
+                .anyMatch(n -> n >= 5.0);
+        return lehenFinalaGaindituta;
     }
 
 
@@ -533,4 +568,79 @@ public class EstatistikaService {
 	     }
 	     return estatRepo.findByKoadernoaIdOrderByEbaluazioMomentua_OrdenaAscIdAsc(koadernoa.getId());
 	 }
+
+    @Transactional(readOnly = true)
+    public EstatistikaLaburpenDto kalkulatuLaburpena(Koadernoa koadernoa) {
+        if (koadernoa == null || koadernoa.getId() == null) {
+            return null;
+        }
+
+        List<EstatistikaEbaluazioan> estatistikak = lortuKoadernoarenEstatistikak(koadernoa);
+        EstatistikaEbaluazioan lehenFinala = estatistikak.stream()
+                .filter(e -> e.getEbaluazioMomentua() != null
+                        && "1_FINAL".equalsIgnoreCase(e.getEbaluazioMomentua().getKodea()))
+                .findFirst()
+                .orElse(null);
+        EstatistikaEbaluazioan bigarrenFinala = estatistikak.stream()
+                .filter(e -> e.getEbaluazioMomentua() != null
+                        && "2_FINAL".equalsIgnoreCase(e.getEbaluazioMomentua().getKodea()))
+                .findFirst()
+                .orElse(null);
+
+        if (lehenFinala == null || bigarrenFinala == null || !bigarrenFinala.isKalkulatua()) {
+            return null;
+        }
+
+        Long lehenFinalId = lehenFinala.getEbaluazioMomentua() != null ? lehenFinala.getEbaluazioMomentua().getId() : null;
+        Long bigarrenFinalId = bigarrenFinala.getEbaluazioMomentua() != null ? bigarrenFinala.getEbaluazioMomentua().getId() : null;
+        if (lehenFinalId == null || bigarrenFinalId == null) {
+            return null;
+        }
+
+        List<Matrikula> matrikulak = matrikulaRepository
+                .findByKoadernoa_IdAndEgoera(koadernoa.getId(), MatrikulaEgoera.MATRIKULATUA);
+
+        int ebaluatuak = 0;
+        int aprobatuak = 0;
+
+        for (Matrikula matrikula : matrikulak) {
+            EbaluazioNota nota1 = lortuNotaMomentuan(matrikula, lehenFinalId);
+            EbaluazioNota nota2 = lortuNotaMomentuan(matrikula, bigarrenFinalId);
+
+            boolean ebaluatuta = daNotaEdoEgoeraEbaluatua(nota1) || daNotaEdoEgoeraEbaluatua(nota2);
+            if (ebaluatuta) {
+                ebaluatuak++;
+            }
+
+            boolean gaindituta = daNotaGainditua(nota1) || daNotaGainditua(nota2);
+            if (gaindituta) {
+                aprobatuak++;
+            }
+        }
+
+        return new EstatistikaLaburpenDto(
+                lehenFinala.getUnitateakEmanda(),
+                lehenFinala.getUnitateakAurreikusiak(),
+                lehenFinala.getOrduakEmanda(),
+                lehenFinala.getOrduakAurreikusiak(),
+                aprobatuak,
+                ebaluatuak,
+                lehenFinala.getHutsegiteOrduak()
+        );
+    }
+
+    private EbaluazioNota lortuNotaMomentuan(Matrikula matrikula, Long momentuId) {
+        if (matrikula == null || momentuId == null || matrikula.getNotak() == null) {
+            return null;
+        }
+        return matrikula.getNotak().stream()
+                .filter(n -> n.getEbaluazioMomentua() != null
+                        && Objects.equals(n.getEbaluazioMomentua().getId(), momentuId))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private boolean daNotaGainditua(EbaluazioNota nota) {
+        return nota != null && nota.getNota() != null && nota.getNota() >= 5.0;
+    }
 }

@@ -26,6 +26,7 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.EstatistikaEbaluazioan;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.EzadostasunFitxa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.EzadostasunMota;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.EstatistikaLaburpenDto;
 import com.koadernoa.app.objektuak.koadernoak.repository.EzadostasunFitxaRepository;
 import com.koadernoa.app.objektuak.koadernoak.service.EstatistikaService;
 
@@ -60,11 +61,13 @@ public class EstatistikakController {
                 .filter(e -> estatistikaService.badagoEbaluatuGaberik(koadernoAktiboa, e.getEbaluazioMomentua()))
                 .map(EstatistikaEbaluazioan::getId)
                 .collect(Collectors.toSet());
+        EstatistikaLaburpenDto laburpena = estatistikaService.kalkulatuLaburpena(koadernoAktiboa);
 
         model.addAttribute("koadernoAktiboDago", true);
         model.addAttribute("koadernoAktiboa", koadernoAktiboa);
         model.addAttribute("estatistikak", estatistikak);
         model.addAttribute("ebaluatuGabeAbisuEstatIdak", ebaluatuGabeAbisuEstatIdak);
+        model.addAttribute("laburpena", laburpena);
 
         return "irakasleak/estatistikak/index";
     }
