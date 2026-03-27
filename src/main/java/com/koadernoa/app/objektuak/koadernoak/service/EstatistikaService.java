@@ -18,6 +18,7 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.Asistentzia;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Asistentzia.AsistentziaEgoera;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Ebaluaketa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.EstatistikaEbaluazioan;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.EstatistikaLaburpenDto;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Jarduera;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Programazioa;
@@ -569,7 +570,7 @@ public class EstatistikaService {
 	 }
 
     @Transactional(readOnly = true)
-    public LaburpenEstatistikaDto kalkulatuLaburpena(Koadernoa koadernoa) {
+    public EstatistikaLaburpenDto kalkulatuLaburpena(Koadernoa koadernoa) {
         if (koadernoa == null || koadernoa.getId() == null) {
             return null;
         }
@@ -617,7 +618,7 @@ public class EstatistikaService {
             }
         }
 
-        return new LaburpenEstatistikaDto(
+        return new EstatistikaLaburpenDto(
                 lehenFinala.getUnitateakEmanda(),
                 lehenFinala.getUnitateakAurreikusiak(),
                 lehenFinala.getOrduakEmanda(),

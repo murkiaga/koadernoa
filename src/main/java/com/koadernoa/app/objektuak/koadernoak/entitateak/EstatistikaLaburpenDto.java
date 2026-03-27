@@ -1,6 +1,6 @@
-package com.koadernoa.app.objektuak.koadernoak.service;
+package com.koadernoa.app.objektuak.koadernoak.entitateak;
 
-public class LaburpenEstatistikaDto {
+public class EstatistikaLaburpenDto {
 
     private final int unitateakEmanda;
     private final int unitateakAurreikusiak;
@@ -10,7 +10,7 @@ public class LaburpenEstatistikaDto {
     private final int ebaluatuak;
     private final int hutsegiteOrduak;
 
-    public LaburpenEstatistikaDto(int unitateakEmanda,
+    public EstatistikaLaburpenDto(int unitateakEmanda,
                                   int unitateakAurreikusiak,
                                   int orduakEmanda,
                                   int orduakAurreikusiak,
