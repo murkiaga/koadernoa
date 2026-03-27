@@ -123,12 +123,8 @@
 
           <!-- Nota input-ak dinamikoki, ebaluazio momentu bakoitzerako -->
           <td th:each="em : ${momentuak}"
-              th:with="ezDaBigarrenFinalEbaluagarria=${em.kodea == '2_FINAL' and lehenFinalaGainditutaMap != null and lehenFinalaGainditutaMap[mat.id]}">
+              th:with="ezDaBigarrenFinalEbaluagarria=${em.kodea == '2_FINAL' and (bigarrenFinalaErakutsiMap == null or !bigarrenFinalaErakutsiMap[mat.id])}">
             <div class="nota-wrap">
-              <span th:if="${ezDaBigarrenFinalEbaluagarria}"
-                    style="font-weight:600;color:#374151;">
-                1. finalean gaindituta
-              </span>
               <input type="text"
                      th:if="${!ezDaBigarrenFinalEbaluagarria
                               and !(#maps.containsKey(notaMap, mat.id + '_' + em.id)

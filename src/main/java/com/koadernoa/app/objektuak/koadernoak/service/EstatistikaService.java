@@ -440,15 +440,24 @@ public class EstatistikaService {
             return false;
         }
         if (matrikula.getNotak() == null || matrikula.getNotak().isEmpty()) {
-            return false;
+            return true;
         }
 
-        return matrikula.getNotak().stream()
+        boolean lehenFinaleanBaliorikBadago = matrikula.getNotak().stream()
+                .filter(n -> n.getEbaluazioMomentua() != null
+                        && "1_FINAL".equalsIgnoreCase(n.getEbaluazioMomentua().getKodea()))
+                .anyMatch(n -> n.getNota() != null || n.getEgoera() != null);
+        if (!lehenFinaleanBaliorikBadago) {
+            return true;
+        }
+
+        boolean lehenFinalaGaindituta = matrikula.getNotak().stream()
                 .filter(n -> n.getEbaluazioMomentua() != null
                         && "1_FINAL".equalsIgnoreCase(n.getEbaluazioMomentua().getKodea()))
                 .map(EbaluazioNota::getNota)
                 .filter(Objects::nonNull)
                 .anyMatch(n -> n >= 5.0);
+        return lehenFinalaGaindituta;
     }
 
 

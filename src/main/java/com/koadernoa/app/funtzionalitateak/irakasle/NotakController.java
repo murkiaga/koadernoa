@@ -69,20 +69,34 @@ public class NotakController {
                         n -> buildKey(n.getMatrikula().getId(), n.getEbaluazioMomentua().getId()),
                         Function.identity()
                 ));
-        Map<Long, Boolean> lehenFinalaGainditutaMap = matrikulak.stream()
+        Map<Long, Boolean> bigarrenFinalaErakutsiMap = matrikulak.stream()
                 .collect(Collectors.toMap(Matrikula::getId,
-                        m -> m.getNotak() != null && m.getNotak().stream()
-                                .filter(Objects::nonNull)
-                                .filter(n -> n.getEbaluazioMomentua() != null
-                                        && "1_FINAL".equalsIgnoreCase(n.getEbaluazioMomentua().getKodea()))
-                                .map(EbaluazioNota::getNota)
-                                .filter(Objects::nonNull)
-                                .anyMatch(n -> n >= 5.0)));
+                        m -> {
+                            if (m.getNotak() == null || m.getNotak().isEmpty()) {
+                                return false;
+                            }
+                            boolean lehenFinaleanBaliorikBadago = m.getNotak().stream()
+                                    .filter(Objects::nonNull)
+                                    .filter(n -> n.getEbaluazioMomentua() != null
+                                            && "1_FINAL".equalsIgnoreCase(n.getEbaluazioMomentua().getKodea()))
+                                    .anyMatch(n -> n.getNota() != null || n.getEgoera() != null);
+                            if (!lehenFinaleanBaliorikBadago) {
+                                return false;
+                            }
+                            boolean lehenFinalaGaindituta = m.getNotak().stream()
+                                    .filter(Objects::nonNull)
+                                    .filter(n -> n.getEbaluazioMomentua() != null
+                                            && "1_FINAL".equalsIgnoreCase(n.getEbaluazioMomentua().getKodea()))
+                                    .map(EbaluazioNota::getNota)
+                                    .filter(Objects::nonNull)
+                                    .anyMatch(n -> n >= 5.0);
+                            return !lehenFinalaGaindituta;
+                        }));
 
         model.addAttribute("momentuak", momentuak);
         model.addAttribute("matrikulak", matrikulak);
         model.addAttribute("notaMap", notaMap);
-        model.addAttribute("lehenFinalaGainditutaMap", lehenFinalaGainditutaMap);
+        model.addAttribute("bigarrenFinalaErakutsiMap", bigarrenFinalaErakutsiMap);
 
         return "irakasleak/notak/index";
     }
