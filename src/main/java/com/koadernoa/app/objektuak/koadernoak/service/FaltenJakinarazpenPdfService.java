@@ -3,6 +3,8 @@ package com.koadernoa.app.objektuak.koadernoak.service;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
@@ -12,6 +14,9 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.util.zip.ZipOutputStream;
 
 import fr.opensagres.poi.xwpf.converter.pdf.PdfConverter;
 import fr.opensagres.poi.xwpf.converter.pdf.PdfOptions;
@@ -41,7 +46,7 @@ public class FaltenJakinarazpenPdfService {
         }
 
         try (InputStream in = txantiloia.getInputStream();
-             XWPFDocument document = new XWPFDocument(in);
+             XWPFDocument document = new XWPFDocument(new ByteArrayInputStream(garbituDotxPlaceholderLiteralak(in)));
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
             Map<String, String> balioak = data.toMap();
@@ -128,6 +133,33 @@ public class FaltenJakinarazpenPdfService {
 
     private String kenduLibreOfficePlaceholderHondarrak(String testua) {
         return LIBREOFFICE_PLACEHOLDER.matcher(testua).replaceAll("");
+    }
+
+    private byte[] garbituDotxPlaceholderLiteralak(InputStream input) throws IOException {
+        try (ZipInputStream zis = new ZipInputStream(input);
+             ByteArrayOutputStream bos = new ByteArrayOutputStream();
+             ZipOutputStream zos = new ZipOutputStream(bos)) {
+
+            ZipEntry entry;
+            while ((entry = zis.getNextEntry()) != null) {
+                ZipEntry berria = new ZipEntry(entry.getName());
+                zos.putNextEntry(berria);
+
+                byte[] edukia = zis.readAllBytes();
+                if (entry.getName().endsWith(".xml")) {
+                    String xml = new String(edukia, StandardCharsets.UTF_8);
+                    xml = LIBREOFFICE_PLACEHOLDER.matcher(xml).replaceAll("");
+                    edukia = xml.getBytes(StandardCharsets.UTF_8);
+                }
+
+                zos.write(edukia);
+                zos.closeEntry();
+                zis.closeEntry();
+            }
+
+            zos.finish();
+            return bos.toByteArray();
+        }
     }
 
     public record FaltenJakinarazpenaData(
