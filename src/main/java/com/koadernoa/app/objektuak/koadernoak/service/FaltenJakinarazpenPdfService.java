@@ -37,7 +37,7 @@ public class FaltenJakinarazpenPdfService {
     private static final Locale GAZTELANIA = new Locale("es", "ES");
     private static final Pattern LIBREOFFICE_PLACEHOLDER = Pattern.compile("Haga clic o pulse aquí para escribir texto\\.?");
 
-    @Value("${koadernoa.falten-jakinarazpena.template:classpath:/templates/falten-jakinarazpena.dotx}")
+    @Value("${koadernoa.falten-jakinarazpena.template:classpath:/templates/txostenak/MD6309-falten-jakinarazpena.dotx}")
     private Resource txantiloia;
 
     public byte[] sortuPdf(FaltenJakinarazpenaData data) {
