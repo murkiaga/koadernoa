@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<body>
+<div th:fragment="txostenak-panel">
+  <h2>Txostenak</h2>
+  <p class="muted">
+    Hemen <code>MD6309-falten-jakinarazpena.dotx</code> txostena kontsultatu edo ordezkatu dezakezu.
+    Onartutako fitxategi mota bakarra <strong>.dotx</strong> da.
+  </p>
+
+  <div class="table-wrap" style="margin:12px 0;">
+    <div style="padding:12px; border:1px solid var(--b); border-radius:12px;">
+      <div th:if="${md6309TxostenaBadago}">
+        <div class="muted" style="margin-bottom:8px;">Uneko txostena prest dago.</div>
+        <a class="btn" th:href="@{/admin/txostenak/md6309}">MD6309 txostena deskargatu</a>
+      </div>
+      <div th:if="${!md6309TxostenaBadago}" class="muted">
+        Ez da txostenik aurkitu. Igo fitxategi bat sortzeko.
+      </div>
+    </div>
+  </div>
+
+  <form method="post" th:action="@{/admin/txostenak/md6309}" enctype="multipart/form-data">
+    <input type="hidden"
+           th:if="${_csrf != null}"
+           th:name="${_csrf.parameterName}"
+           th:value="${_csrf.token}"/>
+
+    <div class="row" style="align-items:end;">
+      <label>
+        <div class="muted">Igo .dotx fitxategia</div>
+        <input type="file"
+               name="txostenFile"
+               accept=".dotx,application/vnd.openxmlformats-officedocument.wordprocessingml.template"
+               required>
+      </label>
+
+      <div style="align-self:end;">
+        <button type="submit" class="btn btn-primary">Ordezkatu txostena</button>
+      </div>
+    </div>
+  </form>
+</div>
+</body>
+</html>

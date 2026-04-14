@@ -50,6 +50,14 @@
             id="tab-logak">
       Logak
     </button>
+
+    <button type="button" class="tab-btn"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-txostenak"
+            id="tab-txostenak">
+      Txostenak
+    </button>
   </div>
 
   <!-- LOGOA PANELA -->
@@ -72,6 +80,11 @@
   <section id="panel-logak" class="tab-panel" role="tabpanel"
            aria-labelledby="tab-logak" tabindex="0" aria-hidden="true">
     <div th:replace="~{admin/fragments/logak :: logak-panel}"></div>
+  </section>
+
+  <section id="panel-txostenak" class="tab-panel" role="tabpanel"
+           aria-labelledby="tab-txostenak" tabindex="0" aria-hidden="true">
+    <div th:replace="~{admin/fragments/txostenak :: txostenak-panel}"></div>
   </section>
 </main>
 
