@@ -11,6 +11,8 @@ import java.util.stream.Collectors;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -42,6 +44,7 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.denboralizazioa.FaltakB
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoOrdutegiBlokeaRepository;
 import com.koadernoa.app.objektuak.koadernoak.service.AsistentziaService;
 import com.koadernoa.app.objektuak.koadernoak.service.DenboralizazioFaltaService;
+import com.koadernoa.app.objektuak.koadernoak.service.FaltenJakinarazpenPdfService;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
 import com.koadernoa.app.objektuak.koadernoak.service.ProgramazioTxantiloiService;
 
@@ -58,6 +61,7 @@ public class DenboralizazioaController {
 	private final KoadernoOrdutegiBlokeaRepository koadernoOrdutegiBlokeaRepository;
 	private final KoadernoaService koadernoaService;
 	private final DenboralizazioFaltaService denboralizazioFaltaService;
+	private final FaltenJakinarazpenPdfService faltenJakinarazpenPdfService;
 	private final ProgramazioTxantiloiService programazioTxantiloiService;
 	private final IrakasleaService irakasleaService;
 
@@ -205,6 +209,74 @@ public class DenboralizazioaController {
 	    model.addAttribute("oharraMap", oharraMap);
 
 	    return "irakasleak/denboralizazioa/denboralizazioa";
+	}
+
+	@GetMapping("/falten-jakinarazpena/pdf")
+	public ResponseEntity<?> deskargatuFaltenJakinarazpenaPdf(
+	    @SessionAttribute(value = "koadernoAktiboa", required = false) Koadernoa koadernoa,
+	    @RequestParam("matrikulaId") Long matrikulaId,
+	    @RequestParam("hilabetea") int hilabetea,
+	    @RequestParam("urtea") int urtea,
+	    Authentication auth) {
+
+	    if (koadernoa == null || koadernoa.getId() == null) {
+	        return ResponseEntity.badRequest().body(Map.of("error", "Ez dago koaderno aktiborik aukeratuta."));
+	    }
+
+	    var koadernoaOpt = koadernoaService.findByIdWithEgutegiaAndEgunBereziak(koadernoa.getId());
+	    if (koadernoaOpt.isEmpty()) {
+	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Koaderno aktiboa ez da aurkitu."));
+	    }
+
+	    Koadernoa kargatutakoKoadernoa = koadernoaOpt.get();
+	    FaltakBistaDTO faltak = denboralizazioFaltaService
+	            .kalkulatuFaltenBista(kargatutakoKoadernoa, hilabetea, urtea);
+
+	    var rowOpt = faltak.getIkasleRows().stream()
+	            .filter(row -> row.getMatrikula() != null)
+	            .filter(row -> matrikulaId.equals(row.getMatrikula().getId()))
+	            .findFirst();
+
+	    if (rowOpt.isEmpty()) {
+	        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Ez da aurkitu matrikula."));
+	    }
+
+	    var row = rowOpt.get();
+	    if (row.getFaltaPortzentaia() <= 20d) {
+	        return ResponseEntity.badRequest().body(Map.of("error", "PDFa sortzeko faltak %20 baino handiagoa izan behar du."));
+	    }
+
+	    Irakaslea deskargatzailea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+	    LocalDate gaur = LocalDate.now();
+
+	    String taldea = kargatutakoKoadernoa.getModuloa() != null && kargatutakoKoadernoa.getModuloa().getTaldea() != null
+	        ? kargatutakoKoadernoa.getModuloa().getTaldea().getIzena() : "";
+	    String modulua = kargatutakoKoadernoa.getModuloa() != null ? kargatutakoKoadernoa.getModuloa().getIzena() : "";
+	    String deskargatzaileIzena = deskargatzailea != null ? deskargatzailea.getIzena() : "";
+
+	    var data = FaltenJakinarazpenPdfService.FaltenJakinarazpenaData.of(
+	        taldea,
+	        row.getIkasleIzenOsoa(),
+	        row.getFaltaOrduak(),
+	        modulua,
+	        row.getFaltaPortzentaia(),
+	        urtea,
+	        gaur,
+	        deskargatzaileIzena
+	    );
+
+	    byte[] pdf;
+	    try {
+	        pdf = faltenJakinarazpenPdfService.sortuPdf(data);
+	    } catch (IllegalStateException ex) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", ex.getMessage()));
+	    }
+
+	    String fitxIzena = "falten-jakinarazpena-" + matrikulaId + "-" + urtea + "-" + hilabetea + ".pdf";
+	    return ResponseEntity.ok()
+	        .contentType(MediaType.APPLICATION_PDF)
+	        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fitxIzena + "\"")
+	        .body(pdf);
 	}
 
 	
