@@ -1,6 +1,7 @@
 package com.koadernoa.app.funtzionalitateak.admin;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -10,6 +11,11 @@ import java.util.Set;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -35,6 +41,9 @@ public class AdminController {
 
     @Value("${koadernoa.uploads.logo-subdir:logoa}")
     private String logoSubdir;
+
+    @Value("${koadernoa.txostenak.md6309.path:src/main/resources/templates/txostenak/MD6309-falten-jakinarazpena.dotx}")
+    private String md6309TxostenPath;
 
     private static final Set<String> ALLOWED_CT = Set.of("image/png", "image/jpeg");
     private static final long MAX_BYTES = 300_000; // 300KB
@@ -83,8 +92,13 @@ public class AdminController {
         model.addAttribute("eragilea", eragilea);
         model.addAttribute("from", from);
         model.addAttribute("to", to);
+        model.addAttribute("md6309TxostenaBadago", Files.exists(getMd6309Path()));
 
         return "admin/index";
+    }
+
+    private Path getMd6309Path() {
+        return Paths.get(md6309TxostenPath).toAbsolutePath().normalize();
     }
 
     private LogMota parseMota(String mota) {
@@ -186,5 +200,41 @@ public class AdminController {
         aukService.setBool(AplikazioAukeraService.AUTH_LDAP_ENABLED, ldapEnabled);
 
         return "redirect:/admin/?success=Autentikazio%20aukerak%20eguneratuta";
+    }
+
+    @GetMapping("/txostenak/md6309")
+    public ResponseEntity<Resource> deskargatuMd6309() throws IOException {
+        Path target = getMd6309Path();
+        if (!Files.exists(target)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        InputStream input = Files.newInputStream(target);
+        Resource resource = new InputStreamResource(input);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"MD6309-falten-jakinarazpena.dotx\"")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.wordprocessingml.template"))
+                .contentLength(Files.size(target))
+                .body(resource);
+    }
+
+    @PostMapping("/txostenak/md6309")
+    public String uploadMd6309(@RequestParam("txostenFile") MultipartFile file) throws IOException {
+        if (file == null || file.isEmpty()) {
+            return "redirect:/admin/?tab=txostenak&error=Fitxategia%20hutsa%20da";
+        }
+
+        String jatorrizkoIzena = file.getOriginalFilename();
+        String ext = StringUtils.getFilenameExtension(jatorrizkoIzena);
+        if (ext == null || !"dotx".equalsIgnoreCase(ext)) {
+            return "redirect:/admin/?tab=txostenak&error=Onartutako%20fitxategi%20mota%20bakarra%20.DOTX%20da";
+        }
+
+        Path target = getMd6309Path();
+        Files.createDirectories(target.getParent());
+        Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+
+        return "redirect:/admin/?tab=txostenak&success=Txostena%20eguneratuta";
     }
 }
