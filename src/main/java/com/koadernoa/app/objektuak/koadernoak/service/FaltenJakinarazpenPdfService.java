@@ -5,8 +5,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDate;
 import java.time.format.TextStyle;
+import java.util.ArrayList;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import fr.opensagres.poi.xwpf.converter.pdf.PdfConverter;
 import fr.opensagres.poi.xwpf.converter.pdf.PdfOptions;
@@ -25,6 +30,7 @@ public class FaltenJakinarazpenPdfService {
 
     private static final Locale EUSKARA = new Locale("eu", "ES");
     private static final Locale GAZTELANIA = new Locale("es", "ES");
+    private static final Pattern LIBREOFFICE_PLACEHOLDER = Pattern.compile("Haga clic o pulse aquí para escribir texto\\.?");
 
     @Value("${koadernoa.falten-jakinarazpena.template:classpath:/templates/falten-jakinarazpena.dotx}")
     private Resource txantiloia;
@@ -39,7 +45,7 @@ public class FaltenJakinarazpenPdfService {
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
             Map<String, String> balioak = data.toMap();
-            ordezkatuDokumentuan(document, balioak);
+            ordezkatuDokumentuan(document, balioak, data.toOrderedValues());
             PdfConverter.getInstance().convert(document, out, PdfOptions.create());
             return out.toByteArray();
         } catch (IOException e) {
@@ -47,22 +53,29 @@ public class FaltenJakinarazpenPdfService {
         }
     }
 
-    private void ordezkatuDokumentuan(XWPFDocument doc, Map<String, String> balioak) {
+    private void ordezkatuDokumentuan(XWPFDocument doc, Map<String, String> balioak, java.util.List<String> ordenekoBalioak) {
+        AtomicInteger placeholderIdx = new AtomicInteger(0);
+
         for (XWPFParagraph p : doc.getParagraphs()) {
-            ordezkatuParagrafoan(p, balioak);
+            ordezkatuParagrafoan(p, balioak, ordenekoBalioak, placeholderIdx);
         }
 
         for (XWPFTable t : doc.getTables()) {
             t.getRows().forEach(r -> r.getTableCells().forEach(c ->
-                c.getParagraphs().forEach(p -> ordezkatuParagrafoan(p, balioak))
+                c.getParagraphs().forEach(p -> ordezkatuParagrafoan(p, balioak, ordenekoBalioak, placeholderIdx))
             ));
         }
 
-        doc.getHeaderList().forEach(h -> h.getParagraphs().forEach(p -> ordezkatuParagrafoan(p, balioak)));
-        doc.getFooterList().forEach(f -> f.getParagraphs().forEach(p -> ordezkatuParagrafoan(p, balioak)));
+        doc.getHeaderList().forEach(h -> h.getParagraphs().forEach(p -> ordezkatuParagrafoan(p, balioak, ordenekoBalioak, placeholderIdx)));
+        doc.getFooterList().forEach(f -> f.getParagraphs().forEach(p -> ordezkatuParagrafoan(p, balioak, ordenekoBalioak, placeholderIdx)));
     }
 
-    private void ordezkatuParagrafoan(XWPFParagraph p, Map<String, String> balioak) {
+    private void ordezkatuParagrafoan(
+        XWPFParagraph p,
+        Map<String, String> balioak,
+        java.util.List<String> ordenekoBalioak,
+        AtomicInteger placeholderIdx
+    ) {
         String testua = p.getText();
         if (testua == null || testua.isBlank()) {
             return;
@@ -78,6 +91,8 @@ public class FaltenJakinarazpenPdfService {
                 .replace("<<" + k + ">>", v);
         }
 
+        berria = ordezkatuLibreOfficePlaceholderrak(berria, ordenekoBalioak, placeholderIdx);
+
         if (!berria.equals(testua)) {
             int runs = p.getRuns().size();
             for (int i = runs - 1; i >= 0; i--) {
@@ -85,6 +100,29 @@ public class FaltenJakinarazpenPdfService {
             }
             p.createRun().setText(berria);
         }
+    }
+
+    private String ordezkatuLibreOfficePlaceholderrak(String testua, java.util.List<String> ordenekoBalioak, AtomicInteger placeholderIdx) {
+        Matcher matcher = LIBREOFFICE_PLACEHOLDER.matcher(testua);
+        StringBuffer sb = new StringBuffer();
+        boolean ordezkatuDa = false;
+
+        while (matcher.find()) {
+            int idx = placeholderIdx.getAndIncrement();
+            if (idx >= ordenekoBalioak.size()) {
+                break;
+            }
+            String balioa = Objects.toString(ordenekoBalioak.get(idx), "");
+            matcher.appendReplacement(sb, Matcher.quoteReplacement(balioa));
+            ordezkatuDa = true;
+        }
+
+        if (!ordezkatuDa) {
+            return testua;
+        }
+
+        matcher.appendTail(sb);
+        return sb.toString();
     }
 
     public record FaltenJakinarazpenaData(
@@ -144,6 +182,29 @@ public class FaltenJakinarazpenPdfService {
                 Map.entry("17", String.valueOf(urteaAzkenBi)),
                 Map.entry("18", deskargatzailea)
             );
+        }
+
+        public java.util.List<String> toOrderedValues() {
+            java.util.List<String> values = new ArrayList<>();
+            values.add(taldea);
+            values.add(ikasleaIzenAbizenak);
+            values.add(String.valueOf(faltaOrduak));
+            values.add(modulua);
+            values.add(String.valueOf(faltaPortzentaia));
+            values.add(String.valueOf(urteaAzkenBi));
+            values.add(hilabeteaEu);
+            values.add(String.valueOf(eguna));
+            values.add(deskargatzailea);
+            values.add(ikasleaIzenAbizenak);
+            values.add(taldea);
+            values.add(String.valueOf(faltaOrduak));
+            values.add(modulua);
+            values.add(String.valueOf(faltaPortzentaia));
+            values.add(String.valueOf(eguna));
+            values.add(hilabeteaEs);
+            values.add(String.valueOf(urteaAzkenBi));
+            values.add(deskargatzailea);
+            return values;
         }
 
         private static String balioa(String testua) {
