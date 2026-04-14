@@ -65,10 +65,19 @@
 
               <td th:text="${row.faltaOrduak}">0</td>
 
-              <td th:text="${#numbers.formatDecimal(row.faltaPortzentaia, 1, 2)} + '%'"
-			    th:classappend="${row.faltaPortzentaia} > 20 ? ' falta-pct-altua' :
+              <td th:classappend="${row.faltaPortzentaia} > 20 ? ' falta-pct-altua' :
 			                    (${row.faltaPortzentaia} >= 10 ? ' falta-pct-ertaina' : '')">
-			    0%
+                  <span th:text="${#numbers.formatDecimal(row.faltaPortzentaia, 1, 2)} + '%'">0%</span>
+                  <a th:if="${row.faltaPortzentaia > 20}"
+                     th:href="@{/irakasle/denboralizazioa/falten-jakinarazpena/pdf(
+                          matrikulaId=${row.matrikula.id},
+                          hilabetea=${hilabetea},
+                          urtea=${urtea})}"
+                     title="Falten jakinarazpena PDF-an deskargatu"
+                     aria-label="Falten jakinarazpena PDF-an deskargatu"
+                     style="margin-left:.5rem; text-decoration:none;">
+                      📄
+                  </a>
 			</td>
 
               <td th:each="egun : ${faltaEgunak}"
