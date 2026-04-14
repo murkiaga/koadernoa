@@ -45,12 +45,14 @@ public class FaltenJakinarazpenPdfService {
             throw new IllegalStateException("Ez da aurkitu falten jakinarazpenaren .dotx txantiloia.");
         }
 
+        java.util.List<String> ordenekoBalioak = data.toOrderedValues();
+
         try (InputStream in = txantiloia.getInputStream();
-             XWPFDocument document = new XWPFDocument(new ByteArrayInputStream(garbituDotxPlaceholderLiteralak(in)));
+             XWPFDocument document = new XWPFDocument(new ByteArrayInputStream(garbituDotxPlaceholderLiteralak(in, ordenekoBalioak)));
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
             Map<String, String> balioak = data.toMap();
-            ordezkatuDokumentuan(document, balioak, data.toOrderedValues());
+            ordezkatuDokumentuan(document, balioak, ordenekoBalioak);
             PdfConverter.getInstance().convert(document, out, PdfOptions.create());
             return out.toByteArray();
         } catch (IOException e) {
@@ -135,10 +137,12 @@ public class FaltenJakinarazpenPdfService {
         return LIBREOFFICE_PLACEHOLDER.matcher(testua).replaceAll("");
     }
 
-    private byte[] garbituDotxPlaceholderLiteralak(InputStream input) throws IOException {
+    private byte[] garbituDotxPlaceholderLiteralak(InputStream input, java.util.List<String> ordenekoBalioak) throws IOException {
         try (ZipInputStream zis = new ZipInputStream(input);
              ByteArrayOutputStream bos = new ByteArrayOutputStream();
              ZipOutputStream zos = new ZipOutputStream(bos)) {
+
+            AtomicInteger placeholderIdx = new AtomicInteger(0);
 
             ZipEntry entry;
             while ((entry = zis.getNextEntry()) != null) {
@@ -148,6 +152,7 @@ public class FaltenJakinarazpenPdfService {
                 byte[] edukia = zis.readAllBytes();
                 if (entry.getName().endsWith(".xml")) {
                     String xml = new String(edukia, StandardCharsets.UTF_8);
+                    xml = ordezkatuLibreOfficePlaceholderrak(xml, ordenekoBalioak, placeholderIdx);
                     xml = LIBREOFFICE_PLACEHOLDER.matcher(xml).replaceAll("");
                     edukia = xml.getBytes(StandardCharsets.UTF_8);
                 }
