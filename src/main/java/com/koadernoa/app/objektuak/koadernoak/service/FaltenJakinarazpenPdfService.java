@@ -92,6 +92,7 @@ public class FaltenJakinarazpenPdfService {
         }
 
         berria = ordezkatuLibreOfficePlaceholderrak(berria, ordenekoBalioak, placeholderIdx);
+        berria = kenduLibreOfficePlaceholderHondarrak(berria);
 
         if (!berria.equals(testua)) {
             int runs = p.getRuns().size();
@@ -123,6 +124,10 @@ public class FaltenJakinarazpenPdfService {
 
         matcher.appendTail(sb);
         return sb.toString();
+    }
+
+    private String kenduLibreOfficePlaceholderHondarrak(String testua) {
+        return LIBREOFFICE_PLACEHOLDER.matcher(testua).replaceAll("");
     }
 
     public record FaltenJakinarazpenaData(
