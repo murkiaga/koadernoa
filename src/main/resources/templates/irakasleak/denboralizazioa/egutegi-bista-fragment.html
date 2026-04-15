@@ -56,7 +56,7 @@
 	    				   th:href="@{/irakasle/asistentzia(data=${egunaBista.data})}"
 	    				   class="btn-asistentzia"
 	    				   title="Egun honetako asistentzia">
-	    				  👤✔
+	    				  <span th:text="${asistentziaIrekitaEgunMap[egunaBista.data.toString()] == true ? '👤✔' : '👤'}">👤</span>
 	    				</a>
     					<!-- Ohar ikonoa (oharra badago) -->
 					  	<span th:if="${egunaBista.data != null and oharraMap[egunaBista.data.toString()] != null}"
