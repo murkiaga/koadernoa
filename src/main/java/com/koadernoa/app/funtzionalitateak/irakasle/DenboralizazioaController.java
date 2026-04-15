@@ -40,8 +40,10 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.Jarduera;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.JardueraEditDto;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.JardueraSortuDto;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.Saioa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.denboralizazioa.FaltakBistaDTO;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoOrdutegiBlokeaRepository;
+import com.koadernoa.app.objektuak.koadernoak.repository.SaioaRepository;
 import com.koadernoa.app.objektuak.koadernoak.service.AsistentziaService;
 import com.koadernoa.app.objektuak.koadernoak.service.DenboralizazioFaltaService;
 import com.koadernoa.app.objektuak.koadernoak.service.FaltenJakinarazpenPdfService;
@@ -59,6 +61,7 @@ public class DenboralizazioaController {
 	private final EgutegiaService egutegiaService;
 	private final AsistentziaService asistentziaService;
 	private final KoadernoOrdutegiBlokeaRepository koadernoOrdutegiBlokeaRepository;
+	private final SaioaRepository saioaRepository;
 	private final KoadernoaService koadernoaService;
 	private final DenboralizazioFaltaService denboralizazioFaltaService;
 	private final FaltenJakinarazpenPdfService faltenJakinarazpenPdfService;
@@ -169,6 +172,13 @@ public class DenboralizazioaController {
 
 	    Map<String, Boolean> asistentziaEgunMap =
 	            asistentziaService.kalkulatuAsistentziaEgunak(blokAstegunakByDate, egutegia, unekoUrtea, unekoHilabetea);
+	    Set<LocalDate> asistentziaIrekitaEgunak = saioaRepository
+	            .findByKoadernoaIdAndDataBetweenOrderByDataAscHasieraSlotAsc(kargatutakoKoadernoa.getId(), hasiera, amaiera)
+	            .stream()
+	            .map(Saioa::getData)
+	            .collect(Collectors.toSet());
+	    Map<String, Boolean> asistentziaIrekitaEgunMap = asistentziaIrekitaEgunak.stream()
+	            .collect(Collectors.toMap(LocalDate::toString, __ -> true));
 
 	    Map<LocalDate, List<Jarduera>> jardueraMap = jarduerak.stream()
 	            .filter(j -> j.getData() != null) // segurtasun gehigarria
@@ -184,6 +194,7 @@ public class DenboralizazioaController {
 	    model.addAttribute("asteak", asteak);
 	    model.addAttribute("egunMap", egunMap);
 	    model.addAttribute("asistentziaEgunMap", asistentziaEgunMap);
+	    model.addAttribute("asistentziaIrekitaEgunMap", asistentziaIrekitaEgunMap);
 	    model.addAttribute("deskribapenaMap", deskribapenaMap);
 	    model.addAttribute("bista", bista);
 	    model.addAttribute("txantiloiAldia", dagoTxantiloiAldia(egutegia));
