@@ -16,6 +16,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Comparator;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
@@ -120,14 +121,19 @@ public class FaltenExcelInportService {
         asistentziaRepository.deleteByKoadernoaIdAndSaioaDataIn(koadernoa.getId(), datak);
 
         Map<String, Saioa> saioMap = new HashMap<>();
+        Map<LocalDate, List<Saioa>> saioakByData = new HashMap<>();
         LocalDate minDate = datak.stream().min(LocalDate::compareTo).orElseThrow();
         LocalDate maxDate = datak.stream().max(LocalDate::compareTo).orElseThrow();
         saioaRepository.findByKoadernoaIdAndDataBetweenOrderByDataAscHasieraSlotAsc(koadernoa.getId(), minDate, maxDate)
-                .forEach(s -> saioMap.put(key(s.getData(), s.getHasieraSlot()), s));
+                .forEach(s -> {
+                    saioMap.put(key(s.getData(), s.getHasieraSlot()), s);
+                    saioakByData.computeIfAbsent(s.getData(), __ -> new ArrayList<>()).add(s);
+                });
 
         int sortuak = 0;
         int baztertuak = 0;
         List<String> oharrak = new ArrayList<>();
+        Set<String> erabilitakoMarkak = new HashSet<>();
 
         for (ImportRow row : rows) {
             Optional<Matrikula> matrikulaOpt = matchMatrikula(matrikulaMap, row.alumno());
@@ -137,20 +143,24 @@ public class FaltenExcelInportService {
                 continue;
             }
 
-            Saioa saioa = saioMap.get(key(row.data(), row.slot()));
+            Matrikula matrikula = matrikulaOpt.get();
+            SaioaEbazpena ebazpena = ebatziSaioa(row, matrikula, koadernoa, saioMap, saioakByData, erabilitakoMarkak);
+            Saioa saioa = ebazpena.saioa();
             if (saioa == null) {
                 baztertuak++;
-                oharrak.add("R" + row.rowNum() + ": saiorik ez data/ordu horretan -> " + row.data() + " / " + row.slot());
+                oharrak.add("R" + row.rowNum() + ": saiorik ez data horretan -> " + row.data());
                 continue;
             }
+            if (ebazpena.oharra() != null) oharrak.add(ebazpena.oharra());
 
             asistentziaService.markatu(
                     saioa.getId(),
-                    matrikulaOpt.get().getId(),
+                    matrikula.getId(),
                     row.justifikatua() ? Asistentzia.AsistentziaEgoera.JUSTIFIKATUA : Asistentzia.AsistentziaEgoera.HUTS,
                     row.justifikatua() ? "Excel inportazioa" : null,
                     null
             );
+            erabilitakoMarkak.add(marka(matrikula.getId(), row.data(), saioa.getHasieraSlot()));
             sortuak++;
         }
 
@@ -333,6 +343,47 @@ public class FaltenExcelInportService {
         return (slot >= 1 && slot <= 12) ? slot : null;
     }
 
+    private SaioaEbazpena ebatziSaioa(ImportRow row,
+                                      Matrikula matrikula,
+                                      Koadernoa koadernoa,
+                                      Map<String, Saioa> saioMap,
+                                      Map<LocalDate, List<Saioa>> saioakByData,
+                                      Set<String> erabilitakoMarkak) {
+        Saioa zehatza = saioMap.get(key(row.data(), row.slot()));
+        if (zehatza != null) {
+            return new SaioaEbazpena(zehatza, null);
+        }
+
+        List<Saioa> egunekoSaioak = saioakByData.getOrDefault(row.data(), List.of());
+        Saioa ordezkoa = egunekoSaioak.stream()
+                .filter(s -> !erabilitakoMarkak.contains(marka(matrikula.getId(), row.data(), s.getHasieraSlot())))
+                .min(Comparator.comparingInt(s -> Math.abs(s.getHasieraSlot() - row.slot())))
+                .orElse(null);
+
+        if (ordezkoa != null) {
+            String oharra = "R" + row.rowNum() + ": " + row.data() + " " + row.slot()
+                    + ". ordua ez zegoen; " + ordezkoa.getHasieraSlot() + ". orduan inportatu da.";
+            return new SaioaEbazpena(ordezkoa, oharra);
+        }
+
+        Saioa berria = new Saioa();
+        berria.setKoadernoa(koadernoa);
+        berria.setData(row.data());
+        berria.setHasieraSlot(row.slot());
+        berria.setIraupenaSlot(1);
+        Saioa gordeta = saioaRepository.save(berria);
+        saioMap.put(key(gordeta.getData(), gordeta.getHasieraSlot()), gordeta);
+        saioakByData.computeIfAbsent(gordeta.getData(), __ -> new ArrayList<>()).add(gordeta);
+
+        String oharra = "R" + row.rowNum() + ": " + row.data() + " " + row.slot()
+                + ". ordua ez zegoenez, saio berria sortu da eta falta bertan markatu da.";
+        return new SaioaEbazpena(gordeta, oharra);
+    }
+
+    private String marka(Long matrikulaId, LocalDate data, int slot) {
+        return matrikulaId + "#" + data + "#" + slot;
+    }
+
     private Boolean parseJustifikatua(String raw) {
         if (raw == null) return Boolean.FALSE;
         String n = normalizeName(raw);
@@ -350,5 +401,8 @@ public class FaltenExcelInportService {
     }
 
     private record ImportRow(int rowNum, String alumno, LocalDate data, int slot, boolean justifikatua) {
+    }
+
+    private record SaioaEbazpena(Saioa saioa, String oharra) {
     }
 }
