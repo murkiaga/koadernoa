@@ -5,7 +5,9 @@ import java.text.Normalizer;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -49,6 +51,20 @@ public class FaltenExcelInportService {
     private final SaioaRepository saioaRepository;
     private final AsistentziaRepository asistentziaRepository;
     private final AsistentziaService asistentziaService;
+    private static final DateTimeFormatter SHORT_YEAR_SLASH = new DateTimeFormatterBuilder()
+            .appendValue(ChronoField.DAY_OF_MONTH)
+            .appendLiteral('/')
+            .appendValue(ChronoField.MONTH_OF_YEAR)
+            .appendLiteral('/')
+            .appendValueReduced(ChronoField.YEAR, 2, 2, 2000)
+            .toFormatter();
+    private static final DateTimeFormatter SHORT_YEAR_DASH = new DateTimeFormatterBuilder()
+            .appendValue(ChronoField.DAY_OF_MONTH)
+            .appendLiteral('-')
+            .appendValue(ChronoField.MONTH_OF_YEAR)
+            .appendLiteral('-')
+            .appendValueReduced(ChronoField.YEAR, 2, 2, 2000)
+            .toFormatter();
 
     @Transactional
     public InportEmaitza inportatu(Koadernoa koadernoa, MultipartFile fitxategia) throws IOException {
@@ -261,7 +277,7 @@ public class FaltenExcelInportService {
         if (c == null) return null;
         String v = formatter.formatCellValue(c);
         if (v == null) return null;
-        String t = v.trim();
+        String t = cleanupText(v);
         return t.isBlank() ? null : t;
     }
 
@@ -280,10 +296,12 @@ public class FaltenExcelInportService {
             }
         }
 
-        String txt = formatter.formatCellValue(c);
+        String txt = cleanupText(formatter.formatCellValue(c));
         if (txt == null || txt.isBlank()) return null;
 
         List<DateTimeFormatter> formatuak = List.of(
+                SHORT_YEAR_SLASH,
+                SHORT_YEAR_DASH,
                 DateTimeFormatter.ofPattern("d/M/uuuu"),
                 DateTimeFormatter.ofPattern("d-M-uuuu"),
                 DateTimeFormatter.ISO_LOCAL_DATE
@@ -295,6 +313,16 @@ public class FaltenExcelInportService {
             }
         }
         return null;
+    }
+
+    private String cleanupText(String value) {
+        if (value == null) return null;
+        String t = value.trim();
+        t = t.replace('\u2019', '\'');
+        while (t.startsWith("'")) {
+            t = t.substring(1).trim();
+        }
+        return t;
     }
 
     private Integer parseSlot(String tiempoRaw) {
