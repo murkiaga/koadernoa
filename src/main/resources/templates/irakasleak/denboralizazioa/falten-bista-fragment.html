@@ -23,7 +23,16 @@
         </a>
     </div>
 
-    <h3>Falten jarraipena</h3>
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:.5rem;">
+        <h3 style="margin:0;">Falten jarraipena</h3>
+        <button type="button"
+                class="btn btn-secondary"
+                onclick="irekiFaltenInportModal()"
+                style="display:inline-flex; align-items:center; gap:.5rem;">
+            <span aria-hidden="true">📊</span>
+            <span>hezkuntza aplikazioko faltak inportatu</span>
+        </button>
+    </div>
 
     <div class="faltak-wrapper">
       <table class="faltak-taula">
@@ -87,6 +96,45 @@
           </tr>
           </tbody>
       </table>
+    </div>
+
+    <div id="faltenInportModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin:0;">Faltak inportatu (.xls)</h3>
+                <button class="close" type="button" onclick="itxiFaltenInportModal()">×</button>
+            </div>
+
+            <form method="post"
+                  enctype="multipart/form-data"
+                  th:action="@{/irakasle/denboralizazioa/faltak/inportatu}">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" th:if="${_csrf != null}">
+                <input type="hidden" name="urtea" th:value="${urtea}">
+                <input type="hidden" name="hilabetea" th:value="${hilabetea}">
+
+                <input id="faltenInportFileInput"
+                       type="file"
+                       name="fitxategia"
+                       accept=".xls,.xlsx"
+                       style="display:none"
+                       required>
+
+                <div id="faltenDropzone"
+                     style="border:2px dashed #9ca3af; border-radius:10px; padding:1rem; text-align:center; cursor:pointer; margin:1rem 0;">
+                    <p style="margin:0 0 .4rem 0; font-weight:600;">Arrastatu fitxategia hona</p>
+                    <p style="margin:0; color:#6b7280;">edo klik egin "aukeratu fitxategia" egiteko</p>
+                    <p id="faltenInportFileName" style="margin:.7rem 0 0 0; font-size:.9rem; color:#111827;"></p>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn secondary" onclick="document.getElementById('faltenInportFileInput').click()">
+                        aukeratu fitxategi
+                    </button>
+                    <button type="button" class="btn secondary" onclick="itxiFaltenInportModal()">Utzi</button>
+                    <button type="submit" class="btn primary">Inportatu</button>
+                </div>
+            </form>
+        </div>
     </div>
 
 </div>
