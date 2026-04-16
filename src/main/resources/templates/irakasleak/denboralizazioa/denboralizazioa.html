@@ -358,8 +358,53 @@ function itxiTxantiloiModala() {
   if (input) input.value = '';
 }
 
+function irekiFaltenInportModal() {
+  const modal = document.getElementById('faltenInportModal');
+  if (modal) modal.style.display = 'flex';
+}
+
+function itxiFaltenInportModal() {
+  const modal = document.getElementById('faltenInportModal');
+  if (modal) modal.style.display = 'none';
+}
+
 	//Jardueren drag&drop
 document.addEventListener('DOMContentLoaded', function(){
+  const faltakInput = document.getElementById('faltenInportFileInput');
+  const faltakDropzone = document.getElementById('faltenDropzone');
+  const faltakFileName = document.getElementById('faltenInportFileName');
+  if (faltakInput && faltakDropzone) {
+    faltakDropzone.addEventListener('click', () => faltakInput.click());
+
+    faltakInput.addEventListener('change', function() {
+      const f = faltakInput.files && faltakInput.files[0];
+      faltakFileName.textContent = f ? f.name : '';
+    });
+
+    ['dragenter', 'dragover'].forEach(evt => {
+      faltakDropzone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        faltakDropzone.style.borderColor = '#2563eb';
+        faltakDropzone.style.background = '#eff6ff';
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(evt => {
+      faltakDropzone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        faltakDropzone.style.borderColor = '#9ca3af';
+        faltakDropzone.style.background = '';
+      });
+    });
+
+    faltakDropzone.addEventListener('drop', (e) => {
+      const files = e.dataTransfer && e.dataTransfer.files;
+      if (!files || !files.length) return;
+      faltakInput.files = files;
+      faltakFileName.textContent = files[0].name || '';
+    });
+  }
+
   const container = document.querySelector('.egutegi-slide-container');
   if (!container) return;
 

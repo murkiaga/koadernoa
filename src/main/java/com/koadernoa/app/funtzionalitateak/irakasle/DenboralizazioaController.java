@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
 import com.koadernoa.app.objektuak.egutegia.entitateak.EgunBerezi;
@@ -36,6 +37,8 @@ import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
 import com.koadernoa.app.objektuak.egutegia.service.EgutegiaService;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
+import com.koadernoa.app.objektuak.logak.entitateak.LogMota;
+import com.koadernoa.app.objektuak.logak.service.LogService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Jarduera;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.JardueraEditDto;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.JardueraSortuDto;
@@ -47,6 +50,7 @@ import com.koadernoa.app.objektuak.koadernoak.repository.SaioaRepository;
 import com.koadernoa.app.objektuak.koadernoak.service.AsistentziaService;
 import com.koadernoa.app.objektuak.koadernoak.service.DenboralizazioFaltaService;
 import com.koadernoa.app.objektuak.koadernoak.service.FaltenJakinarazpenPdfService;
+import com.koadernoa.app.objektuak.koadernoak.service.FaltenExcelInportService;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
 import com.koadernoa.app.objektuak.koadernoak.service.ProgramazioTxantiloiService;
 
@@ -65,8 +69,10 @@ public class DenboralizazioaController {
 	private final KoadernoaService koadernoaService;
 	private final DenboralizazioFaltaService denboralizazioFaltaService;
 	private final FaltenJakinarazpenPdfService faltenJakinarazpenPdfService;
+	private final FaltenExcelInportService faltenExcelInportService;
 	private final ProgramazioTxantiloiService programazioTxantiloiService;
 	private final IrakasleaService irakasleaService;
+	private final LogService logService;
 
 	@GetMapping({"","/"})
 	public String erakutsiHilabetekoDenboralizazioa(
@@ -307,6 +313,76 @@ public class DenboralizazioaController {
 	    else koadernoaService.eguneratuJarduera(koadernoa, id, dto);
 
 	    return "redirect:/irakasle/denboralizazioa?urtea=" + urtea + "&hilabetea=" + hilabetea;
+	}
+
+	@PostMapping("/faltak/inportatu")
+	public String inportatuFaltakExcel(
+	        @SessionAttribute(value = "koadernoAktiboa", required = false) Koadernoa koadernoa,
+	        @RequestParam("fitxategia") MultipartFile fitxategia,
+	        @RequestParam("urtea") int urtea,
+	        @RequestParam("hilabetea") int hilabetea,
+	        RedirectAttributes ra,
+	        Authentication auth) {
+
+	    if (koadernoa == null || koadernoa.getId() == null) {
+	        ra.addFlashAttribute("error", "Ez dago koaderno aktiborik aukeratuta.");
+	        return "redirect:/irakasle";
+	    }
+
+	    var koadernoaOpt = koadernoaService.findByIdWithEgutegiaAndEgunBereziak(koadernoa.getId());
+	    if (koadernoaOpt.isEmpty()) {
+	        ra.addFlashAttribute("error", "Koaderno aktiboa ez da aurkitu.");
+	        return "redirect:/irakasle/denboralizazioa?urtea=" + urtea + "&hilabetea=" + hilabetea + "&bista=faltak";
+	    }
+
+	    try {
+	        var emaitza = faltenExcelInportService.inportatu(koadernoaOpt.get(), fitxategia);
+	        String mezua = String.format("Inportazioa eginda. Irakurrita: %d · Sortuta: %d · Baztertuta: %d",
+	                emaitza.getIrakurritakoak(), emaitza.getSortuak(), emaitza.getBaztertuak());
+	        ra.addFlashAttribute("success", mezua);
+	        if (!emaitza.getOharrak().isEmpty()) {
+	            ra.addFlashAttribute("error", String.join(" | ", emaitza.getOharrak().stream().limit(5).toList()));
+	        }
+	        gordeFaltenInportazioLoga(auth, koadernoaOpt.get(), emaitza, null);
+	    } catch (Exception ex) {
+	        ra.addFlashAttribute("error", "Ezin izan dira faltak inportatu: " + ex.getMessage());
+	        gordeFaltenInportazioLoga(auth, koadernoaOpt.get(), null, ex.getMessage());
+	    }
+
+	    return "redirect:/irakasle/denboralizazioa?urtea=" + urtea + "&hilabetea=" + hilabetea + "&bista=faltak";
+	}
+
+	private void gordeFaltenInportazioLoga(Authentication auth,
+	                                       Koadernoa koadernoa,
+	                                       FaltenExcelInportService.InportEmaitza emaitza,
+	                                       String errorea) {
+	    Irakaslea eragilea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+	    String deskribapena;
+	    if (emaitza != null) {
+	        String oharrak = emaitza.getOharrak() == null || emaitza.getOharrak().isEmpty()
+	                ? "oharrik ez"
+	                : String.join(" | ", emaitza.getOharrak().stream().limit(3).toList());
+	        deskribapena = String.format(
+	                "Falten inportazioa: irakurrita=%d, sortuta=%d, baztertuta=%d, oharrak=%s",
+	                emaitza.getIrakurritakoak(),
+	                emaitza.getSortuak(),
+	                emaitza.getBaztertuak(),
+	                oharrak
+	        );
+	    } else {
+	        deskribapena = "Falten inportazio errorea: " + (errorea == null ? "ezezaguna" : errorea);
+	    }
+	    if (deskribapena.length() > 2500) {
+	        deskribapena = deskribapena.substring(0, 2500);
+	    }
+
+	    logService.gorde(
+	            LogMota.HUTSEGITE_INPORTAZIOA,
+	            eragilea,
+	            "Koadernoa",
+	            koadernoa != null ? koadernoa.getId() : null,
+	            deskribapena
+	    );
 	}
 
 	private boolean dagoTxantiloiAldia(Egutegia egutegia) {
