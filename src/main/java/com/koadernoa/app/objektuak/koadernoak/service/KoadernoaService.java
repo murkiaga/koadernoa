@@ -375,6 +375,7 @@ public class KoadernoaService {
         if (activeFrom == null) {
             activeFrom = k.getEgutegia() != null ? k.getEgutegia().getHasieraData() : LocalDate.now();
         }
+        final LocalDate activeFromFinal = activeFrom;
 
         for (KoadernoOrdutegiBlokea b : k.getOrdutegiak()) {
             if (b.getHasieraData() == null && k.getEgutegia() != null) {
@@ -382,7 +383,7 @@ public class KoadernoaService {
             }
         }
         boolean dualOrdutegia = java.util.Optional.ofNullable(k.getOrdutegiak()).orElse(List.of()).stream()
-                .anyMatch(b -> java.util.Objects.equals(b.getHasieraData(), activeFrom) && b.isDualOrdutegia());
+                .anyMatch(b -> java.util.Objects.equals(b.getHasieraData(), activeFromFinal) && b.isDualOrdutegia());
         if (dualOrdutegia) {
             throw new IllegalStateException("DUAL ordutegian ezin dira blokeak editatu.");
         }
