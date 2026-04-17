@@ -2,9 +2,12 @@ package com.koadernoa.app.funtzionalitateak.kudeatzaile;
 
 import java.util.List;
 import java.time.LocalDate;
+import java.util.ArrayList;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
@@ -16,6 +19,7 @@ import com.koadernoa.app.objektuak.egutegia.entitateak.EgunBerezi;
 import com.koadernoa.app.objektuak.egutegia.entitateak.EgunMota;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
+import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
 import com.koadernoa.app.objektuak.egutegia.repository.MailaRepository;
 import com.koadernoa.app.objektuak.egutegia.service.EgutegiaService;
 import com.koadernoa.app.objektuak.egutegia.service.IkasturteaService;
@@ -50,9 +54,11 @@ public class EgutegiaController {
 
 	    Ikasturtea aktiboa = aktiboaOpt.get();
 	    List<Egutegia> egutegiak = aktiboa.getEgutegiak();
+	    List<Maila> erabilgarriMailak = kalkulatuErabiliGabekoMailak(egutegiak);
 
 	    model.addAttribute("ikasturtea", aktiboa);
 	    model.addAttribute("egutegiak", egutegiak);
+	    model.addAttribute("erabiliGabekoMailak", erabilgarriMailak);
 
 	    return "kudeatzaile/egutegia/zerrenda";
 	}
@@ -200,6 +206,43 @@ public class EgutegiaController {
 	                                @RequestParam(name = "berrezarri", defaultValue = "false") boolean berrezarri) {
 	    egutegiaService.eguneratuEgutegia(egutegia, berrezarri);
 	    return "redirect:/kudeatzaile/egutegia/" + egutegia.getId();
+	}
+
+	@PostMapping("/kopiatu")
+	public String kopiatuEgutegia(@RequestParam("jatorrizkoEgutegiaId") Long jatorrizkoEgutegiaId,
+	                              @RequestParam("mailaId") Long mailaId,
+	                              org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
+	    Egutegia jatorrizkoa = egutegiaService.getById(jatorrizkoEgutegiaId);
+	    Ikasturtea ikasturtea = jatorrizkoa.getIkasturtea();
+	    List<Egutegia> ikasturtekoEgutegiak = (ikasturtea != null && ikasturtea.getEgutegiak() != null)
+	            ? ikasturtea.getEgutegiak()
+	            : List.of();
+
+	    boolean existitzenDa = ikasturtekoEgutegiak.stream()
+	            .anyMatch(e -> e.getMaila() != null && e.getMaila().getId().equals(mailaId));
+	    if (existitzenDa) {
+	        ra.addFlashAttribute("error", "Maila hori jada erabiltzen ari da ikasturte honetan.");
+	        return "redirect:/kudeatzaile/egutegia";
+	    }
+
+	    Maila maila = mailaRepository.findById(mailaId)
+	            .orElseThrow(() -> new IllegalArgumentException("Maila ez da aurkitu: " + mailaId));
+	    egutegiaService.kopiatuEgutegia(jatorrizkoa, maila);
+	    ra.addFlashAttribute("success", "Egutegia ondo kopiatu da: " + maila.getIzena());
+	    return "redirect:/kudeatzaile/egutegia";
+	}
+
+	private List<Maila> kalkulatuErabiliGabekoMailak(List<Egutegia> egutegiak) {
+	    Set<Long> erabilitakoMailaIdak = egutegiak == null
+	            ? Set.of()
+	            : egutegiak.stream()
+	                    .map(Egutegia::getMaila)
+	                    .filter(java.util.Objects::nonNull)
+	                    .map(Maila::getId)
+	                    .collect(Collectors.toSet());
+	    return new ArrayList<>(mailaRepository.findAllByAktiboTrueOrderByOrdenaAscIzenaAsc().stream()
+	            .filter(m -> !erabilitakoMailaIdak.contains(m.getId()))
+	            .toList());
 	}
 
 }

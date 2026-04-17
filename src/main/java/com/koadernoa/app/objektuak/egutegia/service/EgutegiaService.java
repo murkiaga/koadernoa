@@ -242,4 +242,30 @@ public class EgutegiaService {
 	    return guztiak;
 	}
 
+	@Transactional
+	public Egutegia kopiatuEgutegia(Egutegia jatorrizkoa, Maila helburuMaila) {
+	    Egutegia berria = new Egutegia();
+	    berria.setIkasturtea(jatorrizkoa.getIkasturtea());
+	    berria.setMaila(helburuMaila);
+	    berria.setHasieraData(jatorrizkoa.getHasieraData());
+	    berria.setBukaeraData(jatorrizkoa.getBukaeraData());
+	    berria.setLehenEbalBukaera(jatorrizkoa.getLehenEbalBukaera());
+	    berria.setBigarrenEbalBukaera(jatorrizkoa.getBigarrenEbalBukaera());
+
+	    List<EgunBerezi> egunBereziBerriak = new ArrayList<>();
+	    if (jatorrizkoa.getEgunBereziak() != null) {
+	        for (EgunBerezi eb : jatorrizkoa.getEgunBereziak()) {
+	            EgunBerezi kopia = new EgunBerezi();
+	            kopia.setData(eb.getData());
+	            kopia.setMota(eb.getMota());
+	            kopia.setOrdezkatua(eb.getOrdezkatua());
+	            kopia.setDeskribapena(eb.getDeskribapena());
+	            kopia.setEgutegia(berria);
+	            egunBereziBerriak.add(kopia);
+	        }
+	    }
+	    berria.setEgunBereziak(egunBereziBerriak);
+	    return egutegiaRepository.save(berria);
+	}
+
 }

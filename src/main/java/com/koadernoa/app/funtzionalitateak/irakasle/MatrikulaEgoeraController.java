@@ -86,6 +86,13 @@ public class MatrikulaEgoeraController {
             @RequestParam(value = "oharra", required = false) String oharra,
             Authentication auth // <-- erabiltzaile autentifikatua jasotzeko
     ) {
+
+    	if (egoera != MatrikulaEgoera.MATRIKULATUA && egoera != MatrikulaEgoera.GAINDITUA) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "ok", false,
+                    "msg", "Egoera baliogabea. Baimenduta: MATRIKULATUA edo GAINDITUA"
+            ));
+        }
         
     	Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
 

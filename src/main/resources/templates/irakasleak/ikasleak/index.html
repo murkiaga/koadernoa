@@ -202,8 +202,8 @@
     <div class="row">
       <label for="egoeraSelect">Egoera</label>
       <select id="egoeraSelect">
-        <option th:each="ego : ${T(com.koadernoa.app.objektuak.modulua.entitateak.MatrikulaEgoera).values()}"
-                th:value="${ego}" th:text="${ego}">MATRIKULATUA</option>
+        <option value="MATRIKULATUA">MATRIKULATUA</option>
+        <option value="GAINDITUA">GAINDITUA</option>
       </select>
     </div>
 
