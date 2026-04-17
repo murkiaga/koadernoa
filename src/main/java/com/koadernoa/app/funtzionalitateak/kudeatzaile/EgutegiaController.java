@@ -227,9 +227,9 @@ public class EgutegiaController {
 
 	    Maila maila = mailaRepository.findById(mailaId)
 	            .orElseThrow(() -> new IllegalArgumentException("Maila ez da aurkitu: " + mailaId));
-	    Egutegia kopia = egutegiaService.kopiatuEgutegia(jatorrizkoa, maila);
+	    egutegiaService.kopiatuEgutegia(jatorrizkoa, maila);
 	    ra.addFlashAttribute("success", "Egutegia ondo kopiatu da: " + maila.getIzena());
-	    return "redirect:/kudeatzaile/egutegia/" + kopia.getId();
+	    return "redirect:/kudeatzaile/egutegia";
 	}
 
 	private List<Maila> kalkulatuErabiliGabekoMailak(List<Egutegia> egutegiak) {

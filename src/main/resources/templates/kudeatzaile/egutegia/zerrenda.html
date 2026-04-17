@@ -72,7 +72,7 @@
 
     <div id="kopiatuModalOverlay" class="kopiatu-modal-overlay" aria-hidden="true">
         <div class="kopiatu-modal">
-            <h3>Kopiatu "ze mailatarako?"</h3>
+            <h3>Zein maila izango du kopiatutako egutegiak?</h3>
             <form th:action="@{/kudeatzaile/egutegia/kopiatu}" method="post">
                 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                 <input type="hidden" id="jatorrizkoEgutegiaIdInput" name="jatorrizkoEgutegiaId"/>
