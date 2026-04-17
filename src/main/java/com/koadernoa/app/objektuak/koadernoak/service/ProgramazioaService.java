@@ -627,6 +627,9 @@ public class ProgramazioaService {
             LocalDate has = b.getHasieraData() != null ? b.getHasieraData() : ikastHas;
             if (b.isDualOrdutegia()) {
                 dualHasierak.add(has);
+                // DUAL hasieratik aurrera (hurrengo ordutegia iritsi arte) eguneroko ordutegi arrunta 0 bihurtu
+                // floorEntry(d) kalkuluan "mozketa-puntu" gisa funtzionatzeko.
+                ordutegiaka.computeIfAbsent(has, __ -> new java.util.EnumMap<>(Astegunak.class));
                 continue;
             }
             ordutegiaka.computeIfAbsent(has, __ -> new java.util.EnumMap<>(Astegunak.class))
