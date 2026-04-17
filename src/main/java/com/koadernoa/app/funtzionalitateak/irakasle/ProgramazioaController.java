@@ -62,6 +62,10 @@ public class ProgramazioaController {
       Programazioa programazioa = programazioaService
             .loadWithEbaluaketakUdetajpByKoadernoId(k.getId())
             .orElseGet(() -> programazioaService.createWithDefaultEbaluaketak(koadernoAktiboa));
+      programazioaService.syncDualUdForProgramazioa(k, programazioa);
+      programazioa = programazioaService
+              .loadWithEbaluaketakUdetajpByKoadernoId(k.getId())
+              .orElse(programazioa);
 
       // ✅ UD zerrenda “lautu” (EBAL ordena, eta barruan UD.posizioa)
       var unitateak = programazioa.getEbaluaketak() == null ? java.util.List.<UnitateDidaktikoa>of()
@@ -90,7 +94,7 @@ public class ProgramazioaController {
           k.getEgutegia() != null &&
           k.getEgutegia().getHasieraData() != null &&
           k.getEgutegia().getBukaeraData() != null &&
-          k.getOrdutegiak() != null && !k.getOrdutegiak().isEmpty() &&
+          k.getOrdutegiak() != null && k.getOrdutegiak().stream().anyMatch(b -> !b.isDualOrdutegia() && b.getIraupenaSlot() > 0) &&
           unitateak != null && !unitateak.isEmpty();
 
       //UD guztien orduen batura (UD.orduak; planifikatuak aparteko map-ean)

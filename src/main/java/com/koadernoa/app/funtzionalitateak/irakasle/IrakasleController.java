@@ -128,6 +128,7 @@ public class IrakasleController {
 
 	    Map<String, Set<String>> ordutegiTabs = new java.util.LinkedHashMap<>();
 	    List<Map<String, String>> ordutegiInfo = new ArrayList<>();
+        Map<String, Boolean> ordutegiDualMap = new java.util.LinkedHashMap<>();
 	    List<LocalDate> hasieraDatak = new ArrayList<>(ordutegiakByDate.keySet());
 	    boolean ordutegiAnitz = hasieraDatak.size() > 1;
 	    for (int i = 0; i < hasieraDatak.size(); i++) {
@@ -136,24 +137,31 @@ public class IrakasleController {
 	                : (koadernoa.getEgutegia() != null ? koadernoa.getEgutegia().getBukaeraData() : null);
 	
 	        Set<String> selected = new HashSet<>();
+            boolean dualOrdutegia = ordutegiakByDate.get(has).stream().anyMatch(KoadernoOrdutegiBlokea::isDualOrdutegia);
 	        for (KoadernoOrdutegiBlokea b : ordutegiakByDate.get(has)) {
+                if (b.isDualOrdutegia()) continue;
 	            int col = ASTE_ORDENA.indexOf(b.getAsteguna()) + 1;
 	            for (int slot = b.getHasieraSlot(); slot <= b.bukaeraSlot(); slot++) {
 	                selected.add(col + "-" + slot);
 	            }
 	        }
 	        ordutegiTabs.put(has.toString(), selected);
+            ordutegiDualMap.put(has.toString(), dualOrdutegia);
 
 	        Map<String, String> info = new java.util.LinkedHashMap<>();
 	        info.put("key", has.toString());
 	        info.put("label", ordutegiAnitz ? (i + 1) + ". ordutegia" : "Ordutegia");
 	        info.put("from", has.toString());
 	        info.put("to", buk != null ? buk.toString() : "");
+            info.put("dual", String.valueOf(dualOrdutegia));
 	        ordutegiInfo.add(info);
 	    }
 
 	    model.addAttribute("ordutegiTabs", ordutegiTabs);
 	    model.addAttribute("ordutegiInfo", ordutegiInfo);
+        model.addAttribute("ordutegiDualMap", ordutegiDualMap);
+        model.addAttribute("moduloDualOrduak", koadernoa.getModuloa() != null && koadernoa.getModuloa().getDualOrduak() != null
+                ? koadernoa.getModuloa().getDualOrduak() : 0);
 	    model.addAttribute("ordutegiAnitz", ordutegiAnitz);
 	    model.addAttribute("activeScheduleStartDate", activeDate != null ? activeDate.toString() : null);
 	    model.addAttribute("selected", ordutegiTabs.getOrDefault(activeDate != null ? activeDate.toString() : "", Set.of()));

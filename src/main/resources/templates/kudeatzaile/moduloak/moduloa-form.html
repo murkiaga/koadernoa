@@ -34,6 +34,10 @@
 	  <label>Orduak:</label>
 	  <input type="number" min="0" th:field="*{orduak}" required/>
 	  <div th:if="${#fields.hasErrors('orduak')}" th:errors="*{orduak}"></div>
+	  
+	  <label>DUAL orduak:</label>
+	  <input type="number" min="0" th:field="*{dualOrduak}" required/>
+	  <div th:if="${#fields.hasErrors('dualOrduak')}" th:errors="*{dualOrduak}"></div>
 
 
 	  <label>Maila:</label>

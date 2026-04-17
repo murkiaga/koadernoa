@@ -19,6 +19,9 @@ public class ModuloaFormDto {
 
     @NotNull
     private Integer orduak;
+    
+    @NotNull
+    private Integer dualOrduak;
 
     @NotNull
     private Long mailaId;

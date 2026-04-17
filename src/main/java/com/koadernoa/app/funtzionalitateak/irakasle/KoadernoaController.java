@@ -23,6 +23,7 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoaSortuDto;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
+import com.koadernoa.app.objektuak.koadernoak.service.ProgramazioaService;
 import com.koadernoa.app.objektuak.modulua.service.IkasleaService;
 import com.koadernoa.app.objektuak.zikloak.service.FamiliaService;
 
@@ -45,6 +46,7 @@ public class KoadernoaController {
 	
 	private final IrakasleaService irakasleaService;
 	private final KoadernoaService koadernoaService;
+    private final ProgramazioaService programazioaService;
 	private final IkasleaService ikasleaService;
 	private final KoadernoaRepository koadernoaRepository;
 	private final FamiliaService familiaService;
@@ -182,8 +184,12 @@ public class KoadernoaController {
                                         @RequestParam int row,
                                         @RequestParam boolean selected,
                                         @RequestParam(required = false) LocalDate scheduleStartDate) {
-        koadernoaService.setSlotSelected(id, col, row, selected, scheduleStartDate);
-        return ResponseEntity.ok(Map.of("ok", true));
+        try {
+            koadernoaService.setSlotSelected(id, col, row, selected, scheduleStartDate);
+            return ResponseEntity.ok(Map.of("ok", true));
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.badRequest().body(Map.of("ok", false, "error", ex.getMessage()));
+        }
     }
 
 
@@ -192,9 +198,20 @@ public class KoadernoaController {
 	@PostMapping("/{id}/ordutegia/berria")
     @ResponseBody
     public ResponseEntity<?> ordutegiBerria(@PathVariable Long id,
-                                            @RequestParam LocalDate hasieraData) {
-        LocalDate created = koadernoaService.sortuOrdutegiBerria(id, hasieraData);
+                                            @RequestParam LocalDate hasieraData,
+                                            @RequestParam(name = "dualOrdutegia", defaultValue = "false") boolean dualOrdutegia) {
+        LocalDate created = koadernoaService.sortuOrdutegiBerria(id, hasieraData, dualOrdutegia);
+        programazioaService.syncDualUdForKoaderno(id);
         return ResponseEntity.ok(Map.of("ok", true, "hasieraData", created.toString()));
+    }
+
+    @PostMapping("/{id}/ordutegia/ezabatu")
+    @ResponseBody
+    public ResponseEntity<?> ezabatuOrdutegia(@PathVariable Long id,
+                                              @RequestParam LocalDate hasieraData) {
+        boolean deleted = koadernoaService.ezabatuOrdutegia(id, hasieraData);
+        programazioaService.syncDualUdForKoaderno(id);
+        return ResponseEntity.ok(Map.of("ok", true, "deleted", deleted));
     }
 
 

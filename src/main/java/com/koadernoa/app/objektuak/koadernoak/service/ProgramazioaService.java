@@ -25,6 +25,7 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.Programazioa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.UnitateDidaktikoa;
 import com.koadernoa.app.objektuak.koadernoak.repository.EbaluaketaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.JardueraPlanifikatuaRepository;
+import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.ProgramazioaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.UnitateDidaktikoaRepository;
 
@@ -38,6 +39,7 @@ public class ProgramazioaService {
     private final UnitateDidaktikoaRepository udRepository;
     private final JardueraPlanifikatuaRepository jpRepository;
     private final EbaluaketaRepository ebaluaketaRepository;
+    private final KoadernoaRepository koadernoaRepository;
     private final DenboralizazioGeneratorService denboralizazioGeneratorService;
 
     // ========= Programazioa =========
@@ -522,6 +524,73 @@ public class ProgramazioaService {
         }
         return Optional.of(p);
     }
+
+    @Transactional
+    public void syncDualUdForKoaderno(Long koadernoId) {
+        if (koadernoId == null) return;
+        Koadernoa k = koadernoaRepository.findByIdWithOrdutegiaAndEgutegia(koadernoId).orElse(null);
+        if (k == null) return;
+        Programazioa p = loadWithEbaluaketakUdetajpByKoadernoId(koadernoId)
+                .orElseGet(() -> createWithDefaultEbaluaketak(k));
+        syncDualUdForProgramazioa(k, p);
+    }
+
+    @Transactional
+    public void syncDualUdForProgramazioa(Koadernoa koadernoa, Programazioa programazioa) {
+        if (koadernoa == null || programazioa == null || programazioa.getEbaluaketak() == null) return;
+
+        int dualOrduak = koadernoa.getModuloa() != null && koadernoa.getModuloa().getDualOrduak() != null
+                ? koadernoa.getModuloa().getDualOrduak() : 0;
+
+        List<LocalDate> dualHasierak = java.util.Optional.ofNullable(koadernoa.getOrdutegiak()).orElse(List.of()).stream()
+                .filter(KoadernoOrdutegiBlokea::isDualOrdutegia)
+                .map(b -> b.getHasieraData() != null ? b.getHasieraData()
+                        : (koadernoa.getEgutegia() != null ? koadernoa.getEgutegia().getHasieraData() : null))
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .sorted()
+                .toList();
+
+        java.util.Set<String> activeCodes = new java.util.HashSet<>();
+        for (LocalDate hasiera : dualHasierak) {
+            Ebaluaketa targetEbal = programazioa.getEbaluaketak().stream()
+                    .filter(e -> e.getHasieraData() != null && e.getBukaeraData() != null
+                            && !hasiera.isBefore(e.getHasieraData()) && !hasiera.isAfter(e.getBukaeraData()))
+                    .findFirst()
+                    .orElse(null);
+            if (targetEbal == null) continue;
+
+            String code = "DUAL-" + hasiera.toString().replace("-", "");
+            activeCodes.add(code);
+
+            UnitateDidaktikoa existing = targetEbal.getUnitateak().stream()
+                    .filter(u -> code.equals(u.getKodea()))
+                    .findFirst().orElse(null);
+            if (dualOrduak <= 0) continue;
+            if (existing == null) {
+                UnitateDidaktikoa ud = new UnitateDidaktikoa();
+                ud.setProgramazioa(programazioa);
+                ud.setEbaluaketa(targetEbal);
+                ud.setKodea(code);
+                ud.setIzenburua("DUALA");
+                ud.setOrduak(dualOrduak);
+                int maxPos = targetEbal.getUnitateak().stream().mapToInt(UnitateDidaktikoa::getPosizioa).max().orElse(0);
+                ud.setPosizioa(maxPos + 1);
+                targetEbal.getUnitateak().add(ud);
+            } else {
+                existing.setIzenburua("DUALA");
+                existing.setOrduak(dualOrduak);
+            }
+        }
+
+        for (Ebaluaketa e : programazioa.getEbaluaketak()) {
+            e.getUnitateak().removeIf(u -> {
+                boolean dualKodea = u.getKodea() != null && u.getKodea().startsWith("DUAL-");
+                return dualKodea && !activeCodes.contains(u.getKodea());
+            });
+        }
+        programazioaRepository.save(programazioa);
+    }
     
 	
     @Transactional(readOnly = true)
@@ -535,13 +604,34 @@ public class ProgramazioaService {
         LocalDate ikastHas = egutegia.getHasieraData();
         java.util.NavigableMap<LocalDate, Map<Astegunak, Integer>> ordutegiaka = new java.util.TreeMap<>();
 
+        java.util.Set<LocalDate> dualHasierak = new java.util.HashSet<>();
+        int dualOrduak = programazioa.getKoadernoa() != null
+                && programazioa.getKoadernoa().getModuloa() != null
+                && programazioa.getKoadernoa().getModuloa().getDualOrduak() != null
+                ? programazioa.getKoadernoa().getModuloa().getDualOrduak() : 0;
+
         for (KoadernoOrdutegiBlokea b : blokeak) {
             LocalDate has = b.getHasieraData() != null ? b.getHasieraData() : ikastHas;
+            if (b.isDualOrdutegia()) {
+                dualHasierak.add(has);
+                continue;
+            }
             ordutegiaka.computeIfAbsent(has, __ -> new java.util.EnumMap<>(Astegunak.class))
                     .merge(b.getAsteguna(), b.getIraupenaSlot(), Integer::sum);
         }
 
-        return ebalOrduErabilgarriakCore(programazioa, egutegia, ordutegiaka);
+        Map<Long, Integer> out = ebalOrduErabilgarriakCore(programazioa, egutegia, ordutegiaka);
+        if (dualOrduak > 0 && !dualHasierak.isEmpty()) {
+            for (LocalDate dualHas : dualHasierak) {
+                Ebaluaketa ebal = java.util.Optional.ofNullable(programazioa.getEbaluaketak()).orElse(List.of()).stream()
+                        .filter(e -> e.getHasieraData() != null && e.getBukaeraData() != null
+                                && !dualHas.isBefore(e.getHasieraData()) && !dualHas.isAfter(e.getBukaeraData()))
+                        .findFirst().orElse(null);
+                if (ebal == null) continue;
+                out.merge(ebal.getId(), dualOrduak, Integer::sum);
+            }
+        }
+        return out;
     }
 	
 	/* ============ Core kalkulua (ORDEZKATUA konponduta) ============ */
