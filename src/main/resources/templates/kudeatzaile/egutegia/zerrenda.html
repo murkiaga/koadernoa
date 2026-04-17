@@ -6,6 +6,19 @@
     <link rel="stylesheet" th:href="@{/css/navbar.css}">
     <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .kopiatu-modal-overlay{
+            position:fixed; inset:0; background:rgba(0,0,0,.45); display:none;
+            align-items:center; justify-content:center; z-index:1000;
+        }
+        .kopiatu-modal-overlay.visible{ display:flex; }
+        .kopiatu-modal{
+            background:#fff; border-radius:.5rem; width:min(95vw, 420px); padding:1rem 1.25rem;
+            box-shadow:0 12px 32px rgba(0,0,0,.25);
+        }
+        .kopiatu-modal h3{ margin:0 0 .75rem; }
+        .kopiatu-modal .actions{ display:flex; gap:.5rem; justify-content:flex-end; margin-top:1rem; }
+    </style>
 </head>
 <body>
     <div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
@@ -27,8 +40,15 @@
 		            <tr th:each="egutegia : ${egutegiak}">
 		                <td th:text="${egutegia.maila.getKodea}"></td>
 		                <td>
-		                    <a class="btn btn-secondary" th:href="@{'/kudeatzaile/egutegia/' + ${egutegia.id}}">Ikusi</a>
+                            <a class="btn btn-secondary" th:href="@{'/kudeatzaile/egutegia/' + ${egutegia.id}}">Ikusi</a>
                             <a class="btn btn-primary" style="margin-left:.5rem;" th:href="@{'/kudeatzaile/egutegia/editatu/' + ${egutegia.id}}">Editatu</a>
+                            <button type="button"
+                                    class="btn btn-secondary kopiatu-btn"
+                                    style="margin-left:.5rem;"
+                                    th:attr="data-egutegia-id=${egutegia.id}"
+                                    th:disabled="${erabiliGabekoMailak == null or erabiliGabekoMailak.isEmpty()}">
+                                Kopiatu
+                            </button>
                             <form th:action="@{|/kudeatzaile/egutegia/ezabatu/${egutegia.id}|}" method="post" style="display:inline-block;margin-left:.5rem;" onsubmit="return confirm('Ziur zaude egutegia ezabatu nahi duzula?');">
                                 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                                 <button type="submit" class="btn btn-danger">Ezabatu</button>
@@ -45,7 +65,58 @@
 	    <a class="btn btn-primary" th:href="@{/kudeatzaile/egutegia/sortu}">
 	        Egutegi berria sortu
 	    </a>
+        <p th:if="${erabiliGabekoMailak == null or erabiliGabekoMailak.isEmpty()}" style="margin-top:1rem;">
+            Ez dago erabilgarri dagoen mailarik egutegi bat kopiatzeko.
+        </p>
 	</main>
+
+    <div id="kopiatuModalOverlay" class="kopiatu-modal-overlay" aria-hidden="true">
+        <div class="kopiatu-modal">
+            <h3>Kopiatu "ze mailatarako?"</h3>
+            <form th:action="@{/kudeatzaile/egutegia/kopiatu}" method="post">
+                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <input type="hidden" id="jatorrizkoEgutegiaIdInput" name="jatorrizkoEgutegiaId"/>
+                <label for="mailaIdSelect">Aukeratu erabilita ez dagoen maila:</label>
+                <select id="mailaIdSelect" name="mailaId" class="form-select" required style="margin-top:.5rem;">
+                    <option value="" selected disabled>-- Aukeratu maila --</option>
+                    <option th:each="m : ${erabiliGabekoMailak}"
+                            th:value="${m.id}"
+                            th:text="${m.izena + ' (' + m.kodea + ')'}"></option>
+                </select>
+                <div class="actions">
+                    <button type="button" id="kopiatuModalItxiBtn" class="btn btn-secondary">Utzi</button>
+                    <button type="submit" class="btn btn-primary">Kopiatu</button>
+                </div>
+            </form>
+        </div>
+    </div>
 <script th:src="@{/js/kudeatzaile-nav.js}"></script>
+<script>
+    const modalOverlay = document.getElementById('kopiatuModalOverlay');
+    const idInput = document.getElementById('jatorrizkoEgutegiaIdInput');
+    const closeBtn = document.getElementById('kopiatuModalItxiBtn');
+    const kopiatuBtns = document.querySelectorAll('.kopiatu-btn');
+
+    kopiatuBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const egutegiaId = btn.getAttribute('data-egutegia-id');
+            idInput.value = egutegiaId;
+            modalOverlay.classList.add('visible');
+            modalOverlay.setAttribute('aria-hidden', 'false');
+        });
+    });
+
+    closeBtn.addEventListener('click', () => {
+        modalOverlay.classList.remove('visible');
+        modalOverlay.setAttribute('aria-hidden', 'true');
+    });
+
+    modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) {
+            modalOverlay.classList.remove('visible');
+            modalOverlay.setAttribute('aria-hidden', 'true');
+        }
+    });
+</script>
 </body>
 </html>
