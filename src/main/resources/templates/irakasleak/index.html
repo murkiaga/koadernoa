@@ -261,6 +261,7 @@
                 th:text="${tab.label}">Ordutegia</button>
         <span id="ordutegiRange" class="ordutegi-date-range"></span>
       </div>
+      <div id="dualOrdutegiInfo" class="dual-badge"></div>
       <div class="grid-viewport">
         <form th:action="@{|/irakasle/koadernoa/${koadernoAktiboa.id}/ordutegia|}"
               method="post"
@@ -311,14 +312,9 @@
       </div>
 
       <div class="ordutegi-new">
-        <label style="display:flex;align-items:center;gap:.4rem;">
-          <input type="checkbox" id="dualOrdutegiaCheck">
-          <span>DUAL ordutegia</span>
-        </label>
         <button type="button" id="ordutegiBerriaBtn" class="btn btn-secondary">Ordutegi berria</button>
         <button type="button" id="ordutegiEzabatuBtn" class="btn btn-danger">Ordutegia ezabatu</button>
       </div>
-      <div id="dualOrdutegiInfo" class="dual-badge"></div>
 
       <!-- Irakasle zerrenda + partekatu atala (fragment berria) -->
       <div th:replace="~{irakasleak/fragments/irakasle-zerrenda-atala :: irakasleZerrenda(${koadernoAktiboa}, ${irakaslea})}"></div>
@@ -346,7 +342,6 @@
   const rangeEl = document.getElementById('ordutegiRange');
   const berriaBtn = document.getElementById('ordutegiBerriaBtn');
   const ezabatuBtn = document.getElementById('ordutegiEzabatuBtn');
-  const dualCheck = document.getElementById('dualOrdutegiaCheck');
   const dualInfo = document.getElementById('dualOrdutegiInfo');
   const schedules = /*[[${ordutegiTabs}]]*/ {};
   const info = /*[[${ordutegiInfo}]]*/ [];
@@ -507,7 +502,7 @@
     if (dualInfo) {
       if (isDual) {
         dualInfo.classList.add('show');
-        dualInfo.textContent = `DUAL ordutegia: blokeik ez. Kontabilizatuko diren orduak: ${moduloDualOrduak}`;
+        dualInfo.textContent = `DUAL ordutegia: blokerik ez. Kontabilizatuko diren orduak: ${moduloDualOrduak}`;
       } else {
         dualInfo.classList.remove('show');
         dualInfo.textContent = '';
@@ -523,7 +518,7 @@
   berriaBtn?.addEventListener('click', async () => {
     const hasieraData = prompt('Sartu ordutegi berriaren hasiera data (YYYY-MM-DD):');
     if (!hasieraData) return;
-    const dualOrdutegia = !!dualCheck?.checked;
+    const dualOrdutegia = confirm('Ordutegi hau DUAL ordutegia izango da? (Ados=BAI, Utzi=EZ)');
 
     const koadernoId = table.dataset.koadernoId;
     const params = new URLSearchParams({ hasieraData, dualOrdutegia: String(dualOrdutegia) });

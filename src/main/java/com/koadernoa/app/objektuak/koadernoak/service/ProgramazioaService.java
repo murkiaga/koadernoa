@@ -499,7 +499,12 @@ public class ProgramazioaService {
 
         // (1) EBAL + UD
         List<Ebaluaketa> ebals = ebaluaketaRepository.findAllWithUdByProgramazioaId(p.getId());
-        p.setEbaluaketak(ebals);
+        if (p.getEbaluaketak() == null) {
+            p.setEbaluaketak(new ArrayList<>());
+        } else {
+            p.getEbaluaketak().clear();
+        }
+        p.getEbaluaketak().addAll(ebals);
 
         // (2) UD id-ak bildu JP batch-fetch egiteko
         List<Long> udIds = ebals.stream()
@@ -519,7 +524,12 @@ public class ProgramazioaService {
                 List<UnitateDidaktikoa> replaced = e.getUnitateak().stream()
                     .map(u -> byId.getOrDefault(u.getId(), u))
                     .collect(Collectors.toList());
-                e.setUnitateak(replaced);
+                if (e.getUnitateak() == null) {
+                    e.setUnitateak(new ArrayList<>());
+                } else {
+                    e.getUnitateak().clear();
+                }
+                e.getUnitateak().addAll(replaced);
             }
         }
         return Optional.of(p);
@@ -562,6 +572,9 @@ public class ProgramazioaService {
 
             String code = "DUAL-" + hasiera.toString().replace("-", "");
             activeCodes.add(code);
+            if (targetEbal.getUnitateak() == null) {
+                targetEbal.setUnitateak(new ArrayList<>());
+            }
 
             UnitateDidaktikoa existing = targetEbal.getUnitateak().stream()
                     .filter(u -> code.equals(u.getKodea()))
