@@ -638,9 +638,6 @@ public class ProgramazioaService {
             }
             if (b.isDualOrdutegia()) {
                 dualHasierak.add(has);
-                // DUAL hasieratik aurrera (hurrengo ordutegia iritsi arte) eguneroko ordutegi arrunta 0 bihurtu
-                // floorEntry(d) kalkuluan "mozketa-puntu" gisa funtzionatzeko.
-                ordutegiaka.computeIfAbsent(has, __ -> new java.util.EnumMap<>(Astegunak.class));
                 continue;
             }
             ordutegiaka.computeIfAbsent(has, __ -> new java.util.EnumMap<>(Astegunak.class))
@@ -650,8 +647,22 @@ public class ProgramazioaService {
         Map<Long, Integer> out = ebalOrduErabilgarriakCore(programazioa, egutegia, ordutegiaka);
         if (dualOrduak > 0 && !dualHasierak.isEmpty()) {
             List<LocalDate> hasieraOrdenatuak = ordutegiHasierak.stream().distinct().sorted().toList();
+            Map<LocalDate, EgunBerezi> egunBereziakMap = java.util.Optional.ofNullable(egutegia.getEgunBereziak())
+                    .orElse(java.util.List.of()).stream()
+                    .filter(eb -> eb.getData() != null)
+                    .collect(java.util.stream.Collectors.toMap(
+                            EgunBerezi::getData,
+                            eb -> eb,
+                            (a, b) -> a
+                    ));
             for (LocalDate dualHas : dualHasierak) {
                 LocalDate dualBuk = dualRangeEnd(dualHas, hasieraOrdenatuak, egutegia.getBukaeraData());
+                // 1) Dual tartean ordutegi arruntez kontatu diren orduak kendu
+                Map<Long, Integer> kenketak = normalOrduakByEvalInRange(
+                        programazioa, egutegia, ordutegiaka, egunBereziakMap, dualHas, dualBuk);
+                kenketak.forEach((ebalId, ordu) -> out.merge(ebalId, -ordu, Integer::sum));
+
+                // 2) Dagokion ebaluazioari DUAL ordu finkoak gehitu
                 Ebaluaketa ebal = findBestEbaluaketaForRange(programazioa.getEbaluaketak(), dualHas, dualBuk);
                 if (ebal == null) continue;
                 out.merge(ebal.getId(), dualOrduak, Integer::sum);
@@ -869,6 +880,44 @@ public class ProgramazioaService {
             }
         }
         return best > 0 ? bestEbal : null;
+    }
+
+    private Map<Long, Integer> normalOrduakByEvalInRange(
+            Programazioa programazioa,
+            Egutegia egutegia,
+            java.util.NavigableMap<LocalDate, Map<Astegunak, Integer>> ordutegiaka,
+            Map<LocalDate, EgunBerezi> egunBereziakMap,
+            LocalDate rangeHas,
+            LocalDate rangeBuk) {
+
+        Map<Long, Integer> out = new java.util.HashMap<>();
+        if (rangeHas == null || rangeBuk == null || rangeHas.isAfter(rangeBuk)) return out;
+
+        LocalDate ikastHas = egutegia.getHasieraData();
+        LocalDate ikastBuk = egutegia.getBukaeraData();
+        LocalDate has = max(rangeHas, ikastHas);
+        LocalDate buk = min(rangeBuk, ikastBuk);
+        if (has == null || buk == null || has.isAfter(buk)) return out;
+
+        for (LocalDate d = has; !d.isAfter(buk); d = d.plusDays(1)) {
+            Astegunak ag = astegunEraginkorra(d, egunBereziakMap);
+            if (ag == null) continue;
+            var ordutegia = ordutegiaka.floorEntry(d) != null ? ordutegiaka.floorEntry(d).getValue() : Map.<Astegunak, Integer>of();
+            int ordu = ordutegia.getOrDefault(ag, 0);
+            if (ordu <= 0) continue;
+
+            Ebaluaketa ebal = null;
+            for (Ebaluaketa e : java.util.Optional.ofNullable(programazioa.getEbaluaketak()).orElse(java.util.List.of())) {
+                if (e.getHasieraData() == null || e.getBukaeraData() == null) continue;
+                if (!d.isBefore(e.getHasieraData()) && !d.isAfter(e.getBukaeraData())) {
+                    ebal = e;
+                    break;
+                }
+            }
+            if (ebal == null) continue;
+            out.merge(ebal.getId(), ordu, Integer::sum);
+        }
+        return out;
     }
   
 }
