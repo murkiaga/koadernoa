@@ -497,7 +497,7 @@ public class KoadernoaService {
         }
         KoadernoOrdutegiBlokea marker = new KoadernoOrdutegiBlokea();
         marker.setKoadernoa(k);
-        marker.setAsteguna(Astegunak.LARUNBATA);
+        marker.setAsteguna(null);
         marker.setHasieraSlot(1);
         marker.setIraupenaSlot(0);
         marker.setHasieraData(hasieraData);

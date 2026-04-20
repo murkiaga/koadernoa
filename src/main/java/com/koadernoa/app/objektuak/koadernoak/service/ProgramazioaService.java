@@ -625,6 +625,10 @@ public class ProgramazioaService {
 
         for (KoadernoOrdutegiBlokea b : blokeak) {
             LocalDate has = b.getHasieraData() != null ? b.getHasieraData() : ikastHas;
+            if (b.getIraupenaSlot() <= 0 && !b.isDualOrdutegia()) {
+                // Marker normala: ez du eguneroko ordu-kalkuluan eragin behar
+                continue;
+            }
             if (b.isDualOrdutegia()) {
                 dualHasierak.add(has);
                 // DUAL hasieratik aurrera (hurrengo ordutegia iritsi arte) eguneroko ordutegi arrunta 0 bihurtu
