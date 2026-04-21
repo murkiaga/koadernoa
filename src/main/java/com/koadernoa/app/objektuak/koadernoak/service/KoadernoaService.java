@@ -375,11 +375,17 @@ public class KoadernoaService {
         if (activeFrom == null) {
             activeFrom = k.getEgutegia() != null ? k.getEgutegia().getHasieraData() : LocalDate.now();
         }
+        final LocalDate activeFromFinal = activeFrom;
 
         for (KoadernoOrdutegiBlokea b : k.getOrdutegiak()) {
             if (b.getHasieraData() == null && k.getEgutegia() != null) {
                 b.setHasieraData(k.getEgutegia().getHasieraData());
             }
+        }
+        boolean dualOrdutegia = java.util.Optional.ofNullable(k.getOrdutegiak()).orElse(List.of()).stream()
+                .anyMatch(b -> java.util.Objects.equals(b.getHasieraData(), activeFromFinal) && b.isDualOrdutegia());
+        if (dualOrdutegia) {
+            throw new IllegalStateException("DUAL ordutegian ezin dira blokeak editatu.");
         }
 
         // Egun honetako blokeak
@@ -467,7 +473,7 @@ public class KoadernoaService {
                     }
                 })
                 .sorted(Comparator.comparing(KoadernoOrdutegiBlokea::getHasieraData)
-                        .thenComparing(KoadernoOrdutegiBlokea::getAsteguna)
+                        .thenComparing(KoadernoOrdutegiBlokea::getAsteguna, Comparator.nullsLast(Comparator.naturalOrder()))
                         .thenComparingInt(KoadernoOrdutegiBlokea::getHasieraSlot))
                 .collect(Collectors.groupingBy(KoadernoOrdutegiBlokea::getHasieraData,
                         java.util.TreeMap::new,
@@ -475,7 +481,7 @@ public class KoadernoaService {
     }
 
     @Transactional
-    public LocalDate sortuOrdutegiBerria(Long koadernoId, LocalDate hasieraData) {
+    public LocalDate sortuOrdutegiBerria(Long koadernoId, LocalDate hasieraData, boolean dualOrdutegia) {
         Koadernoa k = koadernoaRepository.findWithOrdutegiaById(koadernoId).orElseThrow();
         LocalDate ikastHas = k.getEgutegia() != null ? k.getEgutegia().getHasieraData() : null;
         LocalDate ikastBuk = k.getEgutegia() != null ? k.getEgutegia().getBukaeraData() : null;
@@ -489,7 +495,28 @@ public class KoadernoaService {
                 return hasieraData;
             }
         }
+        KoadernoOrdutegiBlokea marker = new KoadernoOrdutegiBlokea();
+        marker.setKoadernoa(k);
+        marker.setAsteguna(null);
+        marker.setHasieraSlot(1);
+        marker.setIraupenaSlot(0);
+        marker.setHasieraData(hasieraData);
+        marker.setDualOrdutegia(dualOrdutegia);
+        k.getOrdutegiak().add(marker);
+        koadernoaRepository.save(k);
         return hasieraData;
+    }
+
+    @Transactional
+    public boolean ezabatuOrdutegia(Long koadernoId, LocalDate hasieraData) {
+        Koadernoa k = koadernoaRepository.findWithOrdutegiaById(koadernoId).orElseThrow();
+        if (hasieraData == null) return false;
+        int before = k.getOrdutegiak() != null ? k.getOrdutegiak().size() : 0;
+        if (k.getOrdutegiak() != null) {
+            k.getOrdutegiak().removeIf(b -> java.util.Objects.equals(b.getHasieraData(), hasieraData));
+        }
+        int after = k.getOrdutegiak() != null ? k.getOrdutegiak().size() : 0;
+        return after < before;
     }
 
     private KoadernoOrdutegiBlokea findCovering(List<KoadernoOrdutegiBlokea> blocks, int slot){

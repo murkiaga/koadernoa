@@ -29,6 +29,8 @@ public class Moduloa {
     private String eeiKodea; //"0225" kode honek RELO eta SALO lotu
 
     private Integer orduak;
+    @Column(name = "dual_orduak")
+    private Integer dualOrduak;
     
     @ManyToOne(optional=false)
     private Maila maila;

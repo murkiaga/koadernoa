@@ -201,6 +201,15 @@
     .ordutegi-tab.active{color:#0f172a;text-decoration:underline;text-underline-offset:3px;}
     .ordutegi-date-range{color:#64748b;font-size:.82rem;font-weight:500;margin-left:auto;}
     .ordutegi-new{margin-top:10px;display:flex;justify-content:flex-end;}
+    .ordutegi-new{gap:10px;align-items:center;flex-wrap:wrap;}
+    .dual-badge{display:none;margin-top:10px;padding:.6rem .8rem;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;color:#1d4ed8;font-weight:600;}
+    .dual-badge.show{display:block;}
+    .modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;z-index:999;}
+    .modal-overlay.show{display:flex;}
+    .modal-card{width:min(420px,92vw);background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:1rem 1rem .9rem;box-shadow:0 10px 30px rgba(2,6,23,.2);}
+    .modal-card h3{margin:.2rem 0 .8rem;}
+    .modal-field{display:flex;flex-direction:column;gap:.35rem;margin-bottom:.8rem;}
+    .modal-actions{display:flex;justify-content:flex-end;gap:.55rem;margin-top:.9rem;}
 
   </style>
 </head>
@@ -258,6 +267,7 @@
                 th:text="${tab.label}">Ordutegia</button>
         <span id="ordutegiRange" class="ordutegi-date-range"></span>
       </div>
+      <div id="dualOrdutegiInfo" class="dual-badge"></div>
       <div class="grid-viewport">
         <form th:action="@{|/irakasle/koadernoa/${koadernoAktiboa.id}/ordutegia|}"
               method="post"
@@ -309,6 +319,7 @@
 
       <div class="ordutegi-new">
         <button type="button" id="ordutegiBerriaBtn" class="btn btn-secondary">Ordutegi berria</button>
+        <button type="button" id="ordutegiEzabatuBtn" class="btn btn-danger">Ordutegia ezabatu</button>
       </div>
 
       <!-- Irakasle zerrenda + partekatu atala (fragment berria) -->
@@ -328,6 +339,26 @@
   <div th:replace="~{irakasleak/fragments/koadernoa-ezabatu :: koadernoa-ezabatu-fragment(${koadernoAktiboa})}"></div>
 </th:block>
 
+<div id="ordutegiModal" class="modal-overlay" aria-hidden="true">
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="ordutegiModalTitle">
+    <h3 id="ordutegiModalTitle">Ordutegi berria sortu</h3>
+    <div class="modal-field">
+      <label for="modalHasieraData">Hasiera data</label>
+      <input type="date" id="modalHasieraData" required>
+    </div>
+    <div class="modal-field" th:if="${moduloDualOrduak > 0}">
+      <label style="display:flex;align-items:center;gap:.45rem;">
+        <input type="checkbox" id="modalDualOrdutegia">
+        <span>Dual ordutegia</span>
+      </label>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-secondary" id="ordutegiModalCancel">Utzi</button>
+      <button type="button" class="btn btn-primary" id="ordutegiModalCreate">Sortu</button>
+    </div>
+  </div>
+</div>
+
 <script th:inline="javascript">
 (function () {
   const table = document.getElementById('ordutegiTaula');
@@ -336,8 +367,17 @@
   const tabsWrap = document.getElementById('ordutegiTabs');
   const rangeEl = document.getElementById('ordutegiRange');
   const berriaBtn = document.getElementById('ordutegiBerriaBtn');
+  const ezabatuBtn = document.getElementById('ordutegiEzabatuBtn');
+  const dualInfo = document.getElementById('dualOrdutegiInfo');
+  const ordutegiModal = document.getElementById('ordutegiModal');
+  const modalHasieraData = document.getElementById('modalHasieraData');
+  const modalDualOrdutegia = document.getElementById('modalDualOrdutegia');
+  const ordutegiModalCancel = document.getElementById('ordutegiModalCancel');
+  const ordutegiModalCreate = document.getElementById('ordutegiModalCreate');
   const schedules = /*[[${ordutegiTabs}]]*/ {};
   const info = /*[[${ordutegiInfo}]]*/ [];
+  const dualMap = /*[[${ordutegiDualMap}]]*/ {};
+  const moduloDualOrduak = /*[[${moduloDualOrduak}]]*/ 0;
   const todayActiveScheduleStartDate = tabsWrap ? tabsWrap.dataset.active : null;
   let selectedScheduleStartDate = todayActiveScheduleStartDate;
 
@@ -366,6 +406,7 @@
   }
 
   function setEditable(on) {
+    if (dualMap[selectedScheduleStartDate]) on = false;
     table.querySelectorAll('td').forEach(td => {
       td.classList.toggle('editable', on);
       td.onclick = on ? onCellClick : null;
@@ -467,6 +508,7 @@
 
   function renderSchedule(key) {
     selectedScheduleStartDate = key;
+    const isDual = !!dualMap[key];
     const selectedSet = new Set((schedules[key] || []));
     table.querySelectorAll('td').forEach(td => {
       const cellKey = `${td.dataset.col}-${td.dataset.row}`;
@@ -479,25 +521,61 @@
         btn.classList.toggle('active', isSelected);
         const baseLabel = btn.dataset.baseLabel || 'Ordutegia';
         const isTodayActive = btn.dataset.key === activeKeyByToday;
-        btn.textContent = (scheduleIsMultiple() && isTodayActive) ? `${baseLabel} (aktibo)` : baseLabel;
+        let txt = (scheduleIsMultiple() && isTodayActive) ? `${baseLabel} (aktibo)` : baseLabel;
+        if (dualMap[btn.dataset.key]) txt += ' [DUAL]';
+        btn.textContent = txt;
       });
     }
     const currentInfo = info.find(i => i.key === key);
     if (rangeEl && currentInfo) {
       rangeEl.textContent = `Noiztik: ${currentInfo.from}` + (currentInfo.to ? ` / Noizra: ${currentInfo.to}` : '');
     }
+    if (dualInfo) {
+      if (isDual) {
+        dualInfo.classList.add('show');
+        dualInfo.textContent = `DUAL ordutegia: blokerik ez. Kontabilizatuko diren orduak: ${moduloDualOrduak}`;
+      } else {
+        dualInfo.classList.remove('show');
+        dualInfo.textContent = '';
+      }
+    }
+    setEditable(toggle ? !!toggle.querySelector('.btn-toggle-option[data-action="unlock"].selected') : true);
   }
 
   tabsWrap?.querySelectorAll('.ordutegi-tab[data-key]').forEach(btn => {
     btn.addEventListener('click', () => renderSchedule(btn.dataset.key));
   });
 
-  berriaBtn?.addEventListener('click', async () => {
-    const hasieraData = prompt('Sartu ordutegi berriaren hasiera data (YYYY-MM-DD):');
-    if (!hasieraData) return;
+  berriaBtn?.addEventListener('click', () => {
+    if (!ordutegiModal || !modalHasieraData) return;
+    modalHasieraData.value = '';
+    if (modalDualOrdutegia) modalDualOrdutegia.checked = false;
+    ordutegiModal.classList.add('show');
+    ordutegiModal.setAttribute('aria-hidden', 'false');
+  });
+
+  ordutegiModalCancel?.addEventListener('click', () => {
+    ordutegiModal?.classList.remove('show');
+    ordutegiModal?.setAttribute('aria-hidden', 'true');
+  });
+
+  ordutegiModal?.addEventListener('click', (e) => {
+    if (e.target === ordutegiModal) {
+      ordutegiModal.classList.remove('show');
+      ordutegiModal.setAttribute('aria-hidden', 'true');
+    }
+  });
+
+  ordutegiModalCreate?.addEventListener('click', async () => {
+    const hasieraData = (modalHasieraData?.value || '').trim();
+    if (!hasieraData) {
+      alert('Hasiera data sartu behar da.');
+      return;
+    }
+    const dualOrdutegia = !!(modalDualOrdutegia && modalDualOrdutegia.checked);
 
     const koadernoId = table.dataset.koadernoId;
-    const params = new URLSearchParams({ hasieraData });
+    const params = new URLSearchParams({ hasieraData, dualOrdutegia: String(dualOrdutegia) });
     const res = await fetch(`/irakasle/koadernoa/${koadernoId}/ordutegia/berria`, {
       method: 'POST',
       headers: Object.assign(
@@ -516,6 +594,7 @@
     const key = json.hasieraData || hasieraData;
 
     if (!schedules[key]) schedules[key] = [];
+    dualMap[key] = dualOrdutegia;
 
     if (!info.find(i => i.key === key)) {
       info.push({ key, from: key, to: '', label: 'Ordutegia' });
@@ -537,6 +616,36 @@
       toggle.querySelectorAll('.btn-toggle-option').forEach(o => o.classList.remove('selected'));
       unlockBtn.classList.add('selected');
     }
+    ordutegiModal?.classList.remove('show');
+    ordutegiModal?.setAttribute('aria-hidden', 'true');
+  });
+
+  ezabatuBtn?.addEventListener('click', async () => {
+    if (!selectedScheduleStartDate) return;
+    if (!confirm(`Ziur zaude ${selectedScheduleStartDate} hasierako ordutegia ezabatu nahi duzula?`)) return;
+    const koadernoId = table.dataset.koadernoId;
+    const params = new URLSearchParams({ hasieraData: selectedScheduleStartDate });
+    const res = await fetch(`/irakasle/koadernoa/${koadernoId}/ordutegia/ezabatu`, {
+      method: 'POST',
+      headers: Object.assign(
+        { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+        CSRF_TOKEN ? { [CSRF_HEADER]: CSRF_TOKEN } : {}
+      ),
+      body: params
+    });
+    if (!res.ok) {
+      alert('Ezin izan da ordutegia ezabatu');
+      return;
+    }
+    const idx = info.findIndex(i => i.key === selectedScheduleStartDate);
+    if (idx >= 0) info.splice(idx, 1);
+    delete schedules[selectedScheduleStartDate];
+    delete dualMap[selectedScheduleStartDate];
+    tabsWrap?.querySelector(`.ordutegi-tab[data-key="${selectedScheduleStartDate}"]`)?.remove();
+    recomputeScheduleMeta();
+    const nextKey = info[0]?.key || null;
+    if (nextKey) renderSchedule(nextKey);
+    else location.reload();
   });
 
   recomputeScheduleMeta();

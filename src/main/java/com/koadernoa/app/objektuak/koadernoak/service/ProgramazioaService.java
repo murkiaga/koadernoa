@@ -25,6 +25,7 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.Programazioa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.UnitateDidaktikoa;
 import com.koadernoa.app.objektuak.koadernoak.repository.EbaluaketaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.JardueraPlanifikatuaRepository;
+import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.ProgramazioaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.UnitateDidaktikoaRepository;
 
@@ -38,6 +39,7 @@ public class ProgramazioaService {
     private final UnitateDidaktikoaRepository udRepository;
     private final JardueraPlanifikatuaRepository jpRepository;
     private final EbaluaketaRepository ebaluaketaRepository;
+    private final KoadernoaRepository koadernoaRepository;
     private final DenboralizazioGeneratorService denboralizazioGeneratorService;
 
     // ========= Programazioa =========
@@ -497,7 +499,12 @@ public class ProgramazioaService {
 
         // (1) EBAL + UD
         List<Ebaluaketa> ebals = ebaluaketaRepository.findAllWithUdByProgramazioaId(p.getId());
-        p.setEbaluaketak(ebals);
+        if (p.getEbaluaketak() == null) {
+            p.setEbaluaketak(new ArrayList<>());
+        } else {
+            p.getEbaluaketak().clear();
+        }
+        p.getEbaluaketak().addAll(ebals);
 
         // (2) UD id-ak bildu JP batch-fetch egiteko
         List<Long> udIds = ebals.stream()
@@ -517,10 +524,90 @@ public class ProgramazioaService {
                 List<UnitateDidaktikoa> replaced = e.getUnitateak().stream()
                     .map(u -> byId.getOrDefault(u.getId(), u))
                     .collect(Collectors.toList());
-                e.setUnitateak(replaced);
+                if (e.getUnitateak() == null) {
+                    e.setUnitateak(new ArrayList<>());
+                } else {
+                    e.getUnitateak().clear();
+                }
+                e.getUnitateak().addAll(replaced);
             }
         }
         return Optional.of(p);
+    }
+
+    @Transactional
+    public void syncDualUdForKoaderno(Long koadernoId) {
+        if (koadernoId == null) return;
+        Koadernoa k = koadernoaRepository.findByIdWithOrdutegiaAndEgutegia(koadernoId).orElse(null);
+        if (k == null) return;
+        Programazioa p = loadWithEbaluaketakUdetajpByKoadernoId(koadernoId)
+                .orElseGet(() -> createWithDefaultEbaluaketak(k));
+        syncDualUdForProgramazioa(k, p);
+    }
+
+    @Transactional
+    public void syncDualUdForProgramazioa(Koadernoa koadernoa, Programazioa programazioa) {
+        if (koadernoa == null || programazioa == null || programazioa.getEbaluaketak() == null) return;
+
+        int dualOrduak = koadernoa.getModuloa() != null && koadernoa.getModuloa().getDualOrduak() != null
+                ? koadernoa.getModuloa().getDualOrduak() : 0;
+
+        List<LocalDate> dualHasierak = java.util.Optional.ofNullable(koadernoa.getOrdutegiak()).orElse(List.of()).stream()
+                .filter(KoadernoOrdutegiBlokea::isDualOrdutegia)
+                .map(b -> b.getHasieraData() != null ? b.getHasieraData()
+                        : (koadernoa.getEgutegia() != null ? koadernoa.getEgutegia().getHasieraData() : null))
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .sorted()
+                .toList();
+        List<LocalDate> ordutegiHasierak = java.util.Optional.ofNullable(koadernoa.getOrdutegiak()).orElse(List.of()).stream()
+                .map(b -> b.getHasieraData() != null ? b.getHasieraData()
+                        : (koadernoa.getEgutegia() != null ? koadernoa.getEgutegia().getHasieraData() : null))
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .sorted()
+                .toList();
+        LocalDate ikastBukaera = koadernoa.getEgutegia() != null ? koadernoa.getEgutegia().getBukaeraData() : null;
+
+        java.util.Set<String> activeCodes = new java.util.HashSet<>();
+        for (LocalDate hasiera : dualHasierak) {
+            LocalDate dualBuk = dualRangeEnd(hasiera, ordutegiHasierak, ikastBukaera);
+            Ebaluaketa targetEbal = findBestEbaluaketaForRange(programazioa.getEbaluaketak(), hasiera, dualBuk);
+            if (targetEbal == null) continue;
+
+            String code = "DUAL-" + hasiera.toString().replace("-", "");
+            activeCodes.add(code);
+            if (targetEbal.getUnitateak() == null) {
+                targetEbal.setUnitateak(new ArrayList<>());
+            }
+
+            UnitateDidaktikoa existing = targetEbal.getUnitateak().stream()
+                    .filter(u -> code.equals(u.getKodea()))
+                    .findFirst().orElse(null);
+            if (dualOrduak <= 0) continue;
+            if (existing == null) {
+                UnitateDidaktikoa ud = new UnitateDidaktikoa();
+                ud.setProgramazioa(programazioa);
+                ud.setEbaluaketa(targetEbal);
+                ud.setKodea(code);
+                ud.setIzenburua("DUALA");
+                ud.setOrduak(dualOrduak);
+                int maxPos = targetEbal.getUnitateak().stream().mapToInt(UnitateDidaktikoa::getPosizioa).max().orElse(0);
+                ud.setPosizioa(maxPos + 1);
+                targetEbal.getUnitateak().add(ud);
+            } else {
+                existing.setIzenburua("DUALA");
+                existing.setOrduak(dualOrduak);
+            }
+        }
+
+        for (Ebaluaketa e : programazioa.getEbaluaketak()) {
+            e.getUnitateak().removeIf(u -> {
+                boolean dualKodea = u.getKodea() != null && u.getKodea().startsWith("DUAL-");
+                return dualKodea && !activeCodes.contains(u.getKodea());
+            });
+        }
+        programazioaRepository.save(programazioa);
     }
     
 	
@@ -534,14 +621,54 @@ public class ProgramazioaService {
 
         LocalDate ikastHas = egutegia.getHasieraData();
         java.util.NavigableMap<LocalDate, Map<Astegunak, Integer>> ordutegiaka = new java.util.TreeMap<>();
+        java.util.List<LocalDate> ordutegiHasierak = new java.util.ArrayList<>();
+
+        java.util.Set<LocalDate> dualHasierak = new java.util.HashSet<>();
+        int dualOrduak = programazioa.getKoadernoa() != null
+                && programazioa.getKoadernoa().getModuloa() != null
+                && programazioa.getKoadernoa().getModuloa().getDualOrduak() != null
+                ? programazioa.getKoadernoa().getModuloa().getDualOrduak() : 0;
 
         for (KoadernoOrdutegiBlokea b : blokeak) {
             LocalDate has = b.getHasieraData() != null ? b.getHasieraData() : ikastHas;
+            ordutegiHasierak.add(has);
+            if (b.getIraupenaSlot() <= 0 && !b.isDualOrdutegia()) {
+                // Marker normala: ez du eguneroko ordu-kalkuluan eragin behar
+                continue;
+            }
+            if (b.isDualOrdutegia()) {
+                dualHasierak.add(has);
+                continue;
+            }
             ordutegiaka.computeIfAbsent(has, __ -> new java.util.EnumMap<>(Astegunak.class))
                     .merge(b.getAsteguna(), b.getIraupenaSlot(), Integer::sum);
         }
 
-        return ebalOrduErabilgarriakCore(programazioa, egutegia, ordutegiaka);
+        Map<Long, Integer> out = ebalOrduErabilgarriakCore(programazioa, egutegia, ordutegiaka);
+        if (dualOrduak > 0 && !dualHasierak.isEmpty()) {
+            List<LocalDate> hasieraOrdenatuak = ordutegiHasierak.stream().distinct().sorted().toList();
+            Map<LocalDate, EgunBerezi> egunBereziakMap = java.util.Optional.ofNullable(egutegia.getEgunBereziak())
+                    .orElse(java.util.List.of()).stream()
+                    .filter(eb -> eb.getData() != null)
+                    .collect(java.util.stream.Collectors.toMap(
+                            EgunBerezi::getData,
+                            eb -> eb,
+                            (a, b) -> a
+                    ));
+            for (LocalDate dualHas : dualHasierak) {
+                LocalDate dualBuk = dualRangeEnd(dualHas, hasieraOrdenatuak, egutegia.getBukaeraData());
+                // 1) Dual tartean ordutegi arruntez kontatu diren orduak kendu
+                Map<Long, Integer> kenketak = normalOrduakByEvalInRange(
+                        programazioa, egutegia, ordutegiaka, egunBereziakMap, dualHas, dualBuk);
+                kenketak.forEach((ebalId, ordu) -> out.merge(ebalId, -ordu, Integer::sum));
+
+                // 2) Dagokion ebaluazioari DUAL ordu finkoak gehitu
+                Ebaluaketa ebal = findBestEbaluaketaForRange(programazioa.getEbaluaketak(), dualHas, dualBuk);
+                if (ebal == null) continue;
+                out.merge(ebal.getId(), dualOrduak, Integer::sum);
+            }
+        }
+        return out;
     }
 	
 	/* ============ Core kalkulua (ORDEZKATUA konponduta) ============ */
@@ -725,6 +852,72 @@ public class ProgramazioaService {
     
     public Optional<Programazioa> loadWithEbaluaketakByKoadernoId(Long koadernoId) {
         return programazioaRepository.findByKoadernoaIdFetchEbaluaketak(koadernoId);
+    }
+
+    private LocalDate dualRangeEnd(LocalDate dualHas, List<LocalDate> scheduleStarts, LocalDate ikastBukaera) {
+        if (dualHas == null) return ikastBukaera;
+        LocalDate next = scheduleStarts.stream()
+                .filter(d -> d != null && d.isAfter(dualHas))
+                .sorted()
+                .findFirst()
+                .orElse(null);
+        if (next != null) return next.minusDays(1);
+        return ikastBukaera != null ? ikastBukaera : dualHas;
+    }
+
+    private Ebaluaketa findBestEbaluaketaForRange(List<Ebaluaketa> ebaluaketak, LocalDate has, LocalDate buk) {
+        if (ebaluaketak == null || has == null || buk == null) return null;
+        long best = -1;
+        Ebaluaketa bestEbal = null;
+        for (Ebaluaketa e : ebaluaketak) {
+            if (e.getHasieraData() == null || e.getBukaeraData() == null) continue;
+            LocalDate s = has.isAfter(e.getHasieraData()) ? has : e.getHasieraData();
+            LocalDate t = buk.isBefore(e.getBukaeraData()) ? buk : e.getBukaeraData();
+            long overlap = s.isAfter(t) ? 0 : java.time.temporal.ChronoUnit.DAYS.between(s, t) + 1;
+            if (overlap > best) {
+                best = overlap;
+                bestEbal = e;
+            }
+        }
+        return best > 0 ? bestEbal : null;
+    }
+
+    private Map<Long, Integer> normalOrduakByEvalInRange(
+            Programazioa programazioa,
+            Egutegia egutegia,
+            java.util.NavigableMap<LocalDate, Map<Astegunak, Integer>> ordutegiaka,
+            Map<LocalDate, EgunBerezi> egunBereziakMap,
+            LocalDate rangeHas,
+            LocalDate rangeBuk) {
+
+        Map<Long, Integer> out = new java.util.HashMap<>();
+        if (rangeHas == null || rangeBuk == null || rangeHas.isAfter(rangeBuk)) return out;
+
+        LocalDate ikastHas = egutegia.getHasieraData();
+        LocalDate ikastBuk = egutegia.getBukaeraData();
+        LocalDate has = max(rangeHas, ikastHas);
+        LocalDate buk = min(rangeBuk, ikastBuk);
+        if (has == null || buk == null || has.isAfter(buk)) return out;
+
+        for (LocalDate d = has; !d.isAfter(buk); d = d.plusDays(1)) {
+            Astegunak ag = astegunEraginkorra(d, egunBereziakMap);
+            if (ag == null) continue;
+            var ordutegia = ordutegiaka.floorEntry(d) != null ? ordutegiaka.floorEntry(d).getValue() : Map.<Astegunak, Integer>of();
+            int ordu = ordutegia.getOrDefault(ag, 0);
+            if (ordu <= 0) continue;
+
+            Ebaluaketa ebal = null;
+            for (Ebaluaketa e : java.util.Optional.ofNullable(programazioa.getEbaluaketak()).orElse(java.util.List.of())) {
+                if (e.getHasieraData() == null || e.getBukaeraData() == null) continue;
+                if (!d.isBefore(e.getHasieraData()) && !d.isAfter(e.getBukaeraData())) {
+                    ebal = e;
+                    break;
+                }
+            }
+            if (ebal == null) continue;
+            out.merge(ebal.getId(), ordu, Integer::sum);
+        }
+        return out;
     }
   
 }

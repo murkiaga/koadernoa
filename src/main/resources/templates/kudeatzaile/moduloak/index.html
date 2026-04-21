@@ -51,6 +51,7 @@
 			            <th>Kodea</th>
 			            <th>Izena</th>
                         <th>Orduak</th>
+                        <th>DUAL orduak</th>
 			            <th>Maila</th>
 			            <th>Taldea</th>
 			            <th>Aukerak</th>
@@ -71,6 +72,7 @@
                                   title="Ez dago ikasturte aktiboko koadernoarik modulo honetan">Datuen Atzipena</span>
                         </td>
                         <td th:text="${moduloa.orduak}">165</td>
+                        <td th:text="${moduloa.dualOrduak != null ? moduloa.dualOrduak : 0}">0</td>
 			            <td th:text="${moduloa.maila.getKodea}">LEHENENGOA</td>
 			            <td th:text="${moduloa.taldea.izena}">2AM3</td>
 			            <td class="actions-cell">
