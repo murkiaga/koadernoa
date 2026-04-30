@@ -542,19 +542,19 @@ public class KoadernoaService {
                 return hasieraData;
             }
         }
+        if (!dualOrdutegia) {
+            // Ordutegi arrunta: ez dugu placeholder-erregistroa gordetzen.
+            // Erabiltzaileak lehen kutxatila hautatzen duenean sortuko da benetako blokea.
+            return hasieraData;
+        }
+
         KoadernoOrdutegiBlokea initial = new KoadernoOrdutegiBlokea();
         initial.setKoadernoa(k);
         initial.setHasieraData(hasieraData);
-        initial.setDualOrdutegia(dualOrdutegia);
-        if (dualOrdutegia) {
-            initial.setAsteguna(null);
-            initial.setHasieraSlot(1);
-            initial.setIraupenaSlot(0);
-        } else {
-            initial.setAsteguna(Astegunak.ASTELEHENA);
-            initial.setHasieraSlot(1);
-            initial.setIraupenaSlot(1);
-        }
+        initial.setDualOrdutegia(true);
+        initial.setAsteguna(null);
+        initial.setHasieraSlot(1);
+        initial.setIraupenaSlot(0);
         k.getOrdutegiak().add(initial);
         validateOrdutegiak(k.getOrdutegiak());
         koadernoaRepository.save(k);
