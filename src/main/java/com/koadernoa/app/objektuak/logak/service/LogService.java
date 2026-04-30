@@ -17,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class LogService {
 
+    private static final int DESKRIBAPENA_MAX_LENGTH = 255;
+
     private final LogSarreraRepository logSarreraRepository;
 
     public void gorde(LogMota mota,
@@ -34,9 +36,16 @@ public class LogService {
         }
         sarrera.setEntitateMota(entitateMota);
         sarrera.setEntitateId(entitateId);
-        sarrera.setDeskribapena(deskribapena);
+        sarrera.setDeskribapena(mugatuDeskribapena(deskribapena));
 
         logSarreraRepository.save(sarrera);
+    }
+
+    private String mugatuDeskribapena(String deskribapena) {
+        if (deskribapena == null || deskribapena.length() <= DESKRIBAPENA_MAX_LENGTH) {
+            return deskribapena;
+        }
+        return deskribapena.substring(0, DESKRIBAPENA_MAX_LENGTH);
     }
 
     public List<LogSarrera> findAllOrderByDataDesc() {
