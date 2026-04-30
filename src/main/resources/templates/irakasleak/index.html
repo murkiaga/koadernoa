@@ -593,7 +593,9 @@
     const json = await res.json().catch(() => ({}));
     const key = json.hasieraData || hasieraData;
 
-    if (!schedules[key]) schedules[key] = [];
+    if (!schedules[key]) {
+      schedules[key] = [];
+    }
     dualMap[key] = dualOrdutegia;
 
     if (!info.find(i => i.key === key)) {

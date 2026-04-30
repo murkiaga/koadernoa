@@ -382,6 +382,8 @@ public class KoadernoaService {
                 b.setHasieraData(k.getEgutegia().getHasieraData());
             }
         }
+        garbituOrdutegiBlokeBaliogabeak(k.getOrdutegiak(), activeFromFinal);
+
         boolean dualOrdutegia = java.util.Optional.ofNullable(k.getOrdutegiak()).orElse(List.of()).stream()
                 .anyMatch(b -> java.util.Objects.equals(b.getHasieraData(), activeFromFinal) && b.isDualOrdutegia());
         if (dualOrdutegia) {
@@ -458,9 +460,54 @@ public class KoadernoaService {
                 k.getOrdutegiak().add(right);
             }
         }
+        validateOrdutegiak(k.getOrdutegiak());
         // flush/commit @Transactional bidez
     }
     
+
+
+    private void garbituOrdutegiBlokeBaliogabeak(List<KoadernoOrdutegiBlokea> ordutegiak, LocalDate hasieraData) {
+        if (ordutegiak == null || hasieraData == null) {
+            return;
+        }
+        boolean dual = ordutegiak.stream().anyMatch(b -> java.util.Objects.equals(b.getHasieraData(), hasieraData) && b.isDualOrdutegia());
+        if (dual) {
+            return;
+        }
+        ordutegiak.removeIf(b -> java.util.Objects.equals(b.getHasieraData(), hasieraData)
+                && (!b.isDualOrdutegia())
+                && (b.getAsteguna() == null || b.getIraupenaSlot() <= 0));
+    }
+
+    private void validateOrdutegiak(List<KoadernoOrdutegiBlokea> ordutegiak) {
+        if (ordutegiak == null || ordutegiak.isEmpty()) {
+            return;
+        }
+        java.util.Map<LocalDate, java.util.List<KoadernoOrdutegiBlokea>> byStart = ordutegiak.stream()
+                .filter(b -> b != null && b.getHasieraData() != null)
+                .collect(java.util.stream.Collectors.groupingBy(KoadernoOrdutegiBlokea::getHasieraData));
+
+        for (var entry : byStart.entrySet()) {
+            boolean dual = entry.getValue().stream().anyMatch(KoadernoOrdutegiBlokea::isDualOrdutegia);
+            if (dual) {
+                continue;
+            }
+            boolean hasValidBlock = false;
+            for (KoadernoOrdutegiBlokea b : entry.getValue()) {
+                if (b.getAsteguna() == null) {
+                    throw new IllegalStateException("Ordutegi-bloke arruntak asteguna behar du.");
+                }
+                if (b.getIraupenaSlot() <= 0) {
+                    throw new IllegalStateException("Ordutegi-bloke arruntak iraupenaSlot > 0 behar du.");
+                }
+                hasValidBlock = true;
+            }
+            if (!hasValidBlock) {
+                throw new IllegalStateException("DUAL ez den ordutegiak gutxienez bloke bat behar du.");
+            }
+        }
+    }
+
     @Transactional(readOnly = true)
     public java.util.NavigableMap<LocalDate, List<KoadernoOrdutegiBlokea>> getOrdutegiakByHasieraData(Long koadernoId) {
         Koadernoa k = koadernoaRepository.findWithOrdutegiaById(koadernoId).orElseThrow();
@@ -495,14 +542,21 @@ public class KoadernoaService {
                 return hasieraData;
             }
         }
-        KoadernoOrdutegiBlokea marker = new KoadernoOrdutegiBlokea();
-        marker.setKoadernoa(k);
-        marker.setAsteguna(null);
-        marker.setHasieraSlot(1);
-        marker.setIraupenaSlot(0);
-        marker.setHasieraData(hasieraData);
-        marker.setDualOrdutegia(dualOrdutegia);
-        k.getOrdutegiak().add(marker);
+        if (!dualOrdutegia) {
+            // Ordutegi arrunta: ez dugu placeholder-erregistroa gordetzen.
+            // Erabiltzaileak lehen kutxatila hautatzen duenean sortuko da benetako blokea.
+            return hasieraData;
+        }
+
+        KoadernoOrdutegiBlokea initial = new KoadernoOrdutegiBlokea();
+        initial.setKoadernoa(k);
+        initial.setHasieraData(hasieraData);
+        initial.setDualOrdutegia(true);
+        initial.setAsteguna(null);
+        initial.setHasieraSlot(1);
+        initial.setIraupenaSlot(0);
+        k.getOrdutegiak().add(initial);
+        validateOrdutegiak(k.getOrdutegiak());
         koadernoaRepository.save(k);
         return hasieraData;
     }
