@@ -12,6 +12,9 @@ Aplikazioaren instalazioaren arabera, saioa hasteko bide hauek egon daitezke era
 - Google bidezko saio-hasiera
 - LDAP bidezko saio-hasiera
 
+<p align="center">
+    <img src="gidak_img/login.png" alt="Pantalla de login" width="300">
+</p>
 Ikastetxe bakoitzean aukera bat edo biak aktibo egon daitezke.
 
 ### Lehen aldia: mintegia aukeratu
@@ -21,26 +24,40 @@ Lehen aldiz sartzen zarenean, baliteke sistemak **mintegia / familia** aukeratze
 
 Irakaslearen hasierako orrian honako egoera hauetako bat aurkituko duzu:
 
-- **Ez baduzu koadernorik sortu edo aukeratu**, sistemak koaderno berria sortzera gonbidatuko zaitu.
-- **Koaderno aktiboa baduzu**, normalean hortik aurrerako atalak koaderno horri lotuta egongo dira.
+- **Ez baduzu koadernorik**, sistemak koaderno berria sortzera gonbidatuko zaitu.
+- **Koaderno aktiboa**. Koaderno bakarra baduzu, defektuz koaderno aktiboa izango da. Hainbat koaderno badituzu, koaderno aktibo bezala bat aukeratu dezakezu, honen gainean lan egiteko.
 
-Kontuan hartu: Koaderno Berrian ***koaderno aktiboa*** kontzeptua oso garrantzitsua da. Erabiltzaileak une bakoitzean aukeratuta duen koadernoa da, eta atal askok horren gainean lan egiten dute.
+<p align="center">
+    <img src="gidak_img/navbar_koaderno_aktiboa.png" alt="Nabigazio barran, koaderno aktiboa aukeratu" width="700">
+</p>
+
+Kontuan hartu: Koaderno Berrian ***koaderno aktiboa*** kontzeptua garrantzitsua da. Erabiltzaileak une bakoitzean aukeratuta duen koadernoa da, eta atal askok horren gainean lan egiten dute. Edozein pantailatik aldatu daiteke koaderno aktiboa (adibidez, koaderno ezberdinetan jarritako notak kontsultatzeko).
 
 ## 3. Koaderno berria sortu
 
-Koaderno berri bat sortzea da irakaslearen lehen lan arruntetako bat.
+Koaderno berri bat sortzea da irakaslearen lehen lan arruntetako bat. Aplikazioan "**Hasiera**" orritik egin daiteke.
 
 ### Oro har, formularioan hau aukeratzen da:
 - familia edo mintegia (defektuz zurea)
 - modulua
 - moduluaren ordutegia
 
+<p align="center">
+    <img src="gidak_img/koaderno_sorrera.png" alt="koaderno sorrera" width="600">
+</p>
+
+Ordutegia lauki-sarea zuriz egongo da, aukeratzen ditugun gelaxkak ordu bateko balioa dute. Aurreko irudian adibidez Astelehenean lehen 2 orduetan klasea dagoela adierazten du (guk klikatu ditugu 2 gelaxka horiek). Aurrerago ere ordutegia aldatu al izango da, edota ordutegi berri bat sortu beste data batzuetarako.
+
 ### Gomendioak
 - Ordutegia zehaztea komeni da, gero asistentzia eta denboralizazioa errazago lantzeko.
 
 ## 4. Koaderno aktiboa aldatu
 
-> PANTAILA ARGAZKIA
+Nabigazio barran dugun zabalgarrian aukeratu dezakegu koaderno aktiboa.
+
+<p align="center">
+    <img src="gidak_img/nire_koadernoak.png" alt="Koaderno aktiboa aldatu" width="600">
+</p>
 
 Irakasle batek koaderno bat baino gehiago izan ditzake. Horregatik, atal askotan lanean hasi aurretik komeni da egiaztatzea zein den **koaderno aktiboa**.
 
@@ -55,13 +72,17 @@ hautatutako koadernoari dagozkionak izango dira.
 
 ## 5. Koaderno baten barruko oinarrizko atalak
 
+<p align="center">
+    <img src="gidak_img/navbar.png" alt="Navbarra" width="900">
+</p>
+
 ### 5.1 Egutegia
 Koaderno aktiboari lotutako egutegia kontsulta dezakezu. Egutegi horretan ikus daitezke. Egutegi hau, ikastetxeko kudeatzaileak aurretik definitu du. Berton ikus daitezke kolore ezberdinetan ebaluaketak, jarritako oharrak (adibidez ebaluazio saioak dauden) edo egun aldaketaren bat badago.
 
 ### 5.2 Ikasleak
 Koaderno bakoitzak bere ikasle-zerrenda du. Atal honetan:
 - koadernoan dauden ikasleak kontsultatu ditzakezu
-- ikasleen egoeraren jarraipena egin (ikasleren bat desmatrikulatu bada adibidez)
+- ikasleen egoeraren jarraipena egin (ikasleren batek modulua gaindituta badauka jada adibidez)
 
 Defektuz, koaderno bat sortzean ikasle zerrenda agertuko da, baina baliteke "ikasleak inportatu" botoia agertzea ere bai, kasu berezietan.
 
@@ -70,10 +91,31 @@ Programazio atalean jada ebaluaketak eta hauetan moduluak dituen orduak kalkulat
 
 Hauek egin daitezke:
 
-- beste koaderno bateko programazioa erabili (irakasgai bereko aurreko urtekoa, edo aurtengo beste hizkuntza batean sortutako programazioa)
+- beste koaderno bateko programazioa erabili (irakasgai bereko aurreko urtekoa, edo aurtengo beste hizkuntza batean sortutako programazioa). Aukera hau soilik programazioa hutsik badago erakusten da.
+
+<p align="center">
+    <img src="gidak_img/programazioa_inportatu.png" alt="Programazioa inportatu" width="600">
+</p>
+Behin "Programazioa inportatu" aukeratuta zabalduko den leihoa:
+<p align="center">
+    <img src="gidak_img/programazioa_inportatu_2.png" alt="Programazioa inportatu" width="600">
+</p>
+Aurreko leihoan programazioak Aurreikusi eta Inportatu egin daitezke.
+Gero programazioa aldatzeko aukera egongo da.
+
 - aurreko urteko koadernoko denboralizaziotik programazioa sortu
 - erronkak, unitatea didaktikoak eta jarduerak zehaztu
-- programatutakoa denboralizaziora irauli (egunerokoa sortu)
+<p align="center">
+    <img src="gidak_img/programazioa.png" alt="Programazioa" width="600">
+</p>
+Ebaluaketen hasiera-bukaera datak eta moduluak dituen orduak zuzenean kalkulatzen ditu, egutegia eta ordutegia kontuan hartuta. 
+<br><br>
+Unitateetan jarduerak zehaztu daitezke edo ez. Aurreko adibidean UD4an 3 jarduera sortu dira. Nahiz eta UD4ak 25 ordu izan, 6 ordura arteko jarduerak sortu ditugu, baina gero denboralizaziora bolkatzean, UD horren lehen 6 orduak jarduerekin beteko ditu, eta gainontzeko 19 orduetarako UDaren izena duen jarduerak sortuko ditu.<br><br>
+
+- programatutakoa denboralizaziora irauli (egunerokoa sortu). Ebaluaketaka irauli daiteke edo programazio osoa.
+<p align="center">
+    <img src="gidak_img/eb-bolkatu.png" alt="Ebaluazioa bolkatu" width="70">
+</p>
 
 ### 5.4 Denboralizazioa
 Denboralizazioa ikasturte edo hilabeteko ikuspegi bisuala ematen duen atala da. Programaziotik ebaluaketak "bolkatu" baditugu, automatikoki sortuta egongo da. Bertan:
