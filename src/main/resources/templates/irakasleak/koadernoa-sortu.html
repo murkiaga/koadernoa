@@ -72,10 +72,29 @@
 
       <!-- 0) Familia -->
 		<label>Familia</label>
-		<select th:field="*{familiaId}" id="familiaSelect" onchange="changeFamilia()" required>
+		<select th:field="*{familiaId}" id="familiaSelect" onchange="changeFilters()">
+		  <option value="">(Dena)</option>
 		  <option th:each="f : ${familiaGuztiak}"
 		          th:value="${f.id}"
 		          th:text="${f.izena}">
+		  </option>
+		</select>
+
+		<label>Zikloa</label>
+		<select th:field="*{zikloaId}" id="zikloaSelect" onchange="changeFilters()">
+		  <option value="">(Dena)</option>
+		  <option th:each="z : ${zikloak}"
+		          th:value="${z.id}"
+		          th:text="${z.izena}">
+		  </option>
+		</select>
+
+		<label>Maila</label>
+		<select th:field="*{mailaId}" id="mailaSelect" onchange="changeFilters()">
+		  <option value="">(Dena)</option>
+		  <option th:each="m : ${mailak}"
+		          th:value="${m.id}"
+		          th:text="${m.izena}">
 		  </option>
 		</select>
 		
@@ -151,10 +170,21 @@ function toggleCell(td){
   }
 }
 
-function changeFamilia() {
-  const id = document.getElementById('familiaSelect').value;
+function changeFilters() {
   const url = new URL(window.location.href);
-  url.searchParams.set('familiaId', id);
+  const familiaId = document.getElementById('familiaSelect').value;
+  const zikloaId = document.getElementById('zikloaSelect').value;
+  const mailaId = document.getElementById('mailaSelect').value;
+
+  if (familiaId) url.searchParams.set('familiaId', familiaId);
+  else url.searchParams.delete('familiaId');
+
+  if (zikloaId) url.searchParams.set('zikloaId', zikloaId);
+  else url.searchParams.delete('zikloaId');
+
+  if (mailaId) url.searchParams.set('mailaId', mailaId);
+  else url.searchParams.delete('mailaId');
+
   window.location.href = url.toString();
 }
 </script>

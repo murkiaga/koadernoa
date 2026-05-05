@@ -25,6 +25,10 @@ public class ZikloaService {
         return zikloaRepository.findById(id);
     }
 
+    public List<Zikloa> getByFamiliaId(Long familiaId) {
+        return zikloaRepository.findByFamilia_IdOrderByIzenaAsc(familiaId);
+    }
+
     public void save(Zikloa zikloa) {
     	zikloaRepository.save(zikloa);
     }
@@ -43,4 +47,3 @@ public class ZikloaService {
         zikloaRepository.deleteById(id);
     }
 }
-

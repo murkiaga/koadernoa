@@ -11,4 +11,5 @@ public interface ZikloaRepository extends JpaRepository<Zikloa, Long> {
     Optional<Zikloa> findByIzena(String izena);
     Optional<Zikloa> findByIzenaIgnoreCaseAndFamilia(String izena, Familia familia);
     java.util.List<Zikloa> findAllByOrderByIzenaAsc();
+    java.util.List<Zikloa> findByFamilia_IdOrderByIzenaAsc(Long familiaId);
 }
