@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
+import com.koadernoa.app.objektuak.egutegia.repository.MailaRepository;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Rola;
 import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
@@ -26,6 +27,7 @@ import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
 import com.koadernoa.app.objektuak.koadernoak.service.ProgramazioaService;
 import com.koadernoa.app.objektuak.modulua.service.IkasleaService;
 import com.koadernoa.app.objektuak.zikloak.service.FamiliaService;
+import com.koadernoa.app.objektuak.zikloak.service.ZikloaService;
 
 import jakarta.transaction.Transactional;
 
@@ -50,6 +52,8 @@ public class KoadernoaController {
 	private final IkasleaService ikasleaService;
 	private final KoadernoaRepository koadernoaRepository;
 	private final FamiliaService familiaService;
+	private final ZikloaService zikloaService;
+	private final MailaRepository mailaRepository;
 	
 	private static final List<Astegunak> ASTE_ORDENA = List.of(
 	        Astegunak.ASTELEHENA,
@@ -123,6 +127,8 @@ public class KoadernoaController {
 	@GetMapping("/berria")
 	public String erakutsiFormularioa(Authentication auth, 
 									@RequestParam(value = "familiaId", required = false) Long familiaId,
+									@RequestParam(value = "zikloaId", required = false) Long zikloaId,
+									@RequestParam(value = "mailaId", required = false) Long mailaId,
 									Model model) {
 		Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
 
@@ -131,15 +137,19 @@ public class KoadernoaController {
 
 	    KoadernoaSortuDto dto = new KoadernoaSortuDto();
 	    dto.setFamiliaId(aukeratua);
+	    dto.setZikloaId(zikloaId);
+	    dto.setMailaId(mailaId);
 
 	    model.addAttribute("koadernoaDto", dto);
 
 	    // 1) Familia guztien zerrenda (aktiboak)
 	    model.addAttribute("familiaGuztiak", familiaService.lortuAktiboakOrdenatuta()); // zuk inplementatu
+	    model.addAttribute("zikloak", aukeratua != null ? zikloaService.getByFamiliaId(aukeratua) : List.of());
+	    model.addAttribute("mailak", mailaRepository.findAllByAktiboTrueOrderByOrdenaAscIzenaAsc());
 
 	    // 2) Moduluak familia horren arabera
 	    model.addAttribute("moduluak",
-	            koadernoaService.lortuErabilgarriDaudenModuluak(irakaslea, aukeratua));
+	            koadernoaService.lortuErabilgarriDaudenModuluak(irakaslea, aukeratua, zikloaId, mailaId));
 
 	    model.addAttribute("irakasleLogeatua", irakaslea);
 

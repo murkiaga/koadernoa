@@ -112,6 +112,11 @@ public class KoadernoaService {
         return moduloaRepository.findAllByTaldea_Zikloa_Familia_Id(familiaId);
     }
 
+    public List<Moduloa> lortuErabilgarriDaudenModuluak(Irakaslea irakaslea, Long familiaId, Long zikloaId, Long mailaId) {
+        if (familiaId == null && zikloaId == null && mailaId == null) return List.of();
+        return moduloaRepository.bilatuFiltroekin(familiaId, zikloaId, mailaId);
+    }
+
     public List<Moduloa> lortuErabilgarriDaudenModuluak(Irakaslea irakaslea) {
         return moduloaRepository.findByTaldea_Zikloa_Familia(irakaslea.getMintegia());
     }

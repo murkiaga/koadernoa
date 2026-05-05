@@ -21,4 +21,15 @@ public interface ModuloaRepository extends JpaRepository<Moduloa, Long>{
 	List<Moduloa> findByTaldea_Zikloa_Familia(Familia familia);
 	
 	List<Moduloa> findAllByTaldea_Zikloa_Familia_Id(Long familiaId);
+
+	@Query("""
+		select m from Moduloa m
+		where (:familiaId is null or m.taldea.zikloa.familia.id = :familiaId)
+		  and (:zikloaId is null or m.taldea.zikloa.id = :zikloaId)
+		  and (:mailaId is null or m.maila.id = :mailaId)
+		order by m.izena asc
+	""")
+	List<Moduloa> bilatuFiltroekin(@Param("familiaId") Long familiaId,
+	                              @Param("zikloaId") Long zikloaId,
+	                              @Param("mailaId") Long mailaId);
 }
