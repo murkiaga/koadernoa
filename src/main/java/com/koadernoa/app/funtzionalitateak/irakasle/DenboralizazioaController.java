@@ -137,6 +137,21 @@ public class DenboralizazioaController {
 	        }
 	        asteak.add(new ArrayList<>(astea));
 	    }
+	    
+	    List<EgunaBista> astekoEgunak = List.of();
+	    if ("astea".equalsIgnoreCase(egutegiMota)) {
+	        LocalDate gaur = LocalDate.now();
+	        boolean hilabeteHonetanDa = gaur.getYear() == unekoUrtea && gaur.getMonthValue() == unekoHilabetea;
+	        astekoEgunak = asteak.stream()
+	                .filter(a -> {
+	                    if (hilabeteHonetanDa) {
+	                        return a.stream().anyMatch(e -> e.getData() != null && e.getData().equals(gaur));
+	                    }
+	                    return a.stream().anyMatch(EgunaBista::isHilabeteAktibokoa);
+	                })
+	                .findFirst()
+	                .orElse(asteak.isEmpty() ? List.of() : asteak.get(0));
+	    }
 
 	    Map<String, String> egunMap = egutegiaService.kalkulatuKlaseak(egutegia);
 
@@ -199,6 +214,7 @@ public class DenboralizazioaController {
 	    model.addAttribute("urtea", unekoUrtea);
 	    model.addAttribute("hilabetea", unekoHilabetea);
 	    model.addAttribute("asteak", asteak);
+	    model.addAttribute("astekoEgunak", astekoEgunak);
 	    model.addAttribute("egunMap", egunMap);
 	    model.addAttribute("asistentziaEgunMap", asistentziaEgunMap);
 	    model.addAttribute("asistentziaIrekitaEgunMap", asistentziaIrekitaEgunMap);
