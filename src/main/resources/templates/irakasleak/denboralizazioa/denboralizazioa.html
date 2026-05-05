@@ -77,6 +77,7 @@
         }
         .calendar-topbar-left{display:flex;align-items:center;gap:.6rem;}
         .calendar-mode-row{ margin:-.35rem 0 .75rem 0; }
+        .calendar-mode-row.centered{ display:flex; justify-content:center; }
         .btn-toggle{
             display:inline-flex; border:1px solid #d1d5db; border-radius:999px; overflow:hidden; background:#fff;
         }
@@ -97,6 +98,14 @@
             background:#1a73e8; color:#fff; font-weight:700;
         }
         .week-jarduera-item{ white-space:normal; }
+        .taula-egutegia.week-mode td{
+            height: calc(100vh - 260px);
+            min-height: 520px;
+        }
+        .taula-egutegia.week-mode .jarduerak{
+            max-height: calc(100vh - 340px);
+            overflow-y:auto;
+        }
 
         .egun-zenbakia {
             position: absolute;

@@ -81,6 +81,7 @@ public class DenboralizazioaController {
 	    @RequestParam(name="hilabetea", required=false) Integer hilabetea,
 	    @RequestParam(name="bista", required=false, defaultValue = "egutegia") String bista,
 	    @RequestParam(name="egutegiMota", required=false, defaultValue = "hilabetea") String egutegiMota,
+	    @RequestParam(name="asteHasiera", required=false) LocalDate asteHasiera,
 	    Model model) {
 
 	    if (koadernoa == null || koadernoa.getId() == null) {
@@ -139,18 +140,31 @@ public class DenboralizazioaController {
 	    }
 	    
 	    List<EgunaBista> astekoEgunak = List.of();
+	    LocalDate astekoHasieraEraginkorra = null;
 	    if ("astea".equalsIgnoreCase(egutegiMota)) {
-	        LocalDate gaur = LocalDate.now();
-	        boolean hilabeteHonetanDa = gaur.getYear() == unekoUrtea && gaur.getMonthValue() == unekoHilabetea;
-	        astekoEgunak = asteak.stream()
-	                .filter(a -> {
-	                    if (hilabeteHonetanDa) {
-	                        return a.stream().anyMatch(e -> e.getData() != null && e.getData().equals(gaur));
-	                    }
-	                    return a.stream().anyMatch(EgunaBista::isHilabeteAktibokoa);
-	                })
-	                .findFirst()
-	                .orElse(asteak.isEmpty() ? List.of() : asteak.get(0));
+	        if (asteHasiera != null) {
+	            astekoHasieraEraginkorra = asteHasiera;
+	            astekoEgunak = new ArrayList<>();
+	            for (int i = 0; i < 5; i++) {
+	                LocalDate d = asteHasiera.plusDays(i);
+	                astekoEgunak.add(new EgunaBista(d, d.getMonthValue() == unekoHilabetea));
+	            }
+	        } else {
+	            LocalDate gaur = LocalDate.now();
+	            boolean hilabeteHonetanDa = gaur.getYear() == unekoUrtea && gaur.getMonthValue() == unekoHilabetea;
+	            astekoEgunak = asteak.stream()
+	                    .filter(a -> {
+	                        if (hilabeteHonetanDa) {
+	                            return a.stream().anyMatch(e -> e.getData() != null && e.getData().equals(gaur));
+	                        }
+	                        return a.stream().anyMatch(EgunaBista::isHilabeteAktibokoa);
+	                    })
+	                    .findFirst()
+	                    .orElse(asteak.isEmpty() ? List.of() : asteak.get(0));
+	            if (!astekoEgunak.isEmpty() && astekoEgunak.get(0).getData() != null) {
+	                astekoHasieraEraginkorra = astekoEgunak.get(0).getData();
+	            }
+	        }
 	    }
 
 	    Map<String, String> egunMap = egutegiaService.kalkulatuKlaseak(egutegia);
@@ -179,6 +193,10 @@ public class DenboralizazioaController {
 	    // Hilabetearen muga-datak
 	    LocalDate hasiera = LocalDate.of(unekoUrtea, unekoHilabetea, 1);
 	    LocalDate amaiera = hasiera.withDayOfMonth(hasiera.lengthOfMonth());
+	    if ("astea".equalsIgnoreCase(egutegiMota) && astekoHasieraEraginkorra != null) {
+	        hasiera = astekoHasieraEraginkorra;
+	        amaiera = astekoHasieraEraginkorra.plusDays(4);
+	    }
 
 	    // Lortu jarduerak
 	    List<Jarduera> jarduerak =
@@ -215,6 +233,7 @@ public class DenboralizazioaController {
 	    model.addAttribute("hilabetea", unekoHilabetea);
 	    model.addAttribute("asteak", asteak);
 	    model.addAttribute("astekoEgunak", astekoEgunak);
+	    model.addAttribute("asteHasiera", astekoHasieraEraginkorra);
 	    model.addAttribute("egunMap", egunMap);
 	    model.addAttribute("asistentziaEgunMap", asistentziaEgunMap);
 	    model.addAttribute("asistentziaIrekitaEgunMap", asistentziaIrekitaEgunMap);

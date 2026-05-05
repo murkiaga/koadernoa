@@ -4,26 +4,24 @@
     <!-- Hilabetea + botoiak -->
     <div class="calendar-topbar">
         <div class="calendar-topbar-left">
-            <a data-egutegi-nav="prev" class="calendar-nav-link" th:href="@{/irakasle/denboralizazioa(
-                        hilabetea=${hilabetea == 1 ? 12 : hilabetea - 1},
-                        urtea=${hilabetea == 1 ? urtea - 1 : urtea},
-                        bista='egutegia',
-                        egutegiMota=${egutegiMota})}">
+            <a data-egutegi-nav="prev" class="calendar-nav-link"
+               th:href="${egutegiMota == 'astea'} ?
+                    @{/irakasle/denboralizazioa(hilabetea=${asteHasiera.minusDays(7).monthValue}, urtea=${asteHasiera.minusDays(7).year}, bista='egutegia', egutegiMota='astea', asteHasiera=${asteHasiera.minusDays(7)})} :
+                    @{/irakasle/denboralizazioa(hilabetea=${hilabetea == 1 ? 12 : hilabetea - 1}, urtea=${hilabetea == 1 ? urtea - 1 : urtea}, bista='egutegia', egutegiMota=${egutegiMota})}">
                 <span>←</span><span>Aurrekoa</span>
             </a>
         </div>
 
         <h2 th:text="${hilabeteUrtea}" style="margin: 0; text-align: center; flex: 1;">Hilabetea</h2>
 
-        <a data-egutegi-nav="next" class="calendar-nav-link" th:href="@{/irakasle/denboralizazioa(
-                        hilabetea=${hilabetea == 12 ? 1 : hilabetea + 1},
-                        urtea=${hilabetea == 12 ? urtea + 1 : urtea},
-                        bista='egutegia',
-                        egutegiMota=${egutegiMota})}">
+        <a data-egutegi-nav="next" class="calendar-nav-link"
+           th:href="${egutegiMota == 'astea'} ?
+                @{/irakasle/denboralizazioa(hilabetea=${asteHasiera.plusDays(7).monthValue}, urtea=${asteHasiera.plusDays(7).year}, bista='egutegia', egutegiMota='astea', asteHasiera=${asteHasiera.plusDays(7)})} :
+                @{/irakasle/denboralizazioa(hilabetea=${hilabetea == 12 ? 1 : hilabetea + 1}, urtea=${hilabetea == 12 ? urtea + 1 : urtea}, bista='egutegia', egutegiMota=${egutegiMota})}">
             <span>Hurrengoa</span><span>→</span>
         </a>
     </div>
-    <div class="calendar-mode-row">
+    <div class="calendar-mode-row centered">
         <div id="EgunerokoaWeekMonthButton" th:attr="data-selected_action=${egutegiMota == 'astea' ? 'week' : 'month'}" class="btn-toggle btn-float btn-left">
             <a class="btn-toggle-option dark"
                th:classappend="${egutegiMota == null or egutegiMota == 'hilabetea'} ? ' selected' : ''"
@@ -37,7 +35,7 @@
     </div>
 
     <!-- Egutegi taula -->
-    <table class="taula-egutegia">
+    <table class="taula-egutegia" th:classappend="${egutegiMota == 'astea'} ? ' week-mode' : ''">
         <thead>
             <tr>
                 <th>Astelehena</th>
