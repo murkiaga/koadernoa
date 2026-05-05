@@ -55,7 +55,7 @@
     			    style="cursor: pointer;">
     			    <div class="egun-zenbakia"
     			         th:text="${egunaBista.data != null ? egunaBista.data.dayOfMonth : ''}"
-    			         th:classappend="${egunMap[egunaBista.data.toString()] == 'ezlektiboa'} ? ' testu-zuria' : ''"
+    			         th:classappend="${(egunMap[egunaBista.data.toString()] == 'ezlektiboa' ? ' testu-zuria' : '') + (egunaBista.data != null and #temporals.format(egunaBista.data,'yyyy-MM-dd') == #temporals.format(#temporals.createNow(),'yyyy-MM-dd') ? ' gaur-zenbakia' : '')}"
     			         th:style="${egunaBista.data != null && !egunaBista.hilabeteAktibokoa} ? 'color: #ccc;' : 'color: black;'">
     			    </div>
     			    
@@ -102,6 +102,16 @@
                               th:text="${egunaBista.data.dayOfMonth}"
                               th:classappend="${#temporals.format(egunaBista.data,'yyyy-MM-dd') == #temporals.format(#temporals.createNow(),'yyyy-MM-dd')} ? ' gaur-zenbakia' : ''"></span>
                     </div>
+                    <div class="goiko-ikonoak"
+                         th:if="${egunaBista.data != null and (asistentziaEgunMap[egunaBista.data.toString()] == true
+                                 or oharraMap[egunaBista.data.toString()] != null)}">
+                        <a th:if="${egunaBista.data != null and (asistentziaEgunMap[egunaBista.data.toString()] == true)}"
+                           th:href="@{/irakasle/asistentzia(data=${egunaBista.data})}"
+                           class="btn-asistentzia"
+                           title="Egun honetako asistentzia">
+                            <span th:text="${asistentziaIrekitaEgunMap[egunaBista.data.toString()] == true ? '👤✔' : '👤'}">👤</span>
+                        </a>
+                    </div>
                     <ul class="jarduerak" th:if="${egunaBista.data != null and jardueraMap[egunaBista.data] != null}">
                         <li class="jarduera-item week-jarduera-item"
                             draggable="true"
@@ -109,7 +119,7 @@
                             th:attr="data-id=${j.id}"
                             onclick="editatuJarduera(event, this)">
                             <strong th:text="${j.titulua}"></strong>
-                            <div th:if="${!#strings.isEmpty(j.deskribapena)}" th:text="${j.deskribapena}"></div>
+                            <div class="week-desc" th:if="${!#strings.isEmpty(j.deskribapena)}" th:text="${j.deskribapena}"></div>
                             <div th:text="${'Orduak: ' + (j.orduak != null ? j.orduak : 0)}"></div>
                         </li>
                     </ul>
@@ -131,6 +141,8 @@
           <input type="hidden" name="id" id="jardueraId">
           <input type="hidden" name="urtea" th:value="${urtea}">
           <input type="hidden" name="hilabetea" th:value="${hilabetea}">
+          <input type="hidden" name="egutegiMota" th:value="${egutegiMota}">
+          <input type="hidden" name="asteHasiera" th:value="${asteHasiera}">
           <input type="hidden" name="data" id="jardueraData">
           <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
@@ -176,6 +188,8 @@
               style="display:none;">
           <input type="hidden" name="urtea" th:value="${urtea}">
           <input type="hidden" name="hilabetea" th:value="${hilabetea}">
+          <input type="hidden" name="egutegiMota" th:value="${egutegiMota}">
+          <input type="hidden" name="asteHasiera" th:value="${asteHasiera}">
           <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
         </form>
       </div>

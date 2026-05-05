@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.SessionAttribute;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.multipart.MultipartFile;
@@ -80,9 +81,10 @@ public class DenboralizazioaController {
 	    @RequestParam(name="urtea", required=false) Integer urtea,
 	    @RequestParam(name="hilabetea", required=false) Integer hilabetea,
 	    @RequestParam(name="bista", required=false, defaultValue = "egutegia") String bista,
-	    @RequestParam(name="egutegiMota", required=false, defaultValue = "hilabetea") String egutegiMota,
+	    @RequestParam(name="egutegiMota", required=false) String egutegiMota,
 	    @RequestParam(name="asteHasiera", required=false) LocalDate asteHasiera,
-	    Model model) {
+	    Model model,
+	    HttpSession session) {
 
 	    if (koadernoa == null || koadernoa.getId() == null) {
 	        model.addAttribute("errorea", "Ez dago koaderno aktiborik aukeratuta.");
@@ -98,6 +100,12 @@ public class DenboralizazioaController {
 	    Koadernoa kargatutakoKoadernoa = koadernoaOpt.get();
 
 	    LocalDate orain = LocalDate.now();
+	    if (egutegiMota == null || egutegiMota.isBlank()) {
+	        Object saioMota = session.getAttribute("denboralizazioaEgutegiMota");
+	        egutegiMota = (saioMota instanceof String s && !s.isBlank()) ? s : "hilabetea";
+	    } else {
+	        session.setAttribute("denboralizazioaEgutegiMota", egutegiMota);
+	    }
 	    int unekoUrtea = (urtea != null) ? urtea : orain.getYear();
 	    int unekoHilabetea = (hilabetea != null) ? hilabetea : orain.getMonthValue();
 
@@ -340,6 +348,8 @@ public class DenboralizazioaController {
 	    @ModelAttribute JardueraSortuDto dto,
 	    @RequestParam("urtea") int urtea,
 	    @RequestParam("hilabetea") int hilabetea,
+	    @RequestParam(name="egutegiMota", required=false, defaultValue="hilabetea") String egutegiMota,
+	    @RequestParam(name="asteHasiera", required=false) String asteHasiera,
 	    @RequestParam(value = "id", required = false) Long id) {
 
 	    if (koadernoa == null || koadernoa.getId() == null) {
@@ -349,7 +359,11 @@ public class DenboralizazioaController {
 	    if (id == null) koadernoaService.gordeJarduera(koadernoa, dto);
 	    else koadernoaService.eguneratuJarduera(koadernoa, id, dto);
 
-	    return "redirect:/irakasle/denboralizazioa?urtea=" + urtea + "&hilabetea=" + hilabetea;
+	    String redirect = "redirect:/irakasle/denboralizazioa?urtea=" + urtea + "&hilabetea=" + hilabetea + "&egutegiMota=" + egutegiMota;
+	    if ("astea".equalsIgnoreCase(egutegiMota) && asteHasiera != null && !asteHasiera.isBlank()) {
+	        redirect += "&asteHasiera=" + asteHasiera;
+	    }
+	    return redirect;
 	}
 
 	@PostMapping("/faltak/inportatu")
@@ -516,13 +530,19 @@ public class DenboralizazioaController {
 	        @SessionAttribute(value = "koadernoAktiboa", required = false) Koadernoa koadernoa,
 	        @PathVariable("id") Long id,
 	        @RequestParam("urtea") int urtea,
-	        @RequestParam("hilabetea") int hilabetea) {
+	        @RequestParam("hilabetea") int hilabetea,
+	        @RequestParam(name="egutegiMota", required=false, defaultValue="hilabetea") String egutegiMota,
+	        @RequestParam(name="asteHasiera", required=false) String asteHasiera) {
 
 	    if (koadernoa == null || koadernoa.getId() == null) {
 	        throw new IllegalStateException("Koaderno aktiborik ez");
 	    }
 
 	    koadernoaService.ezabatuJarduera(koadernoa, id); // id koaderno horren barrukoa dela balidatu!
-	    return "redirect:/irakasle/denboralizazioa?urtea=" + urtea + "&hilabetea=" + hilabetea;
+	    String redirect = "redirect:/irakasle/denboralizazioa?urtea=" + urtea + "&hilabetea=" + hilabetea + "&egutegiMota=" + egutegiMota;
+	    if ("astea".equalsIgnoreCase(egutegiMota) && asteHasiera != null && !asteHasiera.isBlank()) {
+	        redirect += "&asteHasiera=" + asteHasiera;
+	    }
+	    return redirect;
 	}
 }
