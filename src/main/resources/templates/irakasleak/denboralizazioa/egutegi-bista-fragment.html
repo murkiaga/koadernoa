@@ -2,21 +2,36 @@
 <div th:fragment="egutegiBista">
 
     <!-- Hilabetea + botoiak -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <a data-egutegi-nav="prev" th:href="@{/irakasle/denboralizazioa(
+    <div class="calendar-topbar">
+        <div class="calendar-topbar-left">
+            <a data-egutegi-nav="prev" class="calendar-nav-link" th:href="@{/irakasle/denboralizazioa(
                         hilabetea=${hilabetea == 1 ? 12 : hilabetea - 1},
                         urtea=${hilabetea == 1 ? urtea - 1 : urtea},
-                        bista='egutegia')}">
-            ⬅ Aurrekoa
-        </a>
+                        bista='egutegia',
+                        egutegiMota=${egutegiMota})}">
+                <span>←</span><span>Aurrekoa</span>
+            </a>
+
+            <div id="EgunerokoaWeekMonthButton" th:attr="data-selected_action=${egutegiMota == 'astea' ? 'week' : 'month'}" class="btn-toggle btn-float btn-left">
+                <a class="btn-toggle-option dark"
+                   th:classappend="${egutegiMota == null or egutegiMota == 'hilabetea'} ? ' selected' : ''"
+                   th:href="@{/irakasle/denboralizazioa(hilabetea=${hilabetea}, urtea=${urtea}, bista='egutegia', egutegiMota='hilabetea')}"
+                   data-action="month">Hilabete bista</a>
+                <a class="btn-toggle-option dark"
+                   th:classappend="${egutegiMota == 'astea'} ? ' selected' : ''"
+                   th:href="@{/irakasle/denboralizazioa(hilabetea=${hilabetea}, urtea=${urtea}, bista='egutegia', egutegiMota='astea')}"
+                   data-action="week">Asteko bista</a>
+            </div>
+        </div>
 
         <h2 th:text="${hilabeteUrtea}" style="margin: 0; text-align: center; flex: 1;">Hilabetea</h2>
 
-        <a data-egutegi-nav="next" th:href="@{/irakasle/denboralizazioa(
+        <a data-egutegi-nav="next" class="calendar-nav-link" th:href="@{/irakasle/denboralizazioa(
                         hilabetea=${hilabetea == 12 ? 1 : hilabetea + 1},
                         urtea=${hilabetea == 12 ? urtea + 1 : urtea},
-                        bista='egutegia')}">
-            Hurrengoa ➡
+                        bista='egutegia',
+                        egutegiMota=${egutegiMota})}">
+            <span>Hurrengoa</span><span>→</span>
         </a>
     </div>
 
@@ -31,7 +46,7 @@
                 <th>Ostirala</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody th:if="${egutegiMota == null or egutegiMota == 'hilabetea'}">
             <tr th:each="astea : ${asteak}">
     		    <td th:each="egunaBista : ${astea}"
     			    th:class="${egunaBista.data == null} ? 'blank' : ''"
@@ -76,6 +91,27 @@
 					  </ul>
     			</td>
     		</tr>
+        </tbody>
+        <tbody th:if="${egutegiMota == 'astea'}">
+            <tr th:each="astea : ${asteak}">
+                <td th:each="egunaBista : ${astea}"
+                    th:class="${egunaBista.data == null} ? 'blank' : ''"
+                    th:classappend="${egunaBista.data != null} ? ${egunMap[egunaBista.data.toString()]} : ''"
+                    th:attr="data-date=${egunaBista.data != null ? egunaBista.data : null}">
+                    <div class="week-day-title" th:text="${egunaBista.data != null ? #temporals.format(egunaBista.data,'EEEE dd') : ''}"></div>
+                    <ul class="jarduerak" th:if="${egunaBista.data != null and jardueraMap[egunaBista.data] != null}">
+                        <li class="jarduera-item week-jarduera-item"
+                            draggable="true"
+                            th:each="j : ${jardueraMap[egunaBista.data]}"
+                            th:attr="data-id=${j.id}"
+                            onclick="editatuJarduera(event, this)">
+                            <strong th:text="${j.titulua}"></strong>
+                            <div th:if="${!#strings.isEmpty(j.deskribapena)}" th:text="${j.deskribapena}"></div>
+                            <div th:text="${'Orduak: ' + (j.orduak != null ? j.orduak : 0)}"></div>
+                        </li>
+                    </ul>
+                </td>
+            </tr>
         </tbody>
     </table>
 

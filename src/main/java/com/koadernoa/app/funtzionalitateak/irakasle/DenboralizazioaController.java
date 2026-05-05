@@ -80,6 +80,7 @@ public class DenboralizazioaController {
 	    @RequestParam(name="urtea", required=false) Integer urtea,
 	    @RequestParam(name="hilabetea", required=false) Integer hilabetea,
 	    @RequestParam(name="bista", required=false, defaultValue = "egutegia") String bista,
+	    @RequestParam(name="egutegiMota", required=false, defaultValue = "hilabetea") String egutegiMota,
 	    Model model) {
 
 	    if (koadernoa == null || koadernoa.getId() == null) {
@@ -203,6 +204,7 @@ public class DenboralizazioaController {
 	    model.addAttribute("asistentziaIrekitaEgunMap", asistentziaIrekitaEgunMap);
 	    model.addAttribute("deskribapenaMap", deskribapenaMap);
 	    model.addAttribute("bista", bista);
+	    model.addAttribute("egutegiMota", egutegiMota);
 	    model.addAttribute("txantiloiAldia", dagoTxantiloiAldia(egutegia));
 
 	    // FALTEN BISTA-rako datuak soilik bista == "faltak" denean

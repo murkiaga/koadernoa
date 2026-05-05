@@ -72,6 +72,25 @@
             height: 24px;
             font-size: 0.9rem;
         }
+        .calendar-topbar{
+            display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; gap:.75rem;
+        }
+        .calendar-topbar-left{display:flex;align-items:center;gap:.6rem;}
+        .btn-toggle{
+            display:inline-flex; border:1px solid #d1d5db; border-radius:999px; overflow:hidden; background:#fff;
+        }
+        .btn-toggle-option{
+            padding:.38rem .75rem; font-size:.82rem; color:#374151; text-decoration:none; font-weight:600;
+        }
+        .btn-toggle-option.selected{ background:#111827; color:#fff; }
+        .calendar-nav-link{
+            display:inline-flex; align-items:center; gap:.4rem; text-decoration:none; color:#111827;
+            padding:.38rem .7rem; border:1px solid #d1d5db; border-radius:.65rem; background:#fff; font-weight:600;
+            box-shadow:0 1px 2px rgba(0,0,0,.06);
+        }
+        .calendar-nav-link:hover{background:#f9fafb;}
+        .week-day-title{ font-size:.78rem; font-weight:700; margin-bottom:.2rem; }
+        .week-jarduera-item{ white-space:normal; }
 
         .egun-zenbakia {
             position: absolute;
@@ -296,7 +315,8 @@
     <a th:href="@{/irakasle/denboralizazioa(
                     hilabetea=${hilabetea},
                     urtea=${urtea},
-                    bista='egutegia')}"
+                    bista='egutegia',
+                    egutegiMota=${egutegiMota})}"
        th:classappend="${bista == null or bista == 'egutegia'} ? ' active'">
         🗓 Egutegi bista
     </a>
