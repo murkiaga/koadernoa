@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.SessionAttribute;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.multipart.MultipartFile;
@@ -80,7 +81,10 @@ public class DenboralizazioaController {
 	    @RequestParam(name="urtea", required=false) Integer urtea,
 	    @RequestParam(name="hilabetea", required=false) Integer hilabetea,
 	    @RequestParam(name="bista", required=false, defaultValue = "egutegia") String bista,
-	    Model model) {
+	    @RequestParam(name="egutegiMota", required=false) String egutegiMota,
+	    @RequestParam(name="asteHasiera", required=false) LocalDate asteHasiera,
+	    Model model,
+	    HttpSession session) {
 
 	    if (koadernoa == null || koadernoa.getId() == null) {
 	        model.addAttribute("errorea", "Ez dago koaderno aktiborik aukeratuta.");
@@ -96,6 +100,12 @@ public class DenboralizazioaController {
 	    Koadernoa kargatutakoKoadernoa = koadernoaOpt.get();
 
 	    LocalDate orain = LocalDate.now();
+	    if (egutegiMota == null || egutegiMota.isBlank()) {
+	        Object saioMota = session.getAttribute("denboralizazioaEgutegiMota");
+	        egutegiMota = (saioMota instanceof String s && !s.isBlank()) ? s : "hilabetea";
+	    } else {
+	        session.setAttribute("denboralizazioaEgutegiMota", egutegiMota);
+	    }
 	    int unekoUrtea = (urtea != null) ? urtea : orain.getYear();
 	    int unekoHilabetea = (hilabetea != null) ? hilabetea : orain.getMonthValue();
 
@@ -136,6 +146,34 @@ public class DenboralizazioaController {
 	        }
 	        asteak.add(new ArrayList<>(astea));
 	    }
+	    
+	    List<EgunaBista> astekoEgunak = List.of();
+	    LocalDate astekoHasieraEraginkorra = null;
+	    if ("astea".equalsIgnoreCase(egutegiMota)) {
+	        if (asteHasiera != null) {
+	            astekoHasieraEraginkorra = asteHasiera;
+	            astekoEgunak = new ArrayList<>();
+	            for (int i = 0; i < 5; i++) {
+	                LocalDate d = asteHasiera.plusDays(i);
+	                astekoEgunak.add(new EgunaBista(d, d.getMonthValue() == unekoHilabetea));
+	            }
+	        } else {
+	            LocalDate gaur = LocalDate.now();
+	            boolean hilabeteHonetanDa = gaur.getYear() == unekoUrtea && gaur.getMonthValue() == unekoHilabetea;
+	            astekoEgunak = asteak.stream()
+	                    .filter(a -> {
+	                        if (hilabeteHonetanDa) {
+	                            return a.stream().anyMatch(e -> e.getData() != null && e.getData().equals(gaur));
+	                        }
+	                        return a.stream().anyMatch(EgunaBista::isHilabeteAktibokoa);
+	                    })
+	                    .findFirst()
+	                    .orElse(asteak.isEmpty() ? List.of() : asteak.get(0));
+	            if (!astekoEgunak.isEmpty() && astekoEgunak.get(0).getData() != null) {
+	                astekoHasieraEraginkorra = astekoEgunak.get(0).getData();
+	            }
+	        }
+	    }
 
 	    Map<String, String> egunMap = egutegiaService.kalkulatuKlaseak(egutegia);
 
@@ -163,6 +201,10 @@ public class DenboralizazioaController {
 	    // Hilabetearen muga-datak
 	    LocalDate hasiera = LocalDate.of(unekoUrtea, unekoHilabetea, 1);
 	    LocalDate amaiera = hasiera.withDayOfMonth(hasiera.lengthOfMonth());
+	    if ("astea".equalsIgnoreCase(egutegiMota) && astekoHasieraEraginkorra != null) {
+	        hasiera = astekoHasieraEraginkorra;
+	        amaiera = astekoHasieraEraginkorra.plusDays(4);
+	    }
 
 	    // Lortu jarduerak
 	    List<Jarduera> jarduerak =
@@ -198,11 +240,14 @@ public class DenboralizazioaController {
 	    model.addAttribute("urtea", unekoUrtea);
 	    model.addAttribute("hilabetea", unekoHilabetea);
 	    model.addAttribute("asteak", asteak);
+	    model.addAttribute("astekoEgunak", astekoEgunak);
+	    model.addAttribute("asteHasiera", astekoHasieraEraginkorra);
 	    model.addAttribute("egunMap", egunMap);
 	    model.addAttribute("asistentziaEgunMap", asistentziaEgunMap);
 	    model.addAttribute("asistentziaIrekitaEgunMap", asistentziaIrekitaEgunMap);
 	    model.addAttribute("deskribapenaMap", deskribapenaMap);
 	    model.addAttribute("bista", bista);
+	    model.addAttribute("egutegiMota", egutegiMota);
 	    model.addAttribute("txantiloiAldia", dagoTxantiloiAldia(egutegia));
 
 	    // FALTEN BISTA-rako datuak soilik bista == "faltak" denean
@@ -303,6 +348,8 @@ public class DenboralizazioaController {
 	    @ModelAttribute JardueraSortuDto dto,
 	    @RequestParam("urtea") int urtea,
 	    @RequestParam("hilabetea") int hilabetea,
+	    @RequestParam(name="egutegiMota", required=false, defaultValue="hilabetea") String egutegiMota,
+	    @RequestParam(name="asteHasiera", required=false) String asteHasiera,
 	    @RequestParam(value = "id", required = false) Long id) {
 
 	    if (koadernoa == null || koadernoa.getId() == null) {
@@ -312,7 +359,11 @@ public class DenboralizazioaController {
 	    if (id == null) koadernoaService.gordeJarduera(koadernoa, dto);
 	    else koadernoaService.eguneratuJarduera(koadernoa, id, dto);
 
-	    return "redirect:/irakasle/denboralizazioa?urtea=" + urtea + "&hilabetea=" + hilabetea;
+	    String redirect = "redirect:/irakasle/denboralizazioa?urtea=" + urtea + "&hilabetea=" + hilabetea + "&egutegiMota=" + egutegiMota;
+	    if ("astea".equalsIgnoreCase(egutegiMota) && asteHasiera != null && !asteHasiera.isBlank()) {
+	        redirect += "&asteHasiera=" + asteHasiera;
+	    }
+	    return redirect;
 	}
 
 	@PostMapping("/faltak/inportatu")
@@ -479,13 +530,19 @@ public class DenboralizazioaController {
 	        @SessionAttribute(value = "koadernoAktiboa", required = false) Koadernoa koadernoa,
 	        @PathVariable("id") Long id,
 	        @RequestParam("urtea") int urtea,
-	        @RequestParam("hilabetea") int hilabetea) {
+	        @RequestParam("hilabetea") int hilabetea,
+	        @RequestParam(name="egutegiMota", required=false, defaultValue="hilabetea") String egutegiMota,
+	        @RequestParam(name="asteHasiera", required=false) String asteHasiera) {
 
 	    if (koadernoa == null || koadernoa.getId() == null) {
 	        throw new IllegalStateException("Koaderno aktiborik ez");
 	    }
 
 	    koadernoaService.ezabatuJarduera(koadernoa, id); // id koaderno horren barrukoa dela balidatu!
-	    return "redirect:/irakasle/denboralizazioa?urtea=" + urtea + "&hilabetea=" + hilabetea;
+	    String redirect = "redirect:/irakasle/denboralizazioa?urtea=" + urtea + "&hilabetea=" + hilabetea + "&egutegiMota=" + egutegiMota;
+	    if ("astea".equalsIgnoreCase(egutegiMota) && asteHasiera != null && !asteHasiera.isBlank()) {
+	        redirect += "&asteHasiera=" + asteHasiera;
+	    }
+	    return redirect;
 	}
 }

@@ -72,6 +72,41 @@
             height: 24px;
             font-size: 0.9rem;
         }
+        .calendar-topbar{
+            display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; gap:.75rem;
+        }
+        .calendar-topbar-left{display:flex;align-items:center;gap:.6rem;}
+        .calendar-mode-row{ margin:-.35rem 0 .75rem 0; }
+        .calendar-mode-row.centered{ display:flex; justify-content:center; }
+        .btn-toggle{
+            display:inline-flex; border:1px solid #d1d5db; border-radius:999px; overflow:hidden; background:#fff;
+        }
+        .btn-toggle-option{
+            padding:.38rem .75rem; font-size:.82rem; color:#374151; text-decoration:none; font-weight:600;
+        }
+        .btn-toggle-option.selected{ background:#111827; color:#fff; }
+        .calendar-nav-link{
+            display:inline-flex; align-items:center; gap:.4rem; text-decoration:none; color:#111827;
+            padding:.38rem .7rem; border:1px solid #d1d5db; border-radius:.65rem; background:#fff; font-weight:600;
+            box-shadow:0 1px 2px rgba(0,0,0,.06);
+        }
+        .calendar-nav-link:hover{background:#f9fafb;}
+        .week-day-title{ font-size:.78rem; font-weight:700; margin-bottom:0; right:6px; top:4px; left:auto; }
+        .gaur-zenbakia{
+            display:inline-flex; align-items:center; justify-content:center;
+            width:1.7rem; height:1.7rem; border-radius:999px;
+            background:#1a73e8; color:#fff; font-weight:700;
+        }
+        .week-jarduera-item{ white-space:normal; }
+        .week-desc{ white-space: pre-line; }
+        .taula-egutegia.week-mode td{
+            height: calc(100vh - 260px);
+            min-height: 520px;
+        }
+        .taula-egutegia.week-mode .jarduerak{
+            max-height: calc(100vh - 340px);
+            overflow-y:auto;
+        }
 
         .egun-zenbakia {
             position: absolute;
@@ -296,7 +331,8 @@
     <a th:href="@{/irakasle/denboralizazioa(
                     hilabetea=${hilabetea},
                     urtea=${urtea},
-                    bista='egutegia')}"
+                    bista='egutegia',
+                    egutegiMota=${egutegiMota})}"
        th:classappend="${bista == null or bista == 'egutegia'} ? ' active'">
         🗓 Egutegi bista
     </a>

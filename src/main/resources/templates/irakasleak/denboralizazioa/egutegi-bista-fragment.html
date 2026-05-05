@@ -2,26 +2,40 @@
 <div th:fragment="egutegiBista">
 
     <!-- Hilabetea + botoiak -->
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <a data-egutegi-nav="prev" th:href="@{/irakasle/denboralizazioa(
-                        hilabetea=${hilabetea == 1 ? 12 : hilabetea - 1},
-                        urtea=${hilabetea == 1 ? urtea - 1 : urtea},
-                        bista='egutegia')}">
-            ⬅ Aurrekoa
-        </a>
+    <div class="calendar-topbar">
+        <div class="calendar-topbar-left">
+            <a data-egutegi-nav="prev" class="calendar-nav-link"
+               th:href="${egutegiMota == 'astea'} ?
+                    @{/irakasle/denboralizazioa(hilabetea=${asteHasiera.minusDays(7).monthValue}, urtea=${asteHasiera.minusDays(7).year}, bista='egutegia', egutegiMota='astea', asteHasiera=${asteHasiera.minusDays(7)})} :
+                    @{/irakasle/denboralizazioa(hilabetea=${hilabetea == 1 ? 12 : hilabetea - 1}, urtea=${hilabetea == 1 ? urtea - 1 : urtea}, bista='egutegia', egutegiMota=${egutegiMota})}">
+                <span>←</span><span>Aurrekoa</span>
+            </a>
+        </div>
 
         <h2 th:text="${hilabeteUrtea}" style="margin: 0; text-align: center; flex: 1;">Hilabetea</h2>
 
-        <a data-egutegi-nav="next" th:href="@{/irakasle/denboralizazioa(
-                        hilabetea=${hilabetea == 12 ? 1 : hilabetea + 1},
-                        urtea=${hilabetea == 12 ? urtea + 1 : urtea},
-                        bista='egutegia')}">
-            Hurrengoa ➡
+        <a data-egutegi-nav="next" class="calendar-nav-link"
+           th:href="${egutegiMota == 'astea'} ?
+                @{/irakasle/denboralizazioa(hilabetea=${asteHasiera.plusDays(7).monthValue}, urtea=${asteHasiera.plusDays(7).year}, bista='egutegia', egutegiMota='astea', asteHasiera=${asteHasiera.plusDays(7)})} :
+                @{/irakasle/denboralizazioa(hilabetea=${hilabetea == 12 ? 1 : hilabetea + 1}, urtea=${hilabetea == 12 ? urtea + 1 : urtea}, bista='egutegia', egutegiMota=${egutegiMota})}">
+            <span>Hurrengoa</span><span>→</span>
         </a>
+    </div>
+    <div class="calendar-mode-row centered">
+        <div id="EgunerokoaWeekMonthButton" th:attr="data-selected_action=${egutegiMota == 'astea' ? 'week' : 'month'}" class="btn-toggle btn-float btn-left">
+            <a class="btn-toggle-option dark"
+               th:classappend="${egutegiMota == null or egutegiMota == 'hilabetea'} ? ' selected' : ''"
+               th:href="@{/irakasle/denboralizazioa(hilabetea=${hilabetea}, urtea=${urtea}, bista='egutegia', egutegiMota='hilabetea')}"
+               data-action="month">Hilabete bista</a>
+            <a class="btn-toggle-option dark"
+               th:classappend="${egutegiMota == 'astea'} ? ' selected' : ''"
+               th:href="@{/irakasle/denboralizazioa(hilabetea=${hilabetea}, urtea=${urtea}, bista='egutegia', egutegiMota='astea')}"
+               data-action="week">Asteko bista</a>
+        </div>
     </div>
 
     <!-- Egutegi taula -->
-    <table class="taula-egutegia">
+    <table class="taula-egutegia" th:classappend="${egutegiMota == 'astea'} ? ' week-mode' : ''">
         <thead>
             <tr>
                 <th>Astelehena</th>
@@ -31,7 +45,7 @@
                 <th>Ostirala</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody th:if="${egutegiMota == null or egutegiMota == 'hilabetea'}">
             <tr th:each="astea : ${asteak}">
     		    <td th:each="egunaBista : ${astea}"
     			    th:class="${egunaBista.data == null} ? 'blank' : ''"
@@ -41,7 +55,7 @@
     			    style="cursor: pointer;">
     			    <div class="egun-zenbakia"
     			         th:text="${egunaBista.data != null ? egunaBista.data.dayOfMonth : ''}"
-    			         th:classappend="${egunMap[egunaBista.data.toString()] == 'ezlektiboa'} ? ' testu-zuria' : ''"
+    			         th:classappend="${(egunMap[egunaBista.data.toString()] == 'ezlektiboa' ? ' testu-zuria' : '') + (egunaBista.data != null and #temporals.format(egunaBista.data,'yyyy-MM-dd') == #temporals.format(#temporals.createNow(),'yyyy-MM-dd') ? ' gaur-zenbakia' : '')}"
     			         th:style="${egunaBista.data != null && !egunaBista.hilabeteAktibokoa} ? 'color: #ccc;' : 'color: black;'">
     			    </div>
     			    
@@ -77,6 +91,41 @@
     			</td>
     		</tr>
         </tbody>
+        <tbody th:if="${egutegiMota == 'astea'}">
+            <tr>
+                <td th:each="egunaBista : ${astekoEgunak}"
+                    th:class="${egunaBista.data == null} ? 'blank' : ''"
+                    th:classappend="${egunaBista.data != null} ? ${egunMap[egunaBista.data.toString()]} : ''"
+                    th:attr="data-date=${egunaBista.data != null ? egunaBista.data : null}">
+                    <div class="egun-zenbakia week-day-title">
+                        <span th:if="${egunaBista.data != null}"
+                              th:text="${egunaBista.data.dayOfMonth}"
+                              th:classappend="${#temporals.format(egunaBista.data,'yyyy-MM-dd') == #temporals.format(#temporals.createNow(),'yyyy-MM-dd')} ? ' gaur-zenbakia' : ''"></span>
+                    </div>
+                    <div class="goiko-ikonoak"
+                         th:if="${egunaBista.data != null and (asistentziaEgunMap[egunaBista.data.toString()] == true
+                                 or oharraMap[egunaBista.data.toString()] != null)}">
+                        <a th:if="${egunaBista.data != null and (asistentziaEgunMap[egunaBista.data.toString()] == true)}"
+                           th:href="@{/irakasle/asistentzia(data=${egunaBista.data})}"
+                           class="btn-asistentzia"
+                           title="Egun honetako asistentzia">
+                            <span th:text="${asistentziaIrekitaEgunMap[egunaBista.data.toString()] == true ? '👤✔' : '👤'}">👤</span>
+                        </a>
+                    </div>
+                    <ul class="jarduerak" th:if="${egunaBista.data != null and jardueraMap[egunaBista.data] != null}">
+                        <li class="jarduera-item week-jarduera-item"
+                            draggable="true"
+                            th:each="j : ${jardueraMap[egunaBista.data]}"
+                            th:attr="data-id=${j.id}"
+                            onclick="editatuJarduera(event, this)">
+                            <strong th:text="${j.titulua}"></strong>
+                            <div class="week-desc" th:if="${!#strings.isEmpty(j.deskribapena)}" th:text="${j.deskribapena}"></div>
+                            <div th:text="${'Orduak: ' + (j.orduak != null ? j.orduak : 0)}"></div>
+                        </li>
+                    </ul>
+                </td>
+            </tr>
+        </tbody>
     </table>
 
     <!-- MODALA -->
@@ -92,6 +141,8 @@
           <input type="hidden" name="id" id="jardueraId">
           <input type="hidden" name="urtea" th:value="${urtea}">
           <input type="hidden" name="hilabetea" th:value="${hilabetea}">
+          <input type="hidden" name="egutegiMota" th:value="${egutegiMota}">
+          <input type="hidden" name="asteHasiera" th:value="${asteHasiera}">
           <input type="hidden" name="data" id="jardueraData">
           <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
@@ -137,6 +188,8 @@
               style="display:none;">
           <input type="hidden" name="urtea" th:value="${urtea}">
           <input type="hidden" name="hilabetea" th:value="${hilabetea}">
+          <input type="hidden" name="egutegiMota" th:value="${egutegiMota}">
+          <input type="hidden" name="asteHasiera" th:value="${asteHasiera}">
           <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
         </form>
       </div>
