@@ -77,7 +77,16 @@ hautatutako koadernoari dagozkionak izango dira.
 </p>
 
 ### 5.1 Egutegia
-Koaderno aktiboari lotutako egutegia kontsulta dezakezu. Egutegi horretan ikus daitezke. Egutegi hau, ikastetxeko kudeatzaileak aurretik definitu du. Berton ikus daitezke kolore ezberdinetan ebaluaketak, jarritako oharrak (adibidez ebaluazio saioak dauden) edo egun aldaketaren bat badago.
+Koaderno aktiboari lotutako egutegia kontsulta dezakezu. Egutegi hau, ikastetxeko kudeatzaileak aurretik definitu du. Berton ikus daitezke kolore ezberdinetan ebaluaketak, jarritako oharrak (adibidez ebaluazio saioak dauden) edo egun aldaketaren bat badago.
+
+Egutegian 3 kolore bloke nagusi bereizten dira, ebaluaketei dagozkienak.
+Egun bereziak ere egon daitezke, jaiegunak edota ez lektiboez gain, egun "ordezkatuak" ere existitzen dira.
+Hauek, nahiz eta osteguna izan, adibidez ikastetxe mailan astearte gisa tratatu daitezke.
+
+Egun batzuek puntu txikitxo bat daukate, horrek esan nahi du egun horretan informazio gehiago dagoela. Adibidez, ebaluazio bilerak daudela adierazteko.
+
+Egun bakoitzaren gainean kokatuta, egun horri buruzko informazioa erakusten da.
+
 
 ### 5.2 Ikasleak
 Koaderno bakoitzak bere ikasle-zerrenda du. Atal honetan:
@@ -118,10 +127,13 @@ Unitateetan jarduerak zehaztu daitezke edo ez. Aurreko adibidean UD4an 3 jarduer
 </p>
 
 ### 5.4 Denboralizazioa
-Denboralizazioa ikasturte edo hilabeteko ikuspegi bisuala ematen duen atala da. Programaziotik ebaluaketak "bolkatu" baditugu, automatikoki sortuta egongo da. Bertan:
+Denboralizazioan 2 bista nagusi ditugu:
+ - Hilabete bistan, jardueren planifikazioa
+ - Falten bistan, ikasleen hutsegiteen zerrenda
+
+Denboralizazioa hilabetekako ikuspegi bisuala ematen duen atala da. Programaziotik ebaluaketak "bolkatu" baditugu, automatikoki sortuta egongo da. Bertan:
 - saioak edo jarduerak kokatu edota birplanifikatu
-- egutegiko muga errealak kontuan hartu
-- planifikazioa denborarekin lotu
+- egutegiko muga errealak kontuan hartu, ebaluaketak koloreekin bereiztuz
 
 
 ### 5.5 Ikasleen bertaratzea
@@ -130,8 +142,13 @@ Asistentzia atalean ikasleen bertaratzea erregistratzen da:
 - hutsegite justifikatuak
 - berandutzeak
 
-Komeni da jarraipen hau egunean-egunean egiten joatea.
+Nahiz eta komeni den jarraipen hau egunean-egunean egiten joatea, aukera dago Hezkuntzako aplikaziotik deskargatutako "Hutsegiteen txostena" inportatzea.
 
+Ikasleen hutsegiteak irakasgaiaren orduen %20 gainditzen badu, **ebaluazio jarraituko eskubidea galdu izanaren txostena** sortu daiteke.
+
+<p align="center">
+    <img src="gidak_img/hutsegiteak_inportatu.png" alt="Hutsegiteak inportatu botoia" width="">
+</p>
 
 ### 5.6 Notak
 Noten atalean ebaluazioari lotutako informazioa jasotzen da. Atal honetan:
