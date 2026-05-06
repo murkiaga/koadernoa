@@ -80,11 +80,11 @@ public class ModuloKudeatzaileController {
             model.addAttribute("ikasleak",
                 ikasleaRepository.findByTaldea_IdOrderByAbizena1AscAbizena2AscIzenaAsc(taldeaId));
         }
+        model.addAttribute("taldeak", zikloaId != null ? taldeaService.getByZikloaId(zikloaId) : taldeaService.getAll());
         model.addAttribute("taldeaId", taldeaId);
         model.addAttribute("zikloaId", zikloaId);
         model.addAttribute("hautazkoa", hautazkoa);
         model.addAttribute("moduluak", moduluak.getContent());
-        model.addAttribute("taldeak", taldeaService.getAll());
         model.addAttribute("zikloak", zikloaService.getAll());
         model.addAttribute("moduloKlikagarriak", koadernoaRepository.findModuloIdsInAktiboIkasturtea());
         model.addAttribute("currentPage", moduluak.getNumber());

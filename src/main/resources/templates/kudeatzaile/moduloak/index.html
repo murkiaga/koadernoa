@@ -17,7 +17,7 @@
 			    <input type="hidden" name="page" value="0">
 			    <div style="display:flex; align-items:center; gap:.4rem; white-space:nowrap;">
 			      <label style="margin:0;">Zikloa:</label>
-			      <select name="zikloaId" style="width:auto; min-width:180px; max-width:240px;" onchange="this.form.submit()">
+			      <select name="zikloaId" style="width:auto; min-width:180px; max-width:240px;" onchange="this.form.taldeaId.value=''; this.form.submit()">
 			        <option value="">GUZTIAK</option>
 			        <option th:each="z : ${zikloak}"
 			                th:value="${z.id}"
