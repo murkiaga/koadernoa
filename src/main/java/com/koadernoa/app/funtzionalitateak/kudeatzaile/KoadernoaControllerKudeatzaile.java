@@ -56,11 +56,17 @@ public class KoadernoaControllerKudeatzaile {
         model.addAttribute("familiak", familiak);
 
         List<Taldea> taldeak;
+        Long filtroTaldeaId = taldeaId;
         if (familiaId != null) {
             taldeak = taldeaRepository.findByZikloa_Familia_IdOrderByIzenaAsc(familiaId);
+            final Long requestedTaldeaId = filtroTaldeaId;
+            if (requestedTaldeaId != null && taldeak.stream().noneMatch(t -> requestedTaldeaId.equals(t.getId()))) {
+                filtroTaldeaId = null;
+            }
         } else {
             taldeak = taldeaRepository.findAllByOrderByIzenaAsc();
         }
+        final Long selectedTaldeaId = filtroTaldeaId;
         model.addAttribute("taldeak", taldeak);
 
         // 2) Koaderno guztiak kargatu (service-ak inplementatu dezake simpleki repo.findAll() deituz)
@@ -83,12 +89,12 @@ public class KoadernoaControllerKudeatzaile {
         }
 
         // 4) Filtratu taldeaz
-        if (taldeaId != null) {
+        if (selectedTaldeaId != null) {
             koadernoak = koadernoak.stream()
                     .filter(k -> {
                         Moduloa m = k.getModuloa();
                         Taldea t = (m != null ? m.getTaldea() : null);
-                        return t != null && taldeaId.equals(t.getId());
+                        return t != null && selectedTaldeaId.equals(t.getId());
                     })
                     .collect(Collectors.toList());
         }
@@ -123,7 +129,7 @@ public class KoadernoaControllerKudeatzaile {
 
         model.addAttribute("koadernoak", koadernoak);
         model.addAttribute("familiaId", familiaId);
-        model.addAttribute("taldeaId", taldeaId);
+        model.addAttribute("taldeaId", selectedTaldeaId);
         model.addAttribute("irakasleId", irakasleId);
         model.addAttribute("irakasleak", irakasleaRepository.findAll());
 

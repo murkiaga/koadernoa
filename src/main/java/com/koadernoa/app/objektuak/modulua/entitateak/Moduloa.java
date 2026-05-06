@@ -31,6 +31,8 @@ public class Moduloa {
     private Integer orduak;
     @Column(name = "dual_orduak")
     private Integer dualOrduak;
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean hautazkoa = false;
     
     @ManyToOne(optional=false)
     private Maila maila;

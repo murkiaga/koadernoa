@@ -66,9 +66,9 @@
           </li>
           <li><a th:href="@{/irakasle/mezuak}" th:classappend="${currentPath == '/irakasle/mezuak'} ? 'active'" th:if="${irakurriGabekoMezuKop > 0}"> ✉️ <span th:text="${irakurriGabekoMezuKop}"></span></a></li>
           <li>
-            <form th:action="@{/logout}" method="post" style="display:inline">
+            <form th:action="@{/logout}" method="post">
               <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-              <button type="submit" class="logout-btn">Logout</button>
+              <button type="submit" class="logout-btn">Irten</button>
             </form>
           </li>
         </ul>
@@ -108,7 +108,7 @@
           <li>
             <form th:action="@{/logout}" method="post">
               <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-              <button type="submit" class="logout-btn">Logout</button>
+              <button type="submit" class="logout-btn">Irten</button>
             </form>
           </li>
         </ul>

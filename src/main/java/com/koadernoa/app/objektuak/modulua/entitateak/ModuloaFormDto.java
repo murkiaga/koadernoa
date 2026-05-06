@@ -23,6 +23,8 @@ public class ModuloaFormDto {
     @NotNull
     private Integer dualOrduak;
 
+    private boolean hautazkoa;
+
     @NotNull
     private Long mailaId;
 

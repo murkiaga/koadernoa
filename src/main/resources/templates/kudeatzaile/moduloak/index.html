@@ -16,6 +16,18 @@
 			<form class="form" th:action="@{/kudeatzaile/moduloa}" method="get" style="display:flex; align-items:center; gap:.75rem; margin:0; flex-wrap:nowrap; max-width:none;">
 			    <input type="hidden" name="page" value="0">
 			    <div style="display:flex; align-items:center; gap:.4rem; white-space:nowrap;">
+			      <label style="margin:0;">Zikloa:</label>
+			      <select name="zikloaId" style="width:auto; min-width:180px; max-width:240px;" onchange="this.form.taldeaId.value=''; this.form.submit()">
+			        <option value="">GUZTIAK</option>
+			        <option th:each="z : ${zikloak}"
+			                th:value="${z.id}"
+			                th:text="${z.izena}"
+			                th:selected="${z.id == zikloaId}">
+			        </option>
+			      </select>
+			    </div>
+
+			    <div style="display:flex; align-items:center; gap:.4rem; white-space:nowrap;">
 			      <label style="margin:0;">Taldea:</label>
 			      <select name="taldeaId" style="width:auto; min-width:180px; max-width:220px;" onchange="this.form.submit()">
 			        <option value="">GUZTIAK</option>
@@ -24,6 +36,15 @@
 			                th:text="${t.izena}"
 			                th:selected="${t.id == taldeaId}">
 			        </option>
+			      </select>
+			    </div>
+
+			    <div style="display:flex; align-items:center; gap:.4rem; white-space:nowrap;">
+			      <label style="margin:0;">Hautazkoa:</label>
+			      <select name="hautazkoa" style="width:auto; min-width:120px;" onchange="this.form.submit()">
+			        <option value="" th:selected="${hautazkoa == null}">GUZTIAK</option>
+			        <option value="true" th:selected="${hautazkoa != null and hautazkoa}">Bai</option>
+			        <option value="false" th:selected="${hautazkoa != null and hautazkoa == false}">Ez</option>
 			      </select>
 			    </div>
 
@@ -39,7 +60,7 @@
 			    </div>
 			</form>
 
-			<a class="btn btn-primary" th:href="@{/kudeatzaile/moduloa/sortu(taldeaId=${param.taldeaId})}">Sortu Modulo Berria</a>
+			<a class="btn btn-primary" th:href="@{/kudeatzaile/moduloa/sortu(taldeaId=${taldeaId})}">Sortu Modulo Berria</a>
 		</div>
 		
 		<div class="table-wrap">
@@ -52,6 +73,7 @@
 			            <th>Izena</th>
                         <th>Orduak</th>
                         <th>DUAL orduak</th>
+			            <th>Hautazkoa</th>
 			            <th>Maila</th>
 			            <th>Taldea</th>
 			            <th>Aukerak</th>
@@ -73,6 +95,7 @@
                         </td>
                         <td th:text="${moduloa.orduak}">165</td>
                         <td th:text="${moduloa.dualOrduak != null ? moduloa.dualOrduak : 0}">0</td>
+			            <td th:text="${moduloa.hautazkoa ? 'Bai' : 'Ez'}">Ez</td>
 			            <td th:text="${moduloa.maila.getKodea}">LEHENENGOA</td>
 			            <td th:text="${moduloa.taldea.izena}">2AM3</td>
 			            <td class="actions-cell">
@@ -87,11 +110,11 @@
 		<div style="margin: 1rem 0; display:flex; align-items:center; gap:.75rem;" th:if="${totalPages > 0}">
 		  <a class="btn btn-secondary"
 		     th:if="${currentPage > 0}"
-		     th:href="@{/kudeatzaile/moduloa(taldeaId=${taldeaId},page=${currentPage - 1},size=${pageSize})}">Aurrekoa</a>
+		     th:href="@{/kudeatzaile/moduloa(taldeaId=${taldeaId},zikloaId=${zikloaId},hautazkoa=${hautazkoa},page=${currentPage - 1},size=${pageSize})}">Aurrekoa</a>
 		  <span th:text="|Orria ${currentPage + 1} / ${totalPages} (${totalItems} modulo)|">Orria 1 / 1</span>
 		  <a class="btn btn-secondary"
 		     th:if="${currentPage + 1 < totalPages}"
-		     th:href="@{/kudeatzaile/moduloa(taldeaId=${taldeaId},page=${currentPage + 1},size=${pageSize})}">Hurrengoa</a>
+		     th:href="@{/kudeatzaile/moduloa(taldeaId=${taldeaId},zikloaId=${zikloaId},hautazkoa=${hautazkoa},page=${currentPage + 1},size=${pageSize})}">Hurrengoa</a>
 		</div>
 		<div th:if="${taldeaId != null}" style="margin:.75rem 0 1rem;">
 		  <a th:href="@{/kudeatzaile/taldeak/{id}/argazkiak(id=${taldeaId})}"

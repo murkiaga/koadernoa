@@ -39,6 +39,11 @@
 	  <input type="number" min="0" th:field="*{dualOrduak}" required/>
 	  <div th:if="${#fields.hasErrors('dualOrduak')}" th:errors="*{dualOrduak}"></div>
 
+	  <label style="display:flex; align-items:center; gap:.5rem;">
+	    <input type="checkbox" th:field="*{hautazkoa}" style="width:auto;"/>
+	    Hautazkoa
+	  </label>
+
 
 	  <label>Maila:</label>
 	  <select th:field="*{mailaId}" required>

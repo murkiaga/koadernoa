@@ -23,7 +23,7 @@
     <div class="filters-row">
       <label>
         <span>Familia</span>
-        <select name="familiaId">
+        <select name="familiaId" onchange="this.form.taldeaId.value=''; this.form.submit()">
           <option value=""
                   th:selected="${familiaId == null}">
             (Familia guztiak)
