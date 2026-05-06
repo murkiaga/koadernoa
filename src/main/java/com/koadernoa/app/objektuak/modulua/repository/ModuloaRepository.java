@@ -24,6 +24,19 @@ public interface ModuloaRepository extends JpaRepository<Moduloa, Long>{
 
 	@Query("""
 		select m from Moduloa m
+		left join m.taldea t
+		left join t.zikloa z
+		where (:taldeaId is null or t.id = :taldeaId)
+		  and (:zikloaId is null or z.id = :zikloaId)
+		  and (:hautazkoa is null or m.hautazkoa = :hautazkoa)
+	""")
+	Page<Moduloa> bilatuFiltroekin(@Param("taldeaId") Long taldeaId,
+	                                @Param("zikloaId") Long zikloaId,
+	                                @Param("hautazkoa") Boolean hautazkoa,
+	                                Pageable pageable);
+
+	@Query("""
+		select m from Moduloa m
 		where (:familiaId is null or m.taldea.zikloa.familia.id = :familiaId)
 		  and (:zikloaId is null or m.taldea.zikloa.id = :zikloaId)
 		  and (:mailaId is null or m.maila.id = :mailaId)

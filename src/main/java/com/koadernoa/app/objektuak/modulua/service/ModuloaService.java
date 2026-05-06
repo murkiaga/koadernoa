@@ -13,7 +13,6 @@ import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 import com.koadernoa.app.objektuak.modulua.entitateak.ModuloaFormDto;
 import com.koadernoa.app.objektuak.modulua.repository.ModuloaRepository;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Taldea;
-import com.koadernoa.app.objektuak.zikloak.repository.TaldeaRepository;
 import com.koadernoa.app.objektuak.zikloak.service.TaldeaService;
 
 import jakarta.transaction.Transactional;
@@ -55,6 +54,10 @@ public class ModuloaService {
     public Page<Moduloa> getByTaldeaId(Long taldeaId, Pageable pageable) {
         return moduloaRepository.findByTaldeaId(taldeaId, pageable);
     }
+
+    public Page<Moduloa> bilatuFiltroekin(Long taldeaId, Long zikloaId, Boolean hautazkoa, Pageable pageable) {
+        return moduloaRepository.bilatuFiltroekin(taldeaId, zikloaId, hautazkoa, pageable);
+    }
     
     @Transactional
     public Moduloa saveFromDto(ModuloaFormDto dto) {
@@ -76,6 +79,7 @@ public class ModuloaService {
         target.setEeiKodea(dto.getEeiKodea().trim());
         target.setOrduak(dto.getOrduak());
         target.setDualOrduak(dto.getDualOrduak());
+        target.setHautazkoa(dto.isHautazkoa());
         target.setMaila(maila);
         target.setTaldea(taldea);
 

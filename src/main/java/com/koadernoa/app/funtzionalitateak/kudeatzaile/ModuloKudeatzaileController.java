@@ -38,6 +38,7 @@ import com.koadernoa.app.objektuak.modulua.repository.IkasleaRepository;
 import com.koadernoa.app.objektuak.modulua.repository.MatrikulaRepository;
 import com.koadernoa.app.objektuak.modulua.service.ModuloaService;
 import com.koadernoa.app.objektuak.zikloak.service.TaldeaService;
+import com.koadernoa.app.objektuak.zikloak.service.ZikloaService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -49,6 +50,7 @@ public class ModuloKudeatzaileController {
 
     private final ModuloaService moduloaService;
     private final TaldeaService taldeaService;
+    private final ZikloaService zikloaService;
     private final MailaRepository mailaRepository;
     private final IkasturteaRepository ikasturteaRepository;
     private final IkasleaRepository ikasleaRepository;
@@ -64,6 +66,8 @@ public class ModuloKudeatzaileController {
 
     @GetMapping({"", "/"})
     public String moduloZerrenda(@RequestParam(name = "taldeaId", required = false) Long taldeaId,
+                                 @RequestParam(name = "zikloaId", required = false) Long zikloaId,
+                                 @RequestParam(name = "hautazkoa", required = false) Boolean hautazkoa,
                                  @RequestParam(name = "page", defaultValue = "0") int page,
                                  @RequestParam(name = "size", defaultValue = "20") int size,
                                  Model model) {
@@ -71,17 +75,17 @@ public class ModuloKudeatzaileController {
         int orria = Math.max(0, page);
         PageRequest pageable = PageRequest.of(orria, tamaina, Sort.by("izena").ascending());
 
-        Page<Moduloa> moduluak;
+        Page<Moduloa> moduluak = moduloaService.bilatuFiltroekin(taldeaId, zikloaId, hautazkoa, pageable);
         if (taldeaId != null) {
-            moduluak = moduloaService.getByTaldeaId(taldeaId, pageable);
             model.addAttribute("ikasleak",
                 ikasleaRepository.findByTaldea_IdOrderByAbizena1AscAbizena2AscIzenaAsc(taldeaId));
-        } else {
-            moduluak = moduloaService.getAll(pageable);
         }
         model.addAttribute("taldeaId", taldeaId);
+        model.addAttribute("zikloaId", zikloaId);
+        model.addAttribute("hautazkoa", hautazkoa);
         model.addAttribute("moduluak", moduluak.getContent());
         model.addAttribute("taldeak", taldeaService.getAll());
+        model.addAttribute("zikloak", zikloaService.getAll());
         model.addAttribute("moduloKlikagarriak", koadernoaRepository.findModuloIdsInAktiboIkasturtea());
         model.addAttribute("currentPage", moduluak.getNumber());
         model.addAttribute("totalPages", moduluak.getTotalPages());
@@ -127,6 +131,7 @@ public class ModuloKudeatzaileController {
         form.setEeiKodea(m.getEeiKodea());
         form.setOrduak(m.getOrduak());
         form.setDualOrduak(m.getDualOrduak() != null ? m.getDualOrduak() : 0);
+        form.setHautazkoa(m.isHautazkoa());
         form.setMailaId(m.getMaila() != null ? m.getMaila().getId() : null);
         form.setTaldeaId(m.getTaldea() != null ? m.getTaldea().getId() : null);
 
