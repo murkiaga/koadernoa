@@ -58,6 +58,10 @@ public class KoadernoaControllerKudeatzaile {
         List<Taldea> taldeak;
         if (familiaId != null) {
             taldeak = taldeaRepository.findByZikloa_Familia_IdOrderByIzenaAsc(familiaId);
+            Long selectedTaldeaId = taldeaId;
+            if (selectedTaldeaId != null && taldeak.stream().noneMatch(t -> selectedTaldeaId.equals(t.getId()))) {
+                taldeaId = null;
+            }
         } else {
             taldeak = taldeaRepository.findAllByOrderByIzenaAsc();
         }
