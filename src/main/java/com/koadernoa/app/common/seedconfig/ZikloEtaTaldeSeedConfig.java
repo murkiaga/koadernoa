@@ -70,10 +70,12 @@ public class ZikloEtaTaldeSeedConfig {
             // 4) TALDEAK
 
             // MIKROINFORMATIKA-SISTEMETAKO ETA SAREETAKO TEKNIKARIA
+            /*
             ensureTaldea(taldeaRepo, "1SMA", zikloSmr);
             ensureTaldea(taldeaRepo, "1SMD", zikloSmr);
             ensureTaldea(taldeaRepo, "2SMA", zikloSmr);
             ensureTaldea(taldeaRepo, "2SMD", zikloSmr);
+            */
 
             // PLATAFORMA ANITZEKO APLIKAZIOAK...
             // Hemen ez dakigu ze talde-kode erabili nahi dituzun zehazki;
@@ -83,12 +85,16 @@ public class ZikloEtaTaldeSeedConfig {
             // ensureTaldea(taldeaRepo, "2DAM", zikloDam);
 
             // WEB APLIKAZIOEN GARAPENA
+            /*
             ensureTaldea(taldeaRepo, "1AWA", zikloDaw);
             ensureTaldea(taldeaRepo, "1AWD", zikloDaw);
             ensureTaldea(taldeaRepo, "2AW3", zikloDaw);
+            */
             
             // MULTI
-            ensureTaldea(taldeaRepo, "2AM3", zikloDam);
+            /*
+             * ensureTaldea(taldeaRepo, "2AM3", zikloDam);
+            */
         };
     }
 
