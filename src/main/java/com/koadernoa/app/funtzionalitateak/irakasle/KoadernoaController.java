@@ -328,6 +328,9 @@ public class KoadernoaController {
 
 	    // 5) Nire burua zerrendatik kendu eta gorde
 	    k.getIrakasleak().removeIf(ir -> ir.getId().equals(ni.getId()));
+        if (k.getJabea() != null && k.getJabea().getId().equals(ni.getId())) {
+            k.setJabea(null);
+        }
 	    koadernoaRepository.save(k); 
 
 	    // 6) Nire beste koadernoak bilatu
@@ -363,7 +366,8 @@ public class KoadernoaController {
 
 	    boolean sarbidea = koadernoaService.irakasleakBadaukaSarbidea(ni, k);
 	    boolean adminEdoKudeatzaile = ni.getRola() == Rola.ADMIN || ni.getRola() == Rola.KUDEATZAILEA;
-	    if (!sarbidea || !adminEdoKudeatzaile) {
+        boolean jabeaDa = k.getJabea() != null && ni.getId() != null && ni.getId().equals(k.getJabea().getId());
+	    if (!adminEdoKudeatzaile && !(sarbidea && jabeaDa)) {
 	        ra.addFlashAttribute("error", "Ez duzu baimenik irakasleak kentzeko.");
 	        return "redirect:/irakasle/koadernoa/" + id;
 	    }
@@ -379,6 +383,9 @@ public class KoadernoaController {
 	    }
 
 	    k.getIrakasleak().removeIf(ir -> ir.getId().equals(irakasleId));
+        if (k.getJabea() != null && k.getJabea().getId().equals(irakasleId)) {
+            k.setJabea(null);
+        }
 	    koadernoaRepository.save(k);
 	    ra.addFlashAttribute("success", "Irakaslea koadernotik kendu da.");
 	    return "redirect:/irakasle/koadernoa/" + id;

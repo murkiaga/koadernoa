@@ -7,9 +7,11 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
 import com.koadernoa.app.objektuak.egutegia.service.IkasturteaService;
@@ -134,6 +136,27 @@ public class KoadernoaControllerKudeatzaile {
         model.addAttribute("irakasleak", irakasleaRepository.findAll());
 
         return "kudeatzaile/koadernoak/index";
+    }
+
+
+    @PostMapping("/{id}/jabea")
+    public String aldatuJabea(@PathVariable Long id,
+                              @RequestParam(name = "jabeaId", required = false) Long jabeaId,
+                              @RequestParam(required = false) Long familiaId,
+                              @RequestParam(required = false) Long taldeaId,
+                              @RequestParam(required = false) Long irakasleId,
+                              RedirectAttributes ra) {
+        try {
+            koadernoaService.aldatuJabea(id, jabeaId);
+            ra.addFlashAttribute("success", "Koadernoaren jabea eguneratu da.");
+        } catch (IllegalArgumentException ex) {
+            ra.addFlashAttribute("error", ex.getMessage());
+        }
+
+        ra.addAttribute("familiaId", familiaId);
+        ra.addAttribute("taldeaId", taldeaId);
+        ra.addAttribute("irakasleId", irakasleId);
+        return "redirect:/kudeatzaile/koadernoak";
     }
 
     /**
