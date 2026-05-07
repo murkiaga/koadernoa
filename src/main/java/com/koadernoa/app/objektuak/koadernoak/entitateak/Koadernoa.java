@@ -34,6 +34,9 @@ public class Koadernoa {
 
     @ManyToMany
     private List<Irakaslea> irakasleak;
+
+    @ManyToOne
+    private Irakaslea jabea;
     
     @OneToMany(mappedBy = "koadernoa", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<KoadernoOrdutegiBlokea> ordutegiak;

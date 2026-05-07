@@ -70,6 +70,9 @@
       <button type="submit">Filtratu</button>    </div>
   </form>
 
+  <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+  <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
   <!-- Koaderno zerrenda hutsa -->
   <div th:if="${#lists.isEmpty(koadernoak)}" class="empty-msg">
     Ez da aurkitu koadernorik hautatutako filtroekin.
@@ -86,7 +89,7 @@
         <th>Mod. kodea</th>
         <th>Modulua</th>
         <th>Ikasturtea</th>
-        <th>Irakasleak</th>
+        <th>Jabea</th>
         <th style="text-align:right;">Ekintzak</th>
       </tr>
       </thead>
@@ -142,14 +145,26 @@
           2025-2026
         </td>
 
-        <!-- Irakasleen zerrenda laburtua -->
-        <td class="col-irakasleak"
-            th:text="${
-              #lists.isEmpty(k.irakasleak)
-                ? '-'
-                : #strings.listJoin(k.irakasleak.?[true].![izena], ', ')
-            }">
-          Irakaslea1, Irakaslea2
+        <!-- Jabea: koaderno honetako irakasleen artean hautatu edo jaberik gabe utzi -->
+        <td class="col-jabea">
+          <form th:action="@{|/kudeatzaile/koadernoak/${k.id}/jabea|}" method="post">
+            <input type="hidden"
+                   th:if="${_csrf != null}"
+                   th:name="${_csrf.parameterName}"
+                   th:value="${_csrf.token}"/>
+            <input type="hidden" name="familiaId" th:value="${familiaId}"/>
+            <input type="hidden" name="taldeaId" th:value="${taldeaId}"/>
+            <input type="hidden" name="irakasleId" th:value="${irakasleId}"/>
+            <select name="jabeaId" onchange="this.form.submit()" th:disabled="${#lists.isEmpty(k.irakasleak)}">
+              <option value="" th:selected="${k.jabea == null}">(Jaberik gabe)</option>
+              <option th:each="ir : ${k.irakasleak}"
+                      th:value="${ir.id}"
+                      th:text="${ir.izena}"
+                      th:selected="${k.jabea != null and k.jabea.id == ir.id}">
+                Irakaslea
+              </option>
+            </select>
+          </form>
         </td>
 
         <!-- Ekintzak -->

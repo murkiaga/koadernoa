@@ -100,11 +100,34 @@ public class KoadernoaService {
     }
     
     public List<Koadernoa> findAll() {
-        return koadernoaRepository.findAll();
+        return koadernoaRepository.findAllWithRelations();
     }
 
     public List<Koadernoa> findByIrakaslea(Irakaslea irakaslea) {
         return koadernoaRepository.findByIrakasleakContaining(irakaslea);
+    }
+
+    @Transactional
+    public void aldatuJabea(Long koadernoId, Long jabeaId) {
+        Koadernoa koadernoa = koadernoaRepository.findById(koadernoId)
+                .orElseThrow(() -> new IllegalArgumentException("Koadernoa ez da aurkitu."));
+
+        if (jabeaId == null) {
+            koadernoa.setJabea(null);
+            koadernoaRepository.save(koadernoa);
+            return;
+        }
+
+        Irakaslea jabea = irakasleaRepository.findById(jabeaId)
+                .orElseThrow(() -> new IllegalArgumentException("Irakaslea ez da aurkitu."));
+        boolean koadernokoIrakaslea = koadernoa.getIrakasleak() != null
+                && koadernoa.getIrakasleak().stream().anyMatch(ir -> jabeaId.equals(ir.getId()));
+        if (!koadernokoIrakaslea) {
+            throw new IllegalArgumentException("Jabea koadernoko irakasleen artean egon behar da.");
+        }
+
+        koadernoa.setJabea(jabea);
+        koadernoaRepository.save(koadernoa);
     }
     
     public List<Moduloa> lortuErabilgarriDaudenModuluak(Irakaslea irakaslea, Long familiaId) {
@@ -154,14 +177,17 @@ public class KoadernoaService {
         boolean bikoiztuakBaimendu = aplikazioAukeraService.getBool(
                 AplikazioAukeraService.KOADERNO_BIKOIZTUAK_BAIMENDU, true);
         if (!bikoiztuakBaimendu && koadernoaRepository.existsByModuloa_IdAndEgutegia_Id(moduloa.getId(), egutegia.getId())) {
-            String sortzailea = koadernoaRepository.findFirstByModuloa_IdAndEgutegia_IdOrderByIdAsc(moduloa.getId(), egutegia.getId())
-                    .flatMap(k0 -> k0.getIrakasleak() == null ? java.util.Optional.empty() : k0.getIrakasleak().stream().findFirst())
+            String jabea = koadernoaRepository.findFirstByModuloa_IdAndEgutegia_IdOrderByIdAsc(moduloa.getId(), egutegia.getId())
+                    .map(k0 -> {
+                        if (k0.getJabea() != null) return k0.getJabea();
+                        return k0.getIrakasleak() == null ? null : k0.getIrakasleak().stream().findFirst().orElse(null);
+                    })
                     .map(i -> i.getIzena() != null && !i.getIzena().isBlank() ? i.getIzena() : i.getEmaila())
                     .orElse("ezezaguna");
             String ikasturtea = egutegia.getIkasturtea() != null ? egutegia.getIkasturtea().getIzena() : "ikasturte honetan";
             throw new IllegalArgumentException(
                     ikasturtea + "rako " + moduloa.getIzena() + " irakasgairako badago koadernoa sortuta. "
-                            + sortzailea + " irakasleak sortuta.");
+                            + jabea + " irakasleak sortuta.");
         }
 
     	    List<Irakaslea> irakasleak = new ArrayList<>();
@@ -178,6 +204,7 @@ public class KoadernoaService {
     	    k.setModuloa(moduloa);
     	    k.setEgutegia(egutegia);
     	    k.setIrakasleak(irakasleak);
+    	    k.setJabea(irakaslea);
     	    k.setJarduerak(List.of());
     	    k.setNotaFitxategiak(List.of());
     	    k.setEstatistikak(new ArrayList<>());

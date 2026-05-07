@@ -33,6 +33,11 @@
                 th:if="${ir.id == irakaslea.id}">
             zu
           </span>
+
+          <span class="tag-self"
+                th:if="${koadernoa.jabea != null and koadernoa.jabea.id == ir.id}">
+            jabea
+          </span>
         </div>
 
         <!-- Eskuina: X botoia (norbera denean BAKARRIK,
@@ -56,7 +61,7 @@
           </button>
         </form>
 
-        <form th:if="${ir.id != irakaslea.id and #lists.size(koadernoa.irakasleak) > 1 and (irakaslea.rola.name() == 'ADMIN' or irakaslea.rola.name() == 'KUDEATZAILEA')}"
+        <form th:if="${ir.id != irakaslea.id and #lists.size(koadernoa.irakasleak) > 1 and (irakaslea.rola.name() == 'ADMIN' or irakaslea.rola.name() == 'KUDEATZAILEA' or (koadernoa.jabea != null and koadernoa.jabea.id == irakaslea.id))}"
               th:action="@{|/irakasle/koadernoa/${koadernoa.id}/irakasle/${ir.id}/kendu|}"
               method="post"
               class="teacher-leave-form"

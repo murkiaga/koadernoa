@@ -99,6 +99,7 @@ public interface KoadernoaRepository extends JpaRepository<Koadernoa, Long>{
     		  left join fetch k.egutegia e
     		  left join fetch e.ikasturtea i
     		  left join fetch k.irakasleak ir
+              left join fetch k.jabea j
     		  order by f.izena, t.izena, m.izena
     		  """)
     		List<Koadernoa> findAllWithRelations();
