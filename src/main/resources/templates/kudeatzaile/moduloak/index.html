@@ -100,7 +100,7 @@
 			            <td th:text="${moduloa.taldea.izena}">2AM3</td>
 			            <td class="actions-cell">
 			                <a th:href="@{/kudeatzaile/moduloa/editatu/{id}(id=${moduloa.id})}" class="btn btn-secondary">Editatu</a>
-			                <a th:href="@{/kudeatzaile/moduloa/ezabatu/{id}(id=${moduloa.id})}" class="btn btn-danger">Ezabatu</a>
+			                <a th:href="@{/kudeatzaile/moduloa/ezabatu/{id}(id=${moduloa.id},taldeaId=${taldeaId},zikloaId=${zikloaId},hautazkoa=${hautazkoa},page=${currentPage},size=${pageSize})}" class="btn btn-danger">Ezabatu</a>
 			            </td>
 			        </tr>
 			    </tbody>

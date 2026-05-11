@@ -273,6 +273,20 @@ public class KonfigurazioaController {
             return "redirect:/kudeatzaile/konfigurazioa#mailak";
         }
 
+        String mailaKodea = request.getParameter("mailaKodea");
+        if (mailaKodea != null) {
+            String kodeaTrim = mailaKodea.trim();
+            if (kodeaTrim.isBlank()) {
+                redirectAttributes.addFlashAttribute("error", "Mailaren kodea derrigorrezkoa da.");
+                return "redirect:/kudeatzaile/konfigurazioa/mailak/" + mailaId + "/ebaluazioak";
+            }
+            Maila existing = mailaRepository.findByKodea(kodeaTrim).orElse(null);
+            if (existing != null && !existing.getId().equals(mailaId)) {
+                redirectAttributes.addFlashAttribute("error", "Mailaren kodea errepikatuta dago: " + kodeaTrim);
+                return "redirect:/kudeatzaile/konfigurazioa/mailak/" + mailaId + "/ebaluazioak";
+            }
+            maila.setKodea(kodeaTrim);
+        }
         String mailaIzena = request.getParameter("mailaIzena");
         if (mailaIzena != null && !mailaIzena.trim().isBlank()) {
             maila.setIzena(mailaIzena.trim());
