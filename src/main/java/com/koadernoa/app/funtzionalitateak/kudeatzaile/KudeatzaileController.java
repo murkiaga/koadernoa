@@ -52,7 +52,7 @@ public class KudeatzaileController {
     /** Kudeatzaileko orri guztietan erabilgarri: ikasturte aktiboa */
     @ModelAttribute("ikasturteAktiboa")
     public com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea ikasturteAktiboa() {
-        return ikasturteaRepository.findByAktiboaTrue().orElse(null);
+        return ikasturteaRepository.findFirstByAktiboaTrueOrderByIdDesc().orElse(null);
     }
 
 	@GetMapping({"","/"})

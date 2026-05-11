@@ -10,7 +10,7 @@
     .talde-row{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;}
     .talde-badge{background:#eef2ff;color:#3730a3;padding:.25rem .6rem;border-radius:999px;font-weight:600;}
     .modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:center;justify-content:center;z-index:50;}
-    .talde-modal-card{background:#fff;width:min(680px,92vw);border-radius:.75rem;padding:1rem;box-shadow:0 24px 60px rgba(2,6,23,.25);}
+    .talde-modal-card,.matrikula-modal-card{background:#fff;width:min(680px,92vw);border-radius:.75rem;padding:1rem;box-shadow:0 24px 60px rgba(2,6,23,.25);}
     .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem;}
     .modal-close{border:none;background:transparent;font-size:1.3rem;cursor:pointer;}
     .autocomplete-list{max-height:280px;overflow:auto;border:1px solid #d1d5db;border-radius:.5rem;margin-top:.5rem;}
@@ -138,8 +138,11 @@
     </table>
   </div>
 
-  <a class="btn btn-secondary" th:if="${ikaslea.taldea != null}" th:href="@{/kudeatzaile/moduloa(taldeaId=${ikaslea.taldea.id})}">Itzuli</a>
-  <a class="btn btn-secondary" th:if="${ikaslea.taldea == null}" th:href="@{/kudeatzaile/moduloa}">Itzuli</a>
+  <div style="margin-top:1rem;display:flex;gap:.5rem;flex-wrap:wrap;">
+    <button type="button" class="btn btn-primary" id="openMatrikulaModal">Matrikula gehitu</button>
+    <a class="btn btn-secondary" th:if="${ikaslea.taldea != null}" th:href="@{/kudeatzaile/moduloa(taldeaId=${ikaslea.taldea.id})}">Itzuli</a>
+    <a class="btn btn-secondary" th:if="${ikaslea.taldea == null}" th:href="@{/kudeatzaile/moduloa}">Itzuli</a>
+  </div>
 </main>
 
 <div id="taldeModalBackdrop" class="modal-backdrop" aria-hidden="true">
@@ -166,6 +169,9 @@
     </form>
   </div>
 </div>
+
+
+<div th:replace="kudeatzaile/ikaslea/matrikula-gehitu-modal :: matrikulaGehituModal"></div>
 
 <script th:src="@{/js/kudeatzaile-nav.js}"></script>
 <script>
@@ -292,6 +298,68 @@
       closeModal();
     }
   });
+})();
+</script>
+
+<script th:inline="javascript">
+(() => {
+  const backdrop = document.getElementById('matrikulaModalBackdrop');
+  const openBtn = document.getElementById('openMatrikulaModal');
+  const closeBtn = document.getElementById('closeMatrikulaModal');
+  const cancelBtn = document.getElementById('cancelMatrikulaModal');
+  const taldeaSelect = document.getElementById('matrikulaTaldeaId');
+  const moduloSelect = document.getElementById('matrikulaModuloaId');
+  const info = document.getElementById('matrikulaInfo');
+  const confirmBtn = document.getElementById('confirmMatrikulaGehituBtn');
+  const ikasleaId = /*[[${ikaslea.id}]]*/ 0;
+  const ikasturteaId = /*[[${hautatutakoIkasturteaId}]]*/ null;
+
+  async function kargatuModuloak() {
+    const params = new URLSearchParams();
+    if (taldeaSelect.value) params.set('taldeaId', taldeaSelect.value);
+    if (ikasturteaId) params.set('ikasturteaId', ikasturteaId);
+    moduloSelect.innerHTML = '<option value="">Kargatzen...</option>';
+    confirmBtn.disabled = true;
+    info.textContent = 'Moduluak kargatzen...';
+    try {
+      const res = await fetch(`/kudeatzaile/ikaslea/${ikasleaId}/matrikulak/moduloak?${params.toString()}`, {
+        headers: { 'Accept': 'application/json' }
+      });
+      if (!res.ok) throw new Error('Ezin izan dira moduluak kargatu');
+      const items = await res.json();
+      moduloSelect.innerHTML = '<option value="">Aukeratu modulua</option>';
+      items.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.id;
+        opt.textContent = `${item.kodea ? item.kodea + ' - ' : ''}${item.izena}${item.matrikulatuta ? ' (dagoeneko matrikulatuta)' : ''}`;
+        opt.disabled = !!item.matrikulatuta;
+        moduloSelect.appendChild(opt);
+      });
+      const erabilgarriak = items.filter(item => !item.matrikulatuta).length;
+      info.textContent = erabilgarriak ? `${erabilgarriak} modulu erabilgarri.` : 'Ez dago modulu erabilgarririk hautatutako talde eta ikasturterako.';
+      confirmBtn.disabled = erabilgarriak === 0;
+    } catch (e) {
+      moduloSelect.innerHTML = '<option value="">Errorea kargatzean</option>';
+      info.textContent = 'Errorea moduluak kargatzean. Saiatu berriro.';
+      confirmBtn.disabled = true;
+    }
+  }
+
+  function openModal() {
+    backdrop.style.display = 'flex';
+    backdrop.setAttribute('aria-hidden', 'false');
+    kargatuModuloak();
+  }
+  function closeModal() {
+    backdrop.style.display = 'none';
+    backdrop.setAttribute('aria-hidden', 'true');
+  }
+
+  openBtn?.addEventListener('click', openModal);
+  closeBtn?.addEventListener('click', closeModal);
+  cancelBtn?.addEventListener('click', closeModal);
+  taldeaSelect?.addEventListener('change', kargatuModuloak);
+  backdrop?.addEventListener('click', (e) => { if (e.target === backdrop) closeModal(); });
 })();
 </script>
 </body>

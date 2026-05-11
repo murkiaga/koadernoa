@@ -55,6 +55,19 @@
 
 
       <label>
+        <span>Ikasturtea</span>
+        <select name="ikasturteaId">
+          <option value="" th:selected="${ikasturteaId == null}">(Ikasturte guztiak)</option>
+          <option th:each="ik : ${ikasturteak}"
+                  th:value="${ik.id}"
+                  th:text="${ik.izena}"
+                  th:selected="${ikasturteaId != null and ikasturteaId == ik.id}">
+            2025-2026
+          </option>
+        </select>
+      </label>
+
+      <label>
         <span>Irakaslea</span>
         <select name="irakasleId">
           <option value="" th:selected="${irakasleId == null}">(Irakasle guztiak)</option>
@@ -155,6 +168,7 @@
             <input type="hidden" name="familiaId" th:value="${familiaId}"/>
             <input type="hidden" name="taldeaId" th:value="${taldeaId}"/>
             <input type="hidden" name="irakasleId" th:value="${irakasleId}"/>
+            <input type="hidden" name="ikasturteaId" th:value="${ikasturteaId}"/>
             <select name="jabeaId" onchange="this.form.submit()" th:disabled="${#lists.isEmpty(k.irakasleak)}">
               <option value="" th:selected="${k.jabea == null}">(Jaberik gabe)</option>
               <option th:each="ir : ${k.irakasleak}"

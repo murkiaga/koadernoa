@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<body>
+<div th:fragment="matrikulaGehituModal" id="matrikulaModalBackdrop" class="modal-backdrop" aria-hidden="true">
+  <div class="matrikula-modal-card" role="dialog" aria-modal="true" aria-labelledby="matrikulaModalTitle">
+    <div class="modal-header">
+      <h3 id="matrikulaModalTitle" style="margin:0;">Matrikula gehitu</h3>
+      <button type="button" class="modal-close" id="closeMatrikulaModal" aria-label="Itxi">×</button>
+    </div>
+
+    <form th:action="@{/kudeatzaile/ikaslea/{id}/matrikulak/gehitu(id=${ikaslea.id})}" method="post" id="matrikulaGehituForm">
+      <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+      <input type="hidden" name="ikasturteaId" th:value="${hautatutakoIkasturteaId}">
+
+      <label for="matrikulaTaldeaId" style="display:block;font-weight:600;margin-top:.4rem;">Taldea</label>
+      <select id="matrikulaTaldeaId" style="width:100%;margin-top:.35rem;">
+        <option value="">(Talde guztiak)</option>
+        <option th:each="t : ${taldeak}"
+                th:value="${t.id}"
+                th:text="${t.izena}"
+                th:selected="${defaultTaldeaId != null and defaultTaldeaId == t.id}">
+          Taldea
+        </option>
+      </select>
+
+      <label for="matrikulaModuloaId" style="display:block;font-weight:600;margin-top:.8rem;">Modulua</label>
+      <select id="matrikulaModuloaId" name="moduloaId" required style="width:100%;margin-top:.35rem;">
+        <option value="">Kargatzen...</option>
+      </select>
+      <p id="matrikulaInfo" style="margin:.45rem 0;color:#64748b;font-size:.9rem;">Aukeratu talde bat moduluak ikusteko.</p>
+
+      <div style="margin-top:.9rem;display:flex;justify-content:flex-end;gap:.5rem;">
+        <button type="button" class="btn btn-secondary" id="cancelMatrikulaModal">Ezeztatu</button>
+        <button type="submit" class="btn btn-primary" id="confirmMatrikulaGehituBtn">Onartu</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+</body>
+</html>

@@ -9,6 +9,7 @@ import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
 
 public interface IkasturteaRepository extends JpaRepository<Ikasturtea, Long>{
 
-	Optional<Ikasturtea> findByAktiboaTrue();
+	Optional<Ikasturtea> findFirstByAktiboaTrueOrderByIdDesc();
+	List<Ikasturtea> findAllByAktiboaTrue();
 	List<Ikasturtea> findAllByOrderByIzenaDesc();
 }
