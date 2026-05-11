@@ -95,9 +95,17 @@
         .gaur-zenbakia{
             display:inline-flex; align-items:center; justify-content:center;
             width:1.7rem; height:1.7rem; border-radius:999px;
-            background:#1a73e8; color:#fff; font-weight:700;
+            background:#1a73e8; color:#fff !important; font-weight:700;
         }
-        .week-jarduera-item{ white-space:normal; }
+        .taula-egutegia td .egun-zenbakia.gaur-zenbakia { color:#fff !important; }
+        .week-jarduera-item{
+            white-space:normal;
+            border:2px solid #374151;
+            background:#fff;
+            box-shadow:0 2px 5px rgba(17,24,39,.16);
+            margin-bottom:2px;
+        }
+        .week-jarduera-item + .week-jarduera-item{ margin-top:4px; }
         .week-desc{ white-space: pre-line; }
         .taula-egutegia.week-mode td{
             height: calc(100vh - 260px);

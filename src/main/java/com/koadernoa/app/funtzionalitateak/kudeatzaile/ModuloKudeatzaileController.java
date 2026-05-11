@@ -12,6 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -311,9 +312,31 @@ public class ModuloKudeatzaileController {
     }
 
     @GetMapping("/ezabatu/{id}")
-    public String moduloaEzabatu(@PathVariable("id") Long id) {
+    public String moduloaEzabatu(@PathVariable("id") Long id,
+                                 @RequestParam(name = "taldeaId", required = false) Long taldeaId,
+                                 @RequestParam(name = "zikloaId", required = false) Long zikloaId,
+                                 @RequestParam(name = "hautazkoa", required = false) Boolean hautazkoa,
+                                 @RequestParam(name = "page", required = false) Integer page,
+                                 @RequestParam(name = "size", required = false) Integer size) {
         moduloaService.delete(id);
-        return "redirect:/kudeatzaile/moduloa";
+
+        UriComponentsBuilder redirect = UriComponentsBuilder.fromPath("/kudeatzaile/moduloa");
+        if (taldeaId != null) {
+            redirect.queryParam("taldeaId", taldeaId);
+        }
+        if (zikloaId != null) {
+            redirect.queryParam("zikloaId", zikloaId);
+        }
+        if (hautazkoa != null) {
+            redirect.queryParam("hautazkoa", hautazkoa);
+        }
+        if (page != null) {
+            redirect.queryParam("page", page);
+        }
+        if (size != null) {
+            redirect.queryParam("size", size);
+        }
+        return "redirect:" + redirect.toUriString();
     }
 
     private Irakaslea unekoEragilea() {
