@@ -35,6 +35,8 @@ import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
 import com.koadernoa.app.objektuak.logak.entitateak.LogMota;
 import com.koadernoa.app.objektuak.logak.service.LogService;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
+import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.mezuak.entitateak.Mezua;
 import com.koadernoa.app.objektuak.mezuak.repository.MezuaRepository;
 import com.koadernoa.app.objektuak.modulua.entitateak.Ikaslea;
@@ -63,6 +65,7 @@ public class IkasleaKudeatzaileController {
     private final IrakasleaRepository irakasleaRepository;
     private final ZikloaRepository zikloaRepository;
     private final TaldeaRepository taldeaRepository;
+    private final KoadernoaRepository koadernoaRepository;
     private final LogService logService;
 
     @GetMapping("/kudeatzaile/ikasleak")
@@ -114,11 +117,16 @@ public class IkasleaKudeatzaileController {
                               @RequestParam(name = "ikasturteaId", required = false) Long ikasturteaId,
                               Model model) {
         Ikaslea ikaslea = ikasleaRepository.findById(id).orElseThrow();
-        List<Ikasturtea> ikasturteak = matrikulaRepository.findIkasturteakByIkaslea(id);
+        List<Ikasturtea> ikasturteak = new java.util.ArrayList<>(matrikulaRepository.findIkasturteakByIkaslea(id));
+        ikasturteaRepository.findFirstByAktiboaTrueOrderByIdDesc().ifPresent(aktiboa -> {
+            if (ikasturteak.stream().noneMatch(ik -> ik.getId().equals(aktiboa.getId()))) {
+                ikasturteak.add(0, aktiboa);
+            }
+        });
 
         Long hautatutakoIkasturteaId = ikasturteaId;
         if (hautatutakoIkasturteaId == null) {
-            hautatutakoIkasturteaId = ikasturteaRepository.findByAktiboaTrue()
+            hautatutakoIkasturteaId = ikasturteaRepository.findFirstByAktiboaTrueOrderByIdDesc()
                     .map(Ikasturtea::getId)
                     .orElseGet(() -> ikasturteak.isEmpty() ? null : ikasturteak.get(0).getId());
         }
@@ -132,6 +140,8 @@ public class IkasleaKudeatzaileController {
         model.addAttribute("hautatutakoIkasturteaId", hautatutakoIkasturteaId);
         model.addAttribute("matrikulak", matrikulak);
         model.addAttribute("matrikulaEgoerak", MatrikulaEgoera.values());
+        model.addAttribute("taldeak", taldeaRepository.findAllByOrderByIzenaAsc());
+        model.addAttribute("defaultTaldeaId", ikaslea.getTaldea() != null ? ikaslea.getTaldea().getId() : null);
         model.addAttribute("uko1fMap", uko1fMap);
         model.addAttribute("uko2fMap", uko2fMap);
 
@@ -188,8 +198,70 @@ public class IkasleaKudeatzaileController {
         }
 
         matrikulaRepository.delete(opt.get());
+        garbituTaldeaAktibokoMatrikularikEzBadu(id);
         redirectAttributes.addFlashAttribute("successMessage", "Matrikula ezabatu da (lotutako notak/asistentziak barne).");
         return redirectIkasleFitxara(id, ikasturteaId);
+    }
+
+    @PostMapping("/kudeatzaile/ikaslea/{id}/matrikulak/gehitu")
+    public String gehituMatrikula(@PathVariable Long id,
+                                  @RequestParam("moduloaId") Long moduloaId,
+                                  @RequestParam(name = "ikasturteaId", required = false) Long ikasturteaId,
+                                  RedirectAttributes redirectAttributes) {
+        Long ikasturteEfektiboaId = ikasturteaId != null
+                ? ikasturteaId
+                : ikasturteaRepository.findFirstByAktiboaTrueOrderByIdDesc().map(Ikasturtea::getId).orElse(null);
+        if (ikasturteEfektiboaId == null) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Ez dago ikasturterik hautatuta.");
+            return redirectIkasleFitxara(id, ikasturteaId);
+        }
+
+        Koadernoa koadernoa = koadernoaRepository.findByModuloaIdAndIkasturteaId(moduloaId, ikasturteEfektiboaId).stream()
+                .findFirst()
+                .orElse(null);
+        if (koadernoa == null) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Ez dago koadernorik modulu horretarako hautatutako ikasturtean.");
+            return redirectIkasleFitxara(id, ikasturteEfektiboaId);
+        }
+        if (matrikulaRepository.existsByIkasleaIdAndKoadernoaId(id, koadernoa.getId())) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Ikaslea dagoeneko matrikulatuta dago modulu horretan.");
+            return redirectIkasleFitxara(id, ikasturteEfektiboaId);
+        }
+
+        Ikaslea ikaslea = ikasleaRepository.findById(id).orElseThrow();
+        Matrikula matrikula = new Matrikula();
+        matrikula.setIkaslea(ikaslea);
+        matrikula.setKoadernoa(koadernoa);
+        matrikula.setEgoera(MatrikulaEgoera.MATRIKULATUA);
+        matrikulaRepository.save(matrikula);
+
+        if (ikaslea.getTaldea() == null && koadernoa.getModuloa() != null) {
+            ikaslea.setTaldea(koadernoa.getModuloa().getTaldea());
+            ikasleaRepository.save(ikaslea);
+        }
+
+        redirectAttributes.addFlashAttribute("successMessage", "Matrikula gehitu da.");
+        return redirectIkasleFitxara(id, ikasturteEfektiboaId);
+    }
+
+    @GetMapping("/kudeatzaile/ikaslea/{id}/matrikulak/moduloak")
+    @ResponseBody
+    public List<Map<String, Object>> matrikulaModuloak(@PathVariable Long id,
+                                                        @RequestParam(name = "taldeaId", required = false) Long taldeaId,
+                                                        @RequestParam(name = "ikasturteaId", required = false) Long ikasturteaId) {
+        Long ikasturteEfektiboaId = ikasturteaId != null
+                ? ikasturteaId
+                : ikasturteaRepository.findFirstByAktiboaTrueOrderByIdDesc().map(Ikasturtea::getId).orElse(null);
+        return koadernoaRepository.findByTaldeaAndIkasturteaWithModuloa(taldeaId, ikasturteEfektiboaId).stream()
+                .filter(k -> k.getModuloa() != null)
+                .map(k -> Map.<String, Object>of(
+                        "id", k.getModuloa().getId(),
+                        "izena", k.getModuloa().getIzena() != null ? k.getModuloa().getIzena() : "-",
+                        "kodea", k.getModuloa().getKodea() != null ? k.getModuloa().getKodea() : "",
+                        "koadernoaId", k.getId(),
+                        "matrikulatuta", matrikulaRepository.existsByIkasleaIdAndKoadernoaId(id, k.getId())
+                ))
+                .toList();
     }
 
     @PostMapping("/kudeatzaile/ikaslea/{id}/matrikulak/{matrikulaId}/uko-1f")
@@ -311,6 +383,19 @@ public class IkasleaKudeatzaileController {
                 })
                 .or(() -> Optional.ofNullable(fallback))
                 .orElseThrow(() -> new IllegalStateException("Ez da aurkitu mezu-sistemarako bidaltzailerik."));
+    }
+
+    private void garbituTaldeaAktibokoMatrikularikEzBadu(Long ikasleaId) {
+        Long aktiboaId = ikasturteaRepository.findFirstByAktiboaTrueOrderByIdDesc().map(Ikasturtea::getId).orElse(null);
+        if (aktiboaId == null || matrikulaRepository.countByIkasleaAndIkasturtea(ikasleaId, aktiboaId) > 0) {
+            return;
+        }
+        ikasleaRepository.findById(ikasleaId).ifPresent(ikaslea -> {
+            if (ikaslea.getTaldea() != null) {
+                ikaslea.setTaldea(null);
+                ikasleaRepository.save(ikaslea);
+            }
+        });
     }
 
     private String redirectIkasleFitxara(Long id, Long ikasturteaId) {

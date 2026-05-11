@@ -19,7 +19,7 @@ public class IkasturteaService {
 	private final IkasturteaRepository ikasturteaRepository;
 	
 	public Ikasturtea getIkasturteAktiboa() {
-	    return ikasturteaRepository.findByAktiboaTrue()
+	    return ikasturteaRepository.findFirstByAktiboaTrueOrderByIdDesc()
 	        .orElseThrow(() -> new IllegalStateException("Ez dago ikasturte aktiborik"));
 	}
 
@@ -33,7 +33,7 @@ public class IkasturteaService {
     }
 
     public Optional<Ikasturtea> getAktiboa() {
-        return ikasturteaRepository.findByAktiboaTrue().stream().findFirst();
+        return ikasturteaRepository.findFirstByAktiboaTrueOrderByIdDesc();
     }
     
     public Ikasturtea getById(Long id) {
@@ -48,7 +48,16 @@ public class IkasturteaService {
         return ikasturteaRepository.findAllByOrderByIzenaDesc();
     }
     
+    @Transactional
     public Ikasturtea save(Ikasturtea ikasturtea) {
+        if (ikasturtea.isAktiboa()) {
+            ikasturteaRepository.findAllByAktiboaTrue().forEach(i -> {
+                if (ikasturtea.getId() == null || !i.getId().equals(ikasturtea.getId())) {
+                    i.setAktiboa(false);
+                    ikasturteaRepository.save(i);
+                }
+            });
+        }
         return ikasturteaRepository.save(ikasturtea);
     }
     

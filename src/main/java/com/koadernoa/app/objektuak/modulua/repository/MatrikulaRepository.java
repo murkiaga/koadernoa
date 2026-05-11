@@ -119,5 +119,13 @@ public interface MatrikulaRepository extends JpaRepository<Matrikula, Long> {
     """)
     List<com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea> findIkasturteakByIkaslea(@Param("ikasleaId") Long ikasleaId);
 
+    @Query("""
+        select count(m) from Matrikula m
+        where m.ikaslea.id = :ikasleaId
+          and m.koadernoa.egutegia.ikasturtea.id = :ikasturteaId
+    """)
+    long countByIkasleaAndIkasturtea(@Param("ikasleaId") Long ikasleaId,
+                                     @Param("ikasturteaId") Long ikasturteaId);
+
 	void deleteByKoadernoa_Id(Long koadernoId);
 }

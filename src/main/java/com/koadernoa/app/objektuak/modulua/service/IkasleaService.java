@@ -112,7 +112,7 @@ public class IkasleaService {
             return new TaldeAldaketaEmaitza(false, aurrekoTaldeIzena, taldeaBerria.getIzena(), 0, 0);
         }
 
-        ikasturteaRepository.findByAktiboaTrue()
+        ikasturteaRepository.findFirstByAktiboaTrueOrderByIdDesc()
                 .orElseThrow(() -> new IllegalStateException("Ez dago ikasturte aktiborik."));
 
         List<Long> zaharrekoKoadernoak = unekoTaldeaId == null

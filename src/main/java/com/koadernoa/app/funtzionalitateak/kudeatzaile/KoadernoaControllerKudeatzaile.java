@@ -48,6 +48,7 @@ public class KoadernoaControllerKudeatzaile {
             @RequestParam(required = false) Long familiaId,
             @RequestParam(required = false) Long taldeaId,
             @RequestParam(required = false) Long irakasleId,
+            @RequestParam(required = false) Long ikasturteaId,
             Model model) {
 
         // 1) Familia eta talde zerrendak (filtro dropdown-entzat)
@@ -71,8 +72,22 @@ public class KoadernoaControllerKudeatzaile {
         final Long selectedTaldeaId = filtroTaldeaId;
         model.addAttribute("taldeak", taldeak);
 
-        // 2) Koaderno guztiak kargatu (service-ak inplementatu dezake simpleki repo.findAll() deituz)
+        // 2) Ikasturte filtroa: defektuz ikasturte aktiboa
+        List<Ikasturtea> ikasturteak = ikasturteaService.getAllOrderedDesc();
+        Long selectedIkasturteaId = ikasturteaId != null
+                ? ikasturteaId
+                : ikasturteaService.getAktiboa().map(Ikasturtea::getId).orElse(null);
+
+        // 3) Koaderno guztiak kargatu (service-ak inplementatu dezake simpleki repo.findAll() deituz)
         List<Koadernoa> koadernoak = koadernoaService.findAll();
+
+        if (selectedIkasturteaId != null) {
+            koadernoak = koadernoak.stream()
+                    .filter(k -> k.getEgutegia() != null
+                            && k.getEgutegia().getIkasturtea() != null
+                            && selectedIkasturteaId.equals(k.getEgutegia().getIkasturtea().getId()))
+                    .collect(Collectors.toList());
+        }
 
         // 3) Filtratu familiaz (Taldea → Zikloa → Familia)
         if (familiaId != null) {
@@ -133,6 +148,8 @@ public class KoadernoaControllerKudeatzaile {
         model.addAttribute("familiaId", familiaId);
         model.addAttribute("taldeaId", selectedTaldeaId);
         model.addAttribute("irakasleId", irakasleId);
+        model.addAttribute("ikasturteaId", selectedIkasturteaId);
+        model.addAttribute("ikasturteak", ikasturteak);
         model.addAttribute("irakasleak", irakasleaRepository.findAll());
 
         return "kudeatzaile/koadernoak/index";
@@ -145,6 +162,7 @@ public class KoadernoaControllerKudeatzaile {
                               @RequestParam(required = false) Long familiaId,
                               @RequestParam(required = false) Long taldeaId,
                               @RequestParam(required = false) Long irakasleId,
+                              @RequestParam(required = false) Long ikasturteaId,
                               RedirectAttributes ra) {
         try {
             koadernoaService.aldatuJabea(id, jabeaId);
@@ -156,6 +174,7 @@ public class KoadernoaControllerKudeatzaile {
         ra.addAttribute("familiaId", familiaId);
         ra.addAttribute("taldeaId", taldeaId);
         ra.addAttribute("irakasleId", irakasleId);
+        ra.addAttribute("ikasturteaId", ikasturteaId);
         return "redirect:/kudeatzaile/koadernoak";
     }
 

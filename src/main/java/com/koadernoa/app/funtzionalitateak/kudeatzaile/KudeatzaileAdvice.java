@@ -18,7 +18,7 @@ public class KudeatzaileAdvice {
     /** Kudeatzaileko orri GUZTIETAN egongo da erabilgarri */
     @ModelAttribute("ikasturteAktiboa")
     public Ikasturtea ikasturteAktiboa() {
-        return ikasturteaRepository.findByAktiboaTrue().orElse(null);
+        return ikasturteaRepository.findFirstByAktiboaTrueOrderByIdDesc().orElse(null);
     }
 
     /** Navbar-eko aktibo klaseetarako */
