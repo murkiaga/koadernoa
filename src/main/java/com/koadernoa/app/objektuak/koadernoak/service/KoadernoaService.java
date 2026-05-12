@@ -45,10 +45,12 @@ import com.koadernoa.app.objektuak.koadernoak.repository.ProgramazioaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.SaioaRepository;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 import com.koadernoa.app.objektuak.modulua.repository.MatrikulaRepository;
+import com.koadernoa.app.objektuak.modulua.repository.MintegiModuluBaimenaRepository;
 import com.koadernoa.app.objektuak.logak.entitateak.LogMota;
 import com.koadernoa.app.objektuak.logak.service.LogService;
 import com.koadernoa.app.objektuak.modulua.repository.ModuloaRepository;
 import com.koadernoa.app.objektuak.konfigurazioa.service.AplikazioAukeraService;
+import com.koadernoa.app.objektuak.zikloak.entitateak.Zikloa;
 
 import lombok.RequiredArgsConstructor;
 
@@ -72,6 +74,7 @@ public class KoadernoaService {
     private final EbaluazioNotaRepository ebaluazioNotaRepository;
     private final KoadernoOrdutegiBlokeaRepository koadernoOrdutegiBlokeaRepository;
     private final AplikazioAukeraService aplikazioAukeraService;
+    private final MintegiModuluBaimenaRepository mintegiModuluBaimenaRepository;
     
     //Aste-orden estandarra (astelehen-ostiral)
     private static final List<Astegunak> ASTE_ORDENA = List.of(
@@ -132,16 +135,67 @@ public class KoadernoaService {
     
     public List<Moduloa> lortuErabilgarriDaudenModuluak(Irakaslea irakaslea, Long familiaId) {
         if (familiaId == null) return List.of();
-        return moduloaRepository.findAllByTaldea_Zikloa_Familia_Id(familiaId);
+        return lortuErabilgarriDaudenModuluak(irakaslea, familiaId, null, null);
     }
 
     public List<Moduloa> lortuErabilgarriDaudenModuluak(Irakaslea irakaslea, Long familiaId, Long zikloaId, Long mailaId) {
         if (familiaId == null && zikloaId == null && mailaId == null) return List.of();
+        if (!familiaIragazkiaErabilgarriaDa(irakaslea, familiaId)) return List.of();
+        if (mintegiarenFamiliaDa(irakaslea, familiaId) && mintegiakEeiBaimenakDitu(irakaslea)) {
+            return moduloaRepository.bilatuFamiliaEdoEeiKodeekin(familiaId, baimendutakoEeiKodeak(irakaslea), zikloaId, mailaId);
+        }
         return moduloaRepository.bilatuFiltroekin(familiaId, zikloaId, mailaId);
     }
 
     public List<Moduloa> lortuErabilgarriDaudenModuluak(Irakaslea irakaslea) {
         return moduloaRepository.findByTaldea_Zikloa_Familia(irakaslea.getMintegia());
+    }
+
+    public List<Zikloa> lortuErabilgarriDaudenZikloak(Irakaslea irakaslea, Long familiaId) {
+        if (familiaId == null || !familiaIragazkiaErabilgarriaDa(irakaslea, familiaId)) return List.of();
+        if (mintegiarenFamiliaDa(irakaslea, familiaId) && mintegiakEeiBaimenakDitu(irakaslea)) {
+            return moduloaRepository.findDistinctZikloakByFamiliaOrEeiKodeak(familiaId, baimendutakoEeiKodeak(irakaslea));
+        }
+        return moduloaRepository.findDistinctZikloakByFamiliaOrEeiKodeak(familiaId, eeiKodeHutsak());
+    }
+
+    public List<Maila> lortuErabilgarriDaudenMailak(Irakaslea irakaslea, Long familiaId, Long zikloaId) {
+        if (familiaId == null || !familiaIragazkiaErabilgarriaDa(irakaslea, familiaId)) return List.of();
+        if (mintegiarenFamiliaDa(irakaslea, familiaId) && mintegiakEeiBaimenakDitu(irakaslea)) {
+            return moduloaRepository.findDistinctMailakByFamiliaOrEeiKodeakAndZikloa(familiaId, baimendutakoEeiKodeak(irakaslea), zikloaId);
+        }
+        return moduloaRepository.findDistinctMailakByFamiliaAndZikloa(familiaId, zikloaId);
+    }
+
+    private boolean familiaIragazkiaErabilgarriaDa(Irakaslea irakaslea, Long familiaId) {
+        if (familiaId == null) return false;
+        return mintegiarenFamiliaDa(irakaslea, familiaId) || aplikazioAukeraService.getBool(
+                AplikazioAukeraService.KOADERNO_BESTE_MINTEGIA_BAIMENDU, false);
+    }
+
+    private boolean mintegiarenFamiliaDa(Irakaslea irakaslea, Long familiaId) {
+        return irakaslea != null && irakaslea.getMintegia() != null
+                && java.util.Objects.equals(irakaslea.getMintegia().getId(), familiaId);
+    }
+
+    private boolean mintegiakEeiBaimenakDitu(Irakaslea irakaslea) {
+        return irakaslea != null && irakaslea.getMintegia() != null
+                && !mintegiModuluBaimenaRepository.findByFamilia_IdAndAktiboTrue(irakaslea.getMintegia().getId()).isEmpty();
+    }
+
+    private List<String> baimendutakoEeiKodeak(Irakaslea irakaslea) {
+        if (irakaslea == null || irakaslea.getMintegia() == null) return eeiKodeHutsak();
+        List<String> kodeak = mintegiModuluBaimenaRepository.findByFamilia_IdAndAktiboTrue(irakaslea.getMintegia().getId())
+                .stream()
+                .map(b -> b.getEeiKodea() == null ? "" : b.getEeiKodea().trim().toUpperCase())
+                .filter(k -> !k.isBlank())
+                .distinct()
+                .toList();
+        return kodeak.isEmpty() ? eeiKodeHutsak() : kodeak;
+    }
+
+    private List<String> eeiKodeHutsak() {
+        return List.of("__EEI_KODERIK_EZ__");
     }
 
     public List<Egutegia> lortuEgutegiGuztiak() {
@@ -167,7 +221,12 @@ public class KoadernoaService {
 
         boolean besteMintegiaBaimendu = aplikazioAukeraService.getBool(
                 AplikazioAukeraService.KOADERNO_BESTE_MINTEGIA_BAIMENDU, false);
-        if (!besteMintegiaBaimendu && !moduloa.getTaldea().getZikloa().getFamilia().equals(irakaslea.getMintegia())) {
+        boolean bereMintegikoa = moduloa.getTaldea().getZikloa().getFamilia().equals(irakaslea.getMintegia());
+        boolean eeiKodezBaimendua = irakaslea.getMintegia() != null
+                && moduloa.getEeiKodea() != null
+                && mintegiModuluBaimenaRepository.existsByFamilia_IdAndEeiKodeaIgnoreCaseAndAktiboTrue(
+                        irakaslea.getMintegia().getId(), moduloa.getEeiKodea().trim());
+        if (!besteMintegiaBaimendu && !bereMintegikoa && !eeiKodezBaimendua) {
             throw new AccessDeniedException("Beste familiako modulua aukeratu da.");
         }
         if (!java.util.Objects.equals(moduloa.getMaila().getId(), egutegia.getMaila().getId())) {

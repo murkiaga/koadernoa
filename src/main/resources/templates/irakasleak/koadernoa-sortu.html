@@ -72,7 +72,7 @@
 
       <!-- 0) Familia -->
 		<label>Familia</label>
-		<select th:field="*{familiaId}" id="familiaSelect" onchange="changeFilters()">
+		<select th:field="*{familiaId}" id="familiaSelect" onchange="changeFilters('familia')">
 		  <option value="">(Dena)</option>
 		  <option th:each="f : ${familiaGuztiak}"
 		          th:value="${f.id}"
@@ -81,7 +81,7 @@
 		</select>
 
 		<label>Zikloa</label>
-		<select th:field="*{zikloaId}" id="zikloaSelect" onchange="changeFilters()">
+		<select th:field="*{zikloaId}" id="zikloaSelect" onchange="changeFilters('zikloa')">
 		  <option value="">(Dena)</option>
 		  <option th:each="z : ${zikloak}"
 		          th:value="${z.id}"
@@ -90,7 +90,7 @@
 		</select>
 
 		<label>Maila</label>
-		<select th:field="*{mailaId}" id="mailaSelect" onchange="changeFilters()">
+		<select th:field="*{mailaId}" id="mailaSelect" onchange="changeFilters('maila')">
 		  <option value="">(Dena)</option>
 		  <option th:each="m : ${mailak}"
 		          th:value="${m.id}"
@@ -170,7 +170,7 @@ function toggleCell(td){
   }
 }
 
-function changeFilters() {
+function changeFilters(changed) {
   const url = new URL(window.location.href);
   const familiaId = document.getElementById('familiaSelect').value;
   const zikloaId = document.getElementById('zikloaSelect').value;
@@ -179,11 +179,21 @@ function changeFilters() {
   if (familiaId) url.searchParams.set('familiaId', familiaId);
   else url.searchParams.delete('familiaId');
 
-  if (zikloaId) url.searchParams.set('zikloaId', zikloaId);
-  else url.searchParams.delete('zikloaId');
+  if (changed === 'familia') {
+    url.searchParams.delete('zikloaId');
+    url.searchParams.delete('mailaId');
+  } else {
+    if (zikloaId) url.searchParams.set('zikloaId', zikloaId);
+    else url.searchParams.delete('zikloaId');
 
-  if (mailaId) url.searchParams.set('mailaId', mailaId);
-  else url.searchParams.delete('mailaId');
+    if (changed === 'zikloa') {
+      url.searchParams.delete('mailaId');
+    } else if (mailaId) {
+      url.searchParams.set('mailaId', mailaId);
+    } else {
+      url.searchParams.delete('mailaId');
+    }
+  }
 
   window.location.href = url.toString();
 }

@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
-import com.koadernoa.app.objektuak.egutegia.repository.MailaRepository;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Rola;
 import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
@@ -25,9 +24,9 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoaSortuDto;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
 import com.koadernoa.app.objektuak.koadernoak.service.ProgramazioaService;
+import com.koadernoa.app.objektuak.konfigurazioa.service.AplikazioAukeraService;
 import com.koadernoa.app.objektuak.modulua.service.IkasleaService;
 import com.koadernoa.app.objektuak.zikloak.service.FamiliaService;
-import com.koadernoa.app.objektuak.zikloak.service.ZikloaService;
 
 import jakarta.transaction.Transactional;
 
@@ -52,8 +51,7 @@ public class KoadernoaController {
 	private final IkasleaService ikasleaService;
 	private final KoadernoaRepository koadernoaRepository;
 	private final FamiliaService familiaService;
-	private final ZikloaService zikloaService;
-	private final MailaRepository mailaRepository;
+	private final AplikazioAukeraService aplikazioAukeraService;
 	
 	private static final List<Astegunak> ASTE_ORDENA = List.of(
 	        Astegunak.ASTELEHENA,
@@ -133,7 +131,14 @@ public class KoadernoaController {
 		Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
 
 	    Long nireFamiliaId = (irakaslea.getMintegia() != null) ? irakaslea.getMintegia().getId() : null;
-	    Long aukeratua = (familiaId != null) ? familiaId : nireFamiliaId;
+	    boolean besteMintegiaBaimendu = aplikazioAukeraService.getBool(
+	            AplikazioAukeraService.KOADERNO_BESTE_MINTEGIA_BAIMENDU, false);
+	    boolean kanpokoFamiliaEskatuDa = familiaId != null && !java.util.Objects.equals(familiaId, nireFamiliaId);
+	    Long aukeratua = (besteMintegiaBaimendu && familiaId != null) ? familiaId : nireFamiliaId;
+	    if (!besteMintegiaBaimendu && kanpokoFamiliaEskatuDa) {
+	        zikloaId = null;
+	        mailaId = null;
+	    }
 
 	    KoadernoaSortuDto dto = new KoadernoaSortuDto();
 	    dto.setFamiliaId(aukeratua);
@@ -142,12 +147,14 @@ public class KoadernoaController {
 
 	    model.addAttribute("koadernoaDto", dto);
 
-	    // 1) Familia guztien zerrenda (aktiboak)
-	    model.addAttribute("familiaGuztiak", familiaService.lortuAktiboakOrdenatuta()); // zuk inplementatu
-	    model.addAttribute("zikloak", aukeratua != null ? zikloaService.getByFamiliaId(aukeratua) : List.of());
-	    model.addAttribute("mailak", mailaRepository.findAllByAktiboTrueOrderByOrdenaAscIzenaAsc());
+	    // 1) Familia aukerak: beste mintegietako koadernoak desgaituta badaude, irakaslearen familia soilik erakutsi
+	    model.addAttribute("familiaGuztiak", besteMintegiaBaimendu
+	            ? familiaService.lortuAktiboakOrdenatuta()
+	            : (irakaslea.getMintegia() != null ? List.of(irakaslea.getMintegia()) : List.of()));
+	    model.addAttribute("zikloak", koadernoaService.lortuErabilgarriDaudenZikloak(irakaslea, aukeratua));
+	    model.addAttribute("mailak", koadernoaService.lortuErabilgarriDaudenMailak(irakaslea, aukeratua, zikloaId));
 
-	    // 2) Moduluak familia horren arabera
+	    // 2) Moduluak familia, ziklo eta maila iragazkien arabera
 	    model.addAttribute("moduluak",
 	            koadernoaService.lortuErabilgarriDaudenModuluak(irakaslea, aukeratua, zikloaId, mailaId));
 

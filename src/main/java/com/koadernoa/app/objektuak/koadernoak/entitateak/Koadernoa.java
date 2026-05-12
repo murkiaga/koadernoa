@@ -61,6 +61,16 @@ public class Koadernoa {
             return "(koaderno osatu gabea)";
         return moduloa.getKodea() + " - " + egutegia.getIkasturtea().getIzena();
     }
+
+    @Transient
+    public String getIzenaTaldearekin() {
+        String izena = getIzena();
+        if (moduloa == null || moduloa.getTaldea() == null || moduloa.getTaldea().getIzena() == null
+                || moduloa.getTaldea().getIzena().isBlank()) {
+            return izena;
+        }
+        return izena + " (" + moduloa.getTaldea().getIzena() + ")";
+    }
     
     @Transient
     public String getIrakasleakLabur() {
