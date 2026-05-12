@@ -22,6 +22,8 @@ import com.koadernoa.app.objektuak.ebaluazioa.repository.EbaluazioNotaRepository
 import com.koadernoa.app.objektuak.ebaluazioa.repository.EzadostasunKonfigRepository;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
 import com.koadernoa.app.objektuak.egutegia.repository.MailaRepository;
+import com.koadernoa.app.objektuak.modulua.entitateak.MintegiModuluBaimena;
+import com.koadernoa.app.objektuak.modulua.repository.MintegiModuluBaimenaRepository;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Familia;
 import com.koadernoa.app.objektuak.zikloak.repository.FamiliaRepository;
 import com.koadernoa.app.objektuak.konfigurazioa.service.AplikazioAukeraService;
@@ -45,10 +47,16 @@ public class KonfigurazioaController {
     private final EbaluazioNotaRepository ebaluazioNotaRepository;
     private final EzadostasunKonfigRepository ezadostasunKonfigRepository;
     private final AplikazioAukeraService aplikazioAukeraService;
+    private final MintegiModuluBaimenaRepository mintegiModuluBaimenaRepository;
 
     // ---- GET: orria ----
     @GetMapping
     public String index(Model model) {
+        gehituKonfigurazioDatuak(model);
+        return "kudeatzaile/konfigurazioa/index";
+    }
+
+    private void gehituKonfigurazioDatuak(Model model) {
         // MAILAK
         List<Maila> mailak = mailaRepository.findAll(
             Sort.by(Sort.Order.asc("ordena"), Sort.Order.asc("izena"))
@@ -63,10 +71,13 @@ public class KonfigurazioaController {
 
         // EBALUAZIO EGOERAK
         List<EbaluazioEgoera> egoerak = ebaluazioEgoeraRepository.findAllByOrderByKodeaAsc();
-        
-        // EZADOSTASUN KONFIGURAZIOAK ====
+
+        // EZADOSTASUN KONFIGURAZIOAK
         List<EzadostasunKonfig> ezadKonfigList =
                 ezadostasunKonfigRepository.findAll(org.springframework.data.domain.Sort.by("kodea").ascending());
+
+        // MINTEGI-MODULU BAIMENAK
+        List<MintegiModuluBaimena> mintegiModuluBaimenak = mintegiModuluBaimenaRepository.findAllOrdenatuta();
 
         model.addAttribute("mailak", mailak);
         model.addAttribute("activeForm", mailaForm);
@@ -78,15 +89,16 @@ public class KonfigurazioaController {
 
         model.addAttribute("egoerak", egoerak);
         model.addAttribute("sortuEgoeraForm", new SortuEbaluazioEgoeraForm());
-        
+
         model.addAttribute("ezadostasunKonfigList", ezadKonfigList);
+
+        model.addAttribute("mintegiModuluBaimenak", mintegiModuluBaimenak);
+        model.addAttribute("sortuMintegiModuluBaimenaForm", new SortuMintegiModuluBaimenaForm());
 
         KoadernoKonfigForm koadernoKonfigForm = new KoadernoKonfigForm();
         koadernoKonfigForm.setBikoiztuakBaimendu(aplikazioAukeraService.getBool(AplikazioAukeraService.KOADERNO_BIKOIZTUAK_BAIMENDU, true));
         koadernoKonfigForm.setBesteMintegiaBaimendu(aplikazioAukeraService.getBool(AplikazioAukeraService.KOADERNO_BESTE_MINTEGIA_BAIMENDU, false));
         model.addAttribute("koadernoKonfigForm", koadernoKonfigForm);
-
-        return "kudeatzaile/konfigurazioa/index";
     }
 
     // ---- MAILAK: aktibo/desaktibo bulk ----
@@ -109,20 +121,8 @@ public class KonfigurazioaController {
             br.rejectValue("kodea", "kodea.blank", "Kodea beharrezkoa da");
         }
         if (br.hasErrors()) {
-            // berriz kargatu datuak
-            model.addAttribute("mailak", mailaRepository.findAll(
-                Sort.by(Sort.Order.asc("ordena"), Sort.Order.asc("izena"))
-            ));
-            model.addAttribute("activeForm", new ActiveMailakForm());
-
-            model.addAttribute("familiak", familiaRepository.findAll(Sort.by(Sort.Order.asc("izena"))));
-            model.addAttribute("activeFamiliaForm", new ActiveFamiliakForm());
-            model.addAttribute("sortuFamiliaForm", new SortuFamiliaForm());
-
-            // egoerak ere gehitu (bestela pestaña horrek petatuko du)
-            model.addAttribute("egoerak", ebaluazioEgoeraRepository.findAllByOrderByKodeaAsc());
-            model.addAttribute("sortuEgoeraForm", new SortuEbaluazioEgoeraForm());
-
+            gehituKonfigurazioDatuak(model);
+            model.addAttribute("sortuForm", form);
             return "kudeatzaile/konfigurazioa/index";
         }
 
@@ -170,19 +170,8 @@ public class KonfigurazioaController {
             br.rejectValue("izena", "izena.blank", "Izena beharrezkoa da");
         }
         if (br.hasErrors()) {
-            // panelak berriz prestatu
-            model.addAttribute("mailak", mailaRepository.findAll(
-                Sort.by(Sort.Order.asc("ordena"), Sort.Order.asc("izena"))
-            ));
-            model.addAttribute("activeForm", new ActiveMailakForm());
-
-            model.addAttribute("familiak", familiaRepository.findAll(Sort.by(Sort.Order.asc("izena"))));
-            model.addAttribute("activeFamiliaForm", new ActiveFamiliakForm());
-
-            // egoerak ere gehitu
-            model.addAttribute("egoerak", ebaluazioEgoeraRepository.findAllByOrderByKodeaAsc());
-            model.addAttribute("sortuEgoeraForm", new SortuEbaluazioEgoeraForm());
-
+            gehituKonfigurazioDatuak(model);
+            model.addAttribute("sortuFamiliaForm", form);
             return "kudeatzaile/konfigurazioa/index";
         }
 
@@ -210,6 +199,126 @@ public class KonfigurazioaController {
         return "redirect:/kudeatzaile/konfigurazioa#familiak";
     }
     
+    // ---- MINTEGI-MODULU BAIMENAK: sortu ----
+    @PostMapping("/mintegi-modulu-baimenak/sortu")
+    @Transactional
+    public String sortuMintegiModuluBaimena(@ModelAttribute("sortuMintegiModuluBaimenaForm") SortuMintegiModuluBaimenaForm form,
+                                            RedirectAttributes ra) {
+        if (form.getFamiliaId() == null) {
+            ra.addFlashAttribute("error", "Familia aukeratu behar da.");
+            return "redirect:/kudeatzaile/konfigurazioa#mintegi-modulu-baimenak";
+        }
+
+        String eeiKodea = normalizatuEeiKodea(form.getEeiKodea());
+        if (eeiKodea.isBlank()) {
+            ra.addFlashAttribute("error", "EEI kodea beharrezkoa da.");
+            return "redirect:/kudeatzaile/konfigurazioa#mintegi-modulu-baimenak";
+        }
+
+        Familia familia = familiaRepository.findById(form.getFamiliaId()).orElse(null);
+        if (familia == null) {
+            ra.addFlashAttribute("error", "Familia ez da aurkitu.");
+            return "redirect:/kudeatzaile/konfigurazioa#mintegi-modulu-baimenak";
+        }
+
+        if (mintegiModuluBaimenaRepository.existsByFamilia_IdAndEeiKodeaIgnoreCase(familia.getId(), eeiKodea)) {
+            ra.addFlashAttribute("error", "Familia horrek badu dagoeneko EEI kode horretarako baimena: " + eeiKodea);
+            return "redirect:/kudeatzaile/konfigurazioa#mintegi-modulu-baimenak";
+        }
+
+        MintegiModuluBaimena baimena = new MintegiModuluBaimena();
+        baimena.setFamilia(familia);
+        baimena.setEeiKodea(eeiKodea);
+        baimena.setAktibo(form.isAktibo());
+        baimena.setOharra(testuHutsaNullBihurtu(form.getOharra()));
+        mintegiModuluBaimenaRepository.save(baimena);
+
+        ra.addFlashAttribute("success", "Mintegi-modulu baimena sortu da.");
+        return "redirect:/kudeatzaile/konfigurazioa#mintegi-modulu-baimenak";
+    }
+
+    // ---- MINTEGI-MODULU BAIMENAK: eguneratu / ezabatu ----
+    @PostMapping("/mintegi-modulu-baimenak/gorde")
+    @Transactional
+    public String gordeMintegiModuluBaimenak(HttpServletRequest request,
+                                             RedirectAttributes ra) {
+        String[] idArray = request.getParameterValues("ids");
+        String[] deleteIdsArray = request.getParameterValues("deleteIds");
+
+        Set<Long> deleteIds = new HashSet<>();
+        if (deleteIdsArray != null) {
+            Arrays.stream(deleteIdsArray).forEach(s -> {
+                try { deleteIds.add(Long.valueOf(s)); } catch (NumberFormatException ignored) {}
+            });
+        }
+
+        if (idArray != null) {
+            for (String idStr : idArray) {
+                Long id;
+                try {
+                    id = Long.valueOf(idStr);
+                } catch (NumberFormatException ex) {
+                    continue;
+                }
+
+                MintegiModuluBaimena baimena = mintegiModuluBaimenaRepository.findById(id).orElse(null);
+                if (baimena == null) continue;
+
+                if (deleteIds.contains(id)) {
+                    mintegiModuluBaimenaRepository.delete(baimena);
+                    continue;
+                }
+
+                String familiaIdStr = request.getParameter("familiaId_" + id);
+                String eeiKodea = normalizatuEeiKodea(request.getParameter("eeiKodea_" + id));
+                if (familiaIdStr == null || familiaIdStr.isBlank() || eeiKodea.isBlank()) {
+                    ra.addFlashAttribute("error", "Baimen guztietan familia eta EEI kodea bete behar dira.");
+                    return "redirect:/kudeatzaile/konfigurazioa#mintegi-modulu-baimenak";
+                }
+
+                Long familiaId;
+                try {
+                    familiaId = Long.valueOf(familiaIdStr);
+                } catch (NumberFormatException ex) {
+                    ra.addFlashAttribute("error", "Familia identifikatzaile baliogabea.");
+                    return "redirect:/kudeatzaile/konfigurazioa#mintegi-modulu-baimenak";
+                }
+
+                Familia familia = familiaRepository.findById(familiaId).orElse(null);
+                if (familia == null) {
+                    ra.addFlashAttribute("error", "Familia ez da aurkitu.");
+                    return "redirect:/kudeatzaile/konfigurazioa#mintegi-modulu-baimenak";
+                }
+
+                MintegiModuluBaimena bikoiztua = mintegiModuluBaimenaRepository
+                        .findByFamilia_IdAndEeiKodeaIgnoreCase(familiaId, eeiKodea)
+                        .orElse(null);
+                if (bikoiztua != null && !bikoiztua.getId().equals(id)) {
+                    ra.addFlashAttribute("error", "Ezin da gorde: familia eta EEI kodea bikoiztuta daude (" + familia.getIzena() + " / " + eeiKodea + ").");
+                    return "redirect:/kudeatzaile/konfigurazioa#mintegi-modulu-baimenak";
+                }
+
+                baimena.setFamilia(familia);
+                baimena.setEeiKodea(eeiKodea);
+                baimena.setAktibo(request.getParameter("aktibo_" + id) != null);
+                baimena.setOharra(testuHutsaNullBihurtu(request.getParameter("oharra_" + id)));
+                mintegiModuluBaimenaRepository.save(baimena);
+            }
+        }
+
+        ra.addFlashAttribute("success", "Mintegi-modulu baimenak gorde dira.");
+        return "redirect:/kudeatzaile/konfigurazioa#mintegi-modulu-baimenak";
+    }
+
+    private String normalizatuEeiKodea(String eeiKodea) {
+        return eeiKodea == null ? "" : eeiKodea.trim().toUpperCase();
+    }
+
+    private String testuHutsaNullBihurtu(String testua) {
+        if (testua == null || testua.isBlank()) return null;
+        return testua.trim();
+    }
+
     // Util txiki bat controller barruan edo Helper klase batean:
     private static String slugify(String input) {
         String s = input.toLowerCase().trim();
@@ -744,6 +853,14 @@ public class KonfigurazioaController {
     public static class KoadernoKonfigForm {
         private boolean bikoiztuakBaimendu;
         private boolean besteMintegiaBaimendu;
+    }
+
+    @Data
+    public static class SortuMintegiModuluBaimenaForm {
+        @NotNull private Long familiaId;
+        @NotBlank private String eeiKodea;
+        private boolean aktibo = true;
+        private String oharra;
     }
 
     @Data
