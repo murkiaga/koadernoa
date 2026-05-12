@@ -33,7 +33,7 @@
             <!-- 2) Irakaslearen “ohiko” koadernoak -->
             <option th:each="k : ${irakasleKoadernoak}"
                     th:value="${k.id}"
-                    th:text="${k.izena}"
+                    th:text="${k.izenaTaldearekin}"
                     th:selected="${koadernoAktiboa != null
                                   and !navbarKontsultaModua
                                   and k.id == koadernoAktiboa.id}">
