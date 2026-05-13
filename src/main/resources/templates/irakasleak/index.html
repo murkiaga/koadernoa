@@ -352,6 +352,12 @@
         <span>Dual ordutegia</span>
       </label>
     </div>
+    <div class="modal-field">
+      <label style="display:flex;align-items:center;gap:.45rem;">
+        <input type="checkbox" id="modalTarteHutsa">
+        <span>Tarte hutsa (0 ordu)</span>
+      </label>
+    </div>
     <div class="modal-actions">
       <button type="button" class="btn btn-secondary" id="ordutegiModalCancel">Utzi</button>
       <button type="button" class="btn btn-primary" id="ordutegiModalCreate">Sortu</button>
@@ -372,11 +378,13 @@
   const ordutegiModal = document.getElementById('ordutegiModal');
   const modalHasieraData = document.getElementById('modalHasieraData');
   const modalDualOrdutegia = document.getElementById('modalDualOrdutegia');
+  const modalTarteHutsa = document.getElementById('modalTarteHutsa');
   const ordutegiModalCancel = document.getElementById('ordutegiModalCancel');
   const ordutegiModalCreate = document.getElementById('ordutegiModalCreate');
   const schedules = /*[[${ordutegiTabs}]]*/ {};
   const info = /*[[${ordutegiInfo}]]*/ [];
   const dualMap = /*[[${ordutegiDualMap}]]*/ {};
+  const tarteHutsaMap = /*[[${ordutegiTarteHutsaMap}]]*/ {};
   const moduloDualOrduak = /*[[${moduloDualOrduak}]]*/ 0;
   const todayActiveScheduleStartDate = tabsWrap ? tabsWrap.dataset.active : null;
   let selectedScheduleStartDate = todayActiveScheduleStartDate;
@@ -447,6 +455,9 @@
       } else {
         schedules[selectedScheduleStartDate] = schedules[selectedScheduleStartDate].filter(k => k !== key);
       }
+      tarteHutsaMap[selectedScheduleStartDate] = !dualMap[selectedScheduleStartDate]
+        && schedules[selectedScheduleStartDate].length === 0;
+      renderSchedule(selectedScheduleStartDate);
 
     } catch (err) {
       // Revert optimistic change
@@ -523,6 +534,7 @@
         const isTodayActive = btn.dataset.key === activeKeyByToday;
         let txt = (scheduleIsMultiple() && isTodayActive) ? `${baseLabel} (aktibo)` : baseLabel;
         if (dualMap[btn.dataset.key]) txt += ' [DUAL]';
+        else if (tarteHutsaMap[btn.dataset.key]) txt += ' [0h]';
         btn.textContent = txt;
       });
     }
@@ -534,6 +546,9 @@
       if (isDual) {
         dualInfo.classList.add('show');
         dualInfo.textContent = `DUAL ordutegia: blokerik ez. Kontabilizatuko diren orduak: ${moduloDualOrduak}`;
+      } else if (tarteHutsaMap[key]) {
+        dualInfo.classList.add('show');
+        dualInfo.textContent = 'Tarte hutsa: ordutegi honek 0 ordu ditu.';
       } else {
         dualInfo.classList.remove('show');
         dualInfo.textContent = '';
@@ -546,10 +561,18 @@
     btn.addEventListener('click', () => renderSchedule(btn.dataset.key));
   });
 
+  modalDualOrdutegia?.addEventListener('change', () => {
+    if (modalDualOrdutegia.checked && modalTarteHutsa) modalTarteHutsa.checked = false;
+  });
+  modalTarteHutsa?.addEventListener('change', () => {
+    if (modalTarteHutsa.checked && modalDualOrdutegia) modalDualOrdutegia.checked = false;
+  });
+
   berriaBtn?.addEventListener('click', () => {
     if (!ordutegiModal || !modalHasieraData) return;
     modalHasieraData.value = '';
     if (modalDualOrdutegia) modalDualOrdutegia.checked = false;
+    if (modalTarteHutsa) modalTarteHutsa.checked = false;
     ordutegiModal.classList.add('show');
     ordutegiModal.setAttribute('aria-hidden', 'false');
   });
@@ -573,9 +596,10 @@
       return;
     }
     const dualOrdutegia = !!(modalDualOrdutegia && modalDualOrdutegia.checked);
+    const tarteHutsa = !dualOrdutegia && !!(modalTarteHutsa && modalTarteHutsa.checked);
 
     const koadernoId = table.dataset.koadernoId;
-    const params = new URLSearchParams({ hasieraData, dualOrdutegia: String(dualOrdutegia) });
+    const params = new URLSearchParams({ hasieraData, dualOrdutegia: String(dualOrdutegia), tarteHutsa: String(tarteHutsa) });
     const res = await fetch(`/irakasle/koadernoa/${koadernoId}/ordutegia/berria`, {
       method: 'POST',
       headers: Object.assign(
@@ -597,9 +621,10 @@
       schedules[key] = [];
     }
     dualMap[key] = dualOrdutegia;
+    tarteHutsaMap[key] = tarteHutsa;
 
     if (!info.find(i => i.key === key)) {
-      info.push({ key, from: key, to: '', label: 'Ordutegia' });
+      info.push({ key, from: key, to: '', label: 'Ordutegia', tarteHutsa: String(tarteHutsa), dual: String(dualOrdutegia) });
 
       const btn = document.createElement('button');
       btn.type = 'button';
@@ -643,6 +668,7 @@
     if (idx >= 0) info.splice(idx, 1);
     delete schedules[selectedScheduleStartDate];
     delete dualMap[selectedScheduleStartDate];
+    delete tarteHutsaMap[selectedScheduleStartDate];
     tabsWrap?.querySelector(`.ordutegi-tab[data-key="${selectedScheduleStartDate}"]`)?.remove();
     recomputeScheduleMeta();
     const nextKey = info[0]?.key || null;

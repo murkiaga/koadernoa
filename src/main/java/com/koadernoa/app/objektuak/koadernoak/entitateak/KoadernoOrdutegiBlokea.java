@@ -33,6 +33,7 @@ public class KoadernoOrdutegiBlokea {
     private int iraupenaSlot;    // zenbat slot jarraian (>=1)
     private LocalDate hasieraData;
     private boolean dualOrdutegia = false;
+    private boolean tarteHutsa = false;
 
     public int bukaeraSlot() {
         return hasieraSlot + iraupenaSlot - 1;

@@ -656,6 +656,10 @@ public class ProgramazioaService {
         for (KoadernoOrdutegiBlokea b : blokeak) {
             LocalDate has = b.getHasieraData() != null ? b.getHasieraData() : ikastHas;
             ordutegiHasierak.add(has);
+            if (b.isTarteHutsa()) {
+                ordutegiaka.putIfAbsent(has, new java.util.EnumMap<>(Astegunak.class));
+                continue;
+            }
             if (b.getIraupenaSlot() <= 0 && !b.isDualOrdutegia()) {
                 // Marker normala: ez du eguneroko ordu-kalkuluan eragin behar
                 continue;
@@ -664,6 +668,7 @@ public class ProgramazioaService {
                 dualHasierak.add(has);
                 continue;
             }
+            if (b.getAsteguna() == null) continue;
             ordutegiaka.computeIfAbsent(has, __ -> new java.util.EnumMap<>(Astegunak.class))
                     .merge(b.getAsteguna(), b.getIraupenaSlot(), Integer::sum);
         }

@@ -17,7 +17,7 @@ public interface KoadernoOrdutegiBlokeaRepository extends JpaRepository<Koaderno
 	List<KoadernoOrdutegiBlokea> findByKoadernoaIdAndAstegunaAndHasieraDataLessThanEqual(Long koadernoaId, Astegunak asteguna, LocalDate data);
 	
 	List<KoadernoOrdutegiBlokea> findByKoadernoa_IdAndHasieraDataLessThanEqual(Long koadernoaId, LocalDate data);
-	@Query("select b.asteguna from KoadernoOrdutegiBlokea b where b.koadernoa.id = :koadernoaId")
+	@Query("select b.asteguna from KoadernoOrdutegiBlokea b where b.koadernoa.id = :koadernoaId and b.asteguna is not null and b.tarteHutsa = false and b.dualOrdutegia = false")
 	List<Astegunak> findAstegunakByKoadernoaId(@Param("koadernoaId") Long koadernoaId);
 	
 	void deleteByKoadernoa_Id(Long koadernoId);

@@ -65,12 +65,19 @@ public class AsistentziaService {
 	  var asteGunaEraginkorra = effectiveAsteguna(koadernoa.getEgutegia(), data);
 
 	  var historikoa = koadernoOrdutegiBlokeaRepository
-	      .findByKoadernoaIdAndAstegunaAndHasieraDataLessThanEqual(koadernoa.getId(), asteGunaEraginkorra, data);
+	      .findByKoadernoa_IdAndHasieraDataLessThanEqual(koadernoa.getId(), data);
 
 	  LocalDate ikastHas = koadernoa.getEgutegia() != null ? koadernoa.getEgutegia().getHasieraData() : data;
 	  java.util.NavigableMap<LocalDate, java.util.List<KoadernoOrdutegiBlokea>> byStart = new java.util.TreeMap<>();
 	  for (KoadernoOrdutegiBlokea b : historikoa) {
 	    LocalDate has = b.getHasieraData() != null ? b.getHasieraData() : ikastHas;
+	    if (b.isTarteHutsa()) {
+	      byStart.putIfAbsent(has, new java.util.ArrayList<>());
+	      continue;
+	    }
+	    if (b.isDualOrdutegia() || b.getAsteguna() != asteGunaEraginkorra || b.getIraupenaSlot() <= 0) {
+	      continue;
+	    }
 	    byStart.computeIfAbsent(has, __ -> new java.util.ArrayList<>()).add(b);
 	  }
 	  var blokeak = byStart.floorEntry(data) != null ? byStart.floorEntry(data).getValue() : java.util.List.<KoadernoOrdutegiBlokea>of();

@@ -507,12 +507,14 @@ public class KoadernoaService {
                 right.setHasieraSlot(right.getHasieraSlot() - 1);
                 right.setIraupenaSlot(right.getIraupenaSlot() + 1);
             } else {
+                kenduTarteHutsaMarkatzailea(k.getOrdutegiak(), activeFrom);
                 KoadernoOrdutegiBlokea nb = new KoadernoOrdutegiBlokea();
                 nb.setKoadernoa(k);
                 nb.setAsteguna(eguna);
                 nb.setHasieraSlot(row);
                 nb.setIraupenaSlot(1);
                 nb.setHasieraData(activeFrom);
+                nb.setTarteHutsa(false);
                 k.getOrdutegiak().add(nb);
             }
         } else {
@@ -525,6 +527,7 @@ public class KoadernoaService {
 
             if (len == 1) {
                 k.getOrdutegiak().remove(covering);
+                ensureTarteHutsaIfScheduleHasNoBlocks(k, activeFrom);
             } else if (row == start) {
                 covering.setHasieraSlot(start + 1);
                 covering.setIraupenaSlot(len - 1);
@@ -557,6 +560,43 @@ public class KoadernoaService {
     
 
 
+    private void ensureTarteHutsaIfScheduleHasNoBlocks(Koadernoa k, LocalDate hasieraData) {
+        if (k == null || k.getOrdutegiak() == null || hasieraData == null) return;
+        boolean hasRegularBlock = k.getOrdutegiak().stream()
+                .anyMatch(b -> java.util.Objects.equals(b.getHasieraData(), hasieraData)
+                        && !b.isDualOrdutegia()
+                        && !b.isTarteHutsa()
+                        && b.getAsteguna() != null
+                        && b.getIraupenaSlot() > 0);
+        boolean hasDual = k.getOrdutegiak().stream()
+                .anyMatch(b -> java.util.Objects.equals(b.getHasieraData(), hasieraData) && b.isDualOrdutegia());
+        if (!hasRegularBlock && !hasDual) {
+            ensureTarteHutsaMarkatzailea(k, hasieraData);
+        }
+    }
+
+    private void ensureTarteHutsaMarkatzailea(Koadernoa k, LocalDate hasieraData) {
+        if (k == null || k.getOrdutegiak() == null || hasieraData == null) return;
+        boolean exists = k.getOrdutegiak().stream()
+                .anyMatch(b -> java.util.Objects.equals(b.getHasieraData(), hasieraData) && b.isTarteHutsa());
+        if (exists) return;
+
+        KoadernoOrdutegiBlokea marker = new KoadernoOrdutegiBlokea();
+        marker.setKoadernoa(k);
+        marker.setHasieraData(hasieraData);
+        marker.setTarteHutsa(true);
+        marker.setDualOrdutegia(false);
+        marker.setAsteguna(null);
+        marker.setHasieraSlot(1);
+        marker.setIraupenaSlot(0);
+        k.getOrdutegiak().add(marker);
+    }
+
+    private void kenduTarteHutsaMarkatzailea(List<KoadernoOrdutegiBlokea> ordutegiak, LocalDate hasieraData) {
+        if (ordutegiak == null || hasieraData == null) return;
+        ordutegiak.removeIf(b -> java.util.Objects.equals(b.getHasieraData(), hasieraData) && b.isTarteHutsa());
+    }
+
     private void garbituOrdutegiBlokeBaliogabeak(List<KoadernoOrdutegiBlokea> ordutegiak, LocalDate hasieraData) {
         if (ordutegiak == null || hasieraData == null) {
             return;
@@ -567,6 +607,7 @@ public class KoadernoaService {
         }
         ordutegiak.removeIf(b -> java.util.Objects.equals(b.getHasieraData(), hasieraData)
                 && (!b.isDualOrdutegia())
+                && (!b.isTarteHutsa())
                 && (b.getAsteguna() == null || b.getIraupenaSlot() <= 0));
     }
 
@@ -583,8 +624,12 @@ public class KoadernoaService {
             if (dual) {
                 continue;
             }
+            boolean hasTarteHutsa = entry.getValue().stream().anyMatch(KoadernoOrdutegiBlokea::isTarteHutsa);
             boolean hasValidBlock = false;
             for (KoadernoOrdutegiBlokea b : entry.getValue()) {
+                if (b.isTarteHutsa()) {
+                    continue;
+                }
                 if (b.getAsteguna() == null) {
                     throw new IllegalStateException("Ordutegi-bloke arruntak asteguna behar du.");
                 }
@@ -593,8 +638,8 @@ public class KoadernoaService {
                 }
                 hasValidBlock = true;
             }
-            if (!hasValidBlock) {
-                throw new IllegalStateException("DUAL ez den ordutegiak gutxienez bloke bat behar du.");
+            if (!hasValidBlock && !hasTarteHutsa) {
+                throw new IllegalStateException("DUAL ez den ordutegiak gutxienez bloke bat edo tarte huts marka bat behar du.");
             }
         }
     }
@@ -619,7 +664,7 @@ public class KoadernoaService {
     }
 
     @Transactional
-    public LocalDate sortuOrdutegiBerria(Long koadernoId, LocalDate hasieraData, boolean dualOrdutegia) {
+    public LocalDate sortuOrdutegiBerria(Long koadernoId, LocalDate hasieraData, boolean dualOrdutegia, boolean tarteHutsa) {
         Koadernoa k = koadernoaRepository.findWithOrdutegiaById(koadernoId).orElseThrow();
         LocalDate ikastHas = k.getEgutegia() != null ? k.getEgutegia().getHasieraData() : null;
         LocalDate ikastBuk = k.getEgutegia() != null ? k.getEgutegia().getBukaeraData() : null;
@@ -633,7 +678,7 @@ public class KoadernoaService {
                 return hasieraData;
             }
         }
-        if (!dualOrdutegia) {
+        if (!dualOrdutegia && !tarteHutsa) {
             // Ordutegi arrunta: ez dugu placeholder-erregistroa gordetzen.
             // Erabiltzaileak lehen kutxatila hautatzen duenean sortuko da benetako blokea.
             return hasieraData;
@@ -642,7 +687,8 @@ public class KoadernoaService {
         KoadernoOrdutegiBlokea initial = new KoadernoOrdutegiBlokea();
         initial.setKoadernoa(k);
         initial.setHasieraData(hasieraData);
-        initial.setDualOrdutegia(true);
+        initial.setDualOrdutegia(dualOrdutegia);
+        initial.setTarteHutsa(!dualOrdutegia && tarteHutsa);
         initial.setAsteguna(null);
         initial.setHasieraSlot(1);
         initial.setIraupenaSlot(0);

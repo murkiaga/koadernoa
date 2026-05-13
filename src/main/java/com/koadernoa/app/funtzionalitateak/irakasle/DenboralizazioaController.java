@@ -215,6 +215,13 @@ public class DenboralizazioaController {
 	    java.util.NavigableMap<LocalDate, Set<Astegunak>> blokAstegunakByDate = new java.util.TreeMap<>();
 	    for (var b : koadernoOrdutegiBlokeaRepository.findByKoadernoa_Id(kargatutakoKoadernoa.getId())) {
 	        LocalDate has = b.getHasieraData() != null ? b.getHasieraData() : ikastHasiera;
+	        if (b.isTarteHutsa()) {
+	            blokAstegunakByDate.putIfAbsent(has, new HashSet<>());
+	            continue;
+	        }
+	        if (b.isDualOrdutegia() || b.getAsteguna() == null || b.getIraupenaSlot() <= 0) {
+	            continue;
+	        }
 	        blokAstegunakByDate.computeIfAbsent(has, __ -> new HashSet<>()).add(b.getAsteguna());
 	    }
 

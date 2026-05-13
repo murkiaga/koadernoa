@@ -216,8 +216,9 @@ public class KoadernoaController {
     @ResponseBody
     public ResponseEntity<?> ordutegiBerria(@PathVariable Long id,
                                             @RequestParam LocalDate hasieraData,
-                                            @RequestParam(name = "dualOrdutegia", defaultValue = "false") boolean dualOrdutegia) {
-        LocalDate created = koadernoaService.sortuOrdutegiBerria(id, hasieraData, dualOrdutegia);
+                                            @RequestParam(name = "dualOrdutegia", defaultValue = "false") boolean dualOrdutegia,
+                                            @RequestParam(name = "tarteHutsa", defaultValue = "false") boolean tarteHutsa) {
+        LocalDate created = koadernoaService.sortuOrdutegiBerria(id, hasieraData, dualOrdutegia, tarteHutsa);
         programazioaService.syncDualUdForKoaderno(id);
         return ResponseEntity.ok(Map.of("ok", true, "hasieraData", created.toString()));
     }

@@ -129,6 +129,7 @@ public class IrakasleController {
 	    Map<String, Set<String>> ordutegiTabs = new java.util.LinkedHashMap<>();
 	    List<Map<String, String>> ordutegiInfo = new ArrayList<>();
         Map<String, Boolean> ordutegiDualMap = new java.util.LinkedHashMap<>();
+        Map<String, Boolean> ordutegiTarteHutsaMap = new java.util.LinkedHashMap<>();
 	    List<LocalDate> hasieraDatak = new ArrayList<>(ordutegiakByDate.keySet());
 	    boolean ordutegiAnitz = hasieraDatak.size() > 1;
 	    for (int i = 0; i < hasieraDatak.size(); i++) {
@@ -138,8 +139,9 @@ public class IrakasleController {
 	
 	        Set<String> selected = new HashSet<>();
             boolean dualOrdutegia = ordutegiakByDate.get(has).stream().anyMatch(KoadernoOrdutegiBlokea::isDualOrdutegia);
+            boolean tarteHutsa = ordutegiakByDate.get(has).stream().anyMatch(KoadernoOrdutegiBlokea::isTarteHutsa);
 	        for (KoadernoOrdutegiBlokea b : ordutegiakByDate.get(has)) {
-                if (b.isDualOrdutegia()) continue;
+                if (b.isDualOrdutegia() || b.isTarteHutsa() || b.getAsteguna() == null || b.getIraupenaSlot() <= 0) continue;
 	            int col = ASTE_ORDENA.indexOf(b.getAsteguna()) + 1;
 	            for (int slot = b.getHasieraSlot(); slot <= b.bukaeraSlot(); slot++) {
 	                selected.add(col + "-" + slot);
@@ -147,6 +149,7 @@ public class IrakasleController {
 	        }
 	        ordutegiTabs.put(has.toString(), selected);
             ordutegiDualMap.put(has.toString(), dualOrdutegia);
+            ordutegiTarteHutsaMap.put(has.toString(), tarteHutsa);
 
 	        Map<String, String> info = new java.util.LinkedHashMap<>();
 	        info.put("key", has.toString());
@@ -154,12 +157,14 @@ public class IrakasleController {
 	        info.put("from", has.toString());
 	        info.put("to", buk != null ? buk.toString() : "");
             info.put("dual", String.valueOf(dualOrdutegia));
+            info.put("tarteHutsa", String.valueOf(tarteHutsa));
 	        ordutegiInfo.add(info);
 	    }
 
 	    model.addAttribute("ordutegiTabs", ordutegiTabs);
 	    model.addAttribute("ordutegiInfo", ordutegiInfo);
         model.addAttribute("ordutegiDualMap", ordutegiDualMap);
+        model.addAttribute("ordutegiTarteHutsaMap", ordutegiTarteHutsaMap);
         model.addAttribute("moduloDualOrduak", koadernoa.getModuloa() != null && koadernoa.getModuloa().getDualOrduak() != null
                 ? koadernoa.getModuloa().getDualOrduak() : 0);
 	    model.addAttribute("ordutegiAnitz", ordutegiAnitz);

@@ -7,9 +7,11 @@ import static org.mockito.Mockito.verify;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
+import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Ebaluaketa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoOrdutegiBlokea;
@@ -76,6 +78,48 @@ class ProgramazioaServiceTest {
         assertThat(movedDualUd.getEbaluaketa()).isSameAs(third);
         assertThat(movedDualUd.getOrduak()).isEqualTo(120);
         verify(programazioaRepository).save(programazioa);
+    }
+
+    @Test
+    void ebalOrduErabilgarriakUsesTarteHutsaAsZeroHourScheduleFromStartDate() {
+        ProgramazioaService service = new ProgramazioaService(
+                mock(ProgramazioaRepository.class),
+                mock(UnitateDidaktikoaRepository.class),
+                mock(JardueraPlanifikatuaRepository.class),
+                mock(EbaluaketaRepository.class),
+                mock(KoadernoaRepository.class),
+                mock(DenboralizazioGeneratorService.class));
+
+        Egutegia egutegia = new Egutegia();
+        egutegia.setHasieraData(LocalDate.of(2025, 9, 1));
+        egutegia.setBukaeraData(LocalDate.of(2025, 9, 12));
+
+        Koadernoa koadernoa = new Koadernoa();
+        Moduloa moduloa = new Moduloa();
+        moduloa.setDualOrduak(0);
+        koadernoa.setModuloa(moduloa);
+        koadernoa.setEgutegia(egutegia);
+
+        Programazioa programazioa = new Programazioa();
+        programazioa.setKoadernoa(koadernoa);
+        Ebaluaketa ebal = ebaluaketa(programazioa, 1L, LocalDate.of(2025, 9, 1), LocalDate.of(2025, 9, 12));
+        programazioa.setEbaluaketak(new ArrayList<>(List.of(ebal)));
+
+        KoadernoOrdutegiBlokea astekoOrdutegia = new KoadernoOrdutegiBlokea();
+        astekoOrdutegia.setHasieraData(LocalDate.of(2025, 9, 1));
+        astekoOrdutegia.setAsteguna(Astegunak.ASTELEHENA);
+        astekoOrdutegia.setIraupenaSlot(2);
+
+        KoadernoOrdutegiBlokea tarteHutsa = new KoadernoOrdutegiBlokea();
+        tarteHutsa.setHasieraData(LocalDate.of(2025, 9, 8));
+        tarteHutsa.setTarteHutsa(true);
+        tarteHutsa.setAsteguna(null);
+        tarteHutsa.setIraupenaSlot(0);
+
+        Map<Long, Integer> emaitza = service.ebalOrduErabilgarriakBlokeekin(
+                programazioa, egutegia, List.of(astekoOrdutegia, tarteHutsa));
+
+        assertThat(emaitza).containsEntry(1L, 2);
     }
 
     private Ebaluaketa ebaluaketa(Programazioa programazioa, Long id, LocalDate hasiera, LocalDate bukaera) {
