@@ -163,6 +163,10 @@ public class DenboralizazioGeneratorService {
     java.util.NavigableMap<LocalDate, Map<Astegunak, Integer>> slotsByDate = new java.util.TreeMap<>();
     for (KoadernoOrdutegiBlokea b : Optional.ofNullable(k.getOrdutegiak()).orElse(List.of())) {
         LocalDate has = b.getHasieraData() != null ? b.getHasieraData() : ikastHas;
+        if (b.isTarteHutsa()) {
+            slotsByDate.putIfAbsent(has, new java.util.EnumMap<>(Astegunak.class));
+            continue;
+        }
         if (b.getAsteguna() == null || b.getIraupenaSlot() <= 0 || b.isDualOrdutegia()) {
             continue;
         }

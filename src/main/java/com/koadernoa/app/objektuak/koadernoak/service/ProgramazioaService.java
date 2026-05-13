@@ -581,9 +581,7 @@ public class ProgramazioaService {
                 targetEbal.setUnitateak(new ArrayList<>());
             }
 
-            UnitateDidaktikoa existing = targetEbal.getUnitateak().stream()
-                    .filter(u -> code.equals(u.getKodea()))
-                    .findFirst().orElse(null);
+            UnitateDidaktikoa existing = findUdByKodeaInProgramazioa(programazioa, code);
             if (dualOrduak <= 0) continue;
             if (existing == null) {
                 UnitateDidaktikoa ud = new UnitateDidaktikoa();
@@ -598,6 +596,14 @@ public class ProgramazioaService {
             } else {
                 existing.setIzenburua("DUALA");
                 existing.setOrduak(dualOrduak);
+                if (!isSameEbaluaketa(existing.getEbaluaketa(), targetEbal)) {
+                    existing.setEbaluaketa(targetEbal);
+                    int maxPos = targetEbal.getUnitateak().stream()
+                            .filter(u -> !Objects.equals(u.getId(), existing.getId()))
+                            .mapToInt(UnitateDidaktikoa::getPosizioa)
+                            .max().orElse(0);
+                    existing.setPosizioa(maxPos + 1);
+                }
             }
         }
 
@@ -611,6 +617,24 @@ public class ProgramazioaService {
     }
     
 	
+    private boolean isSameEbaluaketa(Ebaluaketa current, Ebaluaketa target) {
+        if (current == target) return true;
+        if (current == null || target == null || current.getId() == null || target.getId() == null) return false;
+        return Objects.equals(current.getId(), target.getId());
+    }
+
+    private UnitateDidaktikoa findUdByKodeaInProgramazioa(Programazioa programazioa, String kodea) {
+        if (programazioa == null || kodea == null || programazioa.getEbaluaketak() == null) {
+            return null;
+        }
+        return programazioa.getEbaluaketak().stream()
+                .filter(Objects::nonNull)
+                .flatMap(e -> e.getUnitateak() == null ? java.util.stream.Stream.<UnitateDidaktikoa>empty() : e.getUnitateak().stream())
+                .filter(u -> kodea.equals(u.getKodea()))
+                .findFirst()
+                .orElse(null);
+    }
+
     @Transactional(readOnly = true)
     public Map<Long, Integer> ebalOrduErabilgarriakBlokeekin(
             Programazioa programazioa,
@@ -632,6 +656,10 @@ public class ProgramazioaService {
         for (KoadernoOrdutegiBlokea b : blokeak) {
             LocalDate has = b.getHasieraData() != null ? b.getHasieraData() : ikastHas;
             ordutegiHasierak.add(has);
+            if (b.isTarteHutsa()) {
+                ordutegiaka.putIfAbsent(has, new java.util.EnumMap<>(Astegunak.class));
+                continue;
+            }
             if (b.getIraupenaSlot() <= 0 && !b.isDualOrdutegia()) {
                 // Marker normala: ez du eguneroko ordu-kalkuluan eragin behar
                 continue;
@@ -640,6 +668,7 @@ public class ProgramazioaService {
                 dualHasierak.add(has);
                 continue;
             }
+            if (b.getAsteguna() == null) continue;
             ordutegiaka.computeIfAbsent(has, __ -> new java.util.EnumMap<>(Astegunak.class))
                     .merge(b.getAsteguna(), b.getIraupenaSlot(), Integer::sum);
         }

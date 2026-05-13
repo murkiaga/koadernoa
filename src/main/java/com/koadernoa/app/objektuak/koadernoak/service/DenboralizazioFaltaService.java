@@ -59,6 +59,10 @@ public class DenboralizazioFaltaService {
         java.util.NavigableMap<LocalDate, Map<Astegunak, Integer>> orduakByDate = new java.util.TreeMap<>();
         for (KoadernoOrdutegiBlokea b : blokak) {
             LocalDate has = b.getHasieraData() != null ? b.getHasieraData() : ikastHas;
+            if (b.isTarteHutsa()) {
+                orduakByDate.putIfAbsent(has, new java.util.EnumMap<>(Astegunak.class));
+                continue;
+            }
             if (b.getAsteguna() == null || b.getIraupenaSlot() <= 0 || b.isDualOrdutegia()) {
                 continue;
             }
