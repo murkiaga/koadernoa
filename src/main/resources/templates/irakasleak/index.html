@@ -352,12 +352,6 @@
         <span>Dual ordutegia</span>
       </label>
     </div>
-    <div class="modal-field">
-      <label style="display:flex;align-items:center;gap:.45rem;">
-        <input type="checkbox" id="modalTarteHutsa">
-        <span>Tarte hutsa (0 ordu)</span>
-      </label>
-    </div>
     <div class="modal-actions">
       <button type="button" class="btn btn-secondary" id="ordutegiModalCancel">Utzi</button>
       <button type="button" class="btn btn-primary" id="ordutegiModalCreate">Sortu</button>
@@ -378,7 +372,6 @@
   const ordutegiModal = document.getElementById('ordutegiModal');
   const modalHasieraData = document.getElementById('modalHasieraData');
   const modalDualOrdutegia = document.getElementById('modalDualOrdutegia');
-  const modalTarteHutsa = document.getElementById('modalTarteHutsa');
   const ordutegiModalCancel = document.getElementById('ordutegiModalCancel');
   const ordutegiModalCreate = document.getElementById('ordutegiModalCreate');
   const schedules = /*[[${ordutegiTabs}]]*/ {};
@@ -561,18 +554,10 @@
     btn.addEventListener('click', () => renderSchedule(btn.dataset.key));
   });
 
-  modalDualOrdutegia?.addEventListener('change', () => {
-    if (modalDualOrdutegia.checked && modalTarteHutsa) modalTarteHutsa.checked = false;
-  });
-  modalTarteHutsa?.addEventListener('change', () => {
-    if (modalTarteHutsa.checked && modalDualOrdutegia) modalDualOrdutegia.checked = false;
-  });
-
   berriaBtn?.addEventListener('click', () => {
     if (!ordutegiModal || !modalHasieraData) return;
     modalHasieraData.value = '';
     if (modalDualOrdutegia) modalDualOrdutegia.checked = false;
-    if (modalTarteHutsa) modalTarteHutsa.checked = false;
     ordutegiModal.classList.add('show');
     ordutegiModal.setAttribute('aria-hidden', 'false');
   });
@@ -596,10 +581,10 @@
       return;
     }
     const dualOrdutegia = !!(modalDualOrdutegia && modalDualOrdutegia.checked);
-    const tarteHutsa = !dualOrdutegia && !!(modalTarteHutsa && modalTarteHutsa.checked);
+    const tarteHutsa = !dualOrdutegia;
 
     const koadernoId = table.dataset.koadernoId;
-    const params = new URLSearchParams({ hasieraData, dualOrdutegia: String(dualOrdutegia), tarteHutsa: String(tarteHutsa) });
+    const params = new URLSearchParams({ hasieraData, dualOrdutegia: String(dualOrdutegia) });
     const res = await fetch(`/irakasle/koadernoa/${koadernoId}/ordutegia/berria`, {
       method: 'POST',
       headers: Object.assign(

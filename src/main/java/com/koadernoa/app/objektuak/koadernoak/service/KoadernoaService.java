@@ -493,6 +493,7 @@ public class KoadernoaService {
             // jada estalita badago, ezer ez
             KoadernoOrdutegiBlokea covering = findCovering(dayBlocks, row);
             if (covering != null) return;
+            kenduTarteHutsaMarkatzailea(k.getOrdutegiak(), activeFrom);
 
             KoadernoOrdutegiBlokea left  = findEndingAt(dayBlocks, row - 1);
             KoadernoOrdutegiBlokea right = findStartingAt(dayBlocks, row + 1);
@@ -507,7 +508,6 @@ public class KoadernoaService {
                 right.setHasieraSlot(right.getHasieraSlot() - 1);
                 right.setIraupenaSlot(right.getIraupenaSlot() + 1);
             } else {
-                kenduTarteHutsaMarkatzailea(k.getOrdutegiak(), activeFrom);
                 KoadernoOrdutegiBlokea nb = new KoadernoOrdutegiBlokea();
                 nb.setKoadernoa(k);
                 nb.setAsteguna(eguna);
@@ -664,7 +664,7 @@ public class KoadernoaService {
     }
 
     @Transactional
-    public LocalDate sortuOrdutegiBerria(Long koadernoId, LocalDate hasieraData, boolean dualOrdutegia, boolean tarteHutsa) {
+    public LocalDate sortuOrdutegiBerria(Long koadernoId, LocalDate hasieraData, boolean dualOrdutegia) {
         Koadernoa k = koadernoaRepository.findWithOrdutegiaById(koadernoId).orElseThrow();
         LocalDate ikastHas = k.getEgutegia() != null ? k.getEgutegia().getHasieraData() : null;
         LocalDate ikastBuk = k.getEgutegia() != null ? k.getEgutegia().getBukaeraData() : null;
@@ -678,17 +678,11 @@ public class KoadernoaService {
                 return hasieraData;
             }
         }
-        if (!dualOrdutegia && !tarteHutsa) {
-            // Ordutegi arrunta: ez dugu placeholder-erregistroa gordetzen.
-            // Erabiltzaileak lehen kutxatila hautatzen duenean sortuko da benetako blokea.
-            return hasieraData;
-        }
-
         KoadernoOrdutegiBlokea initial = new KoadernoOrdutegiBlokea();
         initial.setKoadernoa(k);
         initial.setHasieraData(hasieraData);
         initial.setDualOrdutegia(dualOrdutegia);
-        initial.setTarteHutsa(!dualOrdutegia && tarteHutsa);
+        initial.setTarteHutsa(!dualOrdutegia);
         initial.setAsteguna(null);
         initial.setHasieraSlot(1);
         initial.setIraupenaSlot(0);
