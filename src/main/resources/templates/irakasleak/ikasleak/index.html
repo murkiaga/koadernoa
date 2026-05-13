@@ -173,7 +173,7 @@
 	           alt="argazkia">
 	      <div class="status-ribbon"
 	           th:attr="data-egoera=${m.egoera}"
-	           th:text="${m.egoera}">MATRIKULATUA</div>
+	           th:text="${m.egoera.etiketa}">MATRIKULATUA</div>
 	    </div>
 	
 	    <!-- Testuak -->
@@ -203,7 +203,7 @@
       <label for="egoeraSelect">Egoera</label>
       <select id="egoeraSelect">
         <option value="MATRIKULATUA">MATRIKULATUA</option>
-        <option value="GAINDITUA">GAINDITUA</option>
+        <option value="GAINDITUA">Aurretik gaindituta / Konbalidatuta</option>
       </select>
     </div>
 
@@ -297,7 +297,9 @@
         const ribbon = currentCard.querySelector('.status-ribbon');
         if(ribbon){
           ribbon.dataset.egoera = json.egoera;
-          ribbon.textContent = json.egoera;
+          ribbon.textContent = json.egoera === 'GAINDITUA'
+            ? 'Aurretik gaindituta / Konbalidatuta'
+            : json.egoera;
         }
 
         const btn = currentCard.querySelector('.status-btn');

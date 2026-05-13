@@ -92,11 +92,9 @@
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
             <input type="hidden" name="ikasturteaId" th:value="${hautatutakoIkasturteaId}">
             <select name="egoera">
-              <option th:each="ego : ${matrikulaEgoerak}"
-                      th:value="${ego}"
-                      th:text="${ego}"
-                      th:selected="${ego == m.egoera}">
-              </option>
+              <option value="MATRIKULATUA" th:selected="${m.egoera != null and m.egoera.name() == 'MATRIKULATUA'}">MATRIKULATUA</option>
+              <option value="GAINDITUA" th:selected="${m.egoera != null and m.egoera.name() == 'GAINDITUA'}">Aurretik gaindituta / Konbalidatuta</option>
+              <option value="PENDIENTE_AURREKO_URTETIK" th:selected="${m.egoera != null and m.egoera.name() == 'PENDIENTE_AURREKO_URTETIK'}">Pendiente</option>
             </select>
             <button type="submit" class="btn btn-secondary">Gorde</button>
           </form>

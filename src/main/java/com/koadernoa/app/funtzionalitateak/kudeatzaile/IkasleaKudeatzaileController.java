@@ -179,6 +179,14 @@ public class IkasleaKudeatzaileController {
             return redirectIkasleFitxara(id, ikasturteaId);
         }
 
+        if (egoera != MatrikulaEgoera.MATRIKULATUA
+                && egoera != MatrikulaEgoera.GAINDITUA
+                && egoera != MatrikulaEgoera.PENDIENTE_AURREKO_URTETIK) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                    "Egoera baliogabea. Baimenduta: MATRIKULATUA, Aurretik gaindituta / Konbalidatuta edo Pendiente.");
+            return redirectIkasleFitxara(id, ikasturteaId);
+        }
+
         Matrikula m = opt.get();
         m.setEgoera(egoera);
         matrikulaRepository.save(m);
