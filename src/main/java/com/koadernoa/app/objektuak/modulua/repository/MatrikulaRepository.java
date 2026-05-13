@@ -19,6 +19,16 @@ public interface MatrikulaRepository extends JpaRepository<Matrikula, Long> {
 			  order by i.abizena1 asc, i.abizena2 asc, i.izena asc
 			""")
 	List<Matrikula> findAllByKoadernoaFetchIkasleaOrderByIzena(Long koadernoId);
+
+	@Query("""
+			  select m from Matrikula m
+			  join fetch m.ikaslea i
+			  where m.koadernoa.id = :koadernoId
+			    and m.egoera <> :egoera
+			  order by i.abizena1 asc, i.abizena2 asc, i.izena asc
+			""")
+	List<Matrikula> findAllByKoadernoaFetchIkasleaAndEgoeraNotOrderByIzena(@Param("koadernoId") Long koadernoId,
+	                                                                        @Param("egoera") MatrikulaEgoera egoera);
 	
 	// Estatistiketarako: koaderno honetako MATRIKULATUA dauden matrikulak lortzeko
 	List<Matrikula> findByKoadernoa_IdAndEgoera(Long koadernoaId, MatrikulaEgoera egoera);
@@ -27,6 +37,16 @@ public interface MatrikulaRepository extends JpaRepository<Matrikula, Long> {
 	long countByKoadernoa_IdAndEgoera(Long koadernoaId, MatrikulaEgoera egoera);
 	
 	List<Matrikula> findByKoadernoaIdAndEgoera(Long koadernoaId, MatrikulaEgoera egoera);
+
+	@Query("""
+	    select m from Matrikula m
+	    join fetch m.ikaslea i
+	    where m.koadernoa.id = :koadernoaId
+	      and m.egoera = :egoera
+	    order by i.abizena1 asc, i.abizena2 asc, i.izena asc
+	""")
+	List<Matrikula> findByKoadernoaIdAndEgoeraFetchIkasleaOrderByIzena(@Param("koadernoaId") Long koadernoaId,
+	                                                                   @Param("egoera") MatrikulaEgoera egoera);
 	
 	default List<Matrikula> findByKoadernoaIdAndEgoeraMatrikulatuta(Long koadernoaId){
         return findByKoadernoaIdAndEgoera(koadernoaId, MatrikulaEgoera.MATRIKULATUA);

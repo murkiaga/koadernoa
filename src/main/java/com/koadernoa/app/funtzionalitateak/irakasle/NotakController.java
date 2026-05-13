@@ -57,9 +57,16 @@ public class NotakController {
         List<EbaluazioMomentua> momentuak =
                 ebaluazioMomentuaRepository.findByMailaAndAktiboTrueOrderByOrdenaAsc(maila);
 
-        // 2) Koaderno honetako ikasle matrikulatuak
+        // 2) Koaderno honetako ikasle matrikulatuak eta pendienteak, bereizita
         List<Matrikula> matrikulak =
-                matrikulaRepository.findByKoadernoaIdAndEgoera(koadernoa.getId(), MatrikulaEgoera.MATRIKULATUA);
+                matrikulaRepository.findByKoadernoaIdAndEgoeraFetchIkasleaOrderByIzena(
+                        koadernoa.getId(), MatrikulaEgoera.MATRIKULATUA);
+        List<Matrikula> pendienteak =
+                matrikulaRepository.findByKoadernoaIdAndEgoeraFetchIkasleaOrderByIzena(
+                        koadernoa.getId(), MatrikulaEgoera.PENDIENTE_AURREKO_URTETIK);
+        List<EbaluazioMomentua> pendienteMomentuak = momentuak.stream()
+                .filter(this::daFinalMomentua)
+                .toList();
 
         // 3) Jadanik gordeta dauden notak kargatu
         List<EbaluazioNota> notak = ebaluazioNotaRepository.findByMatrikulaKoadernoa(koadernoa);
@@ -95,6 +102,8 @@ public class NotakController {
 
         model.addAttribute("momentuak", momentuak);
         model.addAttribute("matrikulak", matrikulak);
+        model.addAttribute("pendienteak", pendienteak);
+        model.addAttribute("pendienteMomentuak", pendienteMomentuak);
         model.addAttribute("notaMap", notaMap);
         model.addAttribute("bigarrenFinalaErakutsiMap", bigarrenFinalaErakutsiMap);
 
@@ -118,14 +127,31 @@ public class NotakController {
 
         List<Matrikula> matrikulak =
                 matrikulaRepository.findByKoadernoaIdAndEgoera(koadernoa.getId(), MatrikulaEgoera.MATRIKULATUA);
+        List<Matrikula> pendienteak =
+                matrikulaRepository.findByKoadernoaIdAndEgoera(koadernoa.getId(), MatrikulaEgoera.PENDIENTE_AURREKO_URTETIK);
+        List<EbaluazioMomentua> pendienteMomentuak = momentuak.stream()
+                .filter(this::daFinalMomentua)
+                .toList();
 
         for (Matrikula m : matrikulak) {
             String oh = request.getParameter("oharra_" + m.getId());
             m.setOharra(oh != null ? oh.trim() : null);
         }
+        for (Matrikula m : pendienteak) {
+            String oh = request.getParameter("oharra_" + m.getId());
+            m.setOharra(oh != null ? oh.trim() : null);
+        }
         matrikulaRepository.saveAll(matrikulak);
+        matrikulaRepository.saveAll(pendienteak);
 
         String errorHtml = ebaluazioNotaService.gordeNotak(koadernoa, momentuak, matrikulak, request);
+        String pendienteErrorHtml = ebaluazioNotaService.gordeNotak(
+                koadernoa, pendienteMomentuak, pendienteak, request, false);
+        if (pendienteErrorHtml != null && !pendienteErrorHtml.isBlank()) {
+            errorHtml = (errorHtml == null || errorHtml.isBlank())
+                    ? pendienteErrorHtml
+                    : errorHtml + "\n" + pendienteErrorHtml;
+        }
 
         if (errorHtml != null && !errorHtml.isBlank()) {
             redirectAttributes.addFlashAttribute("error", errorHtml);
@@ -138,5 +164,13 @@ public class NotakController {
 
     private String buildKey(Long matrikulaId, Long momentuaId) {
         return matrikulaId + "_" + momentuaId;
+    }
+
+    private boolean daFinalMomentua(EbaluazioMomentua momentua) {
+        if (momentua == null || momentua.getKodea() == null) {
+            return false;
+        }
+        return "1_FINAL".equalsIgnoreCase(momentua.getKodea())
+                || "2_FINAL".equalsIgnoreCase(momentua.getKodea());
     }
 }

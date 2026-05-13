@@ -64,9 +64,10 @@ public class MatrikulaEgoeraController {
 	    model.addAttribute("taldeIkasleKop", taldeIkasleKop);
 	    
 
-	    // Egoera GUZTIAK ekarri (repoan definituta dagoen metodoa)
+	    // Pendienteak ez dira koadernoko ikasle zerrenda arruntean erakusten.
 	    List<Matrikula> matrikulak =
-	        matrikulaRepository.findAllByKoadernoaFetchIkasleaOrderByIzena(koadernoAktiboa.getId());
+	        matrikulaRepository.findAllByKoadernoaFetchIkasleaAndEgoeraNotOrderByIzena(
+	            koadernoAktiboa.getId(), MatrikulaEgoera.PENDIENTE_AURREKO_URTETIK);
 
 	    model.addAttribute("matrikulak", matrikulak);
 	    model.addAttribute("kop", matrikulak.size());
@@ -90,7 +91,7 @@ public class MatrikulaEgoeraController {
     	if (egoera != MatrikulaEgoera.MATRIKULATUA && egoera != MatrikulaEgoera.GAINDITUA) {
             return ResponseEntity.badRequest().body(Map.of(
                     "ok", false,
-                    "msg", "Egoera baliogabea. Baimenduta: MATRIKULATUA edo GAINDITUA"
+                    "msg", "Egoera baliogabea. Baimenduta: MATRIKULATUA edo Aurretik gaindituta / Konbalidatuta"
             ));
         }
         

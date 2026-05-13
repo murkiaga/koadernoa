@@ -53,7 +53,7 @@
         <td th:text="${m.koadernoa != null ? m.koadernoa.izena : '-'}">-</td>
         <td th:text="${m.koadernoa != null and m.koadernoa.moduloa != null ? m.koadernoa.moduloa.izena : '-'}">-</td>
         <td th:text="${m.koadernoa != null and m.koadernoa.moduloa != null ? m.koadernoa.moduloa.eeiKodea : '-'}">-</td>
-        <td th:text="${m.egoera}">MATRIKULATUA</td>
+        <td th:text="${m.egoera != null ? m.egoera.etiketa : '-'}">MATRIKULATUA</td>
       </tr>
       <tr th:if="${#lists.isEmpty(matrikulak)}">
         <td colspan="4" style="text-align:center;color:#6b7280;">Ez dago matrikularik ikasturte honetan.</td>

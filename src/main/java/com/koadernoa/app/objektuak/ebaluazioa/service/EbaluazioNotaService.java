@@ -33,6 +33,15 @@ public class EbaluazioNotaService {
                              List<EbaluazioMomentua> momentuak,
                              List<Matrikula> matrikulak,
                              HttpServletRequest request) {
+        return gordeNotak(koadernoa, momentuak, matrikulak, request, true);
+    }
+
+    @Transactional
+    public String gordeNotak(Koadernoa koadernoa,
+                             List<EbaluazioMomentua> momentuak,
+                             List<Matrikula> matrikulak,
+                             HttpServletRequest request,
+                             boolean kontrolatuBigarrenFinala) {
 
         StringBuilder errorBuilder = new StringBuilder();
         Map<Long, LehenFinalEgoera> lehenFinalEgoeraMap = matrikulak.stream()
@@ -44,7 +53,8 @@ public class EbaluazioNotaService {
                     : ("Matrikula ID " + matrikula.getId());
 
             for (EbaluazioMomentua momentua : momentuak) {
-                if (daBigarrenFinala(momentua)
+                if (kontrolatuBigarrenFinala
+                        && daBigarrenFinala(momentua)
                         && !daBigarrenFinalaEbaluagarria(lehenFinalEgoeraMap.get(matrikula.getId()))) {
                     ebaluazioNotaRepository
                             .findByMatrikulaAndEbaluazioMomentua(matrikula, momentua)

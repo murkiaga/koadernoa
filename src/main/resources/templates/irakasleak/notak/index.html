@@ -32,6 +32,8 @@
 
     .actions { margin-top: 16px; display:flex; gap:8px; }
     .oharra-input{width:120px;min-height:30px;max-width:260px;resize:both;padding:4px 6px;border:1px solid var(--b);border-radius:6px;font-size:.88rem;}
+    .section-title{margin:1.5rem 0 .55rem;font-size:1.15rem;}
+    .section-help{margin:.1rem 0 .8rem;color:#6b7280;}
 
     /* Notak orriko '+' egoera menuaren estilo espezifikoa */
     .nota-wrap {
@@ -97,88 +99,157 @@
 	  Errore mezua
 	</div>
 
-  <div th:if="${#lists.isEmpty(matrikulak)}">
+  <div th:if="${#lists.isEmpty(matrikulak) and #lists.isEmpty(pendienteak)}">
     <p>Ez dago ikaslerik koaderno honetan.</p>
   </div>
 
-  <div th:if="${!#lists.isEmpty(matrikulak)}">
+  <div th:if="${!#lists.isEmpty(matrikulak) or !#lists.isEmpty(pendienteak)}">
     <form method="post" th:action="@{/irakasle/notak}">
-      <table>
-        <thead>
-        <tr>
-          <th>Ikaslea</th>
-          <th>OHARRA</th>
-          <th th:each="em : ${momentuak}"
-              th:text="${em.izena}">
-            1. ebaluazioa
-          </th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="mat : ${matrikulak}">
-          <td th:text="${mat.ikaslea != null ? mat.ikaslea.izenOsoa : ''}">
-		   Abizenak, Izena
-		  </td>
-          <td><textarea class="oharra-input" th:name="${'oharra_' + mat.id}" th:text="${mat.oharra}"></textarea></td>
+      <section th:if="${!#lists.isEmpty(matrikulak)}">
+        <h2 class="section-title">Matrikulatutako ikasleak</h2>
+        <table>
+          <thead>
+          <tr>
+            <th>Ikaslea</th>
+            <th>OHARRA</th>
+            <th th:each="em : ${momentuak}"
+                th:text="${em.izena}">
+              1. ebaluazioa
+            </th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="mat : ${matrikulak}">
+            <td th:text="${mat.ikaslea != null ? mat.ikaslea.izenOsoa : ''}">
+             Abizenak, Izena
+            </td>
+            <td><textarea class="oharra-input" th:name="${'oharra_' + mat.id}" th:text="${mat.oharra}"></textarea></td>
 
-          <!-- Nota input-ak dinamikoki, ebaluazio momentu bakoitzerako -->
-          <td th:each="em : ${momentuak}"
-              th:with="ezDaBigarrenFinalEbaluagarria=${em.kodea == '2_FINAL' and (bigarrenFinalaErakutsiMap == null or !bigarrenFinalaErakutsiMap[mat.id])}">
-            <div class="nota-wrap">
-              <input type="text"
-                     th:if="${!ezDaBigarrenFinalEbaluagarria
-                              and !(#maps.containsKey(notaMap, mat.id + '_' + em.id)
-                              and notaMap[mat.id + '_' + em.id].egoera != null
-                              and notaMap[mat.id + '_' + em.id].egoera.kodea == 'UKO_EGINDA')}"
-                     th:name="${'nota_' + mat.id + '_' + em.id}"
-                     placeholder="nota"
-                     th:value="${
-                       #maps.containsKey(notaMap, mat.id + '_' + em.id)
-                         ? (
-                             notaMap[mat.id + '_' + em.id].egoera != null
-                               ? notaMap[mat.id + '_' + em.id].egoera.kodea
-                               : notaMap[mat.id + '_' + em.id].nota
-                           )
-                         : ''
-                     }"/>
-              <span th:if="${#maps.containsKey(notaMap, mat.id + '_' + em.id)
-                              and !ezDaBigarrenFinalEbaluagarria
-                              and notaMap[mat.id + '_' + em.id].egoera != null
-                              and notaMap[mat.id + '_' + em.id].egoera.kodea == 'UKO_EGINDA'}"
-                    style="font-weight:700;color:#991b1b;">
-                Uko Eginda
-              </span>
+            <!-- Nota input-ak dinamikoki, ebaluazio momentu bakoitzerako -->
+            <td th:each="em : ${momentuak}"
+                th:with="ezDaBigarrenFinalEbaluagarria=${em.kodea == '2_FINAL' and (bigarrenFinalaErakutsiMap == null or !bigarrenFinalaErakutsiMap[mat.id])}">
+              <div class="nota-wrap">
+                <input type="text"
+                       th:if="${!ezDaBigarrenFinalEbaluagarria
+                                and !(#maps.containsKey(notaMap, mat.id + '_' + em.id)
+                                and notaMap[mat.id + '_' + em.id].egoera != null
+                                and notaMap[mat.id + '_' + em.id].egoera.kodea == 'UKO_EGINDA')}"
+                       th:name="${'nota_' + mat.id + '_' + em.id}"
+                       placeholder="nota"
+                       th:value="${
+                         #maps.containsKey(notaMap, mat.id + '_' + em.id)
+                           ? (
+                               notaMap[mat.id + '_' + em.id].egoera != null
+                                 ? notaMap[mat.id + '_' + em.id].egoera.kodea
+                                 : notaMap[mat.id + '_' + em.id].nota
+                             )
+                           : ''
+                       }"/>
+                <span th:if="${#maps.containsKey(notaMap, mat.id + '_' + em.id)
+                                and !ezDaBigarrenFinalEbaluagarria
+                                and notaMap[mat.id + '_' + em.id].egoera != null
+                                and notaMap[mat.id + '_' + em.id].egoera.kodea == 'UKO_EGINDA'}"
+                      style="font-weight:700;color:#991b1b;">
+                  Uko Eginda
+                </span>
 
-              <!-- '+' botoia: egoera berezien menu desplegablea -->
-              <button type="button"
-                      class="nota-egoera-btn"
-                      th:if="${!ezDaBigarrenFinalEbaluagarria
-                              and !#lists.isEmpty(em.egoeraOnartuak)
-                              and !(#maps.containsKey(notaMap, mat.id + '_' + em.id)
-                                  and notaMap[mat.id + '_' + em.id].egoera != null
-                                  and notaMap[mat.id + '_' + em.id].egoera.kodea == 'UKO_EGINDA')}">
-                +
-              </button>
-
-              <div class="nota-egoera-menu" style="display:none;"
-                   th:if="${!ezDaBigarrenFinalEbaluagarria
-                           and !#lists.isEmpty(em.egoeraOnartuak)
-                           and !(#maps.containsKey(notaMap, mat.id + '_' + em.id)
-                               and notaMap[mat.id + '_' + em.id].egoera != null
-                               and notaMap[mat.id + '_' + em.id].egoera.kodea == 'UKO_EGINDA')}">
+                <!-- '+' botoia: egoera berezien menu desplegablea -->
                 <button type="button"
-                        class="nota-egoera-op"
-                        th:each="ego : ${em.egoeraOnartuak}"
-                        th:data-value="${ego.kodea}"
-                        th:text="${ego.kodea}">
-                  EZ_AURKEZTUA
+                        class="nota-egoera-btn"
+                        th:if="${!ezDaBigarrenFinalEbaluagarria
+                                and !#lists.isEmpty(em.egoeraOnartuak)
+                                and !(#maps.containsKey(notaMap, mat.id + '_' + em.id)
+                                    and notaMap[mat.id + '_' + em.id].egoera != null
+                                    and notaMap[mat.id + '_' + em.id].egoera.kodea == 'UKO_EGINDA')}">
+                  +
                 </button>
+
+                <div class="nota-egoera-menu" style="display:none;"
+                     th:if="${!ezDaBigarrenFinalEbaluagarria
+                             and !#lists.isEmpty(em.egoeraOnartuak)
+                             and !(#maps.containsKey(notaMap, mat.id + '_' + em.id)
+                                 and notaMap[mat.id + '_' + em.id].egoera != null
+                                 and notaMap[mat.id + '_' + em.id].egoera.kodea == 'UKO_EGINDA')}">
+                  <button type="button"
+                          class="nota-egoera-op"
+                          th:each="ego : ${em.egoeraOnartuak}"
+                          th:data-value="${ego.kodea}"
+                          th:text="${ego.kodea}">
+                    EZ_AURKEZTUA
+                  </button>
+                </div>
               </div>
-            </div>
-          </td>
-        </tr>
-        </tbody>
-      </table>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section th:if="${!#lists.isEmpty(pendienteak)}">
+        <h2 class="section-title">Pendienteak</h2>
+        <p class="section-help">Ikasle pendienteentzat 1_FINAL eta 2_FINAL notak bakarrik sar daitezke.</p>
+        <table>
+          <thead>
+          <tr>
+            <th>Ikaslea</th>
+            <th>OHARRA</th>
+            <th th:each="em : ${pendienteMomentuak}" th:text="${em.izena}">Finala</th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="mat : ${pendienteak}">
+            <td th:text="${mat.ikaslea != null ? mat.ikaslea.izenOsoa : ''}">Abizenak, Izena</td>
+            <td><textarea class="oharra-input" th:name="${'oharra_' + mat.id}" th:text="${mat.oharra}"></textarea></td>
+            <td th:each="em : ${pendienteMomentuak}">
+              <div class="nota-wrap">
+                <input type="text"
+                       th:if="${!(#maps.containsKey(notaMap, mat.id + '_' + em.id)
+                                and notaMap[mat.id + '_' + em.id].egoera != null
+                                and notaMap[mat.id + '_' + em.id].egoera.kodea == 'UKO_EGINDA')}"
+                       th:name="${'nota_' + mat.id + '_' + em.id}"
+                       placeholder="nota"
+                       th:value="${
+                         #maps.containsKey(notaMap, mat.id + '_' + em.id)
+                           ? (
+                               notaMap[mat.id + '_' + em.id].egoera != null
+                                 ? notaMap[mat.id + '_' + em.id].egoera.kodea
+                                 : notaMap[mat.id + '_' + em.id].nota
+                             )
+                           : ''
+                       }"/>
+                <span th:if="${#maps.containsKey(notaMap, mat.id + '_' + em.id)
+                                and notaMap[mat.id + '_' + em.id].egoera != null
+                                and notaMap[mat.id + '_' + em.id].egoera.kodea == 'UKO_EGINDA'}"
+                      style="font-weight:700;color:#991b1b;">
+                  Uko Eginda
+                </span>
+                <button type="button"
+                        class="nota-egoera-btn"
+                        th:if="${!#lists.isEmpty(em.egoeraOnartuak)
+                                and !(#maps.containsKey(notaMap, mat.id + '_' + em.id)
+                                    and notaMap[mat.id + '_' + em.id].egoera != null
+                                    and notaMap[mat.id + '_' + em.id].egoera.kodea == 'UKO_EGINDA')}">
+                  +
+                </button>
+                <div class="nota-egoera-menu" style="display:none;"
+                     th:if="${!#lists.isEmpty(em.egoeraOnartuak)
+                             and !(#maps.containsKey(notaMap, mat.id + '_' + em.id)
+                                 and notaMap[mat.id + '_' + em.id].egoera != null
+                                 and notaMap[mat.id + '_' + em.id].egoera.kodea == 'UKO_EGINDA')}">
+                  <button type="button"
+                          class="nota-egoera-op"
+                          th:each="ego : ${em.egoeraOnartuak}"
+                          th:data-value="${ego.kodea}"
+                          th:text="${ego.kodea}">
+                    EZ_AURKEZTUA
+                  </button>
+                </div>
+              </div>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </section>
 
       <div class="actions">
         <button type="submit" class="btn-primary">Gorde notak</button>
