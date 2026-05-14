@@ -46,6 +46,13 @@ public class EstatistikaEbaluazioan {
     
     //%ak kalkulatzeko
     @Transient
+    public boolean isBigarrenFinala() {
+        return ebaluazioMomentua != null
+                && ebaluazioMomentua.getKodea() != null
+                && "2_FINAL".equalsIgnoreCase(ebaluazioMomentua.getKodea().trim());
+    }
+
+    @Transient
     public Integer getUdPortzentaia() {
         if (unitateakAurreikusiak <= 0) return null;
         return (int) Math.round(100.0 * unitateakEmanda / (double) unitateakAurreikusiak);
