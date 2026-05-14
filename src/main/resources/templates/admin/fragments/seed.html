@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<body>
+<div th:fragment="seed-panel">
+  <h2>Seed katalogo akademikoa</h2>
+  <p class="muted">
+    <code>seed/katalogo-akademikoa.json</code> classpath-etik irakurritako katalogoa kargatzeko panela.
+    Ziklo osoa aukeratuz gero, talde zehatzik aukeratu ezean, falta diren talde guztiak sortuko dira.
+  </p>
+
+  <div class="table-wrap" style="margin:12px 0;">
+    <div style="padding:12px; border:1px solid var(--b); border-radius:12px; display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:10px;">
+      <div><strong th:text="${seedEgoera.zikloKopurua}">0</strong><div class="muted">ziklo JSONean</div></div>
+      <div><strong th:text="${seedEgoera.taldeKopurua}">0</strong><div class="muted">talde JSONean</div></div>
+      <div><strong th:text="${seedEgoera.moduluKopurua}">0</strong><div class="muted">modulu JSONean</div></div>
+      <div><strong th:text="${seedEgoera.bertsioa}">1</strong><div class="muted">bertsioa</div></div>
+    </div>
+  </div>
+
+  <form method="post" th:action="@{/admin/seed/kargatu}">
+    <input type="hidden"
+           th:if="${_csrf != null}"
+           th:name="${_csrf.parameterName}"
+           th:value="${_csrf.token}"/>
+
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <article th:each="zikloa : ${seedEgoera.zikloak}"
+               style="border:1px solid var(--b); border-radius:12px; padding:14px; background:#fff;">
+        <div style="display:flex; gap:12px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap;">
+          <label style="display:flex; gap:10px; align-items:flex-start; margin:0;">
+            <input type="checkbox"
+                   name="zikloak"
+                   th:value="${zikloa.key}"
+                   th:disabled="${zikloa.guztizSortuta}">
+            <span>
+              <strong th:text="${zikloa.izena}">Zikloa</strong>
+              <span class="muted" th:text="|(${zikloa.familiaIzena} · ${zikloa.maila})|">(Familia · Maila)</span>
+            </span>
+          </label>
+
+          <span th:text="${zikloa.egoeraTestua}"
+                th:style="${zikloa.guztizSortuta} ? 'padding:4px 9px;border-radius:999px;background:#e8f5e9;color:#1b5e20;font-weight:600;' : (${zikloa.partziala} ? 'padding:4px 9px;border-radius:999px;background:#fff8e1;color:#8a5a00;font-weight:600;' : 'padding:4px 9px;border-radius:999px;background:#ffebee;color:#b71c1c;font-weight:600;')">
+            Sortu gabe
+          </span>
+        </div>
+
+        <div class="muted" style="margin:8px 0 10px 30px;"
+             th:text="|${zikloa.sortutakoTaldeKopurua}/${zikloa.taldeKopurua} talde sortuta|">
+          0/0 talde sortuta
+        </div>
+
+        <div style="margin-left:30px; display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:8px;">
+          <label th:each="taldea : ${zikloa.taldeak}"
+                 style="display:flex; gap:8px; align-items:flex-start; padding:8px; border:1px solid var(--b); border-radius:10px; margin:0;"
+                 th:styleappend="${taldea.existitzenDa} ? 'opacity:.65;background:#f6f6f6;' : ''">
+            <input type="checkbox"
+                   name="taldeak"
+                   th:value="${taldea.key}"
+                   th:disabled="${taldea.existitzenDa}">
+            <span>
+              <strong th:text="${taldea.izena}">1A</strong>
+              <span class="muted" th:text="| · ${taldea.moduluKopurua} modulu|"> · 0 modulu</span><br>
+              <small th:text="${taldea.egoeraTestua}">Sortu gabe</small>
+            </span>
+          </label>
+        </div>
+      </article>
+    </div>
+
+    <div style="margin-top:16px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+      <button type="submit" class="btn btn-primary">Aukeratutakoak inportatu</button>
+      <span class="muted">Inportazioa idempotentea da; berriro exekutatzeak ez du daturik bikoiztuko.</span>
+    </div>
+  </form>
+</div>
+</body>
+</html>
