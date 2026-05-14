@@ -11,6 +11,8 @@
 	<div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
 	<main class="page">
 		<h1>Moduluen Zerrenda</h1>
+		<div th:if="${success}" class="alert alert-success" th:text="${success}">Success mezua</div>
+		<div th:if="${error}" class="alert alert-error" th:text="${error}">Errore mezua</div>
 		
 		<div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:nowrap; margin-bottom:1rem;">
 			<form class="form" th:action="@{/kudeatzaile/moduloa}" method="get" style="display:flex; align-items:center; gap:.75rem; margin:0; flex-wrap:nowrap; max-width:none;">

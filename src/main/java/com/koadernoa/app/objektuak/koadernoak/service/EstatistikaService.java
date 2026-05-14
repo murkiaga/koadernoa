@@ -104,8 +104,14 @@ public class EstatistikaService {
         EbaluazioMomentua em = est.getEbaluazioMomentua();
         DateRange tartea = tarteaEbaluazioMomentua(egutegia, em);
 
+        boolean bigarrenFinalaDa = em != null && "2_FINAL".equalsIgnoreCase(em.getKodea());
+
         // ---------- UNITATEAK ----------
-        if (programazioa != null) {
+        if (bigarrenFinalaDa) {
+            // 2_FINALean ez dira UD/erronka metrikak erakutsi edo kalkulatu behar.
+            est.setUnitateakAurreikusiak(0);
+            est.setUnitateakEmanda(0);
+        } else if (programazioa != null) {
             int aurreikusUd = kalkulatuUnitateakAurreikusiak(programazioa, tartea);
             est.setUnitateakAurreikusiak(aurreikusUd);
 
@@ -118,13 +124,19 @@ public class EstatistikaService {
         }
 
         // ---------- ORDUAK ----------
-        int aurreikusOrdu = (programazioa != null)
-                ? kalkulatuOrduakAurreikusiak(programazioa, tartea)
-                : 0;
-        est.setOrduakAurreikusiak(aurreikusOrdu);
+        if (bigarrenFinalaDa) {
+            // 2_FINALean ez dira saio/bertaratze metrikak erakutsi edo kalkulatu behar.
+            est.setOrduakAurreikusiak(0);
+            est.setOrduakEmanda(0);
+        } else {
+            int aurreikusOrdu = (programazioa != null)
+                    ? kalkulatuOrduakAurreikusiak(programazioa, tartea)
+                    : 0;
+            est.setOrduakAurreikusiak(aurreikusOrdu);
 
-        int emandakoOrdu = kalkulatuOrduakEmanda(koadernoa, tartea);
-        est.setOrduakEmanda(emandakoOrdu);
+            int emandakoOrdu = kalkulatuOrduakEmanda(koadernoa, tartea);
+            est.setOrduakEmanda(emandakoOrdu);
+        }
 
         // ---------- IKASLEAK ----------
         int ebaluatuak = kalkulatuEbaluatuak(koadernoa, em);
@@ -134,7 +146,7 @@ public class EstatistikaService {
         est.setAprobatuak(aprobatuak);
 
         // ---------- HUTSEGITE ORDUAK ----------
-        int hutsOrdu = kalkulatuHutsegiteOrduak(koadernoa, tartea);
+        int hutsOrdu = bigarrenFinalaDa ? 0 : kalkulatuHutsegiteOrduak(koadernoa, tartea);
         est.setHutsegiteOrduak(hutsOrdu);
 
         est.setKalkulatua(true);

@@ -219,8 +219,16 @@
                   th:text="| · Orduak: ${moduloOrduak}|">
               · Orduak: 0
             </span>
-            <span th:if="${moduloOrduEgoera == 'falta'}" class="hours-warn"> (orduak falta)</span>
-            <span th:if="${moduloOrduEgoera == 'sobera'}" class="hours-warn"> (orduak sobera)</span>
+            <span th:if="${moduloOrduEgoera == 'falta'}"
+                  class="hours-warn"
+                  th:text="| · ${moduloOrduDiffAbs} ordu falta|">
+              · 4 ordu falta
+            </span>
+            <span th:if="${moduloOrduEgoera == 'sobera'}"
+                  class="hours-warn"
+                  th:text="| · ${moduloOrduDiffAbs} ordu sobera|">
+              · 4 ordu sobera
+            </span>
           </div>
         </div>
         <div style="margin-left:auto; display:flex; gap:.5rem;">

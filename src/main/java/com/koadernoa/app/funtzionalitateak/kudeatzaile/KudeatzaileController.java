@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -22,6 +23,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.koadernoa.app.objektuak.egutegia.repository.IkasturteaRepository;
 import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
+import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.modulua.repository.IkasleaRepository;
 import com.koadernoa.app.objektuak.modulua.service.IkasleArgazkiService;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Taldea;
@@ -48,6 +50,7 @@ public class KudeatzaileController {
     private final IkasleaRepository ikasleaRepository;
     private final IkasleArgazkiService ikasleArgazkiService;
     private final IkasturteaRepository ikasturteaRepository;
+    private final KoadernoaRepository koadernoaRepository;
     
     /** Kudeatzaileko orri guztietan erabilgarri: ikasturte aktiboa */
     @ModelAttribute("ikasturteAktiboa")
@@ -169,8 +172,17 @@ public class KudeatzaileController {
     }
 
     @GetMapping("/taldeak/ezabatu/{id}")
-    public String ezabatuTaldea(@PathVariable("id") Long id) {
-        taldeaService.deleteById(id);
+    public String ezabatuTaldea(@PathVariable("id") Long id, RedirectAttributes ra) {
+        if (koadernoaRepository.existsByModuloa_Taldea_Id(id)) {
+            ra.addFlashAttribute("errorea", "talde hau ezin da ezabatu koadernoren bat duelako");
+        } else {
+            try {
+                taldeaService.deleteById(id);
+                ra.addFlashAttribute("msg", "Taldea ezabatu da.");
+            } catch (DataIntegrityViolationException ex) {
+                ra.addFlashAttribute("errorea", "talde hau ezin da ezabatu koadernoren bat duelako");
+            }
+        }
         return "redirect:/kudeatzaile/taldeak";
     }
     
