@@ -58,6 +58,14 @@
             id="tab-txostenak">
       Txostenak
     </button>
+
+    <button type="button" class="tab-btn"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-seed"
+            id="tab-seed">
+      Seed
+    </button>
   </div>
 
   <!-- LOGOA PANELA -->
@@ -85,6 +93,11 @@
   <section id="panel-txostenak" class="tab-panel" role="tabpanel"
            aria-labelledby="tab-txostenak" tabindex="0" aria-hidden="true">
     <div th:replace="~{admin/fragments/txostenak :: txostenak-panel}"></div>
+  </section>
+
+  <section id="panel-seed" class="tab-panel" role="tabpanel"
+           aria-labelledby="tab-seed" tabindex="0" aria-hidden="true">
+    <div th:replace="~{admin/fragments/seed :: seed-panel}"></div>
   </section>
 </main>
 

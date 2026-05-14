@@ -3,6 +3,8 @@ package com.koadernoa.app.funtzionalitateak.admin;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.*;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -20,6 +22,9 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.koadernoa.app.funtzionalitateak.admin.seed.dto.SeedImportRequest;
+import com.koadernoa.app.funtzionalitateak.admin.seed.dto.SeedImportResult;
+import com.koadernoa.app.funtzionalitateak.admin.seed.service.KatalogoAkademikoaSeedService;
 import com.koadernoa.app.objektuak.konfigurazioa.service.AplikazioAukeraService;
 import com.koadernoa.app.objektuak.logak.entitateak.LogMota;
 import com.koadernoa.app.objektuak.logak.service.LogService;
@@ -35,6 +40,7 @@ public class AdminController {
     private final AplikazioAukeraService aukService;
     private final AuthProviderStatusService statusService;
     private final LogService logService;
+    private final KatalogoAkademikoaSeedService katalogoAkademikoaSeedService;
 
     @Value("${koadernoa.uploads.dir:uploads}")
     private String baseDir;
@@ -93,6 +99,8 @@ public class AdminController {
         model.addAttribute("from", from);
         model.addAttribute("to", to);
         model.addAttribute("md6309TxostenaBadago", Files.exists(getMd6309Path()));
+        model.addAttribute("seedEgoera", katalogoAkademikoaSeedService.kalkulatuEgoera());
+        model.addAttribute("seedImportRequest", new SeedImportRequest());
 
         return "admin/index";
     }
@@ -236,5 +244,19 @@ public class AdminController {
         Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
 
         return "redirect:/admin/?tab=txostenak&success=Txostena%20eguneratuta";
+    }
+
+    @PostMapping("/seed/kargatu")
+    public String kargatuSeed(@ModelAttribute SeedImportRequest request) {
+        try {
+            SeedImportResult result = katalogoAkademikoaSeedService.inportatu(request);
+            return "redirect:/admin/?tab=seed&success=" + urlEncode(result.successMessage());
+        } catch (IllegalArgumentException e) {
+            return "redirect:/admin/?tab=seed&error=" + urlEncode(e.getMessage());
+        }
+    }
+
+    private String urlEncode(String value) {
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 }

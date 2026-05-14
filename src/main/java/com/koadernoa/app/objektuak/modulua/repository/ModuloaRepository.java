@@ -1,6 +1,7 @@
 package com.koadernoa.app.objektuak.modulua.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -11,9 +12,12 @@ import org.springframework.data.repository.query.Param;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Familia;
+import com.koadernoa.app.objektuak.zikloak.entitateak.Taldea;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Zikloa;
 
 public interface ModuloaRepository extends JpaRepository<Moduloa, Long>{
+
+	Optional<Moduloa> findByKodeaIgnoreCaseAndEeiKodeaIgnoreCaseAndTaldeaAndMaila(String kodea, String eeiKodea, Taldea taldea, Maila maila);
 
 	List<Moduloa> findByTaldeaId(Long taldeaId);
 	Page<Moduloa> findByTaldeaId(Long taldeaId, Pageable pageable);
