@@ -1,0 +1,3168 @@
+{
+  "bertsioa": 1,
+  "iturria": "katalogo-akademikoa_20260514_103437.sql",
+  "oharra": "SQL dump-etik sortutako katalogo akademikoa. Ez ditu DBko IDak erabiltzen; erlazioak JSON hierarkiaren bidez berreraikita daude.",
+  "mailak": [
+    {
+      "kodea": "LOE_1",
+      "izena": "1. maila LOE",
+      "ordena": 1,
+      "aktibo": true
+    },
+    {
+      "kodea": "LEHENENGOA",
+      "izena": "1. maila",
+      "ordena": 1,
+      "aktibo": true
+    },
+    {
+      "kodea": "LOE_2",
+      "izena": "2. maila LOE",
+      "ordena": 2,
+      "aktibo": true
+    },
+    {
+      "kodea": "LOGSE_1",
+      "izena": "1. maila LOGSE",
+      "ordena": 2,
+      "aktibo": true
+    },
+    {
+      "kodea": "BIGARRENA",
+      "izena": "2. maila",
+      "ordena": 2,
+      "aktibo": true
+    },
+    {
+      "kodea": "LOGSE_2",
+      "izena": "2. maila LOGSE",
+      "ordena": 4,
+      "aktibo": true
+    },
+    {
+      "kodea": "C_GRADUA",
+      "izena": "C_GRADUA",
+      "ordena": 5,
+      "aktibo": true
+    }
+  ],
+  "familiak": [
+    {
+      "izena": "INFORMATIKA ETA KOMUNIKAZIOAK",
+      "slug": "informatika-eta-komunikazioak",
+      "aktibo": true,
+      "zikloak": [
+        {
+          "izena": "MIKROINFORMATIKA-SISTEMAK ETA SAREAK",
+          "maila": "ErdiMaila",
+          "taldeak": [
+            {
+              "izena": "1SM2A",
+              "moduluak": [
+                {
+                  "eeiKodea": "0225",
+                  "izena": "Redes Locales",
+                  "kodea": "SALO",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 231,
+                  "dualOrduak": 21,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0222",
+                  "izena": "Sistemas operativos monopuesto",
+                  "kodea": "PBSE",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 165,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0226",
+                  "izena": "Seguridad informática",
+                  "kodea": "INSE",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 99,
+                  "dualOrduak": 9,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0156",
+                  "izena": "Inglés profesional (GM)",
+                  "kodea": "INPR",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 60,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0221",
+                  "izena": "Montaje y mantenimiento de equipos",
+                  "kodea": "TRMM",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 231,
+                  "dualOrduak": 21,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1664",
+                  "izena": "Digitalización aplicada a los sectores productivos (GM)",
+                  "kodea": "DIGI",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 60,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1709",
+                  "izena": "Itinerario personal para la empleabilidad I",
+                  "kodea": "ENPI",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 120,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                }
+              ]
+            },
+            {
+              "izena": "1SM2D",
+              "moduluak": [
+                {
+                  "eeiKodea": "0156",
+                  "izena": "Ingeles profesional (EM)",
+                  "kodea": "INPR",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 60,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0221",
+                  "izena": "Tresneria muntatzea eta mantentzea",
+                  "kodea": "TRMM",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 231,
+                  "dualOrduak": 21,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0222",
+                  "izena": "Postu bakarreko sistema eragileak",
+                  "kodea": "PBSE",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 165,
+                  "dualOrduak": 15,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0225",
+                  "izena": "Sare lokalak",
+                  "kodea": "SALO",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 231,
+                  "dualOrduak": 21,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0226",
+                  "izena": "Informatika-segurtasuna",
+                  "kodea": "INSE",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 99,
+                  "dualOrduak": 9,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1664",
+                  "izena": "Produkzio-sektoreei aplikatutako digitalizazioa (EM)",
+                  "kodea": "DIGI",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 60,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1709",
+                  "izena": "Enplegagarritasunerako ibilbide pertsonala I",
+                  "kodea": "ENPI",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 120,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                }
+              ]
+            },
+            {
+              "izena": "2SM2A",
+              "moduluak": [
+                {
+                  "eeiKodea": "0223",
+                  "izena": "Aplicaciones ofimáticas",
+                  "kodea": "BUAA",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 231,
+                  "dualOrduak": 84,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0224",
+                  "izena": "Sistemas operativos en red",
+                  "kodea": "SSER",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 168,
+                  "dualOrduak": 63,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0227",
+                  "izena": "Servicios en red",
+                  "kodea": "SAZE",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 189,
+                  "dualOrduak": 63,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0228",
+                  "izena": "Aplicaciones web",
+                  "kodea": "WEAP",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 105,
+                  "dualOrduak": 42,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1708",
+                  "izena": "Sostenibilidad aplicada al sistema productivo",
+                  "kodea": "IRAU",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 30,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1710",
+                  "izena": "Itinerario personal para la empleabilidad II",
+                  "kodea": "EMPL",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 63,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1713",
+                  "izena": "Proyecto intermodular",
+                  "kodea": "PINT",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 50,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "SMH1A",
+                  "izena": "Introducción a la programación",
+                  "kodea": "SM1A",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "SMH1B",
+                  "izena": "Fundamentos de las bases de datos relacionales",
+                  "kodea": "SM1B",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "SMH2A",
+                  "izena": "Introducción a la programación",
+                  "kodea": "SM2A",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "SMH2B",
+                  "izena": "Iniciación a Docker",
+                  "kodea": "SM2B",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                }
+              ]
+            },
+            {
+              "izena": "2SM2D",
+              "moduluak": [
+                {
+                  "eeiKodea": "0223",
+                  "izena": "Bulegotika-aplikazioak",
+                  "kodea": "BUAA",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 231,
+                  "dualOrduak": 84,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0224",
+                  "izena": "Sareko sistema eragileak",
+                  "kodea": "SSER",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 168,
+                  "dualOrduak": 63,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0227",
+                  "izena": "Sareko zerbitzuak",
+                  "kodea": "SAZE",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 189,
+                  "dualOrduak": 63,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0228",
+                  "izena": "Web aplikazioak",
+                  "kodea": "WEAP",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 105,
+                  "dualOrduak": 42,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1708",
+                  "izena": "Produkzio-sistemari aplikatutako iraunkortasuna",
+                  "kodea": "IRAU",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 30,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1710",
+                  "izena": "Enplegagarritasunerako ibilbide pertsonala II",
+                  "kodea": "EMPL",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 63,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1713",
+                  "izena": "Proiektu intermodularra",
+                  "kodea": "PINT",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 50,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "SMH1A",
+                  "izena": "Programazio hastapenak",
+                  "kodea": "SM1A",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "SMH1B",
+                  "izena": "Datu base erlazionalen oinarriak",
+                  "kodea": "SM1B",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "SMH2A",
+                  "izena": "Programazio hastapenak",
+                  "kodea": "SM2A",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "SMH2B",
+                  "izena": "Docker hastapena",
+                  "kodea": "SM2B",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "izena": "PLATAFORMA ANITZEKO APLIKAZIOEN GARAPENA",
+          "maila": "GoiMaila",
+          "taldeak": [
+            {
+              "izena": "2PG3D",
+              "moduluak": [
+                {
+                  "eeiKodea": "0483",
+                  "izena": "Informatika-sistemak",
+                  "kodea": "INSI",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 165,
+                  "dualOrduak": 60,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0486",
+                  "izena": "Datu-atzipena",
+                  "kodea": "DDAT",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 120,
+                  "dualOrduak": 36,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0488",
+                  "izena": "Interfazeen garapena",
+                  "kodea": "INGA",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 140,
+                  "dualOrduak": 35,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0489",
+                  "izena": "Multimedia-programazioa eta gailu mugikorrak ",
+                  "kodea": "MPGM",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 100,
+                  "dualOrduak": 37,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0490",
+                  "izena": "Zerbitzu eta prozesuen programazioa",
+                  "kodea": "ZPRP",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 80,
+                  "dualOrduak": 17,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0491",
+                  "izena": "Enpresa-kudeaketako sistemak",
+                  "kodea": "ENKS",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 100,
+                  "dualOrduak": 37,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0492",
+                  "izena": "Plataforma anitzeko aplikazioak garatzeko proiektu intermodularra",
+                  "kodea": "PIAN",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 50,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1710",
+                  "izena": "Enplegagarritasunerako ibilbide pertsonala II",
+                  "kodea": "EMPL",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 63,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "PGH1A",
+                  "izena": "Teknologia garatzailea",
+                  "kodea": "PG1A",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "PGH1B",
+                  "izena": "Datu egitura eta algoritmia",
+                  "kodea": "PG1B",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "PGH2A",
+                  "izena": "Teknologia garatzailea",
+                  "kodea": "PG2A",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "PGH2B",
+                  "izena": "Zibersegurtasuna web aplikazioen garapenean",
+                  "kodea": "PG2B",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "izena": "WEB APLIKAZIOEN GARAPENA",
+          "maila": "GoiMaila",
+          "taldeak": [
+            {
+              "izena": "2WG3A",
+              "moduluak": [
+                {
+                  "eeiKodea": "0483",
+                  "izena": "Sistemas informáticos",
+                  "kodea": "INSI",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 165,
+                  "dualOrduak": 60,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0612",
+                  "izena": "Desarrollo web en entorno cliente",
+                  "kodea": "BIWG",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 140,
+                  "dualOrduak": 56,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0613",
+                  "izena": "Desarrollo web en entorno servidor",
+                  "kodea": "ZIWG",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 180,
+                  "dualOrduak": 33,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0614",
+                  "izena": "Despliegue de aplicaciones web",
+                  "kodea": "WAAH",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 100,
+                  "dualOrduak": 37,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0615",
+                  "izena": "Diseño de interfaces web",
+                  "kodea": "WEID",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 120,
+                  "dualOrduak": 36,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0616",
+                  "izena": "Proyecto intermodular de desarrollo de aplicaciones web",
+                  "kodea": "PIWG",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 50,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1710",
+                  "izena": "Itinerario personal para la empleabilidad II",
+                  "kodea": "EMPL",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 63,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "WGH1A",
+                  "izena": "Tecnologia innovadora",
+                  "kodea": "WG1A",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "WGH1B",
+                  "izena": "Estructuras de datos y algoritmia",
+                  "kodea": "WG1B",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "WGH2A",
+                  "izena": "Tecnologia innovadora",
+                  "kodea": "WG2A",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "WGH2B",
+                  "izena": "Ciberseguridad en el desarrollo de aplicaciones web",
+                  "kodea": "WG2B",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "0612",
+                  "izena": "Web development in a client environment",
+                  "kodea": "BIWG",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 140,
+                  "dualOrduak": 56,
+                  "hautazkoa": false
+                }
+              ]
+            },
+            {
+              "izena": "1WG3A",
+              "moduluak": [
+                {
+                  "eeiKodea": "0179",
+                  "izena": "Inglés profesional (GS)",
+                  "kodea": "INPR",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 60,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0373",
+                  "izena": "Lenguajes de marcas y sistemas de gestión de información",
+                  "kodea": "MLKS",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 132,
+                  "dualOrduak": 12,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0484",
+                  "izena": "Bases de datos",
+                  "kodea": "DABA",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 198,
+                  "dualOrduak": 18,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0485",
+                  "izena": "Programación",
+                  "kodea": "PROG",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 264,
+                  "dualOrduak": 24,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0487",
+                  "izena": "Entornos de desarrollo",
+                  "kodea": "GAIN",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 99,
+                  "dualOrduak": 9,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1665",
+                  "izena": "Digitalización aplicada a los sectores productivos (GS)",
+                  "kodea": "DIGI",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 60,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1708",
+                  "izena": "Sostenibilidad aplicada al sistema productivo",
+                  "kodea": "IRAU",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 30,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1709",
+                  "izena": "Itinerario personal para la empleabilidad I",
+                  "kodea": "ENPI",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 120,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0373",
+                  "izena": "Markup languages ​​and information management systems",
+                  "kodea": "MLKS",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 132,
+                  "dualOrduak": 12,
+                  "hautazkoa": false
+                }
+              ]
+            },
+            {
+              "izena": "1WG3D",
+              "moduluak": [
+                {
+                  "eeiKodea": "0485",
+                  "izena": "Programazioa",
+                  "kodea": "PROG",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 264,
+                  "dualOrduak": 24,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0373",
+                  "izena": "Markatzeko lengoaiak eta informazioa kudeatzeko sistemak",
+                  "kodea": "MLKS",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 132,
+                  "dualOrduak": 12,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0179",
+                  "izena": "Ingeles profesional (GM)",
+                  "kodea": "INPR",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 60,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0484",
+                  "izena": "Datu-baseak",
+                  "kodea": "DABA",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 198,
+                  "dualOrduak": 18,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0487",
+                  "izena": "Garapen-inguruneak",
+                  "kodea": "GAIN",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 99,
+                  "dualOrduak": 9,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1665",
+                  "izena": "Produkzio-sektoreei aplikatutako digitalizazioa (GM)",
+                  "kodea": "DIGI",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 60,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1708",
+                  "izena": "Produkzio-sistemari aplikatutako iraunkortasuna",
+                  "kodea": "IRAU",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 30,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1709",
+                  "izena": "Enplegagarritasunerako ibilbide pertsonala I",
+                  "kodea": "ENPI",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 120,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                }
+              ]
+            },
+            {
+              "izena": "2WG3D",
+              "moduluak": [
+                {
+                  "eeiKodea": "0613",
+                  "izena": "Zerbitzari-inguruneko web-garapena",
+                  "kodea": "ZIWG",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 180,
+                  "dualOrduak": 33,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0612",
+                  "izena": "Bezero-inguruneko web-garapena",
+                  "kodea": "BIWG",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 140,
+                  "dualOrduak": 56,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0483",
+                  "izena": "Informatika-sistemak",
+                  "kodea": "INSI",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 165,
+                  "dualOrduak": 60,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0614",
+                  "izena": "Web-aplikazioen hedapena",
+                  "kodea": "WAAH",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 100,
+                  "dualOrduak": 37,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0615",
+                  "izena": "Web interfazeen diseinua",
+                  "kodea": "WEID",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 120,
+                  "dualOrduak": 36,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0616",
+                  "izena": "Web aplikazioen garapeneko proiektu intermodularra",
+                  "kodea": "PIWG",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 50,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1710",
+                  "izena": "Enplegagarritasunerako ibilbide pertsonala II",
+                  "kodea": "EMPL",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 63,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "WGH1A",
+                  "izena": "Teknologia garatzailea",
+                  "kodea": "WG1A",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "WGH1B",
+                  "izena": "Datu egitura eta algoritmia",
+                  "kodea": "WG1B",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "WGH2A",
+                  "izena": "Teknologia garatzailea",
+                  "kodea": "WG2A",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "WGH2B",
+                  "izena": "Zibersegurtasuna web aplikazioen garapenean",
+                  "kodea": "WG2B",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "izena": "MERKATARITZA ETA MARKETINA",
+      "slug": "merkataritza-eta-marketina",
+      "aktibo": true,
+      "zikloak": [
+        {
+          "izena": "MERKATARITZA JARDUERAK",
+          "maila": "ErdiMaila",
+          "taldeak": [
+            {
+              "izena": "1MJ2B",
+              "moduluak": [
+                {
+                  "eeiKodea": "0156-E101",
+                  "izena": "Ingeles profesional eta aurreratua (EM) / Inglés profesional y avanzado (GM)",
+                  "kodea": "INPR-INAU",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 165,
+                  "dualOrduak": 15,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1226",
+                  "izena": "Merkataritza-jarduerako marketina / Marketing en la actividad comercial",
+                  "kodea": "MJMA",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 165,
+                  "dualOrduak": 15,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1229",
+                  "izena": "Gestión de compras",
+                  "kodea": "ERKU",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 99,
+                  "dualOrduak": 9,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1229",
+                  "izena": "Erosketen kudeaketa",
+                  "kodea": "ERKU",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 99,
+                  "dualOrduak": 9,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1232",
+                  "izena": "Procesos de venta",
+                  "kodea": "SAPR",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 165,
+                  "dualOrduak": 15,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1232",
+                  "izena": "Salmenta-prozesuak",
+                  "kodea": "SAPR",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 165,
+                  "dualOrduak": 15,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1233",
+                  "izena": "Aplicaciones informáticas para el comercio",
+                  "kodea": "MIAA",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 165,
+                  "dualOrduak": 15,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1233",
+                  "izena": "Merkataritzarako informatika-aplikazioak",
+                  "kodea": "MIAA",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 165,
+                  "dualOrduak": 15,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1708",
+                  "izena": "Produkzio-sistemari aplikatutako iraunkortasuna / Sostenibilidad aplicada al sistema productivo",
+                  "kodea": "IRAU",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 30,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1709",
+                  "izena": "Enplegagarritasunerako ibilbide pertsonala I / Itinerario personal para la empleabilidad I",
+                  "kodea": "ENPI",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 120,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                }
+              ]
+            },
+            {
+              "izena": "2MJ2B",
+              "moduluak": [
+                {
+                  "eeiKodea": "1227",
+                  "izena": "Gestión de un pequeño comercio",
+                  "kodea": "DTXK",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 168,
+                  "dualOrduak": 84,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1227",
+                  "izena": "Denda Txiki Baten Kudeaketa",
+                  "kodea": "DTXK",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 168,
+                  "dualOrduak": 84,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1228",
+                  "izena": "Biltegi-teknikak / Técnicas de almacén",
+                  "kodea": "BITE",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 99,
+                  "dualOrduak": 36,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1230",
+                  "izena": "Salmenta teknikoa / Venta técnica",
+                  "kodea": "SALT",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 126,
+                  "dualOrduak": 42,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1231",
+                  "izena": "Dinamización del punto de venta",
+                  "kodea": "SPDI",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 147,
+                  "dualOrduak": 42,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1231",
+                  "izena": "Salmenta-puntuaren dinamizazioa",
+                  "kodea": "SPDI",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 147,
+                  "dualOrduak": 42,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1234",
+                  "izena": "Servicios de atención comercial",
+                  "kodea": "MEAZ",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 84,
+                  "dualOrduak": 21,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1234",
+                  "izena": "Merkataritza-arretako zerbitzuak",
+                  "kodea": "MEAZ",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 84,
+                  "dualOrduak": 21,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1235",
+                  "izena": "Merkataritza elektronikoa / Comercio electrónico",
+                  "kodea": "MEEL",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 132,
+                  "dualOrduak": 48,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1664",
+                  "izena": "Produkzio-sektoreei aplikatutako digitalizazioa (EM) / Digitalización aplicada a los sectores productivos (GM)",
+                  "kodea": "DIGI",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 60,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1710",
+                  "izena": "Enplegagarritasunerako ibilbide pertsonala II / Itinerario personal para la empleabilidad II",
+                  "kodea": "EMPL",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 63,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1713",
+                  "izena": "Proiektu intermodularra / Proyecto intermodular",
+                  "kodea": "PINT",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 50,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "MJH1A",
+                  "izena": "Merkataritza simulatua ikasgelan (TPV) / Comercio simulado en el aula (TPV)",
+                  "kodea": "MJ1A",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "MJH1B",
+                  "izena": "Kontabilitate-informazioaren tratamendua / Tratamiento de la información contable",
+                  "kodea": "MJ1B",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "MJH2A",
+                  "izena": "Merkataritza simulatua ikasgelan (TPV) / Comercio simulado en el aula (TPV)",
+                  "kodea": "MJ2A",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "MJH2B",
+                  "izena": "Logistika- eta hornikuntza-sistema informatikoak / Sistemas informáticos de logística y aprovisionamiento",
+                  "kodea": "MJ2B",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "izena": "GARRAIOA ETA LOGISTIKA",
+          "maila": "GoiMaila",
+          "taldeak": [
+            {
+              "izena": "1GL3D",
+              "moduluak": [
+                {
+                  "eeiKodea": "0179-E201",
+                  "izena": "Ingeles profesional eta aurreratua (GM)",
+                  "kodea": "INPR-INAU",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 165,
+                  "dualOrduak": 15,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0622",
+                  "izena": "Salgaien nazioarteko garraioa",
+                  "kodea": "SANG",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 198,
+                  "dualOrduak": 18,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0623",
+                  "izena": "Enpresaren kudeaketa ekonomikoa eta finantzarioa",
+                  "kodea": "EKEF",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 198,
+                  "dualOrduak": 18,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0627",
+                  "izena": "Nazioarteko merkataritzaren administrazio-kudeaketa",
+                  "kodea": "NMAK",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 198,
+                  "dualOrduak": 18,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1665",
+                  "izena": "Produkzio-sektoreei aplikatutako digitalizazioa (GM)",
+                  "kodea": "DIGI",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 60,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1708",
+                  "izena": "Produkzio-sistemari aplikatutako iraunkortasuna",
+                  "kodea": "IRAU",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 30,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1709",
+                  "izena": "Enplegagarritasunerako ibilbide pertsonala I",
+                  "kodea": "ENPI",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 120,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                }
+              ]
+            },
+            {
+              "izena": "2GL3D",
+              "moduluak": [
+                {
+                  "eeiKodea": "0621",
+                  "izena": "Garraioaren eta logistikaren administrazio-kudeaketa",
+                  "kodea": "GLAK",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 160,
+                  "dualOrduak": 55,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0624",
+                  "izena": "Garraioa eta logistika merkaturatzea",
+                  "kodea": "GLOM",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 140,
+                  "dualOrduak": 56,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0625",
+                  "izena": "Biltegiratze-logistika",
+                  "kodea": "BILO",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 132,
+                  "dualOrduak": 48,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0626",
+                  "izena": "Hornikuntza-logistika",
+                  "kodea": "HOLO",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 80,
+                  "dualOrduak": 17,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0628",
+                  "izena": "Bidaiari-garraioaren antolamendua",
+                  "kodea": "BIGA",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 80,
+                  "dualOrduak": 17,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0629",
+                  "izena": "Salgai-garraioaren antolamendua",
+                  "kodea": "SAGA",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 80,
+                  "dualOrduak": 56,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0630",
+                  "izena": "Garraioa eta logistikaren proiektu intermodularra",
+                  "kodea": "PIGL",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 50,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1710",
+                  "izena": "Enplegagarritasunerako ibilbide pertsonala II",
+                  "kodea": "EMPL",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 63,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "GLH1A",
+                  "izena": "Logistika- eta hornikuntza-sistema informatikoak",
+                  "kodea": "GL1A",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "GLH1B",
+                  "izena": "Finantza-matematikan eta excel-an sakontzea",
+                  "kodea": "GL1B",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "GLH2A",
+                  "izena": "Logistika- eta hornikuntza-sistema informatikoak",
+                  "kodea": "GL2A",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "GLH2B",
+                  "izena": "Kontabilitate-informazioaren tratamendua",
+                  "kodea": "GL2B",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "izena": "FABRIKAZIO MEKANIKOA",
+      "slug": "fabrikazio-mekanikoa",
+      "aktibo": true,
+      "zikloak": [
+        {
+          "izena": "SOLDADURA ETA GALDARAGINTZA",
+          "maila": "ErdiMaila",
+          "taldeak": [
+            {
+              "izena": "1SG2B",
+              "moduluak": [
+                {
+                  "eeiKodea": "0006",
+                  "izena": "Metrologia eta saiakuntzak / Metrología y ensayos",
+                  "kodea": "MESA",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 132,
+                  "dualOrduak": 12,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0007",
+                  "izena": "Interpretación gráfica",
+                  "kodea": "INGR",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 132,
+                  "dualOrduak": 12,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0007",
+                  "izena": "Interpretazio grafikoa",
+                  "kodea": "INGR",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 132,
+                  "dualOrduak": 12,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0091",
+                  "izena": "Trazado corte y conformado",
+                  "kodea": "TEKO",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 264,
+                  "dualOrduak": 24,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0091",
+                  "izena": "Trazadura, ebaketa eta konformazioa",
+                  "kodea": "TEKO",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 264,
+                  "dualOrduak": 24,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0093",
+                  "izena": "Soldadura en atmosfera natural",
+                  "kodea": "GNSO",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 231,
+                  "dualOrduak": 24,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0093",
+                  "izena": "Giro naturaleko soldadura",
+                  "kodea": "GNSO",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 231,
+                  "dualOrduak": 24,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0156",
+                  "izena": "Ingeles profesional (EM) / Inglés profesional (GM)",
+                  "kodea": "INPR",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 60,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1709",
+                  "izena": "Enplegagarritasunerako ibilbide pertsonala I / Itinerario personal para la empleabilidad I",
+                  "kodea": "ENPI",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 120,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                }
+              ]
+            },
+            {
+              "izena": "2SG2B",
+              "moduluak": [
+                {
+                  "eeiKodea": "0092",
+                  "izena": "Mekanizazioa / Mecanizado",
+                  "kodea": "MEKA",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 165,
+                  "dualOrduak": 81,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0094",
+                  "izena": "Soldadura en atmósfera protegida",
+                  "kodea": "BGSO",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 231,
+                  "dualOrduak": 84,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0094",
+                  "izena": "Babes-giroko soldadura",
+                  "kodea": "BGSO",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 231,
+                  "dualOrduak": 84,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0095",
+                  "izena": "Muntaia / Montaje",
+                  "kodea": "MUNT",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 231,
+                  "dualOrduak": 84,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1664",
+                  "izena": "Produkzio-sektoreei aplikatutako digitalizazioa (EM) / Digitalización aplicada a los sectores productivos (GM)",
+                  "kodea": "DIGI",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 60,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1708",
+                  "izena": "Produkzio-sistemari aplikatutako iraunkortasuna / Sostenibilidad aplicada al sistema productivo",
+                  "kodea": "IRAU",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 30,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1710",
+                  "izena": "Enplegagarritasunerako ibilbide pertsonala II / Itinerario personal para la empleabilidad II",
+                  "kodea": "EMPL",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 63,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1713",
+                  "izena": "Proiektu intermodularra / Proyecto intermodular",
+                  "kodea": "PINT",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 50,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "SGH1A",
+                  "izena": "Mekanizazio-tailerra / Taller de mecanizado",
+                  "kodea": "SG1A",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "SGH1B",
+                  "izena": "Planoen eta eskemen interpretazioa / Interpretación de planos y esquemas",
+                  "kodea": "SG1B",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "SGH2A",
+                  "izena": "Mekanizazio-tailerra / Taller de mecanizado",
+                  "kodea": "SG2A",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "SGH2B",
+                  "izena": "Soldadurari aplikatutako teknologia-oinarriak / Fundamentos de tecnología aplicados a soldadura",
+                  "kodea": "SG2B",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                }
+              ]
+            },
+            {
+              "izena": "SG-CP2",
+              "moduluak": []
+            }
+          ]
+        },
+        {
+          "izena": "METAL ERAIKUNTZAK",
+          "maila": "GoiMaila",
+          "taldeak": [
+            {
+              "izena": "1MT3A",
+              "moduluak": [
+                {
+                  "eeiKodea": "0162",
+                  "izena": "Programación de sistemas automáticos de fm",
+                  "kodea": "FSAP",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 100,
+                  "dualOrduak": 10,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0245",
+                  "izena": "Representación gráfica en fabricación mecánica",
+                  "kodea": "IGFM",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 165,
+                  "dualOrduak": 15,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0247",
+                  "izena": "Definición de procesos en construcciones metálicas",
+                  "kodea": "MEPD",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 165,
+                  "dualOrduak": 15,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0248",
+                  "izena": "Procesos de mecanizado, corte y conformado en cm",
+                  "kodea": "MEMP",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 198,
+                  "dualOrduak": 18,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0249",
+                  "izena": "Procesos de unión y montaje en construcciones metálicas",
+                  "kodea": "MELP",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 198,
+                  "dualOrduak": 18,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1708",
+                  "izena": "Sostenibilidad aplicada al sistema productivo",
+                  "kodea": "IRAU",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 30,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1709",
+                  "izena": "Itinerario personal para la empleabilidad I",
+                  "kodea": "ENPI",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 120,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                }
+              ]
+            },
+            {
+              "izena": "2MT3A",
+              "moduluak": [
+                {
+                  "eeiKodea": "0163",
+                  "izena": "Programación de la producción",
+                  "kodea": "FMPP",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 120,
+                  "dualOrduak": 57,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0165",
+                  "izena": "Gestión de la calidad, prevención de riesgos laborales y protección ambiental",
+                  "kodea": "KKAP",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 165,
+                  "dualOrduak": 81,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0179",
+                  "izena": "Inglés profesional (GS)",
+                  "kodea": "INPR",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 60,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0246",
+                  "izena": "Diseño de construcciones metálicas",
+                  "kodea": "MEED",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 280,
+                  "dualOrduak": 70,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0250",
+                  "izena": "Proyecto intermodular de construcciones metálicas",
+                  "kodea": "PIMT",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 50,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1665",
+                  "izena": "Digitalización aplicada a los sectores productivos (GS)",
+                  "kodea": "DIGI",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 60,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1710",
+                  "izena": "Itinerario personal para la empleabilidad II",
+                  "kodea": "EMPL",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 63,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "MTH1A",
+                  "izena": "Taller de soldadura",
+                  "kodea": "MT1A",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "MTH1B",
+                  "izena": "Diseño, impresión y visión 3D",
+                  "kodea": "MT1B",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "MTH2A",
+                  "izena": "Taller de soldadura",
+                  "kodea": "MT2A",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "MTH2B",
+                  "izena": "Interpretación de documentación técnica",
+                  "kodea": "MT2B",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                }
+              ]
+            },
+            {
+              "izena": "1MT3D",
+              "moduluak": [
+                {
+                  "eeiKodea": "0162",
+                  "izena": "Fabrikazio mekanikoko sistema automatikoen programazioa",
+                  "kodea": "FSAP",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 100,
+                  "dualOrduak": 10,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0245",
+                  "izena": "Irudikapen Grafikoa Fabrikazio Mekanikoan",
+                  "kodea": "IGFM",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 165,
+                  "dualOrduak": 15,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0247",
+                  "izena": "Metal-eraikuntzen prozesuen definizioa",
+                  "kodea": "MEPD",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 165,
+                  "dualOrduak": 15,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0248",
+                  "izena": "Metal-eraikuntzen mekanizazio-, ebaketa- eta konformazio-prozesuak",
+                  "kodea": "MEMP",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 198,
+                  "dualOrduak": 18,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0249",
+                  "izena": "Metal-eraikuntzen lotura- eta muntaia-prozesuak",
+                  "kodea": "MELP",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 198,
+                  "dualOrduak": 18,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1708",
+                  "izena": "Produkzio-sistemari aplikatutako iraunkortasuna",
+                  "kodea": "IRAU",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 30,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1709",
+                  "izena": "Enplegagarritasunerako ibilbide pertsonala I",
+                  "kodea": "ENPI",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 120,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                }
+              ]
+            },
+            {
+              "izena": "2MT3D",
+              "moduluak": [
+                {
+                  "eeiKodea": "0163",
+                  "izena": "Produkzioaren programazioa",
+                  "kodea": "FMPP",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 120,
+                  "dualOrduak": 57,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0165",
+                  "izena": "Kalitatearen kudeaketa, laneko arriskuen prebentzioa eta ingurumen-babesa",
+                  "kodea": "KKAP",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 165,
+                  "dualOrduak": 81,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0179",
+                  "izena": "Ingeles profesional (GM)",
+                  "kodea": "INPR",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 60,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0246",
+                  "izena": "Metal-eraikuntzen diseinua",
+                  "kodea": "MEED",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 280,
+                  "dualOrduak": 70,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0250",
+                  "izena": "Metal-eraikuntzen proiektu intermodularra",
+                  "kodea": "PIMT",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 50,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1665",
+                  "izena": "Produkzio-sektoreei aplikatutako digitalizazioa (GM)",
+                  "kodea": "DIGI",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 60,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1710",
+                  "izena": "Enplegagarritasunerako ibilbide pertsonala II",
+                  "kodea": "EMPL",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 63,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "MTH1A",
+                  "izena": "Soldadura-tailerra",
+                  "kodea": "MT1A",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "MTH1B",
+                  "izena": "3D diseinua, inprimaketa eta ikusmena",
+                  "kodea": "MT1B",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "MTH2A",
+                  "izena": "Soldadura-tailerra",
+                  "kodea": "MT2A",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "MTH2B",
+                  "izena": "Dokumentazio teknikoaren interpretazioa",
+                  "kodea": "MT2B",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "izena": "OSASUNGINTZA",
+      "slug": "osasungintza",
+      "aktibo": true,
+      "zikloak": [
+        {
+          "izena": "ERIZAINTZAKO ZAINTZA OSAGARRIAK",
+          "maila": "ErdiMaila",
+          "taldeak": [
+            {
+              "izena": "1ER2A",
+              "moduluak": [
+                {
+                  "eeiKodea": "0002",
+                  "izena": "Técnicas básicas de enfermería",
+                  "kodea": "EOTE",
+                  "mailaKodea": "LOGSE_1",
+                  "orduak": 429,
+                  "dualOrduak": 39,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0003",
+                  "izena": "Higiene del medio hospitalario y limpieza del material",
+                  "kodea": "OHMG",
+                  "mailaKodea": "LOGSE_1",
+                  "orduak": 205,
+                  "dualOrduak": 25,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0004",
+                  "izena": "Promoción de la salud y apoyo psicológico al paciente",
+                  "kodea": "OSPA",
+                  "mailaKodea": "LOGSE_1",
+                  "orduak": 118,
+                  "dualOrduak": 28,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0156",
+                  "izena": "Inglés profesional (GM)",
+                  "kodea": "INPR",
+                  "mailaKodea": "LOGSE_1",
+                  "orduak": 60,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1664",
+                  "izena": "Digitalización aplicada a los sectores productivos (GM)",
+                  "kodea": "DIGI",
+                  "mailaKodea": "LOGSE_1",
+                  "orduak": 60,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1708",
+                  "izena": "Sostenibilidad aplicada al sistema productivo",
+                  "kodea": "IRAU",
+                  "mailaKodea": "LOGSE_1",
+                  "orduak": 30,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1709",
+                  "izena": "Itinerario personal para la empleabilidad I",
+                  "kodea": "ENPI",
+                  "mailaKodea": "LOGSE_1",
+                  "orduak": 90,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                }
+              ]
+            },
+            {
+              "izena": "1ER2D1",
+              "moduluak": [
+                {
+                  "eeiKodea": "0002",
+                  "izena": "Erizaintzako oinarrizko teknikak",
+                  "kodea": "EOTE",
+                  "mailaKodea": "LOGSE_1",
+                  "orduak": 429,
+                  "dualOrduak": 39,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0003",
+                  "izena": "Ospitaleko higienea eta materialen garbiketa",
+                  "kodea": "OHMG",
+                  "mailaKodea": "LOGSE_1",
+                  "orduak": 205,
+                  "dualOrduak": 25,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0004",
+                  "izena": "Osasunaren sustapena eta pazientearentzako laguntza psikologikoa",
+                  "kodea": "OSPA",
+                  "mailaKodea": "LOGSE_1",
+                  "orduak": 118,
+                  "dualOrduak": 28,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0156",
+                  "izena": "Ingeles profesional (EM)",
+                  "kodea": "INPR",
+                  "mailaKodea": "LOGSE_1",
+                  "orduak": 60,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1664",
+                  "izena": "Produkzio-sektoreei aplikatutako digitalizazioa (EM)",
+                  "kodea": "DIGI",
+                  "mailaKodea": "LOGSE_1",
+                  "orduak": 60,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1708",
+                  "izena": "Produkzio-sistemari aplikatutako iraunkortasuna",
+                  "kodea": "IRAU",
+                  "mailaKodea": "LOGSE_1",
+                  "orduak": 30,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1709",
+                  "izena": "Enplegagarritasunerako ibilbide pertsonala I",
+                  "kodea": "ENPI",
+                  "mailaKodea": "LOGSE_1",
+                  "orduak": 90,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                }
+              ]
+            },
+            {
+              "izena": "1ER2D2",
+              "moduluak": [
+                {
+                  "eeiKodea": "EOTE",
+                  "izena": "Erizaintzako oinarrizko teknikak",
+                  "kodea": "TECA",
+                  "mailaKodea": "LOGSE_1",
+                  "orduak": 429,
+                  "dualOrduak": 39,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0003",
+                  "izena": "Ospitaleko higienea eta materialen garbiketa",
+                  "kodea": "OHMG",
+                  "mailaKodea": "LOGSE_1",
+                  "orduak": 205,
+                  "dualOrduak": 25,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0004",
+                  "izena": "Osasunaren sustapena eta pazientearentzako laguntza psikologikoa",
+                  "kodea": "OSPA",
+                  "mailaKodea": "LOGSE_1",
+                  "orduak": 118,
+                  "dualOrduak": 28,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0156",
+                  "izena": "Ingeles profesional (EM)",
+                  "kodea": "INPR",
+                  "mailaKodea": "LOGSE_1",
+                  "orduak": 60,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1664",
+                  "izena": "Produkzio-sektoreei aplikatutako digitalizazioa (EM)",
+                  "kodea": "DIGI",
+                  "mailaKodea": "LOGSE_1",
+                  "orduak": 60,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1708",
+                  "izena": "Produkzio-sistemari aplikatutako iraunkortasuna",
+                  "kodea": "IRAU",
+                  "mailaKodea": "LOGSE_1",
+                  "orduak": 30,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1709",
+                  "izena": "Enplegagarritasunerako ibilbide pertsonala I",
+                  "kodea": "ENPI",
+                  "mailaKodea": "LOGSE_1",
+                  "orduak": 90,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                }
+              ]
+            },
+            {
+              "izena": "2ER2A",
+              "moduluak": [
+                {
+                  "eeiKodea": "0001",
+                  "izena": "Operaciones administrativas y documentación sanitaria",
+                  "kodea": "AEAD",
+                  "mailaKodea": "LOGSE_2",
+                  "orduak": 85,
+                  "dualOrduak": 25,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0005",
+                  "izena": "Técnicas de ayuda odontológica-estomatológica",
+                  "kodea": "LOET",
+                  "mailaKodea": "LOGSE_2",
+                  "orduak": 99,
+                  "dualOrduak": 29,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1710",
+                  "izena": "Itinerario personal para la empleabilidad II",
+                  "kodea": "EMPL",
+                  "mailaKodea": "LOGSE_2",
+                  "orduak": 63,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1713",
+                  "izena": "Proyecto intermodular",
+                  "kodea": "PINT",
+                  "mailaKodea": "LOGSE_2",
+                  "orduak": 50,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "ERH1A",
+                  "izena": "<<ERH1A>>",
+                  "kodea": "ER1A",
+                  "mailaKodea": "LOGSE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "ERH1B",
+                  "izena": "<<ERH1B>>",
+                  "kodea": "ER1B",
+                  "mailaKodea": "LOGSE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "ERH2A",
+                  "izena": "<<ERH2A>>",
+                  "kodea": "ER2A",
+                  "mailaKodea": "LOGSE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "ERH2B",
+                  "izena": "<<ERH2B>>",
+                  "kodea": "ER2B",
+                  "mailaKodea": "LOGSE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                }
+              ]
+            },
+            {
+              "izena": "2ER2D1",
+              "moduluak": [
+                {
+                  "eeiKodea": "0001",
+                  "izena": "Administrazio-eragiketak eta osasungintzako dokumentazioa",
+                  "kodea": "AEAD",
+                  "mailaKodea": "LOGSE_2",
+                  "orduak": 85,
+                  "dualOrduak": 25,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0005",
+                  "izena": "Laguntza odontologiko-estomatologikoko teknikak",
+                  "kodea": "LOET",
+                  "mailaKodea": "LOGSE_2",
+                  "orduak": 99,
+                  "dualOrduak": 29,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1710",
+                  "izena": "Enplegagarritasunerako ibilbide pertsonala II",
+                  "kodea": "EMPL",
+                  "mailaKodea": "LOGSE_2",
+                  "orduak": 63,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1713",
+                  "izena": "Proiektu intermodularra",
+                  "kodea": "PINT",
+                  "mailaKodea": "LOGSE_2",
+                  "orduak": 50,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "ERH1A",
+                  "izena": "<<ERH1A>>",
+                  "kodea": "ER1A",
+                  "mailaKodea": "LOGSE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "ERH1B",
+                  "izena": "<<ERH1B>>",
+                  "kodea": "ER1B",
+                  "mailaKodea": "LOGSE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "ERH2A",
+                  "izena": "<<ERH2A>>",
+                  "kodea": "ER2A",
+                  "mailaKodea": "LOGSE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "ERH2B",
+                  "izena": "<<ERH2B>>",
+                  "kodea": "ER2B",
+                  "mailaKodea": "LOGSE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                }
+              ]
+            },
+            {
+              "izena": "2ER2D2",
+              "moduluak": [
+                {
+                  "eeiKodea": "0001",
+                  "izena": "Administrazio-eragiketak eta osasungintzako dokumentazioa",
+                  "kodea": "AEAD",
+                  "mailaKodea": "LOGSE_2",
+                  "orduak": 85,
+                  "dualOrduak": 25,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0005",
+                  "izena": "Laguntza odontologiko-estomatologikoko teknikak",
+                  "kodea": "LOET",
+                  "mailaKodea": "LOGSE_2",
+                  "orduak": 99,
+                  "dualOrduak": 29,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1710",
+                  "izena": "Enplegagarritasunerako ibilbide pertsonala II",
+                  "kodea": "EMPL",
+                  "mailaKodea": "LOGSE_2",
+                  "orduak": 63,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1713",
+                  "izena": "Proiektu intermodularra",
+                  "kodea": "PINT",
+                  "mailaKodea": "LOGSE_2",
+                  "orduak": 50,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "ERH1A",
+                  "izena": "<<ERH1A>>",
+                  "kodea": "ER1A",
+                  "mailaKodea": "LOGSE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "ERH1B",
+                  "izena": "<<ERH1B>>",
+                  "kodea": "ER1B",
+                  "mailaKodea": "LOGSE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "ERH2A",
+                  "izena": "<<ERH2A>>",
+                  "kodea": "ER2A",
+                  "mailaKodea": "LOGSE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "ERH2B",
+                  "izena": "<<ERH2B>>",
+                  "kodea": "ER2B",
+                  "mailaKodea": "LOGSE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "izena": "INSTALATZE ETA MANTENTZE LANAK",
+      "slug": "instalatze-eta-mantentze-lanak",
+      "aktibo": true,
+      "zikloak": [
+        {
+          "izena": "MANTENTZE-LAN ELEKTROMEKANIKOA",
+          "maila": "ErdiMaila",
+          "taldeak": [
+            {
+              "izena": "1ME2B",
+              "moduluak": [
+                {
+                  "eeiKodea": "0156",
+                  "izena": "Ingeles profesional (EM) / Inglés profesional (GM)",
+                  "kodea": "INPR",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 60,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0949",
+                  "izena": "Técnicas de fabricación",
+                  "kodea": "FATE",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 231,
+                  "dualOrduak": 21,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0949",
+                  "izena": "Fabrikazio-teknikak",
+                  "kodea": "FATE",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 231,
+                  "dualOrduak": 21,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0951",
+                  "izena": "Electricidad y automatismos eléctricos",
+                  "kodea": "EAAE",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 264,
+                  "dualOrduak": 24,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0951",
+                  "izena": "Elektrizitatea eta automatismo elektrikoak",
+                  "kodea": "EAAE",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 264,
+                  "dualOrduak": 24,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0952",
+                  "izena": "Automatismo neumatikoak eta hidraulikoak / Automatismos neumáticos e hidráulicos",
+                  "kodea": "ANEH",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 231,
+                  "dualOrduak": 21,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1664",
+                  "izena": "Produkzio-sektoreei aplikatutako digitalizazioa (EM) / Digitalización aplicada a los sectores productivos (GM)",
+                  "kodea": "DIGI",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 60,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1709",
+                  "izena": "Enplegagarritasunerako ibilbide pertsonala I / Itinerario personal para la empleabilidad I",
+                  "kodea": "ENPI",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 120,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                }
+              ]
+            },
+            {
+              "izena": "2ME2B",
+              "moduluak": [
+                {
+                  "eeiKodea": "0950",
+                  "izena": "Lotura- eta muntaia-teknikak / Técnicas de unión y montaje",
+                  "kodea": "LMUT",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 105,
+                  "dualOrduak": 42,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0953",
+                  "izena": "Montaje y mantenimiento mecánico",
+                  "kodea": "MMME",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 189,
+                  "dualOrduak": 63,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0953",
+                  "izena": "Muntaia- eta mantentze-lan mekanikoak",
+                  "kodea": "MMME",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 189,
+                  "dualOrduak": 63,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0954",
+                  "izena": "Muntaia- eta mantentze-lan elektriko/elektronikoak / Montaje y mantenimiento eléctrico-electrónico",
+                  "kodea": "MMEE",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 231,
+                  "dualOrduak": 84,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0955",
+                  "izena": "Montaje y mantenimiento de líneas automatizadas",
+                  "kodea": "LAMM",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 168,
+                  "dualOrduak": 63,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0955",
+                  "izena": "Linea automatizatuen muntaia- eta mantentze-lanak",
+                  "kodea": "LAMM",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 168,
+                  "dualOrduak": 63,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1708",
+                  "izena": "Produkzio-sistemari aplikatutako iraunkortasuna / Sostenibilidad aplicada al sistema productivo",
+                  "kodea": "IRAU",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 30,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1710",
+                  "izena": "Enplegagarritasunerako ibilbide pertsonala II / Itinerario personal para la empleabilidad II",
+                  "kodea": "EMPL",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 63,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1713",
+                  "izena": "Proiektu intermodularra / Proyecto intermodular",
+                  "kodea": "PINT",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 50,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "MEH1A",
+                  "izena": "Soldadura-tailerra / Taller de soldadura",
+                  "kodea": "ME1A",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "MEH1B",
+                  "izena": "Planoen eta eskemen interpretazioa / Interpretación de planos y esquemas",
+                  "kodea": "ME1B",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "MEH2A",
+                  "izena": "Soldadura-tailerra / Taller de soldadura",
+                  "kodea": "ME2A",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "MEH2B",
+                  "izena": "Elektromekanikari aplikatutako teknologia-oinarriak / Fundamentos de tecnología aplicados a electromecánica",
+                  "kodea": "ME2B",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "izena": "MEKATRONIKA INDUSTRIALA",
+          "maila": "GoiMaila",
+          "taldeak": [
+            {
+              "izena": "1MI3A",
+              "moduluak": [
+                {
+                  "eeiKodea": "0936",
+                  "izena": "Sistemas hidráulicos y neumáticos",
+                  "kodea": "SHNE",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 132,
+                  "dualOrduak": 12,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0937",
+                  "izena": "Sistemas eléctricos y electrónicos",
+                  "kodea": "SIEE",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 132,
+                  "dualOrduak": 12,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0939",
+                  "izena": "Procesos de fabricación",
+                  "kodea": "FAPR",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 165,
+                  "dualOrduak": 15,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0940",
+                  "izena": "Representación gráfica de sistemas mecatrónicos",
+                  "kodea": "SMIG",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 132,
+                  "dualOrduak": 12,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0943",
+                  "izena": "Integración de sistemas",
+                  "kodea": "SIIN",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 231,
+                  "dualOrduak": 21,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1665",
+                  "izena": "Digitalización aplicada a los sectores productivos (GS)",
+                  "kodea": "DIGI",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 60,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1709",
+                  "izena": "Itinerario personal para la empleabilidad I",
+                  "kodea": "ENPI",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 120,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                }
+              ]
+            },
+            {
+              "izena": "1MI3D",
+              "moduluak": [
+                {
+                  "eeiKodea": "0936",
+                  "izena": "Sistema hidraulikoak eta pneumatikoak",
+                  "kodea": "SHNE",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 132,
+                  "dualOrduak": 12,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0937",
+                  "izena": "Sistema elektrikoak eta elektronikoak",
+                  "kodea": "SIEE",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 132,
+                  "dualOrduak": 12,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0939",
+                  "izena": "Fabrikazio-prozesuak",
+                  "kodea": "FAPR",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 165,
+                  "dualOrduak": 15,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0940",
+                  "izena": "Sistema mekatronikoen irudikapen grafikoa",
+                  "kodea": "SMIG",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 132,
+                  "dualOrduak": 12,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0943",
+                  "izena": "Sistemen integrazioa",
+                  "kodea": "SIIN",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 231,
+                  "dualOrduak": 21,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1665",
+                  "izena": "Produkzio-sektoreei aplikatutako digitalizazioa (GM)",
+                  "kodea": "DIGI",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 60,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1709",
+                  "izena": "Enplegagarritasunerako ibilbide pertsonala I",
+                  "kodea": "ENPI",
+                  "mailaKodea": "LOE_1",
+                  "orduak": 120,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                }
+              ]
+            },
+            {
+              "izena": "2MI3A",
+              "moduluak": [
+                {
+                  "eeiKodea": "0179",
+                  "izena": "Inglés profesional (GS)",
+                  "kodea": "INPR",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 60,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0935",
+                  "izena": "Sistemas mecánicos",
+                  "kodea": "SIME",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 160,
+                  "dualOrduak": 55,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0938",
+                  "izena": "Elementos de máquinas",
+                  "kodea": "MAEL",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 99,
+                  "dualOrduak": 36,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0941",
+                  "izena": "Configuración de sistemas mecatrónicos",
+                  "kodea": "SMEK",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 160,
+                  "dualOrduak": 76,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0942",
+                  "izena": "Procesos y gestión de mantenimiento y calidad",
+                  "kodea": "MKPK",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 100,
+                  "dualOrduak": 37,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0944",
+                  "izena": "Simulación de sistemas mecatrónicos",
+                  "kodea": "SMES",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 80,
+                  "dualOrduak": 17,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0945",
+                  "izena": "Proyecto intermodular de mecatrónica industrial",
+                  "kodea": "PIMI",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 50,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1708",
+                  "izena": "Sostenibilidad aplicada al sistema productivo",
+                  "kodea": "IRAU",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 30,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1710",
+                  "izena": "Itinerario personal para la empleabilidad II",
+                  "kodea": "EMPL",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 63,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "MIH1A",
+                  "izena": "Interpretación de documentación técnica",
+                  "kodea": "MI1A",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "MIH1B",
+                  "izena": "Taller de soldadura",
+                  "kodea": "MI1B",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "MIH2A",
+                  "izena": "Diseño, impresión y visión 3D",
+                  "kodea": "MI2A",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "MIH2B",
+                  "izena": "Taller de electricidad",
+                  "kodea": "MI2B",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                }
+              ]
+            },
+            {
+              "izena": "2MI3D",
+              "moduluak": [
+                {
+                  "eeiKodea": "0942",
+                  "izena": "Mantentze-lanen eta kalitatearen prozesuak eta kudeaketa",
+                  "kodea": "MKPK",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 100,
+                  "dualOrduak": 37,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0179",
+                  "izena": "Ingeles profesional (GM)",
+                  "kodea": "INPR",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 60,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0935",
+                  "izena": "Sistema mekanikoak",
+                  "kodea": "SIME",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 160,
+                  "dualOrduak": 55,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0938",
+                  "izena": "Makina-elementuak",
+                  "kodea": "MAEL",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 99,
+                  "dualOrduak": 36,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0941",
+                  "izena": "Sistema mekatronikoen konfigurazioa",
+                  "kodea": "SMEK",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 160,
+                  "dualOrduak": 76,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0944",
+                  "izena": "Sistema mekatronikoen simulazioa",
+                  "kodea": "SMES",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 80,
+                  "dualOrduak": 17,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "0945",
+                  "izena": "Mekatronika industrialeko proiektu intermodularra",
+                  "kodea": "PIMI",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 50,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1708",
+                  "izena": "Produkzio-sistemari aplikatutako iraunkortasuna",
+                  "kodea": "IRAU",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 30,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "1710",
+                  "izena": "Enplegagarritasunerako ibilbide pertsonala II",
+                  "kodea": "EMPL",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 63,
+                  "dualOrduak": 0,
+                  "hautazkoa": false
+                },
+                {
+                  "eeiKodea": "MIH1A",
+                  "izena": "Dokumentazio teknikoaren interpretazioa",
+                  "kodea": "MI1A",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "MIH1B",
+                  "izena": "Soldadura-tailerra",
+                  "kodea": "MI1B",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "MIH2A",
+                  "izena": "3D diseinua, inprimaketa eta ikusmena",
+                  "kodea": "MI2A",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                },
+                {
+                  "eeiKodea": "MIH2B",
+                  "izena": "Elektrizitate-tailerra",
+                  "kodea": "MI2B",
+                  "mailaKodea": "LOE_2",
+                  "orduak": 42,
+                  "dualOrduak": 0,
+                  "hautazkoa": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "izena": "FOL",
+      "slug": "fol",
+      "aktibo": true,
+      "zikloak": []
+    },
+    {
+      "izena": "HIZKUNTZAK",
+      "slug": "hizkuntzak",
+      "aktibo": true,
+      "zikloak": []
+    }
+  ],
+  "meta": {
+    "mailak": 7,
+    "familiak": 7,
+    "zikloak": 10,
+    "taldeak": 32,
+    "moduluak": 296,
+    "oharrak": {
+      "moduluBikoiztuPosibleak": [
+        {
+          "taldea": "1WG3A",
+          "kodea": "MLKS",
+          "eeiKodea": "0373",
+          "mailaKodea": "LOE_1",
+          "kopurua": 2,
+          "izenak": [
+            "Lenguajes de marcas y sistemas de gestión de información",
+            "Markup languages ​​and information management systems"
+          ]
+        },
+        {
+          "taldea": "2WG3A",
+          "kodea": "BIWG",
+          "eeiKodea": "0612",
+          "mailaKodea": "LOE_2",
+          "kopurua": 2,
+          "izenak": [
+            "Desarrollo web en entorno cliente",
+            "Web development in a client environment"
+          ]
+        },
+        {
+          "taldea": "1MJ2B",
+          "kodea": "ERKU",
+          "eeiKodea": "1229",
+          "mailaKodea": "LOE_1",
+          "kopurua": 2,
+          "izenak": [
+            "Gestión de compras",
+            "Erosketen kudeaketa"
+          ]
+        },
+        {
+          "taldea": "1MJ2B",
+          "kodea": "SAPR",
+          "eeiKodea": "1232",
+          "mailaKodea": "LOE_1",
+          "kopurua": 2,
+          "izenak": [
+            "Procesos de venta",
+            "Salmenta-prozesuak"
+          ]
+        },
+        {
+          "taldea": "1MJ2B",
+          "kodea": "MIAA",
+          "eeiKodea": "1233",
+          "mailaKodea": "LOE_1",
+          "kopurua": 2,
+          "izenak": [
+            "Aplicaciones informáticas para el comercio",
+            "Merkataritzarako informatika-aplikazioak"
+          ]
+        },
+        {
+          "taldea": "2MJ2B",
+          "kodea": "DTXK",
+          "eeiKodea": "1227",
+          "mailaKodea": "LOE_2",
+          "kopurua": 2,
+          "izenak": [
+            "Gestión de un pequeño comercio",
+            "Denda Txiki Baten Kudeaketa"
+          ]
+        },
+        {
+          "taldea": "2MJ2B",
+          "kodea": "SPDI",
+          "eeiKodea": "1231",
+          "mailaKodea": "LOE_2",
+          "kopurua": 2,
+          "izenak": [
+            "Dinamización del punto de venta",
+            "Salmenta-puntuaren dinamizazioa"
+          ]
+        },
+        {
+          "taldea": "2MJ2B",
+          "kodea": "MEAZ",
+          "eeiKodea": "1234",
+          "mailaKodea": "LOE_2",
+          "kopurua": 2,
+          "izenak": [
+            "Servicios de atención comercial",
+            "Merkataritza-arretako zerbitzuak"
+          ]
+        },
+        {
+          "taldea": "1ME2B",
+          "kodea": "FATE",
+          "eeiKodea": "0949",
+          "mailaKodea": "LOE_1",
+          "kopurua": 2,
+          "izenak": [
+            "Técnicas de fabricación",
+            "Fabrikazio-teknikak"
+          ]
+        },
+        {
+          "taldea": "1ME2B",
+          "kodea": "EAAE",
+          "eeiKodea": "0951",
+          "mailaKodea": "LOE_1",
+          "kopurua": 2,
+          "izenak": [
+            "Electricidad y automatismos eléctricos",
+            "Elektrizitatea eta automatismo elektrikoak"
+          ]
+        },
+        {
+          "taldea": "2ME2B",
+          "kodea": "MMME",
+          "eeiKodea": "0953",
+          "mailaKodea": "LOE_2",
+          "kopurua": 2,
+          "izenak": [
+            "Montaje y mantenimiento mecánico",
+            "Muntaia- eta mantentze-lan mekanikoak"
+          ]
+        },
+        {
+          "taldea": "2ME2B",
+          "kodea": "LAMM",
+          "eeiKodea": "0955",
+          "mailaKodea": "LOE_2",
+          "kopurua": 2,
+          "izenak": [
+            "Montaje y mantenimiento de líneas automatizadas",
+            "Linea automatizatuen muntaia- eta mantentze-lanak"
+          ]
+        },
+        {
+          "taldea": "1SG2B",
+          "kodea": "INGR",
+          "eeiKodea": "0007",
+          "mailaKodea": "LOE_1",
+          "kopurua": 2,
+          "izenak": [
+            "Interpretación gráfica",
+            "Interpretazio grafikoa"
+          ]
+        },
+        {
+          "taldea": "1SG2B",
+          "kodea": "TEKO",
+          "eeiKodea": "0091",
+          "mailaKodea": "LOE_1",
+          "kopurua": 2,
+          "izenak": [
+            "Trazado corte y conformado",
+            "Trazadura, ebaketa eta konformazioa"
+          ]
+        },
+        {
+          "taldea": "1SG2B",
+          "kodea": "GNSO",
+          "eeiKodea": "0093",
+          "mailaKodea": "LOE_1",
+          "kopurua": 2,
+          "izenak": [
+            "Soldadura en atmosfera natural",
+            "Giro naturaleko soldadura"
+          ]
+        },
+        {
+          "taldea": "2SG2B",
+          "kodea": "BGSO",
+          "eeiKodea": "0094",
+          "mailaKodea": "LOE_2",
+          "kopurua": 2,
+          "izenak": [
+            "Soldadura en atmósfera protegida",
+            "Babes-giroko soldadura"
+          ]
+        }
+      ]
+    }
+  }
+}
