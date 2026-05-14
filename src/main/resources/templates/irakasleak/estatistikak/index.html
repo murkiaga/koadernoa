@@ -155,14 +155,14 @@
 		
 		    <!-- UD: emanda (input) / aurreikusita (readonly) + %ak -->
 		    <td>
-		      <div>
+		      <div th:if="${!e.bigarrenFinala}">
 		        <input type="number" min="0"
 		               th:name="|unitateakEmanda_${e.id}|"
 		               th:value="${e.unitateakEmanda}">
 		        /
 		        <span th:text="${e.unitateakAurreikusiak}">0</span>
 		      </div>
-		      <div class="muted" style="font-size:.75rem;margin-top:0.1rem;">
+		      <div th:if="${!e.bigarrenFinala}" class="muted" style="font-size:.75rem;margin-top:0.1rem;">
 		        <!-- Benetako % -->
 		        <span th:if="${e.udPortzentaia != null}">
 		          <a th:if="${udEzadostasun}"
@@ -186,14 +186,14 @@
 		
 		    <!-- Orduak: emanda / aurreikusita + %ak -->
 		    <td>
-		      <div>
+		      <div th:if="${!e.bigarrenFinala}">
 		        <input type="number" min="0"
 		               th:name="|orduakEmanda_${e.id}|"
 		               th:value="${e.orduakEmanda}">
 		        /
 		        <span th:text="${e.orduakAurreikusiak}">0</span>
 		      </div>
-		      <div class="muted" style="font-size:.75rem;margin-top:0.1rem;">
+		      <div th:if="${!e.bigarrenFinala}" class="muted" style="font-size:.75rem;margin-top:0.1rem;">
 		        <span th:if="${e.orduPortzentaia != null}">
 		          <a th:if="${orduEzadostasun}"
 		             class="ezadostasun-link"
@@ -244,10 +244,10 @@
 		
 		    <!-- Ikasleen bertaratzea + bertaratze % -->
 		    <td>
-		      <div th:text="${e.hutsegiteOrduak}">
+		      <div th:if="${!e.bigarrenFinala}" th:text="${e.hutsegiteOrduak}">
 		        0
 		      </div>
-		      <div class="muted" style="font-size:.75rem;margin-top:0.1rem;">
+		      <div th:if="${!e.bigarrenFinala}" class="muted" style="font-size:.75rem;margin-top:0.1rem;">
 				  <!-- Bertaratze portzentaia (adib. 96.2% bertaratzea) -->
 				  <span th:if="${e.bertaratzePortzentaia != null}">
 				    <a th:if="${bertaratzeEzadostasun}"

@@ -643,7 +643,7 @@
 
         <!-- UD-ak / Erronkak -->
         <td>
-          <div class="metric">
+          <div class="metric" th:if="${!e.bigarrenFinala}">
             <span class="main" th:text="|${e.unitateakEmanda} / ${e.unitateakAurreikusiak}|">0 / 0</span>
             <span class="pct" th:if="${e.udPortzentaia != null}" th:text="|${e.udPortzentaia}%|">0%</span>
           </div>
@@ -651,7 +651,7 @@
 
         <!-- Saioak -->
         <td>
-          <div class="metric">
+          <div class="metric" th:if="${!e.bigarrenFinala}">
             <span class="main" th:text="|${e.orduakEmanda} / ${e.orduakAurreikusiak}|">0 / 0</span>
             <span class="pct" th:if="${e.orduPortzentaia != null}" th:text="|${e.orduPortzentaia}%|">0%</span>
           </div>
@@ -667,7 +667,7 @@
 
         <!-- Ikasleen bertaratzea / bertaratzea -->
         <td>
-          <div class="metric">
+          <div class="metric" th:if="${!e.bigarrenFinala}">
             <span class="main" th:text="${e.hutsegiteOrduak}">0</span>
             <span class="pct" th:if="${e.bertaratzePortzentaia != null}">
               <span th:text="${#numbers.formatDecimal(e.bertaratzePortzentaia, 2, 2)}">0.00</span>%

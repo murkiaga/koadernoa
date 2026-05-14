@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -13,6 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -317,8 +319,18 @@ public class ModuloKudeatzaileController {
                                  @RequestParam(name = "zikloaId", required = false) Long zikloaId,
                                  @RequestParam(name = "hautazkoa", required = false) Boolean hautazkoa,
                                  @RequestParam(name = "page", required = false) Integer page,
-                                 @RequestParam(name = "size", required = false) Integer size) {
-        moduloaService.delete(id);
+                                 @RequestParam(name = "size", required = false) Integer size,
+                                 RedirectAttributes redirectAttributes) {
+        if (koadernoaRepository.existsByModuloa_Id(id)) {
+            redirectAttributes.addFlashAttribute("error", "modulo hau ezin da ezabatu koadernoren bat duelako");
+        } else {
+            try {
+                moduloaService.delete(id);
+                redirectAttributes.addFlashAttribute("success", "Moduloa ezabatu da.");
+            } catch (DataIntegrityViolationException ex) {
+                redirectAttributes.addFlashAttribute("error", "modulo hau ezin da ezabatu koadernoren bat duelako");
+            }
+        }
 
         UriComponentsBuilder redirect = UriComponentsBuilder.fromPath("/kudeatzaile/moduloa");
         if (taldeaId != null) {

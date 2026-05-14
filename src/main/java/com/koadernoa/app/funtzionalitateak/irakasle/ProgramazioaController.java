@@ -133,6 +133,7 @@ public class ProgramazioaController {
       model.addAttribute("totalUdHours", totalUdHours);
       model.addAttribute("moduloOrduak", moduloOrduak);
       model.addAttribute("moduloOrduDiff", moduloOrduDiff);
+      model.addAttribute("moduloOrduDiffAbs", moduloOrduDiff != null ? Math.abs(moduloOrduDiff) : null);
       model.addAttribute("moduloOrduEgoera", moduloOrduEgoera);
       model.addAttribute("ebaluaketak", programazioa.getEbaluaketak());
       model.addAttribute("ebalDispon", ebalDispon);
