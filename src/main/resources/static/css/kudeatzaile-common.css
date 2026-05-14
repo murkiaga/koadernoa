@@ -29,7 +29,7 @@ a:hover{ text-decoration:underline; }
 
 /* Layout */
 .page{
-  max-width:1100px;
+  max-width:1500px;
   margin:16px auto 32px;
   padding:0 16px;
 }
@@ -398,4 +398,120 @@ div.modal.show{ display:flex; }
   font-size:.85rem;
   cursor:pointer;
   backdrop-filter:saturate(1.2) blur(2px);
+}
+
+/* Moodle esteka kudeaketa koadernoen zerrendan */
+input[type="url"]{
+  width:100%;
+  padding:6px 10px;
+  border-radius:10px;
+  border:1px solid var(--b);
+  font-size:.92rem;
+  background:#fff;
+}
+
+.col-moodle{
+  text-align:center;
+  white-space:nowrap;
+}
+
+.moodle-admin-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:2.15rem;
+  height:2.15rem;
+  padding:0;
+  border:1px solid var(--b);
+  border-radius:10px;
+  background:#fff;
+  cursor:pointer;
+}
+
+.moodle-admin-btn:hover,
+.moodle-admin-btn:focus-visible{
+  border-color:var(--m);
+  box-shadow:0 0 0 3px rgba(37, 99, 235, .15);
+  outline:none;
+}
+
+.moodle-admin-btn img{
+  display:block;
+  width:1.65rem;
+  height:1.65rem;
+  object-fit:contain;
+}
+
+.admin-moodle-modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  z-index:1000;
+  align-items:center;
+  justify-content:center;
+  padding:1rem;
+}
+
+.admin-moodle-modal.is-open{
+  display:flex;
+}
+
+.admin-moodle-modal__backdrop{
+  position:absolute;
+  inset:0;
+  background:rgba(17,24,39,.58);
+}
+
+.admin-moodle-modal__dialog{
+  position:relative;
+  width:min(34rem,100%);
+  background:#fff;
+  color:var(--t);
+  border-radius:14px;
+  box-shadow:0 24px 60px rgba(0,0,0,.28);
+  overflow:hidden;
+}
+
+.admin-moodle-modal__header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:1rem;
+  padding:1rem 1.25rem;
+  border-bottom:1px solid var(--b);
+}
+
+.admin-moodle-modal__header h2{
+  margin:0;
+}
+
+.admin-moodle-modal__header .muted{
+  margin:.25rem 0 0;
+}
+
+.admin-moodle-modal__close{
+  border:0;
+  background:transparent;
+  color:#4b5563;
+  cursor:pointer;
+  font-size:1.6rem;
+  line-height:1;
+}
+
+.admin-moodle-modal__form{
+  display:flex;
+  flex-direction:column;
+  gap:.55rem;
+  padding:1.25rem;
+}
+
+.admin-moodle-modal__form label{
+  font-weight:600;
+}
+
+.admin-moodle-modal__actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:.6rem;
+  margin-top:.8rem;
 }

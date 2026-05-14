@@ -8,6 +8,7 @@ import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -37,6 +38,9 @@ public class Koadernoa {
 
     @ManyToOne
     private Irakaslea jabea;
+
+    @Column(name = "moodle_esteka", length = 500)
+    private String moodleEsteka;
     
     @OneToMany(mappedBy = "koadernoa", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<KoadernoOrdutegiBlokea> ordutegiak;
@@ -72,6 +76,11 @@ public class Koadernoa {
         return izena + " (" + moduloa.getTaldea().getIzena() + ")";
     }
     
+    @Transient
+    public boolean hasMoodleEsteka() {
+        return moodleEsteka != null && !moodleEsteka.isBlank();
+    }
+
     @Transient
     public String getIrakasleakLabur() {
         if (irakasleak == null || irakasleak.isEmpty()) return "—";

@@ -98,6 +98,17 @@ public class KoadernoaService {
         return koadernoaRepository.findById(id).orElseThrow();
     }
 
+
+    @Transactional
+    public Koadernoa gordeMoodleEsteka(Long koadernoId, String moodleEsteka) {
+        Koadernoa koadernoa = koadernoaRepository.findById(koadernoId)
+                .orElseThrow(() -> new IllegalArgumentException("Koadernoa ez da aurkitu."));
+
+        String esteka = moodleEsteka == null ? null : moodleEsteka.trim();
+        koadernoa.setMoodleEsteka(esteka == null || esteka.isBlank() ? null : esteka);
+        return koadernoaRepository.save(koadernoa);
+    }
+
     public Optional<Koadernoa> findByIdWithEgutegiaAndEgunBereziak(Long id) {
         return koadernoaRepository.findByIdWithEgutegiaAndEgunBereziak(id);
     }

@@ -205,3 +205,143 @@ body {
   --ebal2-color: [[${ebal2Kolore}]];
   --ebal3-color: [[${ebal3Kolore}]];
 }
+
+/* ===== MOODLE ESTEKA NAVBARREAN ===== */
+.koaderno-hautapena {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.koaderno-hautapena label {
+  margin-right: 0;
+}
+
+.moodle-navbar-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  border-radius: .4rem;
+  text-decoration: none;
+}
+
+.moodle-navbar-link:hover,
+.moodle-navbar-link:focus-visible {
+  background: rgba(255, 255, 255, .16);
+  outline: none;
+}
+
+.moodle-navbar-button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.moodle-navbar-icon {
+  width: 1.65rem;
+  height: 1.65rem;
+  display: block;
+  object-fit: contain;
+}
+
+.moodle-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.moodle-modal.is-open {
+  display: flex;
+}
+
+.moodle-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 24, 39, .58);
+}
+
+.moodle-modal__dialog {
+  position: relative;
+  width: min(32rem, 100%);
+  background: #fff;
+  color: #111827;
+  border-radius: .85rem;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .28);
+  overflow: hidden;
+}
+
+.moodle-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.moodle-modal__header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.moodle-modal__close {
+  border: 0;
+  background: transparent;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #4b5563;
+}
+
+.moodle-modal__form {
+  display: flex;
+  flex-direction: column;
+  gap: .55rem;
+  padding: 1.25rem;
+}
+
+.moodle-modal__form label {
+  font-weight: 600;
+}
+
+.moodle-modal__form input[type="url"] {
+  width: 100%;
+  padding: .7rem .8rem;
+  border: 1px solid #cbd5e1;
+  border-radius: .55rem;
+  font: inherit;
+}
+
+.moodle-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: .6rem;
+  margin-top: .8rem;
+}
+
+.moodle-modal__primary,
+.moodle-modal__secondary {
+  border: 0;
+  border-radius: .5rem;
+  padding: .6rem .9rem;
+  cursor: pointer;
+  font: inherit;
+}
+
+.moodle-modal__primary {
+  background: #1abc9c;
+  color: #fff;
+}
+
+.moodle-modal__secondary {
+  background: #e5e7eb;
+  color: #111827;
+}
