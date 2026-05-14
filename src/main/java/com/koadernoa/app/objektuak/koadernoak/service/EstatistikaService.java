@@ -104,7 +104,7 @@ public class EstatistikaService {
         EbaluazioMomentua em = est.getEbaluazioMomentua();
         DateRange tartea = tarteaEbaluazioMomentua(egutegia, em);
 
-        boolean bigarrenFinalaDa = em != null && "2_FINAL".equalsIgnoreCase(em.getKodea());
+        boolean bigarrenFinalaDa = est.isBigarrenFinala();
 
         // ---------- UNITATEAK ----------
         if (bigarrenFinalaDa) {
