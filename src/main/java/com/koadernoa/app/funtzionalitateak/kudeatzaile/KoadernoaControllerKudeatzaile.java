@@ -49,6 +49,7 @@ public class KoadernoaControllerKudeatzaile {
             @RequestParam(required = false) Long taldeaId,
             @RequestParam(required = false) Long irakasleId,
             @RequestParam(required = false) Long ikasturteaId,
+            @RequestParam(required = false) Boolean moodleEstekaDu,
             Model model) {
 
         // 1) Familia eta talde zerrendak (filtro dropdown-entzat)
@@ -123,6 +124,12 @@ public class KoadernoaControllerKudeatzaile {
                     .collect(Collectors.toList());
         }
 
+        if (moodleEstekaDu != null) {
+            koadernoak = koadernoak.stream()
+                    .filter(k -> k.hasMoodleEsteka() == moodleEstekaDu)
+                    .collect(Collectors.toList());
+        }
+
         // 5) Ordenatu: Familia → Taldea → Moduloa
         Comparator<Koadernoa> cmp = Comparator
                 .comparing((Koadernoa k) -> {
@@ -149,6 +156,7 @@ public class KoadernoaControllerKudeatzaile {
         model.addAttribute("taldeaId", selectedTaldeaId);
         model.addAttribute("irakasleId", irakasleId);
         model.addAttribute("ikasturteaId", selectedIkasturteaId);
+        model.addAttribute("moodleEstekaDu", moodleEstekaDu);
         model.addAttribute("ikasturteak", ikasturteak);
         model.addAttribute("irakasleak", irakasleaRepository.findAll());
 
@@ -163,6 +171,7 @@ public class KoadernoaControllerKudeatzaile {
                               @RequestParam(required = false) Long taldeaId,
                               @RequestParam(required = false) Long irakasleId,
                               @RequestParam(required = false) Long ikasturteaId,
+                              @RequestParam(required = false) Boolean moodleEstekaDu,
                               RedirectAttributes ra) {
         try {
             koadernoaService.aldatuJabea(id, jabeaId);
@@ -175,6 +184,31 @@ public class KoadernoaControllerKudeatzaile {
         ra.addAttribute("taldeaId", taldeaId);
         ra.addAttribute("irakasleId", irakasleId);
         ra.addAttribute("ikasturteaId", ikasturteaId);
+        ra.addAttribute("moodleEstekaDu", moodleEstekaDu);
+        return "redirect:/kudeatzaile/koadernoak";
+    }
+
+    @PostMapping("/{id}/moodle-esteka")
+    public String aldatuMoodleEsteka(@PathVariable Long id,
+                                     @RequestParam("moodleEsteka") String moodleEsteka,
+                                     @RequestParam(required = false) Long familiaId,
+                                     @RequestParam(required = false) Long taldeaId,
+                                     @RequestParam(required = false) Long irakasleId,
+                                     @RequestParam(required = false) Long ikasturteaId,
+                                     @RequestParam(required = false) Boolean moodleEstekaDu,
+                                     RedirectAttributes ra) {
+        try {
+            koadernoaService.gordeMoodleEsteka(id, moodleEsteka);
+            ra.addFlashAttribute("success", "Moodle esteka eguneratu da.");
+        } catch (IllegalArgumentException ex) {
+            ra.addFlashAttribute("error", ex.getMessage());
+        }
+
+        ra.addAttribute("familiaId", familiaId);
+        ra.addAttribute("taldeaId", taldeaId);
+        ra.addAttribute("irakasleId", irakasleId);
+        ra.addAttribute("ikasturteaId", ikasturteaId);
+        ra.addAttribute("moodleEstekaDu", moodleEstekaDu);
         return "redirect:/kudeatzaile/koadernoak";
     }
 

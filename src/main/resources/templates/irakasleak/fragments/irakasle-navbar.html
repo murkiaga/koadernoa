@@ -39,6 +39,27 @@
                                   and k.id == koadernoAktiboa.id}">
             </option>
           </select>
+
+          <th:block th:if="${koadernoAktiboa != null}">
+            <a th:if="${koadernoAktiboa.hasMoodleEsteka()}"
+               class="moodle-navbar-link"
+               th:href="${koadernoAktiboa.moodleEsteka}"
+               target="_blank"
+               rel="noopener noreferrer"
+               title="Ireki Moodle ikastaroa"
+               aria-label="Ireki koaderno aktiboaren Moodle ikastaroa">
+              <img th:src="@{/img/moodle.png}" alt="Moodle" class="moodle-navbar-icon">
+            </a>
+
+            <button th:unless="${koadernoAktiboa.hasMoodleEsteka()}"
+                    type="button"
+                    class="moodle-navbar-link moodle-navbar-button"
+                    onclick="MoodleModal.open()"
+                    title="Gehitu Moodle ikastaroaren esteka"
+                    aria-label="Gehitu koaderno aktiboaren Moodle esteka">
+              <img th:src="@{/img/moodle_grises.png}" alt="Moodle esteka ezarri gabe" class="moodle-navbar-icon">
+            </button>
+          </th:block>
         </div>
       </div>
 
@@ -116,10 +137,59 @@
     </div>
   </div>
 
+  <div th:if="${koadernoAktiboa != null and !koadernoAktiboa.hasMoodleEsteka()}"
+       id="moodleEstekaModal"
+       class="moodle-modal"
+       aria-hidden="true">
+    <div class="moodle-modal__backdrop" onclick="MoodleModal.close()"></div>
+    <div class="moodle-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="moodleEstekaModalTitle">
+      <div class="moodle-modal__header">
+        <h2 id="moodleEstekaModalTitle">Moodle ikastaroaren esteka</h2>
+        <button type="button" class="moodle-modal__close" onclick="MoodleModal.close()" aria-label="Itxi">×</button>
+      </div>
+      <form th:action="@{/irakasle/koadernoa/{id}/moodle-esteka(id=${koadernoAktiboa.id})}" method="post" class="moodle-modal__form">
+        <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <input type="hidden" name="next" th:value="${currentPath}"/>
+        <label for="moodleEstekaInput">Esteka</label>
+        <input id="moodleEstekaInput"
+               name="moodleEsteka"
+               type="url"
+               required
+               placeholder="https://moodle.fpzornotza.com/course/view.php?id=338">
+        <div class="moodle-modal__actions">
+          <button type="button" class="moodle-modal__secondary" onclick="MoodleModal.close()">Utzi</button>
+          <button type="submit" class="moodle-modal__primary">Gorde</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     function aldatuKoadernoa(id){
       const next = encodeURIComponent(location.pathname + location.search);
       location.href = '/irakasle/koadernoa/' + id + '?next=' + next;
     }
+
+    window.MoodleModal = (function(){
+      function modal(){ return document.getElementById('moodleEstekaModal'); }
+      function input(){ return document.getElementById('moodleEstekaInput'); }
+      function open(){
+        const el = modal();
+        if (!el) return;
+        el.classList.add('is-open');
+        el.setAttribute('aria-hidden', 'false');
+        setTimeout(function(){ const i = input(); if (i) i.focus(); }, 0);
+      }
+      function close(){
+        const el = modal();
+        if (!el) return;
+        el.classList.remove('is-open');
+        el.setAttribute('aria-hidden', 'true');
+      }
+      document.addEventListener('keydown', function(e){
+        if (e.key === 'Escape') close();
+      });
+      return { open, close };
+    })();
   </script>
 </div>

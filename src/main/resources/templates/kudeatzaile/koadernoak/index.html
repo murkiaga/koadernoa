@@ -80,6 +80,15 @@
         </select>
       </label>
 
+      <label>
+        <span>Moodle esteka du</span>
+        <select name="moodleEstekaDu">
+          <option value="" th:selected="${moodleEstekaDu == null}">(Guztiak)</option>
+          <option value="true" th:selected="${moodleEstekaDu != null and moodleEstekaDu}">Bai</option>
+          <option value="false" th:selected="${moodleEstekaDu != null and !moodleEstekaDu}">Ez</option>
+        </select>
+      </label>
+
       <button type="submit">Filtratu</button>    </div>
   </form>
 
@@ -102,6 +111,7 @@
         <th>Mod. kodea</th>
         <th>Modulua</th>
         <th>Ikasturtea</th>
+        <th>Moodle esteka</th>
         <th>Jabea</th>
         <th style="text-align:right;">Ekintzak</th>
       </tr>
@@ -158,6 +168,22 @@
           2025-2026
         </td>
 
+        <!-- Moodle esteka: kudeatzaileak beti alda dezake modal bidez -->
+        <td class="col-moodle">
+          <button type="button"
+                  class="moodle-admin-btn"
+                  th:classappend="${k.hasMoodleEsteka()} ? ' moodle-admin-btn--set' : ' moodle-admin-btn--empty'"
+                  th:data-action="@{|/kudeatzaile/koadernoak/${k.id}/moodle-esteka|}"
+                  th:data-url="${k.moodleEsteka}"
+                  th:data-koaderno="${k.kodea}"
+                  onclick="KudeatzaileMoodleModal.open(this)"
+                  th:title="${k.hasMoodleEsteka()} ? 'Moodle esteka aldatu' : 'Moodle esteka gehitu'"
+                  aria-label="Moodle esteka editatu">
+            <img th:if="${k.hasMoodleEsteka()}" th:src="@{/img/moodle.png}" alt="Moodle esteka ezarrita">
+            <img th:unless="${k.hasMoodleEsteka()}" th:src="@{/img/moodle_grises.png}" alt="Moodle esteka ezarri gabe">
+          </button>
+        </td>
+
         <!-- Jabea: koaderno honetako irakasleen artean hautatu edo jaberik gabe utzi -->
         <td class="col-jabea">
           <form th:action="@{|/kudeatzaile/koadernoak/${k.id}/jabea|}" method="post">
@@ -169,6 +195,7 @@
             <input type="hidden" name="taldeaId" th:value="${taldeaId}"/>
             <input type="hidden" name="irakasleId" th:value="${irakasleId}"/>
             <input type="hidden" name="ikasturteaId" th:value="${ikasturteaId}"/>
+            <input type="hidden" name="moodleEstekaDu" th:value="${moodleEstekaDu}"/>
             <select name="jabeaId" onchange="this.form.submit()" th:disabled="${#lists.isEmpty(k.irakasleak)}">
               <option value="" th:selected="${k.jabea == null}">(Jaberik gabe)</option>
               <option th:each="ir : ${k.irakasleak}"
@@ -198,8 +225,77 @@
       </tbody>
     </table>
   </div>
+
+
+  <div id="kudeatzaileMoodleModal" class="admin-moodle-modal" aria-hidden="true">
+    <div class="admin-moodle-modal__backdrop" onclick="KudeatzaileMoodleModal.close()"></div>
+    <div class="admin-moodle-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="kudeatzaileMoodleModalTitle">
+      <div class="admin-moodle-modal__header">
+        <div>
+          <h2 id="kudeatzaileMoodleModalTitle">Moodle esteka</h2>
+          <p id="kudeatzaileMoodleModalKoadernoa" class="muted"></p>
+        </div>
+        <button type="button" class="admin-moodle-modal__close" onclick="KudeatzaileMoodleModal.close()" aria-label="Itxi">×</button>
+      </div>
+      <form id="kudeatzaileMoodleForm" method="post" class="admin-moodle-modal__form">
+        <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <input type="hidden" name="familiaId" th:value="${familiaId}"/>
+        <input type="hidden" name="taldeaId" th:value="${taldeaId}"/>
+        <input type="hidden" name="irakasleId" th:value="${irakasleId}"/>
+        <input type="hidden" name="ikasturteaId" th:value="${ikasturteaId}"/>
+        <input type="hidden" name="moodleEstekaDu" th:value="${moodleEstekaDu}"/>
+        <label for="kudeatzaileMoodleEstekaInput">URL-a</label>
+        <input id="kudeatzaileMoodleEstekaInput"
+               name="moodleEsteka"
+               type="url"
+               placeholder="https://moodle.fpzornotza.com/course/view.php?id=338">
+        <div class="admin-moodle-modal__actions">
+          <button type="button" class="btn btn-secondary" onclick="KudeatzaileMoodleModal.close()">Utzi</button>
+          <button type="submit" class="btn btn-primary">Gorde</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
 </main>
 
 <script th:src="@{/js/kudeatzaile-nav.js}"></script>
+<script>
+  window.KudeatzaileMoodleModal = (function(){
+    function modal(){ return document.getElementById('kudeatzaileMoodleModal'); }
+    function form(){ return document.getElementById('kudeatzaileMoodleForm'); }
+    function input(){ return document.getElementById('kudeatzaileMoodleEstekaInput'); }
+    function koadernoa(){ return document.getElementById('kudeatzaileMoodleModalKoadernoa'); }
+
+    function open(button){
+      const el = modal();
+      const f = form();
+      const i = input();
+      if (!el || !f || !i || !button) return;
+
+      f.action = button.dataset.action || '';
+      i.value = button.dataset.url || '';
+      const k = koadernoa();
+      if (k) k.textContent = button.dataset.koaderno || '';
+
+      el.classList.add('is-open');
+      el.setAttribute('aria-hidden', 'false');
+      setTimeout(function(){ i.focus(); }, 0);
+    }
+
+    function close(){
+      const el = modal();
+      if (!el) return;
+      el.classList.remove('is-open');
+      el.setAttribute('aria-hidden', 'true');
+    }
+
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape') close();
+    });
+
+    return { open, close };
+  })();
+</script>
 </body>
 </html>

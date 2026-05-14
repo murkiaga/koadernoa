@@ -232,6 +232,32 @@ public class KoadernoaController {
     }
 
 
+	@PostMapping("/{id}/moodle-esteka")
+	public String gordeMoodleEsteka(@PathVariable Long id,
+	                               @RequestParam("moodleEsteka") String moodleEsteka,
+	                               @RequestParam(value = "next", required = false) String next,
+	                               Authentication auth,
+	                               Model model,
+	                               RedirectAttributes ra) {
+	    Koadernoa koadernoa = koadernoaRepository.findById(id)
+	            .orElseThrow(() -> new IllegalArgumentException("Koadernoa ez da aurkitu"));
+
+	    Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+	    if (!koadernoaService.irakasleakBadaukaSarbidea(irakaslea, koadernoa)) {
+	        ra.addFlashAttribute("error", "Ez duzu koaderno honetarako sarbiderik.");
+	        return "redirect:/irakasle";
+	    }
+
+	    Koadernoa eguneratua = koadernoaService.gordeMoodleEsteka(id, moodleEsteka);
+	    model.addAttribute("koadernoAktiboa", eguneratua);
+	    ra.addFlashAttribute("success", "Moodle esteka gorde da.");
+
+	    if (isSafeInternal(next)) {
+	        return "redirect:" + next;
+	    }
+	    return "redirect:/irakasle";
+	}
+
 	@PostMapping("/{id}/inportatu-taldetik")
 	public String inportatuTaldekoIkasleakKoadernoan(@PathVariable("id") Long koadernoaId,
 	                                                 RedirectAttributes ra) {
