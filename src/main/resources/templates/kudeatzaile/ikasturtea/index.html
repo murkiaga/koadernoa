@@ -11,14 +11,26 @@
 	<div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
 	<main class="page">
 	    <h1>Ikasturteak</h1>
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
 	    <a class="btn btn-primary" th:href="@{/kudeatzaile/ikasturteak/sortu}">Ikasturte berria sortu</a>
 	    <ul class="link-list">
 	        <li th:each="ikasturtea : ${ikasturteak}" 
 	    			th:classappend="${ikasturtea.aktiboa} ? 'is-active'">
-	            <a th:href="@{'/kudeatzaile/ikasturteak/' + ${ikasturtea.id}}">
-	                <span th:text="${ikasturtea.izena}">2024-2025</span>
-	                <span th:if="${ikasturtea.aktiboa}" style="color: green;"> (aktiboa)</span>
-	            </a>
+                <div style="display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;">
+	                <a th:href="@{'/kudeatzaile/ikasturteak/' + ${ikasturtea.id}}">
+	                    <span th:text="${ikasturtea.izena}">2024-2025</span>
+	                    <span th:if="${ikasturtea.aktiboa}" style="color: green;"> (aktiboa)</span>
+	                </a>
+                    <form th:if="${ikasturtea.aktiboa}"
+                          th:action="@{|/kudeatzaile/ikasturteak/${ikasturtea.id}/koadernoak/sortu-faltan|}"
+                          method="post"
+                          style="display:inline-block;margin:0;"
+                          onsubmit="return confirm('Ziur zaude ikasturte aktiboko falta diren koadernoak sortu nahi dituzula?');">
+                        <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <button type="submit" class="btn btn-secondary">Ikasturte aktiboko falta diren koadernoak sortu</button>
+                    </form>
+                </div>
 	        </li>
 	    </ul>
     </main>
