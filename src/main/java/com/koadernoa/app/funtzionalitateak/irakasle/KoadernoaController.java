@@ -23,6 +23,7 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoaSortuDto;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
+import com.koadernoa.app.objektuak.koadernoak.service.KoadernoSorreraEmaitza;
 import com.koadernoa.app.objektuak.koadernoak.service.ProgramazioaService;
 import com.koadernoa.app.objektuak.konfigurazioa.service.AplikazioAukeraService;
 import com.koadernoa.app.objektuak.modulua.service.IkasleaService;
@@ -177,17 +178,24 @@ public class KoadernoaController {
 	    Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
 
         try {
-	        Koadernoa berria = koadernoaService.sortuKoadernoa(
-	                dto,
-	                irakaslea,
-	                cells == null ? List.of() : cells
-	        );
+            KoadernoSorreraEmaitza emaitza = koadernoaService.sortuEdoEsleituKoadernoa(
+                    dto,
+                    irakaslea,
+                    cells == null ? List.of() : cells
+            );
 
-	        try {
-	            ikasleaService.syncKoadernoBakarra(berria.getId());
-	        } catch (Exception e) {
-	        }
-	        return "redirect:/irakasle/koadernoa/" + berria.getId() + "?next='/irakasle'";
+            if (emaitza.egoera() == KoadernoSorreraEmaitza.Egoera.EXISTITZEN_DA) {
+                ra.addFlashAttribute("error", emaitza.mezua());
+                return "redirect:/irakasle/koadernoa/berria";
+            }
+
+            Koadernoa koadernoa = emaitza.koadernoa();
+            try {
+                ikasleaService.syncKoadernoBakarra(koadernoa.getId());
+            } catch (Exception e) {
+            }
+            ra.addFlashAttribute("success", emaitza.mezua());
+            return "redirect:/irakasle";
         } catch (Exception ex) {
             ra.addFlashAttribute("error", ex.getMessage());
             return "redirect:/irakasle/koadernoa/berria";

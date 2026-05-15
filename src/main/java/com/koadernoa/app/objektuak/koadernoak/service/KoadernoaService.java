@@ -224,14 +224,67 @@ public class KoadernoaService {
 
     @Transactional
     public Koadernoa sortuKoadernoa(KoadernoaSortuDto dto, Irakaslea irakaslea, List<String> cells) {
-    	Moduloa moduloa = moduloaRepository.findById(dto.getModuloaId())
-    	        .orElseThrow(() -> new IllegalArgumentException("Ez da modulu hori aurkitu."));
+        KoadernoSorreraEmaitza emaitza = sortuEdoEsleituKoadernoa(dto, irakaslea, cells);
+        if (emaitza.egoera() == KoadernoSorreraEmaitza.Egoera.EXISTITZEN_DA) {
+            throw new IllegalArgumentException(emaitza.mezua());
+        }
+        return emaitza.koadernoa();
+    }
 
-    	    Egutegia egutegia = egutegiaRepository
-    	            .findByIkasturtea_AktiboaTrueAndMaila_Id(moduloa.getMaila().getId())
-    	            .orElseThrow(() -> new IllegalStateException(
-    	                "Ez da egutegirik aurkitu aktibo dagoen ikasturterako eta maila horretarako."));
+    @Transactional
+    public KoadernoSorreraEmaitza sortuEdoEsleituKoadernoa(KoadernoaSortuDto dto, Irakaslea irakaslea, List<String> cells) {
+        Moduloa moduloa = moduloaRepository.findById(dto.getModuloaId())
+                .orElseThrow(() -> new IllegalArgumentException("Ez da modulu hori aurkitu."));
 
+        Egutegia egutegia = egutegiaRepository
+                .findByIkasturtea_AktiboaTrueAndMaila_Id(moduloa.getMaila().getId())
+                .orElseThrow(() -> new IllegalStateException(
+                        "Ez da egutegirik aurkitu aktibo dagoen ikasturterako eta maila horretarako."));
+
+        egiaztatuKoadernoSorreraBaimena(moduloa, egutegia, irakaslea);
+
+        List<Irakaslea> irakasleak = prestatuIrakasleZerrenda(dto, irakaslea);
+        Optional<Koadernoa> existitzenDenKoadernoa = koadernoaRepository
+                .findFirstByModuloa_IdAndEgutegia_IdOrderByIdAsc(moduloa.getId(), egutegia.getId());
+        if (existitzenDenKoadernoa.isPresent()) {
+            Koadernoa koadernoa = existitzenDenKoadernoa.get();
+            if (koadernoa.getJabea() == null) {
+                koadernoa.setJabea(irakaslea);
+                irakasleak.forEach(i -> gehituIrakasleaBeharBada(koadernoa, i));
+                Koadernoa gordeta = koadernoaRepository.save(koadernoa);
+                return new KoadernoSorreraEmaitza(
+                        gordeta,
+                        KoadernoSorreraEmaitza.Egoera.ESLEITUA_JABE_GABEA,
+                        "Koadernoa zure izenean esleitu da.");
+            }
+            return new KoadernoSorreraEmaitza(
+                    koadernoa,
+                    KoadernoSorreraEmaitza.Egoera.EXISTITZEN_DA,
+                    existitzenDenKoadernoarenMezua(koadernoa, moduloa, egutegia));
+        }
+
+        Koadernoa k = new Koadernoa();
+        k.setModuloa(moduloa);
+        k.setEgutegia(egutegia);
+        k.setIrakasleak(irakasleak);
+        k.setJabea(irakaslea);
+        k.setJarduerak(List.of());
+        k.setNotaFitxategiak(List.of());
+        k.setEstatistikak(new ArrayList<>());
+
+        // 🔹 ORDUTEGIA: cells -> blokeak
+        List<KoadernoOrdutegiBlokea> blok = buildBlocksFromCells(k, cells);
+        k.setOrdutegiak(blok); // ziurtatu Koadernoa.entitatean cascade=ALL dagoela harreman honetan
+
+        // Estatistikak
+        List<EstatistikaEbaluazioan> estatistikak = sortuEstatistikak(k);
+        k.setEstatistikak(estatistikak);
+
+        Koadernoa gordeta = koadernoaRepository.save(k);
+        return new KoadernoSorreraEmaitza(gordeta, KoadernoSorreraEmaitza.Egoera.SORTUA, "Koadernoa sortu da.");
+    }
+
+    private void egiaztatuKoadernoSorreraBaimena(Moduloa moduloa, Egutegia egutegia, Irakaslea irakaslea) {
         boolean besteMintegiaBaimendu = aplikazioAukeraService.getBool(
                 AplikazioAukeraService.KOADERNO_BESTE_MINTEGIA_BAIMENDU, false);
         boolean bereMintegikoa = moduloa.getTaldea().getZikloa().getFamilia().equals(irakaslea.getMintegia());
@@ -245,51 +298,47 @@ public class KoadernoaService {
         if (!java.util.Objects.equals(moduloa.getMaila().getId(), egutegia.getMaila().getId())) {
             throw new IllegalArgumentException("Moduluaren eta egutegiaren maila ez datoz bat.");
         }
+    }
 
-        boolean bikoiztuakBaimendu = aplikazioAukeraService.getBool(
-                AplikazioAukeraService.KOADERNO_BIKOIZTUAK_BAIMENDU, true);
-        if (!bikoiztuakBaimendu && koadernoaRepository.existsByModuloa_IdAndEgutegia_Id(moduloa.getId(), egutegia.getId())) {
-            String jabea = koadernoaRepository.findFirstByModuloa_IdAndEgutegia_IdOrderByIdAsc(moduloa.getId(), egutegia.getId())
-                    .map(k0 -> {
-                        if (k0.getJabea() != null) return k0.getJabea();
-                        return k0.getIrakasleak() == null ? null : k0.getIrakasleak().stream().findFirst().orElse(null);
-                    })
-                    .map(i -> i.getIzena() != null && !i.getIzena().isBlank() ? i.getIzena() : i.getEmaila())
-                    .orElse("ezezaguna");
-            String ikasturtea = egutegia.getIkasturtea() != null ? egutegia.getIkasturtea().getIzena() : "ikasturte honetan";
-            throw new IllegalArgumentException(
-                    ikasturtea + "rako " + moduloa.getIzena() + " irakasgairako badago koadernoa sortuta. "
-                            + jabea + " irakasleak sortuta.");
+    private List<Irakaslea> prestatuIrakasleZerrenda(KoadernoaSortuDto dto, Irakaslea irakaslea) {
+        List<Irakaslea> irakasleak = new ArrayList<>();
+        irakasleak.add(irakaslea);
+
+        if (dto.getIrakasleIdZerrenda() != null && !dto.getIrakasleIdZerrenda().isEmpty()) {
+            List<Irakaslea> besteIrakasleak = irakasleaRepository.findAllById(dto.getIrakasleIdZerrenda());
+            for (Irakaslea i : besteIrakasleak) {
+                if (!i.getId().equals(irakaslea.getId())
+                        && irakasleak.stream().noneMatch(existing -> existing.getId().equals(i.getId()))) {
+                    irakasleak.add(i);
+                }
+            }
         }
+        return irakasleak;
+    }
 
-    	    List<Irakaslea> irakasleak = new ArrayList<>();
-    	    irakasleak.add(irakaslea);
+    private void gehituIrakasleaBeharBada(Koadernoa koadernoa, Irakaslea irakaslea) {
+        if (koadernoa.getIrakasleak() == null) {
+            koadernoa.setIrakasleak(new ArrayList<>());
+        } else if (!(koadernoa.getIrakasleak() instanceof ArrayList)) {
+            koadernoa.setIrakasleak(new ArrayList<>(koadernoa.getIrakasleak()));
+        }
+        boolean badago = koadernoa.getIrakasleak().stream()
+                .anyMatch(i -> i.getId() != null && i.getId().equals(irakaslea.getId()));
+        if (!badago) {
+            koadernoa.getIrakasleak().add(irakaslea);
+        }
+    }
 
-    	    if (dto.getIrakasleIdZerrenda() != null && !dto.getIrakasleIdZerrenda().isEmpty()) {
-    	        List<Irakaslea> besteIrakasleak = irakasleaRepository.findAllById(dto.getIrakasleIdZerrenda());
-    	        for (Irakaslea i : besteIrakasleak) {
-    	            if (!i.getId().equals(irakaslea.getId())) irakasleak.add(i);
-    	        }
-    	    }
-
-    	    Koadernoa k = new Koadernoa();
-    	    k.setModuloa(moduloa);
-    	    k.setEgutegia(egutegia);
-    	    k.setIrakasleak(irakasleak);
-    	    k.setJabea(irakaslea);
-    	    k.setJarduerak(List.of());
-    	    k.setNotaFitxategiak(List.of());
-    	    k.setEstatistikak(new ArrayList<>());
-
-    	    // 🔹 ORDUTEGIA: cells -> blokeak
-    	    List<KoadernoOrdutegiBlokea> blok = buildBlocksFromCells(k, cells);
-    	    k.setOrdutegiak(blok); // ziurtatu Koadernoa.entitatean cascade=ALL dagoela harreman honetan
-
-    	    // Estatistikak
-    	    List<EstatistikaEbaluazioan> estatistikak = sortuEstatistikak(k);
-    	    k.setEstatistikak(estatistikak);
-
-    	    return koadernoaRepository.save(k);
+    private String existitzenDenKoadernoarenMezua(Koadernoa koadernoa, Moduloa moduloa, Egutegia egutegia) {
+        String ikasturtea = egutegia.getIkasturtea() != null ? egutegia.getIkasturtea().getIzena() : "ikasturte honetan";
+        String oinarria = ikasturtea + "rako " + moduloa.getIzena() + " irakasgairako badago koadernoa sortuta.";
+        if (koadernoa.getJabea() == null) {
+            return oinarria + " Koaderno horrek ez dauka jaberik.";
+        }
+        String jabea = koadernoa.getJabea().getIzena() != null && !koadernoa.getJabea().getIzena().isBlank()
+                ? koadernoa.getJabea().getIzena()
+                : koadernoa.getJabea().getEmaila();
+        return oinarria + " Jabea: " + jabea + ".";
     }
 
     @Transactional

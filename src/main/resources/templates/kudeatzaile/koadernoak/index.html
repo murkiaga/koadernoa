@@ -95,6 +95,23 @@
   <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
   <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
 
+  <section th:if="${badagoJabeGabekoKoadernorik}" class="alert alert-warning" style="margin:1rem 0;">
+    <strong>Jabe gabeko koadernoak daude</strong>
+    <div style="display:flex;flex-wrap:wrap;gap:.75rem;align-items:center;margin-top:.75rem;">
+      <a class="btn btn-secondary" th:href="@{/kudeatzaile/koadernoak/jabe-gabeak/exportatu}">
+        Jabe gabeko koadernoak esportatu
+      </a>
+      <form th:action="@{/kudeatzaile/koadernoak/jabe-gabeak/inportatu}"
+            method="post"
+            enctype="multipart/form-data"
+            style="display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:0;">
+        <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <input type="file" name="fitxategia" accept=".xlsx,.xls" required/>
+        <button type="submit" class="btn btn-primary">Jabeen esleipena inportatu</button>
+      </form>
+    </div>
+  </section>
+
   <!-- Koaderno zerrenda hutsa -->
   <div th:if="${#lists.isEmpty(koadernoak)}" class="empty-msg">
     Ez da aurkitu koadernorik hautatutako filtroekin.
