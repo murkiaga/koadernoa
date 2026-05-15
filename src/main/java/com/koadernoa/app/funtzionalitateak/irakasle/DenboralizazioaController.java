@@ -50,10 +50,12 @@ import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoOrdutegiBlokeaR
 import com.koadernoa.app.objektuak.koadernoak.repository.SaioaRepository;
 import com.koadernoa.app.objektuak.koadernoak.service.AsistentziaService;
 import com.koadernoa.app.objektuak.koadernoak.service.DenboralizazioFaltaService;
+import com.koadernoa.app.objektuak.koadernoak.service.DenboralizazioGeneratorService;
 import com.koadernoa.app.objektuak.koadernoak.service.FaltenJakinarazpenPdfService;
 import com.koadernoa.app.objektuak.koadernoak.service.FaltenExcelInportService;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
 import com.koadernoa.app.objektuak.koadernoak.service.ProgramazioTxantiloiService;
+import com.koadernoa.app.objektuak.koadernoak.service.ProgramazioaService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -69,9 +71,11 @@ public class DenboralizazioaController {
 	private final SaioaRepository saioaRepository;
 	private final KoadernoaService koadernoaService;
 	private final DenboralizazioFaltaService denboralizazioFaltaService;
+	private final DenboralizazioGeneratorService denboralizazioGeneratorService;
 	private final FaltenJakinarazpenPdfService faltenJakinarazpenPdfService;
 	private final FaltenExcelInportService faltenExcelInportService;
 	private final ProgramazioTxantiloiService programazioTxantiloiService;
+	private final ProgramazioaService programazioaService;
 	private final IrakasleaService irakasleaService;
 	private final LogService logService;
 
@@ -239,8 +243,23 @@ public class DenboralizazioaController {
 	            .filter(j -> j.getData() != null) // segurtasun gehigarria
 	            .collect(Collectors.groupingBy(Jarduera::getData));
 
+	    var denboralizazioUnitateak = programazioaService
+	            .loadWithEbaluaketakUdetajpByKoadernoId(kargatutakoKoadernoa.getId())
+	            .map(p -> p.getEbaluaketak() == null ? java.util.List.<com.koadernoa.app.objektuak.koadernoak.entitateak.UnitateDidaktikoa>of()
+	                    : p.getEbaluaketak().stream()
+	                        .sorted(java.util.Comparator.comparing(e -> java.util.Optional.ofNullable(e.getOrdena()).orElse(0)))
+	                        .flatMap(e -> e.getUnitateak() == null ? java.util.stream.Stream.<com.koadernoa.app.objektuak.koadernoak.entitateak.UnitateDidaktikoa>empty()
+	                                : e.getUnitateak().stream()
+	                                    .sorted(java.util.Comparator
+	                                        .comparingInt(com.koadernoa.app.objektuak.koadernoak.entitateak.UnitateDidaktikoa::getPosizioa)
+	                                        .thenComparing(com.koadernoa.app.objektuak.koadernoak.entitateak.UnitateDidaktikoa::getId)))
+	                        .toList())
+	            .orElse(java.util.List.of());
+
 	    // Model atributuak (bi bistentzat komunak)
 	    model.addAttribute("jardueraMap", jardueraMap);
+	    model.addAttribute("denboralizazioUnitateak", denboralizazioUnitateak);
+	    model.addAttribute("defaultUnitateaIdMap", kalkulatuEgunekoLehenUdMap(kargatutakoKoadernoa.getId()));
 	    model.addAttribute("egutegia", egutegia);
 	    model.addAttribute("ikasturtea", egutegia.getIkasturtea());
 	    model.addAttribute("hilabeteUrtea", hilabeteUrtea);
@@ -278,6 +297,28 @@ public class DenboralizazioaController {
 	    model.addAttribute("oharraMap", oharraMap);
 
 	    return "irakasleak/denboralizazioa/denboralizazioa";
+	}
+
+	private Map<String, Long> kalkulatuEgunekoLehenUdMap(Long koadernoId) {
+	    if (koadernoId == null) return java.util.Collections.emptyMap();
+
+	    var koadernoaOrdutegiarekin = koadernoaService.findByIdWithOrdutegiaAndEgutegia(koadernoId);
+	    var programazioa = programazioaService.loadWithEbaluaketakUdetajpByKoadernoId(koadernoId);
+	    if (koadernoaOrdutegiarekin.isEmpty() || programazioa.isEmpty()) {
+	        return java.util.Collections.emptyMap();
+	    }
+
+	    try {
+	        Map<String, Long> map = new java.util.LinkedHashMap<>();
+	        denboralizazioGeneratorService
+	                .generateFromProgramazioa(koadernoaOrdutegiarekin.get(), programazioa.get(), true, false)
+	                .stream()
+	                .filter(item -> item.data() != null && item.unitatea() != null && item.unitatea().getId() != null)
+	                .forEach(item -> map.putIfAbsent(item.data().toString(), item.unitatea().getId()));
+	        return map;
+	    } catch (RuntimeException ex) {
+	        return java.util.Collections.emptyMap();
+	    }
 	}
 
 	@GetMapping("/falten-jakinarazpena/pdf")

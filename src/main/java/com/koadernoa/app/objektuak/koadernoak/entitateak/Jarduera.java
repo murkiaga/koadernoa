@@ -30,4 +30,7 @@ public class Jarduera {
 
     @ManyToOne
     private Koadernoa koadernoa;
+
+    @ManyToOne
+    private UnitateDidaktikoa unitatea;
 }

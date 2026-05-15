@@ -17,6 +17,14 @@ window.irekiJardueraModala = function(td){
   byId('jardueraId').value = '';
   byId('jardueraData').value = data;
   byId('jardueraMota').value = 'planifikatua'; // default
+  const unitateaSelect = document.getElementById('jardueraUnitatea');
+  const defaultUnitateaId = td.getAttribute('data-default-ud-id');
+  if (unitateaSelect) {
+    const aukera = defaultUnitateaId
+      ? Array.from(unitateaSelect.options).some(opt => opt.value === defaultUnitateaId)
+      : false;
+    unitateaSelect.value = aukera ? defaultUnitateaId : '';
+  }
   byId('jardueraModalTitle').textContent = 'Jarduera berria';
   byId('jardueraModal').style.display = 'flex';
 };
@@ -42,6 +50,8 @@ window.editatuJarduera = function(evt, el){
       byId('jardueraDeskribapena').value = j.deskribapena || '';
       byId('jardueraOrduak').value = (j.orduak ?? 1);
       byId('jardueraMota').value = j.mota || 'planifikatua';
+      const unitateaSelect = document.getElementById('jardueraUnitatea');
+      if (unitateaSelect) unitateaSelect.value = j.unitateaId ? String(j.unitateaId) : '';
 
       byId('jardueraModalTitle').textContent = 'Jarduera editatu';
       byId('jardueraModal').style.display = 'flex';

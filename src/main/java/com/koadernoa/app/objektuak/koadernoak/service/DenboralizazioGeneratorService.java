@@ -39,7 +39,7 @@ public class DenboralizazioGeneratorService {
 	private final JardueraRepository jardueraRepository;
 	
 	/** Aurreikuspena egiteko DTO sinplea */
-	public record PreviewItem(LocalDate data, String titulua, float orduak, String mota, String azalpena) {}
+	public record PreviewItem(LocalDate data, String titulua, float orduak, String mota, String azalpena, UnitateDidaktikoa unitatea) {}
 	
 	/**
 	* Oinarrizko API:
@@ -118,7 +118,7 @@ public class DenboralizazioGeneratorService {
 
 	    // 4) Slot -> chunk esleipena (effectiveSlots erabilita)
 	    List<PreviewItem> generated = allocate(chunks, effectiveSlots).stream()
-	            .map(a -> new PreviewItem(a.date, a.title, a.hours, "planifikatua", a.description))
+	            .map(a -> new PreviewItem(a.date, a.title, a.hours, "planifikatua", a.description, a.unitatea))
 	            .toList();
 
 	    // 5) DB-an idatzi
@@ -129,6 +129,7 @@ public class DenboralizazioGeneratorService {
 	            j.setData(p.data());
 	            j.setTitulua(p.titulua());
 	            j.setDeskribapena(p.azalpena());
+	            j.setUnitatea(p.unitatea());
 	            j.setOrduak(p.orduak());
 	            j.setMota(p.mota());
 	            return j;
@@ -220,7 +221,7 @@ public class DenboralizazioGeneratorService {
 	
 	// ==== 2) Programazioa -> chunk sekuentzia ====
 	
-	private record PlannedChunk(String title, String description, int hours, int udOrder) {}
+	private record PlannedChunk(String title, String description, int hours, int udOrder, UnitateDidaktikoa unitatea) {}
 
 
 	private List<PlannedChunk> flattenProgramazioa(Programazioa p) {
@@ -260,7 +261,8 @@ public class DenboralizazioGeneratorService {
 	                        title,
 	                        ud.getKodea() + " — " + ud.getIzenburua(),
 	                        h,
-	                        udOrder
+	                        udOrder,
+	                        ud
 	                    ));
 	                    consumed += h;
 	                }
@@ -276,7 +278,8 @@ public class DenboralizazioGeneratorService {
 	                ud.getIzenburua(),
 	                ud.getKodea() + " — (UD orokorra)",
 	                remaining,
-	                udOrder
+	                udOrder,
+	                ud
 	            ));
 	        }
 	    }
@@ -285,7 +288,7 @@ public class DenboralizazioGeneratorService {
 	
 	// ==== 4) Esleipena: slots -> chunks ====
 	
-	private record Alloc(LocalDate date, String title, String description, float hours) {}
+	private record Alloc(LocalDate date, String title, String description, float hours, UnitateDidaktikoa unitatea) {}
 
 
 	private List<Alloc> allocate(List<PlannedChunk> chunks, List<SessionSlot> slots) {
@@ -300,7 +303,7 @@ public class DenboralizazioGeneratorService {
 			int capacity = s.slots(); // slot bakoitza = 1 ordu
 			while (capacity > 0 && chunkIdx < chunks.size()) {
 				int take = Math.min(capacity, chunkRemaining);
-				out.add(new Alloc(s.date(), current.title(), current.description(), take));
+				out.add(new Alloc(s.date(), current.title(), current.description(), take, current.unitatea()));
 				capacity -= take;
 				chunkRemaining -= take;
 				if (chunkRemaining == 0) {

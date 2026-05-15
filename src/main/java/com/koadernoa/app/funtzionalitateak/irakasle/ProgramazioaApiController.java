@@ -51,6 +51,22 @@ public class ProgramazioaApiController {
                 .orElse(null);
     }
 
+    private Long getLong(Map<String,Object> body, String key) {
+        Object value = body.get(key);
+        if (!(value instanceof Number number)) {
+            throw new IllegalArgumentException("Mugimendu baliogabea.");
+        }
+        return number.longValue();
+    }
+
+    private int getInt(Map<String,Object> body, String key) {
+        Object value = body.get(key);
+        if (!(value instanceof Number number)) {
+            throw new IllegalArgumentException("Mugimendu baliogabea.");
+        }
+        return number.intValue();
+    }
+
     // ======== GET (modaletarako datuak) ========
     @GetMapping("/ud/{id}")
     public Map<String,Object> getUd(@PathVariable Long id,
@@ -195,9 +211,9 @@ public class ProgramazioaApiController {
                                     Authentication auth) {
         checkAccess(auth, k);
 
-        Long udId = ((Number) body.get("udId")).longValue();
-        Long toEbaluaketaId = ((Number) body.get("toEbaluaketaId")).longValue();
-        int newIndex = ((Number) body.get("newIndex")).intValue();
+        Long udId = getLong(body, "udId");
+        Long toEbaluaketaId = getLong(body, "toEbaluaketaId");
+        int newIndex = getInt(body, "newIndex");
 
         // Egiaztatu UDa eta Ebaluaketa koaderno honetakoak direla
         if (!programazioaService.udDagokioKoadernoari(udId, k.getId())
@@ -255,9 +271,9 @@ public class ProgramazioaApiController {
                                     @SessionAttribute(value="koadernoAktiboa", required=false) Koadernoa k,
                                     Authentication auth) {
         checkAccess(auth, k);
-        Long jpId = ((Number) body.get("jpId")).longValue();
-        Long toUdId = ((Number) body.get("toUdId")).longValue();
-        int newIndex = ((Number) body.get("newIndex")).intValue();
+        Long jpId = getLong(body, "jpId");
+        Long toUdId = getLong(body, "toUdId");
+        int newIndex = getInt(body, "newIndex");
         if (!programazioaService.jpDagokioKoadernoari(jpId, k.getId())
          || !programazioaService.udDagokioKoadernoari(toUdId, k.getId()))
             throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);

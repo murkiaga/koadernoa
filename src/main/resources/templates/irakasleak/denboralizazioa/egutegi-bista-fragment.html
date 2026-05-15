@@ -51,7 +51,7 @@
     			    th:class="${egunaBista.data == null} ? 'blank' : ''"
     			    th:classappend="${egunaBista.data != null} ? ${egunMap[egunaBista.data.toString()]} : ''"
     			    th:title="${egunaBista.data != null} ? ${deskribapenaMap[egunaBista.data.toString()]} : ''"
-    			    th:attr="data-date=${egunaBista.data != null ? egunaBista.data : null}"
+           th:attr="data-date=${egunaBista.data != null ? egunaBista.data : null},data-default-ud-id=${egunaBista.data != null ? defaultUnitateaIdMap[egunaBista.data.toString()] : null}"
     			    style="cursor: pointer;">
     			    <div class="egun-zenbakia"
     			         th:text="${egunaBista.data != null ? egunaBista.data.dayOfMonth : ''}"
@@ -83,7 +83,7 @@
 						  <li class="jarduera-item"
 						    draggable="true"
 						    th:each="j : ${jardueraMap[egunaBista.data]}"
-						    th:text="${ j.titulua + ' - ' + ( #strings.isEmpty(j.mota) ? 'planifikatua' : j.mota ) }"
+						    th:text="${(j.unitatea != null ? '[' + j.unitatea.kodea + '] ' : '') + j.titulua + ' - ' + ( #strings.isEmpty(j.mota) ? 'planifikatua' : j.mota ) }"
 						    th:attr="data-id=${j.id}"
 						    onclick="editatuJarduera(event, this)">
 						  </li>
@@ -96,7 +96,7 @@
                 <td th:each="egunaBista : ${astekoEgunak}"
                     th:class="${egunaBista.data == null} ? 'blank' : ''"
                     th:classappend="${egunaBista.data != null} ? ${egunMap[egunaBista.data.toString()]} : ''"
-                    th:attr="data-date=${egunaBista.data != null ? egunaBista.data : null}">
+                    th:attr="data-date=${egunaBista.data != null ? egunaBista.data : null},data-default-ud-id=${egunaBista.data != null ? defaultUnitateaIdMap[egunaBista.data.toString()] : null}">
                     <div class="egun-zenbakia week-day-title">
                         <span th:if="${egunaBista.data != null}"
                               th:text="${egunaBista.data.dayOfMonth}"
@@ -118,6 +118,7 @@
                             th:each="j : ${jardueraMap[egunaBista.data]}"
                             th:attr="data-id=${j.id}"
                             onclick="editatuJarduera(event, this)">
+                            <span class="ud-badge" th:if="${j.unitatea != null}" th:text="${j.unitatea.kodea}">UD</span>
                             <strong th:text="${j.titulua}"></strong>
                             <div class="week-desc" th:if="${!#strings.isEmpty(j.deskribapena)}" th:text="${j.deskribapena}"></div>
                             <div th:text="${'Orduak: ' + (j.orduak != null ? j.orduak : 0)}"></div>
@@ -145,6 +146,16 @@
           <input type="hidden" name="asteHasiera" th:value="${asteHasiera}">
           <input type="hidden" name="data" id="jardueraData">
           <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+          <div class="form-row">
+            <label>UDa</label>
+            <select name="unitateaId" id="jardueraUnitatea">
+              <option value="">UD gabe</option>
+              <option th:each="ud : ${denboralizazioUnitateak}"
+                      th:value="${ud.id}"
+                      th:text="${ud.kodea + ' — ' + ud.izenburua}">UD1 — Izenburua</option>
+            </select>
+          </div>
 
           <div class="form-row">
             <label>Titulua</label>

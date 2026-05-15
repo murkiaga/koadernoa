@@ -165,6 +165,7 @@ public class ProgramazioaService {
         ud.setKodea(kodea);
         ud.setIzenburua(izenburua);
         if (posizioa != null) ud.setPosizioa(posizioa);
+        balidatuUdOrduakEzDirelaGainditzen(udId, orduak, null, 0);
         ud.setOrduak(orduak);         
         udRepository.save(ud);
     }
@@ -180,6 +181,7 @@ public class ProgramazioaService {
     @Transactional
     public void addJardueraPlanifikatua(Long udId, String izenburua, int orduak) {
         var ud = udRepository.findById(udId).orElseThrow();
+        balidatuJardueraOrduakEzDirelaGainditzen(udId, null, orduak);
         var jp = new JardueraPlanifikatua();
         jp.setUnitatea(ud);
         jp.setIzenburua(izenburua);
@@ -191,6 +193,7 @@ public class ProgramazioaService {
     @Transactional
     public void updateJardueraPlanifikatua(Long jpId, String izenburua, int orduak) {
         var jp = jpRepository.findById(jpId).orElseThrow();
+        balidatuJardueraOrduakEzDirelaGainditzen(jp.getUnitatea().getId(), jpId, orduak);
         jp.setIzenburua(izenburua);
         jp.setOrduak(orduak);
         jpRepository.save(jp);
@@ -257,6 +260,7 @@ public class ProgramazioaService {
         Long fromUdId = jp.getUnitatea().getId();
 
         var toUd = udRepository.findById(toUdId).orElseThrow();
+        balidatuJardueraOrduakEzDirelaGainditzen(toUdId, jpId, jp.getOrduak());
 
         var fromList = new ArrayList<>(jp.getUnitatea().getAzpiJarduerak());
         fromList.removeIf(x -> x.getId().equals(jpId));
@@ -433,19 +437,41 @@ public class ProgramazioaService {
 
  // ========= Laguntzailea =========
 
+
+    private void balidatuJardueraOrduakEzDirelaGainditzen(Long udId, Long jpId, int orduakBerriak) {
+        var ud = udRepository.findById(udId).orElseThrow();
+        int oraingoBatura = planifikatutakoOrduak(udId);
+        int jardueraZaharra = 0;
+        if (jpId != null) {
+            jardueraZaharra = jpRepository.findById(jpId)
+                    .filter(jp -> jp.getUnitatea() != null && java.util.Objects.equals(jp.getUnitatea().getId(), udId))
+                    .map(JardueraPlanifikatua::getOrduak)
+                    .orElse(0);
+        }
+        int baturaBerria = oraingoBatura - jardueraZaharra + Math.max(0, orduakBerriak);
+        balidatuUdOrduakEzDirelaGainditzen(udId, ud.getOrduak(), jpId, orduakBerriak);
+        if (baturaBerria > ud.getOrduak()) {
+            throw new IllegalArgumentException("jardueretan ordu gehiegi dituzu");
+        }
+    }
+
+    private void balidatuUdOrduakEzDirelaGainditzen(Long udId, int udOrduakBerriak, Long jpId, int jpOrduakBerriak) {
+        int oraingoBatura = planifikatutakoOrduak(udId);
+        if (jpId != null) {
+            int jardueraZaharra = jpRepository.findById(jpId)
+                    .filter(jp -> jp.getUnitatea() != null && java.util.Objects.equals(jp.getUnitatea().getId(), udId))
+                    .map(JardueraPlanifikatua::getOrduak)
+                    .orElse(0);
+            oraingoBatura = oraingoBatura - jardueraZaharra + Math.max(0, jpOrduakBerriak);
+        }
+        if (oraingoBatura > Math.max(0, udOrduakBerriak)) {
+            throw new IllegalArgumentException("jardueretan ordu gehiegi dituzu");
+        }
+    }
+
     @Transactional
     private void syncUdOrduak(Long udId) {
-        long count = jpRepository.countByUnitatea_Id(udId);
-        if (count > 0) {
-            // sum Long izan daiteke; null ez bada (COALESCE 0), baina badaezpada
-            Long sum = jpRepository.sumOrduakByUdId(udId);
-            int suma = sum == null ? 0 : sum.intValue();
-
-            var ud = udRepository.findById(udId).orElseThrow();
-            ud.setOrduak(suma);
-            udRepository.save(ud);
-        }
-        // count == 0 -> EZ ukitu UD.orduak; eskuz kudeatzen jarraitzen du
+        // UD.orduak erabiltzaileak ezarritako guztizko muga da; ez sinkronizatu automatikoki jardueren baturarekin.
     }
 
     @Transactional(readOnly = true)
