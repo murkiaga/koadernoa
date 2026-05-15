@@ -865,16 +865,32 @@
 
   // ---------- d&d: UD & JP (SortableJS badagoen bitartean) ----------
   if (window.Sortable) {
+    const isFiniteNumber = (n) => Number.isFinite(n);
+
     document.querySelectorAll('.ud-list').forEach(list=>{
       new Sortable(list, {
-        group: { name:'ud', pull:true, put:true },
+        group: {
+          name: 'ud',
+          pull: true,
+          put: (to, from, dragged) => dragged?.classList.contains('ud-item') === true
+        },
         handle: '.ud-handle',
         draggable: '.ud-item',
         animation: 150,
+        onMove: (evt) => evt.dragged?.classList.contains('ud-item') === true
+          && evt.to?.classList.contains('ud-list') === true,
         onEnd: (evt)=>{
-          const udId = parseInt(evt.item.getAttribute('data-ud-id'));
-          const toEbalId = parseInt(evt.to.getAttribute('data-eb-id'));
+          if (!evt.item.classList.contains('ud-item') || !evt.to.classList.contains('ud-list')) {
+            reloadKeepingState();
+            return;
+          }
+          const udId = parseInt(evt.item.getAttribute('data-ud-id'), 10);
+          const toEbalId = parseInt(evt.to.getAttribute('data-eb-id'), 10);
           const newIndex = evt.newIndex;
+          if (!isFiniteNumber(udId) || !isFiniteNumber(toEbalId) || !isFiniteNumber(newIndex)) {
+            reloadKeepingState();
+            return;
+          }
           fjson('/irakasle/programazioa/api/ud/mugitu', 'POST', { udId, toEbaluaketaId: toEbalId, newIndex }).catch(()=>reloadKeepingState());
         }
       });
@@ -882,14 +898,28 @@
 
     document.querySelectorAll('.jp-list').forEach(list=>{
       new Sortable(list, {
-        group: 'jp',
+        group: {
+          name: 'jp',
+          pull: true,
+          put: (to, from, dragged) => dragged?.classList.contains('jp-item') === true
+        },
         handle: '.jp-handle',
         draggable: '.jp-item',
         animation: 150,
+        onMove: (evt) => evt.dragged?.classList.contains('jp-item') === true
+          && evt.to?.classList.contains('jp-list') === true,
         onEnd: (evt)=>{
-          const jpId = parseInt(evt.item.getAttribute('data-jp-id'));
-          const toUdId = parseInt(evt.to.getAttribute('data-ud-id'));
+          if (!evt.item.classList.contains('jp-item') || !evt.to.classList.contains('jp-list')) {
+            reloadKeepingState();
+            return;
+          }
+          const jpId = parseInt(evt.item.getAttribute('data-jp-id'), 10);
+          const toUdId = parseInt(evt.to.getAttribute('data-ud-id'), 10);
           const newIndex = evt.newIndex;
+          if (!isFiniteNumber(jpId) || !isFiniteNumber(toUdId) || !isFiniteNumber(newIndex)) {
+            reloadKeepingState();
+            return;
+          }
           fjson('/irakasle/programazioa/api/jp/mugitu', 'POST', { jpId, toUdId, newIndex }).catch(()=>reloadKeepingState());
         }
       });
