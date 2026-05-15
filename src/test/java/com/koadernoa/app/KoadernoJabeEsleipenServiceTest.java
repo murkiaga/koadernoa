@@ -83,6 +83,26 @@ class KoadernoJabeEsleipenServiceTest {
     }
 
     @Test
+    void inportatuJabeEsleipenakAcceptsManagerOrAdminAsOwner() throws Exception {
+        Koadernoa koadernoa = new Koadernoa();
+        koadernoa.setId(42L);
+        koadernoa.setIrakasleak(List.of());
+        Irakaslea kudeatzailea = irakaslea(3L, "kudeatzailea@example.com");
+        kudeatzailea.setRola(Rola.KUDEATZAILEA);
+        when(koadernoaRepository.findByIdWithJabeaEtaIrakasleak(42L)).thenReturn(Optional.of(koadernoa));
+        when(irakasleaRepository.findByEmailaIgnoreCase("kudeatzailea@example.com")).thenReturn(Optional.of(kudeatzailea));
+
+        KoadernoJabeInportazioEmaitza emaitza = service.inportatuJabeEsleipenak(fitxategia(
+                "42", "kudeatzailea@example.com", ""));
+
+        assertThat(emaitza.getEsleitutakoKoadernoak()).isEqualTo(1);
+        assertThat(emaitza.getErroreak()).isEmpty();
+        verify(koadernoaRepository).save(koadernoa);
+        assertThat(koadernoa.getJabea()).isSameAs(kudeatzailea);
+        assertThat(koadernoa.getIrakasleak()).containsExactly(kudeatzailea);
+    }
+
+    @Test
     void inportatuJabeEsleipenakDoesNotOverwriteExistingOwner() throws Exception {
         Koadernoa koadernoa = new Koadernoa();
         koadernoa.setId(42L);

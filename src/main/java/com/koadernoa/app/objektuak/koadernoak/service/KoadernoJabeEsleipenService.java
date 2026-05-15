@@ -21,7 +21,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
-import com.koadernoa.app.objektuak.irakasleak.entitateak.Rola;
 import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
@@ -199,11 +198,7 @@ public class KoadernoJabeEsleipenService {
                                       KoadernoJabeInportazioEmaitza emaitza) {
         Irakaslea irakaslea = irakasleaRepository.findByEmailaIgnoreCase(emaila).orElse(null);
         if (irakaslea == null) {
-            emaitza.gehituErrorea("L" + excelLerroa + " (koaderno_id=" + koadernoId + "): ez da irakaslerik aurkitu email honekin: " + emaila + ".");
-            return null;
-        }
-        if (irakaslea.getRola() != Rola.IRAKASLEA) {
-            emaitza.gehituErrorea("L" + excelLerroa + " (koaderno_id=" + koadernoId + "): '" + emaila + "' ez da IRAKASLEA rola duen erabiltzailea.");
+            emaitza.gehituErrorea("L" + excelLerroa + " (koaderno_id=" + koadernoId + "): ez da erabiltzailerik aurkitu email honekin: " + emaila + ".");
             return null;
         }
         return irakaslea;
