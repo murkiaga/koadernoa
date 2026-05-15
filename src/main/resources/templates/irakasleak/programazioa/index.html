@@ -319,7 +319,7 @@
 		            th:each="ud : ${eb.unitateak}"
 		            th:attr="data-ud-id=${ud.id}">
 		          <div class="ud-header" onclick="toggleUd(this)">
-		            <span class="handle" title="Arrastatu ordena aldatzeko">≡</span>
+		            <span class="handle ud-handle" title="Arrastatu UDa ordena aldatzeko">≡</span>
 		            <div>
 		              <span class="title"
 		                    th:text="|${ud.kodea} — ${ud.izenburua}|">
@@ -345,7 +345,7 @@
 		              <li class="jp-item"
 		                  th:each="jp : ${ud.azpiJarduerak}"
 		                  th:attr="data-jp-id=${jp.id}">
-		                <span class="handle" title="Arrastatu ordena aldatzeko">≡</span>
+		                <span class="handle jp-handle" title="Arrastatu jarduera ordena aldatzeko">≡</span>
 		                <div>
 		                  <span class="jp-title" th:text="${jp.izenburua}">Jarduera</span>
 		                  <span class="jp-hours" th:text="|(${jp.orduak}h)|">(0h)</span>
@@ -868,13 +868,14 @@
     document.querySelectorAll('.ud-list').forEach(list=>{
       new Sortable(list, {
         group: { name:'ud', pull:true, put:true },
-        handle: '.handle',
+        handle: '.ud-handle',
+        draggable: '.ud-item',
         animation: 150,
         onEnd: (evt)=>{
           const udId = parseInt(evt.item.getAttribute('data-ud-id'));
           const toEbalId = parseInt(evt.to.getAttribute('data-eb-id'));
           const newIndex = evt.newIndex;
-          fjson('/irakasle/programazioa/api/ud/mugitu', 'POST', { udId, toEbaluaketaId: toEbalId, newIndex });
+          fjson('/irakasle/programazioa/api/ud/mugitu', 'POST', { udId, toEbaluaketaId: toEbalId, newIndex }).catch(()=>reloadKeepingState());
         }
       });
     });
@@ -882,13 +883,14 @@
     document.querySelectorAll('.jp-list').forEach(list=>{
       new Sortable(list, {
         group: 'jp',
-        handle: '.handle',
+        handle: '.jp-handle',
+        draggable: '.jp-item',
         animation: 150,
         onEnd: (evt)=>{
           const jpId = parseInt(evt.item.getAttribute('data-jp-id'));
           const toUdId = parseInt(evt.to.getAttribute('data-ud-id'));
           const newIndex = evt.newIndex;
-          fjson('/irakasle/programazioa/api/jp/mugitu', 'POST', { jpId, toUdId, newIndex });
+          fjson('/irakasle/programazioa/api/jp/mugitu', 'POST', { jpId, toUdId, newIndex }).catch(()=>reloadKeepingState());
         }
       });
     });

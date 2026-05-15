@@ -11,4 +11,5 @@ public class JardueraSortuDto {
     private boolean eginda;
     private float orduak;
     private String mota; // "planifikatua", "eginda", "ebaluazioa", ...
+    private Long unitateaId;
 }

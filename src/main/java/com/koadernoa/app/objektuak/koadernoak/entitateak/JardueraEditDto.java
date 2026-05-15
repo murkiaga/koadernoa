@@ -16,6 +16,8 @@ public class JardueraEditDto {
     private boolean eginda;
     private float orduak;
     private String mota;
+    private Long unitateaId;
+    private String unitateaLabel;
 
     public static JardueraEditDto from(Jarduera j){
         JardueraEditDto d = new JardueraEditDto();
@@ -25,6 +27,10 @@ public class JardueraEditDto {
         d.setDeskribapena(j.getDeskribapena());
         d.setOrduak(j.getOrduak());
         d.setMota(j.getMota());
+        if (j.getUnitatea() != null) {
+            d.setUnitateaId(j.getUnitatea().getId());
+            d.setUnitateaLabel(j.getUnitatea().getKodea() + " — " + j.getUnitatea().getIzenburua());
+        }
         return d;
     }
 }

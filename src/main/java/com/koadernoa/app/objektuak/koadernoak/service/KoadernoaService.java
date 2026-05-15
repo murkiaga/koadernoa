@@ -42,6 +42,7 @@ import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoOrdutegiBlokeaR
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.NotaFitxategiaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.ProgramazioaRepository;
+import com.koadernoa.app.objektuak.koadernoak.repository.UnitateDidaktikoaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.SaioaRepository;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 import com.koadernoa.app.objektuak.modulua.repository.MatrikulaRepository;
@@ -65,6 +66,7 @@ public class KoadernoaService {
     private final JardueraRepository jardueraRepository;
     private final EbaluazioMomentuaRepository ebaluazioMomentuaRepository;
     private final ProgramazioaRepository programazioaRepository;
+    private final UnitateDidaktikoaRepository unitateDidaktikoaRepository;
     private final LogService logService;
     private final EstatistikaEbaluazioanRepository estatistikaRepository;
     private final SaioaRepository saioaRepository;
@@ -325,6 +327,7 @@ public class KoadernoaService {
         j.setData(dto.getData());
         j.setOrduak(dto.getOrduak());
         j.setMota(dto.getMota());
+        ezarriJarduerarenUnitatea(j, dto.getUnitateaId(), koadernoa.getId());
 
         jardueraRepository.save(j);
     }
@@ -345,8 +348,27 @@ public class KoadernoaService {
         j.setData(dto.getData());
         j.setOrduak(dto.getOrduak());
         j.setMota(dto.getMota());
+        ezarriJarduerarenUnitatea(j, dto.getUnitateaId(), koadernoa.getId());
 
         jardueraRepository.save(j);
+    }
+
+
+    private void ezarriJarduerarenUnitatea(Jarduera jarduera, Long unitateaId, Long koadernoId) {
+        if (unitateaId == null) {
+            jarduera.setUnitatea(null);
+            return;
+        }
+        var unitatea = unitateDidaktikoaRepository.findById(unitateaId)
+                .orElseThrow(() -> new IllegalArgumentException("UDa ez da existitzen."));
+        Long unitatearenKoadernoId = unitatea.getProgramazioa() != null
+                && unitatea.getProgramazioa().getKoadernoa() != null
+                ? unitatea.getProgramazioa().getKoadernoa().getId()
+                : null;
+        if (!java.util.Objects.equals(unitatearenKoadernoId, koadernoId)) {
+            throw new IllegalArgumentException("UDa ez dagokio koaderno honi.");
+        }
+        jarduera.setUnitatea(unitatea);
     }
 
     /** QUERY-ak ID bidez, Detached/Transient saihesteko */

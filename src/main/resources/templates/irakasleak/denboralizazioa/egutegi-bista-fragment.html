@@ -34,6 +34,13 @@
         </div>
     </div>
 
+    <div class="calendar-legend" aria-label="Leyenda">
+        <span class="legend-title">Leyenda:</span>
+        <span class="legend-item"><span class="legend-swatch lektibo1"></span>1. ebaluazioa</span>
+        <span class="legend-item"><span class="legend-swatch lektibo2"></span>2. ebaluazioa</span>
+        <span class="legend-item"><span class="legend-swatch lektibo3"></span>3. ebaluazioa</span>
+    </div>
+
     <!-- Egutegi taula -->
     <table class="taula-egutegia" th:classappend="${egutegiMota == 'astea'} ? ' week-mode' : ''">
         <thead>
@@ -83,7 +90,7 @@
 						  <li class="jarduera-item"
 						    draggable="true"
 						    th:each="j : ${jardueraMap[egunaBista.data]}"
-						    th:text="${ j.titulua + ' - ' + ( #strings.isEmpty(j.mota) ? 'planifikatua' : j.mota ) }"
+						    th:text="${(j.unitatea != null ? '[' + j.unitatea.kodea + '] ' : '') + j.titulua + ' - ' + ( #strings.isEmpty(j.mota) ? 'planifikatua' : j.mota ) }"
 						    th:attr="data-id=${j.id}"
 						    onclick="editatuJarduera(event, this)">
 						  </li>
@@ -118,6 +125,7 @@
                             th:each="j : ${jardueraMap[egunaBista.data]}"
                             th:attr="data-id=${j.id}"
                             onclick="editatuJarduera(event, this)">
+                            <span class="ud-badge" th:if="${j.unitatea != null}" th:text="${j.unitatea.kodea}">UD</span>
                             <strong th:text="${j.titulua}"></strong>
                             <div class="week-desc" th:if="${!#strings.isEmpty(j.deskribapena)}" th:text="${j.deskribapena}"></div>
                             <div th:text="${'Orduak: ' + (j.orduak != null ? j.orduak : 0)}"></div>
@@ -145,6 +153,16 @@
           <input type="hidden" name="asteHasiera" th:value="${asteHasiera}">
           <input type="hidden" name="data" id="jardueraData">
           <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+          <div class="form-row">
+            <label>UDa</label>
+            <select name="unitateaId" id="jardueraUnitatea">
+              <option value="">UD gabe</option>
+              <option th:each="ud : ${denboralizazioUnitateak}"
+                      th:value="${ud.id}"
+                      th:text="${ud.kodea + ' — ' + ud.izenburua}">UD1 — Izenburua</option>
+            </select>
+          </div>
 
           <div class="form-row">
             <label>Titulua</label>
