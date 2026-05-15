@@ -257,6 +257,7 @@ public class DenboralizazioaController {
 	    // Model atributuak (bi bistentzat komunak)
 	    model.addAttribute("jardueraMap", jardueraMap);
 	    model.addAttribute("denboralizazioUnitateak", denboralizazioUnitateak);
+	    model.addAttribute("defaultUnitateaIdMap", kalkulatuEgunekoLehenUdMap(kargatutakoKoadernoa.getId()));
 	    model.addAttribute("egutegia", egutegia);
 	    model.addAttribute("ikasturtea", egutegia.getIkasturtea());
 	    model.addAttribute("hilabeteUrtea", hilabeteUrtea);
@@ -294,6 +295,28 @@ public class DenboralizazioaController {
 	    model.addAttribute("oharraMap", oharraMap);
 
 	    return "irakasleak/denboralizazioa/denboralizazioa";
+	}
+
+	private Map<String, Long> kalkulatuEgunekoLehenUdMap(Long koadernoId) {
+	    if (koadernoId == null) return java.util.Collections.emptyMap();
+
+	    var koadernoaOrdutegiarekin = koadernoaService.findByIdWithOrdutegiaAndEgutegia(koadernoId);
+	    var programazioa = programazioaService.loadWithEbaluaketakUdetajpByKoadernoId(koadernoId);
+	    if (koadernoaOrdutegiarekin.isEmpty() || programazioa.isEmpty()) {
+	        return java.util.Collections.emptyMap();
+	    }
+
+	    try {
+	        Map<String, Long> map = new java.util.LinkedHashMap<>();
+	        denboralizazioGeneratorService
+	                .generateFromProgramazioa(koadernoaOrdutegiarekin.get(), programazioa.get(), true, false)
+	                .stream()
+	                .filter(item -> item.data() != null && item.unitatea() != null && item.unitatea().getId() != null)
+	                .forEach(item -> map.putIfAbsent(item.data().toString(), item.unitatea().getId()));
+	        return map;
+	    } catch (RuntimeException ex) {
+	        return java.util.Collections.emptyMap();
+	    }
 	}
 
 	@GetMapping("/falten-jakinarazpena/pdf")

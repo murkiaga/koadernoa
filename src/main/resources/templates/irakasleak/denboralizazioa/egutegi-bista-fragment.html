@@ -51,7 +51,7 @@
     			    th:class="${egunaBista.data == null} ? 'blank' : ''"
     			    th:classappend="${egunaBista.data != null} ? ${egunMap[egunaBista.data.toString()]} : ''"
     			    th:title="${egunaBista.data != null} ? ${deskribapenaMap[egunaBista.data.toString()]} : ''"
-    			    th:attr="data-date=${egunaBista.data != null ? egunaBista.data : null}"
+           th:attr="data-date=${egunaBista.data != null ? egunaBista.data : null},data-default-ud-id=${egunaBista.data != null ? defaultUnitateaIdMap[egunaBista.data.toString()] : null}"
     			    style="cursor: pointer;">
     			    <div class="egun-zenbakia"
     			         th:text="${egunaBista.data != null ? egunaBista.data.dayOfMonth : ''}"
@@ -96,7 +96,7 @@
                 <td th:each="egunaBista : ${astekoEgunak}"
                     th:class="${egunaBista.data == null} ? 'blank' : ''"
                     th:classappend="${egunaBista.data != null} ? ${egunMap[egunaBista.data.toString()]} : ''"
-                    th:attr="data-date=${egunaBista.data != null ? egunaBista.data : null}">
+                    th:attr="data-date=${egunaBista.data != null ? egunaBista.data : null},data-default-ud-id=${egunaBista.data != null ? defaultUnitateaIdMap[egunaBista.data.toString()] : null}">
                     <div class="egun-zenbakia week-day-title">
                         <span th:if="${egunaBista.data != null}"
                               th:text="${egunaBista.data.dayOfMonth}"

@@ -18,7 +18,13 @@ window.irekiJardueraModala = function(td){
   byId('jardueraData').value = data;
   byId('jardueraMota').value = 'planifikatua'; // default
   const unitateaSelect = document.getElementById('jardueraUnitatea');
-  if (unitateaSelect) unitateaSelect.value = '';
+  const defaultUnitateaId = td.getAttribute('data-default-ud-id');
+  if (unitateaSelect) {
+    const aukera = defaultUnitateaId
+      ? Array.from(unitateaSelect.options).some(opt => opt.value === defaultUnitateaId)
+      : false;
+    unitateaSelect.value = aukera ? defaultUnitateaId : '';
+  }
   byId('jardueraModalTitle').textContent = 'Jarduera berria';
   byId('jardueraModal').style.display = 'flex';
 };
