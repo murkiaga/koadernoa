@@ -50,6 +50,7 @@ import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoOrdutegiBlokeaR
 import com.koadernoa.app.objektuak.koadernoak.repository.SaioaRepository;
 import com.koadernoa.app.objektuak.koadernoak.service.AsistentziaService;
 import com.koadernoa.app.objektuak.koadernoak.service.DenboralizazioFaltaService;
+import com.koadernoa.app.objektuak.koadernoak.service.DenboralizazioGeneratorService;
 import com.koadernoa.app.objektuak.koadernoak.service.FaltenJakinarazpenPdfService;
 import com.koadernoa.app.objektuak.koadernoak.service.FaltenExcelInportService;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
@@ -70,6 +71,7 @@ public class DenboralizazioaController {
 	private final SaioaRepository saioaRepository;
 	private final KoadernoaService koadernoaService;
 	private final DenboralizazioFaltaService denboralizazioFaltaService;
+	private final DenboralizazioGeneratorService denboralizazioGeneratorService;
 	private final FaltenJakinarazpenPdfService faltenJakinarazpenPdfService;
 	private final FaltenExcelInportService faltenExcelInportService;
 	private final ProgramazioTxantiloiService programazioTxantiloiService;
