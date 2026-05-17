@@ -10,10 +10,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
-import com.koadernoa.app.objektuak.egutegia.service.EgutegiaService;
 import com.koadernoa.app.objektuak.egutegia.service.IkasturteaService;
+import com.koadernoa.app.objektuak.koadernoak.service.KoadernoAutomatikoSorreraService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 public class IkasturteaController {
 
 	private final IkasturteaService ikasturteaService;
+    private final KoadernoAutomatikoSorreraService koadernoAutomatikoSorreraService;
 
     // 1. Zerrenda
     @GetMapping
@@ -65,6 +67,21 @@ public class IkasturteaController {
 
         ikasturtea.setAktiboa(berria);
         ikasturteaService.save(ikasturtea);
+
+        return "redirect:/kudeatzaile/ikasturteak";
+    }
+
+    @PostMapping("/{ikasturteaId}/koadernoak/sortu-faltan")
+    public String sortuFaltaDirenKoadernoak(@PathVariable Long ikasturteaId, RedirectAttributes ra) {
+        try {
+            KoadernoAutomatikoSorreraService.Emaitza emaitza =
+                    koadernoAutomatikoSorreraService.sortuFaltaDirenKoadernoak(ikasturteaId);
+            ra.addFlashAttribute("success",
+                    emaitza.sortutakoak() + " koaderno sortu dira. "
+                            + emaitza.lehendikZeudenak() + " koaderno jada existitzen ziren.");
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            ra.addFlashAttribute("error", ex.getMessage());
+        }
 
         return "redirect:/kudeatzaile/ikasturteak";
     }

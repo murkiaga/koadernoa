@@ -4,6 +4,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,12 +14,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
 import com.koadernoa.app.objektuak.egutegia.service.IkasturteaService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
+import com.koadernoa.app.objektuak.koadernoak.service.KoadernoJabeEsleipenService;
+import com.koadernoa.app.objektuak.koadernoak.service.KoadernoJabeInportazioEmaitza;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Familia;
@@ -34,6 +40,7 @@ public class KoadernoaControllerKudeatzaile {
 
     private final IkasturteaService ikasturteaService;
     private final KoadernoaService koadernoaService;
+    private final KoadernoJabeEsleipenService koadernoJabeEsleipenService;
     private final FamiliaRepository familiaRepository;
     private final TaldeaRepository taldeaRepository;
     private final IrakasleaRepository irakasleaRepository;
@@ -159,8 +166,40 @@ public class KoadernoaControllerKudeatzaile {
         model.addAttribute("moodleEstekaDu", moodleEstekaDu);
         model.addAttribute("ikasturteak", ikasturteak);
         model.addAttribute("irakasleak", irakasleaRepository.findAll());
+        model.addAttribute("badagoJabeGabekoKoadernorik", koadernoJabeEsleipenService.badagoJabeGabekoKoadernorik());
 
         return "kudeatzaile/koadernoak/index";
+    }
+
+
+    @GetMapping("/jabe-gabeak/exportatu")
+    public ResponseEntity<byte[]> exportatuJabeGabekoKoadernoak() {
+        try {
+            byte[] edukia = koadernoJabeEsleipenService.exportatuJabeGabekoKoadernoak();
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"jabe-gabeko-koadernoak.xlsx\"")
+                    .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                    .body(edukia);
+        } catch (Exception ex) {
+            return ResponseEntity.internalServerError()
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .body(("Ezin izan da Excel fitxategia sortu: " + ex.getMessage()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        }
+    }
+
+    @PostMapping("/jabe-gabeak/inportatu")
+    public String inportatuJabeGabekoKoadernoak(@RequestParam("fitxategia") MultipartFile fitxategia,
+                                                 RedirectAttributes ra) {
+        try {
+            KoadernoJabeInportazioEmaitza emaitza = koadernoJabeEsleipenService.inportatuJabeEsleipenak(fitxategia);
+            ra.addFlashAttribute("success", emaitza.laburpena());
+            if (emaitza.hasErroreak()) {
+                ra.addFlashAttribute("error", emaitza.erroreLaburpena());
+            }
+        } catch (Exception ex) {
+            ra.addFlashAttribute("error", ex.getMessage());
+        }
+        return "redirect:/kudeatzaile/koadernoak";
     }
 
 
