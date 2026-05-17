@@ -76,8 +76,7 @@ public class IrakasleKudeatzaileController {
                 if (lerroa.getAsteguna() == null || lerroa.getOrduZenbakia() == null) {
                     continue;
                 }
-                int col = ASTE_ORDENA.indexOf(lerroa.getAsteguna()) + 1;
-                if (col <= 0) {
+                if (!ASTE_ORDENA.contains(lerroa.getAsteguna())) {
                     continue;
                 }
                 int saioKopurua = lerroa.getSaioKopurua() != null && lerroa.getSaioKopurua() > 0 ? lerroa.getSaioKopurua() : 1;
@@ -85,7 +84,7 @@ public class IrakasleKudeatzaileController {
                 azkenOrdua = Math.max(azkenOrdua, bukaeraOrdua);
                 String edukia = ordutegiGelaxkaTestua(lerroa);
                 for (int ordua = lerroa.getOrduZenbakia(); ordua <= bukaeraOrdua; ordua++) {
-                    ordutegiGelaxkak.computeIfAbsent(col + "-" + ordua, k -> new java.util.ArrayList<>()).add(edukia);
+                    ordutegiGelaxkak.computeIfAbsent(ordutegiGelaxkaKey(lerroa.getAsteguna(), ordua), k -> new java.util.ArrayList<>()).add(edukia);
                 }
             }
         }
@@ -96,8 +95,7 @@ public class IrakasleKudeatzaileController {
         model.addAttribute("ikasturteak", ikasturteak);
         model.addAttribute("ikasturteaId", selectedIkasturteaId);
         model.addAttribute("ordutegia", ordutegia);
-        model.addAttribute("ordutegiGelaxkak", ordutegiGelaxkak);
-        model.addAttribute("rows", IntStream.rangeClosed(1, azkenOrdua).boxed().toList());
+        model.addAttribute("ordutegiGridRows", sortuOrdutegiGridRows(ordutegiGelaxkak, azkenOrdua));
         model.addAttribute("cols", ASTE_ORDENA);
         model.addAttribute("koadernoak", koadernoak);
         return "kudeatzaile/irakasleak/fitxa";
@@ -131,10 +129,30 @@ public class IrakasleKudeatzaileController {
         irakasleaRepository.save(irakaslea);
     }
 
+    private List<OrdutegiGridRow> sortuOrdutegiGridRows(Map<String, List<String>> ordutegiGelaxkak, int azkenOrdua) {
+        return IntStream.rangeClosed(1, azkenOrdua)
+                .mapToObj(ordua -> new OrdutegiGridRow(ordua, ASTE_ORDENA.stream()
+                        .map(asteguna -> new OrdutegiGridCell(asteguna,
+                                ordutegiGelaxkak.getOrDefault(ordutegiGelaxkaKey(asteguna, ordua), List.of())))
+                        .toList()))
+                .toList();
+    }
+
+    private String ordutegiGelaxkaKey(Astegunak asteguna, int orduZenbakia) {
+        return asteguna.name() + "-" + orduZenbakia;
+    }
+
     private String ordutegiGelaxkaTestua(IrakasleOrdutegiLerroa lerroa) {
-        return java.util.stream.Stream.of(lerroa.getModuluKodea(), lerroa.getTaldeKodea(), gelaTestua(lerroa))
+        return java.util.stream.Stream.of(irakasgaiTestua(lerroa), lerroa.getTaldeKodea(), gelaTestua(lerroa))
                 .filter(v -> v != null && !v.isBlank())
                 .collect(java.util.stream.Collectors.joining(" · "));
+    }
+
+    private String irakasgaiTestua(IrakasleOrdutegiLerroa lerroa) {
+        if (lerroa.getModuluKodea() != null && !lerroa.getModuluKodea().isBlank()) {
+            return lerroa.getModuluKodea();
+        }
+        return lerroa.getModuluIzena();
     }
 
     private String gelaTestua(IrakasleOrdutegiLerroa lerroa) {
@@ -142,5 +160,14 @@ public class IrakasleKudeatzaileController {
             return lerroa.getGelaKodea();
         }
         return lerroa.getGelaIzena();
+    }
+
+    public record OrdutegiGridRow(Integer orduZenbakia, List<OrdutegiGridCell> gelaxkak) {
+    }
+
+    public record OrdutegiGridCell(Astegunak asteguna, List<String> edukiak) {
+        public boolean beteta() {
+            return edukiak != null && !edukiak.isEmpty();
+        }
     }
 }

@@ -60,13 +60,12 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="r : ${rows}">
-                    <th th:text="${r}">1</th>
-                    <td th:each="c, stat : ${cols}"
-                        th:with="key=${(stat.index + 1) + '-' + r}, edukiak=${ordutegiGelaxkak[key]}"
-                        th:classappend="${edukiak != null} ? 'selected' : ''">
-                        <div th:if="${edukiak != null}"
-                             th:each="edukia : ${edukiak}"
+                <tr th:each="row : ${ordutegiGridRows}">
+                    <th th:text="${row.orduZenbakia}">1</th>
+                    <td th:each="gelaxka : ${row.gelaxkak}"
+                        th:classappend="${gelaxka.beteta()} ? 'selected' : ''">
+                        <div th:if="${gelaxka.beteta()}"
+                             th:each="edukia : ${gelaxka.edukiak}"
                              class="ordutegi-cell-content"
                              th:text="${edukia}">SRED · 1SM2A · G01</div>
                     </td>
