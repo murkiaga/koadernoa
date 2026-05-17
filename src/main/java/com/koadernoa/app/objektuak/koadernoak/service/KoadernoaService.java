@@ -251,6 +251,7 @@ public class KoadernoaService {
             if (koadernoa.getJabea() == null) {
                 koadernoa.setJabea(irakaslea);
                 irakasleak.forEach(i -> gehituIrakasleaBeharBada(koadernoa, i));
+                eguneratuOrdutegiakKoadernoan(koadernoa, cells);
                 Koadernoa gordeta = koadernoaRepository.save(koadernoa);
                 return new KoadernoSorreraEmaitza(
                         gordeta,
@@ -282,6 +283,17 @@ public class KoadernoaService {
 
         Koadernoa gordeta = koadernoaRepository.save(k);
         return new KoadernoSorreraEmaitza(gordeta, KoadernoSorreraEmaitza.Egoera.SORTUA, "Koadernoa sortu da.");
+    }
+
+
+    private void eguneratuOrdutegiakKoadernoan(Koadernoa koadernoa, List<String> cells) {
+        List<KoadernoOrdutegiBlokea> blokeak = buildBlocksFromCells(koadernoa, cells);
+        if (koadernoa.getOrdutegiak() == null) {
+            koadernoa.setOrdutegiak(blokeak);
+            return;
+        }
+        koadernoa.getOrdutegiak().clear();
+        koadernoa.getOrdutegiak().addAll(blokeak);
     }
 
     private void egiaztatuKoadernoSorreraBaimena(Moduloa moduloa, Egutegia egutegia, Irakaslea irakaslea) {

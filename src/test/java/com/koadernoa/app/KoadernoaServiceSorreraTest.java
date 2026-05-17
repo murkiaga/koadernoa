@@ -6,6 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -15,6 +16,7 @@ import org.mockito.ArgumentCaptor;
 
 import com.koadernoa.app.objektuak.ebaluazioa.repository.EbaluazioMomentuaRepository;
 import com.koadernoa.app.objektuak.ebaluazioa.repository.EbaluazioNotaRepository;
+import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
@@ -95,6 +97,38 @@ class KoadernoaServiceSorreraTest {
     }
 
     @Test
+    void sortuEdoEsleituKoadernoaAssignsScheduleBlocksWhenClaimingOwnerlessNotebook() {
+        TestDatuak datuak = prestatuDatuak();
+        Koadernoa existitzenDena = new Koadernoa();
+        existitzenDena.setId(99L);
+        existitzenDena.setModuloa(datuak.moduloa());
+        existitzenDena.setEgutegia(datuak.egutegia());
+        existitzenDena.setIrakasleak(new ArrayList<>());
+        existitzenDena.setOrdutegiak(new ArrayList<>());
+        when(koadernoaRepository.findFirstByModuloa_IdAndEgutegia_IdOrderByIdAsc(30L, 20L))
+                .thenReturn(Optional.of(existitzenDena));
+        when(koadernoaRepository.save(any(Koadernoa.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        KoadernoSorreraEmaitza emaitza = service.sortuEdoEsleituKoadernoa(
+                dto(30L), datuak.irakaslea(), List.of("1-1", "1-2", "3-4"));
+
+        assertThat(emaitza.egoera()).isEqualTo(KoadernoSorreraEmaitza.Egoera.ESLEITUA_JABE_GABEA);
+        assertThat(emaitza.koadernoa().getOrdutegiak()).hasSize(2);
+        assertThat(emaitza.koadernoa().getOrdutegiak()).allMatch(b -> b.getKoadernoa() == existitzenDena);
+        assertThat(emaitza.koadernoa().getOrdutegiak()).allMatch(b -> LocalDate.of(2025, 9, 1).equals(b.getHasieraData()));
+        assertThat(emaitza.koadernoa().getOrdutegiak()).anySatisfy(b -> {
+            assertThat(b.getAsteguna()).isEqualTo(Astegunak.ASTELEHENA);
+            assertThat(b.getHasieraSlot()).isEqualTo(1);
+            assertThat(b.getIraupenaSlot()).isEqualTo(2);
+        });
+        assertThat(emaitza.koadernoa().getOrdutegiak()).anySatisfy(b -> {
+            assertThat(b.getAsteguna()).isEqualTo(Astegunak.ASTEAZKENA);
+            assertThat(b.getHasieraSlot()).isEqualTo(4);
+            assertThat(b.getIraupenaSlot()).isEqualTo(1);
+        });
+    }
+
+    @Test
     void sortuEdoEsleituKoadernoaDoesNotOverwriteExistingOwnerAndAvoidsUnknownMessage() {
         TestDatuak datuak = prestatuDatuak();
         Irakaslea jabea = new Irakaslea();
@@ -144,6 +178,7 @@ class KoadernoaServiceSorreraTest {
         ikasturtea.setIzena("2025-2026");
         Egutegia egutegia = new Egutegia();
         egutegia.setId(20L);
+        egutegia.setHasieraData(LocalDate.of(2025, 9, 1));
         egutegia.setMaila(maila);
         egutegia.setIkasturtea(ikasturtea);
         Moduloa moduloa = new Moduloa();
