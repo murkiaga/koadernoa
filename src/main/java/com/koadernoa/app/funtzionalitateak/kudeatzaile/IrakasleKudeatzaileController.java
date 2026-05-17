@@ -18,6 +18,7 @@ import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
+import com.koadernoa.app.objektuak.ordutegiak.entitateak.IrakasleOrdutegiLerroa;
 import com.koadernoa.app.objektuak.ordutegiak.entitateak.IrakasleOrdutegia;
 import com.koadernoa.app.objektuak.ordutegiak.repository.IrakasleOrdutegiaRepository;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Familia;
@@ -58,8 +59,8 @@ public class IrakasleKudeatzaileController {
                 : irakasleOrdutegiaRepository.findByIrakasleaIdAndIkasturteaId(id, selectedIkasturteaId).orElse(null);
         if (ordutegia != null && ordutegia.getLerroak() != null) {
             ordutegia.getLerroak().sort(Comparator
-                    .comparing(l -> l.getAsteguna() != null ? l.getAsteguna().ordinal() : Integer.MAX_VALUE)
-                    .thenComparing(l -> l.getOrduZenbakia() != null ? l.getOrduZenbakia() : Integer.MAX_VALUE));
+                    .comparingInt((IrakasleOrdutegiLerroa l) -> l.getAsteguna() != null ? l.getAsteguna().ordinal() : Integer.MAX_VALUE)
+                    .thenComparingInt(l -> l.getOrduZenbakia() != null ? l.getOrduZenbakia() : Integer.MAX_VALUE));
         }
 
         List<Koadernoa> koadernoak = koadernoaRepository.findByIrakasleaAndIkasturteaWithRelations(id, selectedIkasturteaId);
