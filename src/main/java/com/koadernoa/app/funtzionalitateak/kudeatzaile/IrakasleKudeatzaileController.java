@@ -1,7 +1,10 @@
 package com.koadernoa.app.funtzionalitateak.kudeatzaile;
 
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.IntStream;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -12,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
 import com.koadernoa.app.objektuak.egutegia.service.IkasturteaService;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
@@ -36,6 +40,11 @@ public class IrakasleKudeatzaileController {
     private final IkasturteaService ikasturteaService;
     private final IrakasleOrdutegiaRepository irakasleOrdutegiaRepository;
     private final KoadernoaRepository koadernoaRepository;
+
+    private static final List<Astegunak> ASTE_ORDENA = List.of(
+            Astegunak.ASTELEHENA, Astegunak.ASTEARTEA, Astegunak.ASTEAZKENA,
+            Astegunak.OSTEGUNA, Astegunak.OSTIRALA
+    );
 	
 	@GetMapping({"","/"})
 	public String zerrenda(Model model) {
@@ -57,19 +66,39 @@ public class IrakasleKudeatzaileController {
 
         IrakasleOrdutegia ordutegia = selectedIkasturteaId == null ? null
                 : irakasleOrdutegiaRepository.findByIrakasleaIdAndIkasturteaId(id, selectedIkasturteaId).orElse(null);
+        Map<String, List<String>> ordutegiGelaxkak = new LinkedHashMap<>();
+        int azkenOrdua = 12;
         if (ordutegia != null && ordutegia.getLerroak() != null) {
             ordutegia.getLerroak().sort(Comparator
                     .comparingInt((IrakasleOrdutegiLerroa l) -> l.getAsteguna() != null ? l.getAsteguna().ordinal() : Integer.MAX_VALUE)
                     .thenComparingInt(l -> l.getOrduZenbakia() != null ? l.getOrduZenbakia() : Integer.MAX_VALUE));
+            for (IrakasleOrdutegiLerroa lerroa : ordutegia.getLerroak()) {
+                if (lerroa.getAsteguna() == null || lerroa.getOrduZenbakia() == null) {
+                    continue;
+                }
+                int col = ASTE_ORDENA.indexOf(lerroa.getAsteguna()) + 1;
+                if (col <= 0) {
+                    continue;
+                }
+                int saioKopurua = lerroa.getSaioKopurua() != null && lerroa.getSaioKopurua() > 0 ? lerroa.getSaioKopurua() : 1;
+                int bukaeraOrdua = lerroa.getOrduZenbakia() + saioKopurua - 1;
+                azkenOrdua = Math.max(azkenOrdua, bukaeraOrdua);
+                String edukia = ordutegiGelaxkaTestua(lerroa);
+                for (int ordua = lerroa.getOrduZenbakia(); ordua <= bukaeraOrdua; ordua++) {
+                    ordutegiGelaxkak.computeIfAbsent(col + "-" + ordua, k -> new java.util.ArrayList<>()).add(edukia);
+                }
+            }
         }
 
         List<Koadernoa> koadernoak = koadernoaRepository.findByIrakasleaAndIkasturteaWithRelations(id, selectedIkasturteaId);
 
         model.addAttribute("irakaslea", irakaslea);
-        model.addAttribute("familiaGuztiak", familiaRepository.findAll());
         model.addAttribute("ikasturteak", ikasturteak);
         model.addAttribute("ikasturteaId", selectedIkasturteaId);
         model.addAttribute("ordutegia", ordutegia);
+        model.addAttribute("ordutegiGelaxkak", ordutegiGelaxkak);
+        model.addAttribute("rows", IntStream.rangeClosed(1, azkenOrdua).boxed().toList());
+        model.addAttribute("cols", ASTE_ORDENA);
         model.addAttribute("koadernoak", koadernoak);
         return "kudeatzaile/irakasleak/fitxa";
     }
@@ -100,5 +129,18 @@ public class IrakasleKudeatzaileController {
         irakaslea.setMintegia(familia);
         irakaslea.setOrdutegiKodea(ordutegiKodea == null || ordutegiKodea.isBlank() ? null : ordutegiKodea.trim());
         irakasleaRepository.save(irakaslea);
+    }
+
+    private String ordutegiGelaxkaTestua(IrakasleOrdutegiLerroa lerroa) {
+        return java.util.stream.Stream.of(lerroa.getModuluKodea(), lerroa.getTaldeKodea(), gelaTestua(lerroa))
+                .filter(v -> v != null && !v.isBlank())
+                .collect(java.util.stream.Collectors.joining(" · "));
+    }
+
+    private String gelaTestua(IrakasleOrdutegiLerroa lerroa) {
+        if (lerroa.getGelaKodea() != null && !lerroa.getGelaKodea().isBlank()) {
+            return lerroa.getGelaKodea();
+        }
+        return lerroa.getGelaIzena();
     }
 }

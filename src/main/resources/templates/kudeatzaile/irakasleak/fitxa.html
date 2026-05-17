@@ -6,6 +6,13 @@
     <link rel="stylesheet" th:href="@{/css/navbar.css}">
     <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .ordutegi-fitxa-grid { width: 100%; border-collapse: collapse; table-layout: fixed; }
+        .ordutegi-fitxa-grid th, .ordutegi-fitxa-grid td { border: 1px solid #d1d5db; padding: .45rem; text-align: center; vertical-align: middle; }
+        .ordutegi-fitxa-grid td { min-height: 3rem; background: #fff; }
+        .ordutegi-fitxa-grid td.selected { background: #dbeafe; color: #0f172a; font-weight: 600; }
+        .ordutegi-cell-content + .ordutegi-cell-content { margin-top: .35rem; padding-top: .35rem; border-top: 1px solid rgba(15, 23, 42, .18); }
+    </style>
 </head>
 <body>
 <div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
@@ -15,27 +22,6 @@
 
     <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
 
-    <section class="form-card">
-        <h2>Datuak</h2>
-        <p><strong>Emaila:</strong> <span th:text="${irakaslea.emaila ?: '-'}">emaila</span></p>
-        <p><strong>Rola:</strong> <span th:text="${irakaslea.rola ?: '-'}">rola</span></p>
-        <form th:action="@{|/kudeatzaile/irakasleak/${irakaslea.id}/fitxa|}" method="post">
-            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
-            <input type="hidden" name="ikasturteaId" th:value="${ikasturteaId}" />
-            <label for="mintegia">Mintegia</label>
-            <select id="mintegia" name="mintegia" required>
-                <option value="" th:if="${irakaslea.mintegia == null}" selected>— Aukeratu —</option>
-                <option th:each="fam : ${familiaGuztiak}"
-                        th:value="${fam.id}"
-                        th:text="${fam.izena}"
-                        th:selected="${irakaslea.mintegia != null and irakaslea.mintegia.id == fam.id}">Mintegia</option>
-            </select>
-
-            <label for="ordutegiKodea">Ordutegi kodea</label>
-            <input id="ordutegiKodea" type="text" name="ordutegiKodea" th:value="${irakaslea.ordutegiKodea}" placeholder="PROFF/SOLUCF PROF">
-            <button class="btn btn-primary" type="submit">Gorde</button>
-        </form>
-    </section>
 
     <form class="filters" method="get" th:action="@{|/kudeatzaile/irakasleak/${irakaslea.id}|}">
         <label>
@@ -62,29 +48,28 @@
                 · <strong>XML kodea:</strong> <span th:text="${ordutegia.xmlIrakasleKodea}">URKI</span>
                 · <strong>Inportazio data:</strong> <span th:text="${#temporals.format(ordutegia.inportazioData, 'yyyy-MM-dd HH:mm')}">2026-01-01</span>
             </p>
-            <table>
+            <table class="ordutegi-fitxa-grid">
+                <colgroup>
+                    <col>
+                    <col span="5">
+                </colgroup>
                 <thead>
                 <tr>
-                    <th>Asteguna</th>
-                    <th>Ordua</th>
-                    <th>Saioak</th>
-                    <th>Mod. kodea</th>
-                    <th>Modulua</th>
-                    <th>Taldea</th>
-                    <th>Gela</th>
-                    <th>Tarea</th>
+                    <th></th>
+                    <th th:each="c : ${cols}" th:text="${#strings.capitalize(c.name().toLowerCase())}">Astelehena</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="lerroa : ${ordutegia.lerroak}">
-                    <td th:text="${lerroa.asteguna}">ASTEAZKENA</td>
-                    <td th:text="${lerroa.orduZenbakia}">4</td>
-                    <td th:text="${lerroa.saioKopurua}">1</td>
-                    <td th:text="${lerroa.moduluKodea}">SRED</td>
-                    <td th:text="${lerroa.moduluIzena ?: '-'}">Sareak</td>
-                    <td th:text="${lerroa.taldeKodea ?: '-'}">1SM2A</td>
-                    <td th:text="${lerroa.gelaIzena != null and !lerroa.gelaIzena.isBlank() ? lerroa.gelaIzena : (lerroa.gelaKodea ?: '-')}">Gela</td>
-                    <td th:text="${lerroa.tarea ?: '-'}">-</td>
+                <tr th:each="r : ${rows}">
+                    <th th:text="${r}">1</th>
+                    <td th:each="c, stat : ${cols}"
+                        th:with="key=${(stat.index + 1) + '-' + r}, edukiak=${ordutegiGelaxkak[key]}"
+                        th:classappend="${edukiak != null} ? 'selected' : ''">
+                        <div th:if="${edukiak != null}"
+                             th:each="edukia : ${edukiak}"
+                             class="ordutegi-cell-content"
+                             th:text="${edukia}">SRED · 1SM2A · G01</div>
+                    </td>
                 </tr>
                 </tbody>
             </table>
