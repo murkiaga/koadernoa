@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Irakasle fitxa</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" th:href="@{/css/navbar.css}">
+    <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+<div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+<main class="page">
+    <p><a th:href="@{/kudeatzaile/irakasleak}">← Irakasle zerrendara itzuli</a></p>
+    <h1 th:text="${irakaslea.izena}">Irakaslea</h1>
+
+    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+
+    <section class="form-card">
+        <h2>Datuak</h2>
+        <p><strong>Emaila:</strong> <span th:text="${irakaslea.emaila ?: '-'}">emaila</span></p>
+        <p><strong>Rola:</strong> <span th:text="${irakaslea.rola ?: '-'}">rola</span></p>
+        <form th:action="@{|/kudeatzaile/irakasleak/${irakaslea.id}/fitxa|}" method="post">
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+            <input type="hidden" name="ikasturteaId" th:value="${ikasturteaId}" />
+            <label for="mintegia">Mintegia</label>
+            <select id="mintegia" name="mintegia" required>
+                <option value="" th:if="${irakaslea.mintegia == null}" selected>— Aukeratu —</option>
+                <option th:each="fam : ${familiaGuztiak}"
+                        th:value="${fam.id}"
+                        th:text="${fam.izena}"
+                        th:selected="${irakaslea.mintegia != null and irakaslea.mintegia.id == fam.id}">Mintegia</option>
+            </select>
+
+            <label for="ordutegiKodea">Ordutegi kodea</label>
+            <input id="ordutegiKodea" type="text" name="ordutegiKodea" th:value="${irakaslea.ordutegiKodea}" placeholder="PROFF/SOLUCF PROF">
+            <button class="btn btn-primary" type="submit">Gorde</button>
+        </form>
+    </section>
+
+    <form class="filters" method="get" th:action="@{|/kudeatzaile/irakasleak/${irakaslea.id}|}">
+        <label>
+            <span>Ikasturtea</span>
+            <select name="ikasturteaId" onchange="this.form.submit()">
+                <option value="" th:selected="${ikasturteaId == null}">(Ikasturte guztiak)</option>
+                <option th:each="ik : ${ikasturteak}"
+                        th:value="${ik.id}"
+                        th:text="${ik.izena}"
+                        th:selected="${ikasturteaId != null and ikasturteaId == ik.id}">2025-2026</option>
+            </select>
+        </label>
+        <button type="submit">Ikusi</button>
+    </form>
+
+    <section>
+        <h2>Ordutegia</h2>
+        <div th:if="${ordutegia == null}" class="empty-msg">
+            Ez dago irakasle honen ordutegirik hautatutako ikasturtean.
+        </div>
+        <div th:if="${ordutegia != null}" class="table-wrap">
+            <p>
+                <strong>Jatorria:</strong> <span th:text="${ordutegia.jatorria}">KRONOWIN</span>
+                · <strong>XML kodea:</strong> <span th:text="${ordutegia.xmlIrakasleKodea}">URKI</span>
+                · <strong>Inportazio data:</strong> <span th:text="${#temporals.format(ordutegia.inportazioData, 'yyyy-MM-dd HH:mm')}">2026-01-01</span>
+            </p>
+            <table>
+                <thead>
+                <tr>
+                    <th>Asteguna</th>
+                    <th>Ordua</th>
+                    <th>Saioak</th>
+                    <th>Mod. kodea</th>
+                    <th>Modulua</th>
+                    <th>Taldea</th>
+                    <th>Gela</th>
+                    <th>Tarea</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="lerroa : ${ordutegia.lerroak}">
+                    <td th:text="${lerroa.asteguna}">ASTEAZKENA</td>
+                    <td th:text="${lerroa.orduZenbakia}">4</td>
+                    <td th:text="${lerroa.saioKopurua}">1</td>
+                    <td th:text="${lerroa.moduluKodea}">SRED</td>
+                    <td th:text="${lerroa.moduluIzena ?: '-'}">Sareak</td>
+                    <td th:text="${lerroa.taldeKodea ?: '-'}">1SM2A</td>
+                    <td th:text="${lerroa.gelaIzena != null and !lerroa.gelaIzena.isBlank() ? lerroa.gelaIzena : (lerroa.gelaKodea ?: '-')}">Gela</td>
+                    <td th:text="${lerroa.tarea ?: '-'}">-</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section>
+        <h2>Koadernoak</h2>
+        <div th:if="${#lists.isEmpty(koadernoak)}" class="empty-msg">
+            Ez dago irakasle honen koadernorik hautatutako ikasturtean.
+        </div>
+        <div th:if="${!#lists.isEmpty(koadernoak)}" class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>Familia</th>
+                    <th>Taldea</th>
+                    <th>Maila</th>
+                    <th>Mod. kodea</th>
+                    <th>Modulua</th>
+                    <th>Ikasturtea</th>
+                    <th>Jabea</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="k : ${koadernoak}">
+                    <td th:text="${k.moduloa != null and k.moduloa.taldea != null and k.moduloa.taldea.zikloa != null and k.moduloa.taldea.zikloa.familia != null ? k.moduloa.taldea.zikloa.familia.izena : '-'}">Familia</td>
+                    <td th:text="${k.moduloa != null and k.moduloa.taldea != null ? k.moduloa.taldea.izena : '-'}">Taldea</td>
+                    <td th:text="${k.moduloa != null and k.moduloa.maila != null ? k.moduloa.maila.izena : '-'}">Maila</td>
+                    <td th:text="${k.moduloa != null ? k.moduloa.kodea : '-'}">Kodea</td>
+                    <td><a th:href="@{|/irakasle/koadernoa/${k.id}?next=/irakasle|}" th:text="${k.moduloa != null ? k.moduloa.izena : '-'}">Modulua</a></td>
+                    <td th:text="${k.egutegia != null and k.egutegia.ikasturtea != null ? k.egutegia.ikasturtea.izena : '-'}">Ikasturtea</td>
+                    <td th:text="${k.jabea != null ? k.jabea.izena : '(Jaberik gabe)'}">Jabea</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+<script th:src="@{/js/kudeatzaile-nav.js}"></script>
+</body>
+</html>

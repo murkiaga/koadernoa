@@ -114,6 +114,24 @@ public interface KoadernoaRepository extends JpaRepository<Koadernoa, Long>{
     List<Koadernoa> findByModuloaIdAndIkasturteaId(@Param("moduloaId") Long moduloaId,
                                                    @Param("ikasturteaId") Long ikasturteaId);
 
+    @Query("""
+          select distinct k from Koadernoa k
+            join k.irakasleak irFiltro
+            left join fetch k.moduloa m
+            left join fetch m.taldea t
+            left join fetch t.zikloa z
+            left join fetch z.familia f
+            left join fetch k.egutegia e
+            left join fetch e.ikasturtea i
+            left join fetch k.irakasleak ir
+            left join fetch k.jabea j
+          where irFiltro.id = :irakasleId
+            and (:ikasturteaId is null or i.id = :ikasturteaId)
+          order by i.izena desc, f.izena, t.izena, m.izena
+        """)
+    List<Koadernoa> findByIrakasleaAndIkasturteaWithRelations(@Param("irakasleId") Long irakasleId,
+                                                              @Param("ikasturteaId") Long ikasturteaId);
+
 
     boolean existsByJabeaIsNull();
 

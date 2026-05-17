@@ -6,6 +6,7 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Familia;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Taldea;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -34,6 +35,9 @@ public class Irakaslea {
     private String emaila;
     private String pasahitza;
     private String kontu_mota;
+
+    @Column(unique = true)
+    private String ordutegiKodea;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "familia_id")

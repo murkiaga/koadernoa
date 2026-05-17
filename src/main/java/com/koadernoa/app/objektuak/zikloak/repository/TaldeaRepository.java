@@ -16,6 +16,7 @@ import com.koadernoa.app.objektuak.zikloak.entitateak.Zikloa;
 public interface TaldeaRepository extends JpaRepository<Taldea, Long> {
 	Optional<Taldea> findByTutorea(Irakaslea tutorea);
     Optional<Taldea> findByTutorea_Id(Long irakasleId);
+    Optional<Taldea> findByIzenaIgnoreCase(String izena);
     boolean existsByTutorea_Id(Long irakasleId);
     
     //zikloaren arabera taldeak

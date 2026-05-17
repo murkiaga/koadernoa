@@ -19,12 +19,13 @@
 		        <th>Emaila</th>
 		        <th>Rola</th>
 		        <th>Mintegia</th>
+                <th>Ordutegi kodea</th>
 		        <th>Aldatu</th>
 		      </tr>
 		    </thead>
 		    <tbody>
 		      <tr th:each="irakasle : ${irakasleak}">
-		        <td><a th:href="@{/kudeatzaile/koadernoak(irakasleId=${irakasle.id})}" th:text="${irakasle.izena}">Izena</a></td>
+		        <td><a th:href="@{|/kudeatzaile/irakasleak/${irakasle.id}|}" th:text="${irakasle.izena}">Izena</a></td>
 		        <td th:text="${irakasle.emaila}">Emaila</td>
 		        <td th:text="${irakasle.rola}">Rola</td>
 		        <td>
@@ -41,6 +42,9 @@
 		              </option>
 		            </select>
 		        </td>
+                <td>
+                  <input type="text" name="ordutegiKodea" th:value="${irakasle.ordutegiKodea}" placeholder="PROFF/SOLUCF PROF">
+                </td>
 		        <td>
 		            <button class="btn btn-primary" type="submit">Gorde</button>
 		          </form>

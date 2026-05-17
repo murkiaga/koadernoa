@@ -17,6 +17,7 @@ import com.koadernoa.app.objektuak.zikloak.entitateak.Zikloa;
 
 public interface ModuloaRepository extends JpaRepository<Moduloa, Long>{
 
+
 	Optional<Moduloa> findByKodeaIgnoreCaseAndEeiKodeaIgnoreCaseAndTaldeaAndMaila(String kodea, String eeiKodea, Taldea taldea, Maila maila);
 
 	List<Moduloa> findByTaldeaId(Long taldeaId);
