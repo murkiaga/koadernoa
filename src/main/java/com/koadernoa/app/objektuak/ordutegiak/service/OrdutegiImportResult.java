@@ -31,9 +31,10 @@ public class OrdutegiImportResult {
         saltatutakoLerroak.add(lerroa);
     }
 
-    void gehituLotuGabekoIrakaslea(String kodea, String izena) {
+    void gehituLotuGabekoIrakaslea(String kodea, String izena, String emaila) {
+        String emailTestua = emaila == null || emaila.isBlank() ? "emailik gabe" : emaila;
         lotuGabekoIrakasleak.add(kodea + " - " + (izena == null || izena.isBlank() ? "(izenik gabe)" : izena)
-                + " ez dago aplikazioko irakasle batekin lotuta");
+                + " (" + emailTestua + ") ez dago aplikazioko irakasle batekin lotuta");
     }
 
     void gehituLotuGabekoTaldea(String kodea) {

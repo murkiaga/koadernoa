@@ -86,10 +86,12 @@ public class KronowinOrdutegiImportService {
 
             String profKey = key(solucf.prof());
             KronowinIrakaslea xmlIrakaslea = data.irakasleak().get(profKey);
-            Irakaslea irakaslea = irakasleCache.computeIfAbsent(profKey,
-                    k -> irakasleaRepository.findByOrdutegiKodeaIgnoreCase(solucf.prof()).orElse(null));
+            String xmlEmail = xmlIrakaslea != null ? xmlIrakaslea.email() : "";
+            String emailKey = key(xmlEmail);
+            Irakaslea irakaslea = isBlank(xmlEmail) ? null : irakasleCache.computeIfAbsent(emailKey,
+                    k -> irakasleaRepository.findByEmailaIgnoreCase(xmlEmail).orElse(null));
             if (irakaslea == null) {
-                result.gehituLotuGabekoIrakaslea(solucf.prof(), xmlIrakaslea != null ? xmlIrakaslea.izena() : "");
+                result.gehituLotuGabekoIrakaslea(solucf.prof(), xmlIrakaslea != null ? xmlIrakaslea.izena() : "", xmlEmail);
                 continue;
             }
 
@@ -105,7 +107,7 @@ public class KronowinOrdutegiImportService {
             }
 
             if (gorde) {
-                IrakasleOrdutegia ordutegia = ordutegiak.computeIfAbsent(profKey, k -> sortuOrdutegia(ikasturtea, irakaslea, solucf.prof(), xmlIrakaslea));
+                IrakasleOrdutegia ordutegia = ordutegiak.computeIfAbsent(emailKey, k -> sortuOrdutegia(ikasturtea, irakaslea, solucf.prof(), xmlIrakaslea));
                 ordutegia.gehituLerroa(sortuLerroa(solucf, asteguna, taldea, moduluIzena,
                         data.gelaIzenak().getOrDefault(key(solucf.aula()), "")));
             }

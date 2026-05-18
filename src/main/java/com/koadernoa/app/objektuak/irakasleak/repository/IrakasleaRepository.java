@@ -20,7 +20,6 @@ public interface IrakasleaRepository extends JpaRepository<Irakaslea, Long> {
 
     Optional<Irakaslea> findByIzenaIgnoreCase(String erabiltzaileIzena);
 
-    Optional<Irakaslea> findByOrdutegiKodeaIgnoreCase(String ordutegiKodea);
     
     // AUTOCOMPLETE-rako (izena edo emaila barne hartzen dutenak)
     List<Irakaslea> findTop10ByIzenaContainingIgnoreCaseOrEmailaContainingIgnoreCaseOrderByIzenaAsc(

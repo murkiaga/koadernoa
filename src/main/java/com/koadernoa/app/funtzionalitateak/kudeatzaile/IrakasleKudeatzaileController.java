@@ -106,9 +106,8 @@ public class IrakasleKudeatzaileController {
 	
 	@PostMapping("/{id}/mintegia")
     public String aldatuMintegia(@PathVariable("id") Long id,
-                                 @RequestParam("mintegia") Long familiaId,
-                                 @RequestParam(name = "ordutegiKodea", required = false) String ordutegiKodea) {
-        eguneratuIrakaslea(id, familiaId, ordutegiKodea);
+                                 @RequestParam("mintegia") Long familiaId) {
+        eguneratuIrakaslea(id, familiaId);
         return "redirect:/kudeatzaile/irakasleak";
     }
 
@@ -169,10 +168,9 @@ public class IrakasleKudeatzaileController {
     @PostMapping("/{id}/fitxa")
     public String eguneratuFitxa(@PathVariable("id") Long id,
                                  @RequestParam("mintegia") Long familiaId,
-                                 @RequestParam(name = "ordutegiKodea", required = false) String ordutegiKodea,
                                  @RequestParam(name = "ikasturteaId", required = false) Long ikasturteaId,
                                  RedirectAttributes ra) {
-        eguneratuIrakaslea(id, familiaId, ordutegiKodea);
+        eguneratuIrakaslea(id, familiaId);
         ra.addFlashAttribute("success", "Irakaslearen datuak eguneratu dira.");
         String redirect = "redirect:/kudeatzaile/irakasleak/" + id;
         return ikasturteaId != null ? redirect + "?ikasturteaId=" + ikasturteaId : redirect;
@@ -186,7 +184,7 @@ public class IrakasleKudeatzaileController {
         IrakasleOrdutegia ordutegia = new IrakasleOrdutegia();
         ordutegia.setIkasturtea(ikasturtea);
         ordutegia.setIrakaslea(irakaslea);
-        ordutegia.setXmlIrakasleKodea(irakaslea.getOrdutegiKodea());
+        ordutegia.setXmlIrakasleKodea(irakaslea.getEmaila());
         ordutegia.setXmlIrakasleIzena(irakaslea.getIzena());
         ordutegia.setJatorria("ESKUZ");
         ordutegia.setInportazioData(LocalDateTime.now());
@@ -208,11 +206,10 @@ public class IrakasleKudeatzaileController {
         return ikasturteaId != null ? redirect + "?ikasturteaId=" + ikasturteaId : redirect;
     }
 
-    private void eguneratuIrakaslea(Long id, Long familiaId, String ordutegiKodea) {
+    private void eguneratuIrakaslea(Long id, Long familiaId) {
         Irakaslea irakaslea = irakasleaRepository.findById(id).orElseThrow();
         Familia familia = familiaRepository.findById(familiaId).orElseThrow();
         irakaslea.setMintegia(familia);
-        irakaslea.setOrdutegiKodea(normalizatuTestua(ordutegiKodea));
         irakasleaRepository.save(irakaslea);
     }
 

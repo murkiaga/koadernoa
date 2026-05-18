@@ -41,8 +41,8 @@ class KronowinOrdutegiImportServiceTest {
         when(ikasturteaRepository.findById(1L)).thenReturn(Optional.of(ikasturtea()));
         Irakaslea irakaslea = new Irakaslea();
         irakaslea.setId(10L);
-        irakaslea.setOrdutegiKodea("URKI");
-        when(irakasleaRepository.findByOrdutegiKodeaIgnoreCase("URKI")).thenReturn(Optional.of(irakaslea));
+        irakaslea.setEmaila("urki@example.test");
+        when(irakasleaRepository.findByEmailaIgnoreCase("urki@example.test")).thenReturn(Optional.of(irakaslea));
 
         OrdutegiImportResult result = service.inportatu(xmlFile(solucf("URKI", "3", "4")), 1L);
 
@@ -60,7 +60,7 @@ class KronowinOrdutegiImportServiceTest {
     @Test
     void dia0EtaHora0SolucfBatekEzDuOrdutegiLerrorikSortzen() {
         when(ikasturteaRepository.findById(1L)).thenReturn(Optional.of(ikasturtea()));
-        when(irakasleaRepository.findByOrdutegiKodeaIgnoreCase("URKI")).thenReturn(Optional.of(new Irakaslea()));
+        when(irakasleaRepository.findByEmailaIgnoreCase("urki@example.test")).thenReturn(Optional.of(new Irakaslea()));
 
         OrdutegiImportResult result = service.inportatu(xmlFile(solucf("URKI", "0", "0")), 1L);
 
@@ -71,9 +71,9 @@ class KronowinOrdutegiImportServiceTest {
     }
 
     @Test
-    void irakasleOrdutegiKodeaEzBadagoEzDaIrakasleBerririkSortzen() {
+    void xmlEmailaLotutaEzBadagoEzDaIrakasleBerririkSortzen() {
         when(ikasturteaRepository.findById(1L)).thenReturn(Optional.of(ikasturtea()));
-        when(irakasleaRepository.findByOrdutegiKodeaIgnoreCase("URKI")).thenReturn(Optional.empty());
+        when(irakasleaRepository.findByEmailaIgnoreCase("urki@example.test")).thenReturn(Optional.empty());
 
         service.inportatu(xmlFile(solucf("URKI", "3", "4")), 1L);
 
@@ -84,12 +84,12 @@ class KronowinOrdutegiImportServiceTest {
     @Test
     void lotuGabekoIrakasleaImportResultEanAgertzenDa() {
         when(ikasturteaRepository.findById(1L)).thenReturn(Optional.of(ikasturtea()));
-        when(irakasleaRepository.findByOrdutegiKodeaIgnoreCase("URKI")).thenReturn(Optional.empty());
+        when(irakasleaRepository.findByEmailaIgnoreCase("urki@example.test")).thenReturn(Optional.empty());
 
         OrdutegiImportResult result = service.inportatu(xmlFile(solucf("URKI", "3", "4")), 1L);
 
         assertThat(result.getLotuGabekoIrakasleak())
-                .containsExactly("URKI - Urkiaga, Mikel ez dago aplikazioko irakasle batekin lotuta");
+                .containsExactly("URKI - Urkiaga, Mikel (urki@example.test) ez dago aplikazioko irakasle batekin lotuta");
         assertThat(result.getSortutakoLerroKopurua()).isZero();
         verify(irakasleOrdutegiaRepository).saveAll(org.mockito.ArgumentMatchers.argThat(iterable -> !iterable.iterator().hasNext()));
     }
