@@ -24,6 +24,7 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.ordutegiak.entitateak.IrakasleOrdutegiLerroa;
 import com.koadernoa.app.objektuak.ordutegiak.entitateak.IrakasleOrdutegia;
+import com.koadernoa.app.objektuak.ordutegiak.repository.IrakasleOrdutegiLerroaRepository;
 import com.koadernoa.app.objektuak.ordutegiak.repository.IrakasleOrdutegiaRepository;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Familia;
 import com.koadernoa.app.objektuak.zikloak.repository.FamiliaRepository;
@@ -39,6 +40,7 @@ public class IrakasleKudeatzaileController {
 	private final FamiliaRepository familiaRepository;
     private final IkasturteaService ikasturteaService;
     private final IrakasleOrdutegiaRepository irakasleOrdutegiaRepository;
+    private final IrakasleOrdutegiLerroaRepository irakasleOrdutegiLerroaRepository;
     private final KoadernoaRepository koadernoaRepository;
 
     private static final List<Astegunak> ASTE_ORDENA = List.of(
@@ -66,7 +68,7 @@ public class IrakasleKudeatzaileController {
 
         IrakasleOrdutegia ordutegia = selectedIkasturteaId == null ? null
                 : irakasleOrdutegiaRepository.findByIrakasleaIdAndIkasturteaId(id, selectedIkasturteaId).orElse(null);
-        Map<String, List<String>> ordutegiGelaxkak = new LinkedHashMap<>();
+        Map<String, List<OrdutegiGridEntry>> ordutegiGelaxkak = new LinkedHashMap<>();
         int azkenOrdua = 12;
         if (ordutegia != null && ordutegia.getLerroak() != null) {
             ordutegia.getLerroak().sort(Comparator
@@ -82,7 +84,7 @@ public class IrakasleKudeatzaileController {
                 int saioKopurua = lerroa.getSaioKopurua() != null && lerroa.getSaioKopurua() > 0 ? lerroa.getSaioKopurua() : 1;
                 int bukaeraOrdua = lerroa.getOrduZenbakia() + saioKopurua - 1;
                 azkenOrdua = Math.max(azkenOrdua, bukaeraOrdua);
-                String edukia = ordutegiGelaxkaTestua(lerroa);
+                OrdutegiGridEntry edukia = ordutegiGridEntry(lerroa);
                 for (int ordua = lerroa.getOrduZenbakia(); ordua <= bukaeraOrdua; ordua++) {
                     ordutegiGelaxkak.computeIfAbsent(ordutegiGelaxkaKey(lerroa.getAsteguna(), ordua), k -> new java.util.ArrayList<>()).add(edukia);
                 }
@@ -109,6 +111,29 @@ public class IrakasleKudeatzaileController {
         return "redirect:/kudeatzaile/irakasleak";
     }
 
+    @PostMapping("/{id}/ordutegia/lerroa/{lerroaId}")
+    public String eguneratuOrdutegiLerroa(@PathVariable("id") Long id,
+                                          @PathVariable("lerroaId") Long lerroaId,
+                                          @RequestParam(name = "ikasturteaId", required = false) Long ikasturteaId,
+                                          @RequestParam(name = "moduluKodea", required = false) String moduluKodea,
+                                          @RequestParam(name = "taldeKodea", required = false) String taldeKodea,
+                                          @RequestParam(name = "gelaKodea", required = false) String gelaKodea,
+                                          RedirectAttributes ra) {
+        IrakasleOrdutegiLerroa lerroa = irakasleOrdutegiLerroaRepository.findWithIrakasleOrdutegiaById(lerroaId).orElseThrow();
+        if (lerroa.getIrakasleOrdutegia() == null
+                || lerroa.getIrakasleOrdutegia().getIrakaslea() == null
+                || !id.equals(lerroa.getIrakasleOrdutegia().getIrakaslea().getId())) {
+            throw new IllegalArgumentException("Ordutegi lerroa ez dagokio irakasle honi");
+        }
+        lerroa.setModuluKodea(normalizatuTestua(moduluKodea));
+        lerroa.setTaldeKodea(normalizatuTestua(taldeKodea));
+        lerroa.setGelaKodea(normalizatuTestua(gelaKodea));
+        irakasleOrdutegiLerroaRepository.save(lerroa);
+        ra.addFlashAttribute("success", "Ordutegi gelaxka eguneratu da.");
+        String redirect = "redirect:/kudeatzaile/irakasleak/" + id;
+        return ikasturteaId != null ? redirect + "?ikasturteaId=" + ikasturteaId : redirect;
+    }
+
     @PostMapping("/{id}/fitxa")
     public String eguneratuFitxa(@PathVariable("id") Long id,
                                  @RequestParam("mintegia") Long familiaId,
@@ -125,11 +150,15 @@ public class IrakasleKudeatzaileController {
         Irakaslea irakaslea = irakasleaRepository.findById(id).orElseThrow();
         Familia familia = familiaRepository.findById(familiaId).orElseThrow();
         irakaslea.setMintegia(familia);
-        irakaslea.setOrdutegiKodea(ordutegiKodea == null || ordutegiKodea.isBlank() ? null : ordutegiKodea.trim());
+        irakaslea.setOrdutegiKodea(normalizatuTestua(ordutegiKodea));
         irakasleaRepository.save(irakaslea);
     }
 
-    private List<OrdutegiGridRow> sortuOrdutegiGridRows(Map<String, List<String>> ordutegiGelaxkak, int azkenOrdua) {
+    private String normalizatuTestua(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private List<OrdutegiGridRow> sortuOrdutegiGridRows(Map<String, List<OrdutegiGridEntry>> ordutegiGelaxkak, int azkenOrdua) {
         return IntStream.rangeClosed(1, azkenOrdua)
                 .mapToObj(ordua -> new OrdutegiGridRow(ordua, ASTE_ORDENA.stream()
                         .map(asteguna -> new OrdutegiGridCell(asteguna,
@@ -142,10 +171,14 @@ public class IrakasleKudeatzaileController {
         return asteguna.name() + "-" + orduZenbakia;
     }
 
-    private String ordutegiGelaxkaTestua(IrakasleOrdutegiLerroa lerroa) {
-        return java.util.stream.Stream.of(irakasgaiTestua(lerroa), lerroa.getTaldeKodea(), gelaTestua(lerroa))
+    private OrdutegiGridEntry ordutegiGridEntry(IrakasleOrdutegiLerroa lerroa) {
+        String irakasgaia = irakasgaiTestua(lerroa);
+        String taldea = lerroa.getTaldeKodea();
+        String gela = gelaTestua(lerroa);
+        String laburpena = java.util.stream.Stream.of(irakasgaia, taldea, gela)
                 .filter(v -> v != null && !v.isBlank())
                 .collect(java.util.stream.Collectors.joining(" · "));
+        return new OrdutegiGridEntry(lerroa.getId(), irakasgaia, taldea, gela, laburpena);
     }
 
     private String irakasgaiTestua(IrakasleOrdutegiLerroa lerroa) {
@@ -165,9 +198,12 @@ public class IrakasleKudeatzaileController {
     public record OrdutegiGridRow(Integer orduZenbakia, List<OrdutegiGridCell> gelaxkak) {
     }
 
-    public record OrdutegiGridCell(Astegunak asteguna, List<String> edukiak) {
+    public record OrdutegiGridCell(Astegunak asteguna, List<OrdutegiGridEntry> edukiak) {
         public boolean beteta() {
             return edukiak != null && !edukiak.isEmpty();
         }
+    }
+
+    public record OrdutegiGridEntry(Long id, String irakasgaia, String taldea, String gela, String laburpena) {
     }
 }

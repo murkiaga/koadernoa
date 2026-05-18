@@ -7,11 +7,22 @@
     <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        .ordutegi-fitxa-grid { width: 100%; border-collapse: collapse; table-layout: fixed; }
-        .ordutegi-fitxa-grid th, .ordutegi-fitxa-grid td { border: 1px solid #d1d5db; padding: .45rem; text-align: center; vertical-align: middle; }
-        .ordutegi-fitxa-grid td { min-height: 3rem; background: #fff; }
+        .ordutegi-fitxa-wrap { overflow-x:auto; }
+        .ordutegi-fitxa-grid { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: .9rem; }
+        .ordutegi-fitxa-grid .ordua-col { width: 42px; }
+        .ordutegi-fitxa-grid th, .ordutegi-fitxa-grid td { border: 1px solid #d1d5db; padding: .35rem; text-align: center; vertical-align: middle; }
+        .ordutegi-fitxa-grid thead th { background:#f8fafc; font-weight:700; }
+        .ordutegi-fitxa-grid tbody th { width:42px; min-width:42px; max-width:42px; background:#f8fafc; color:#475569; font-weight:700; padding:.25rem; }
+        .ordutegi-fitxa-grid td { height: 54px; background: #fff; }
         .ordutegi-fitxa-grid td.selected { background: #dbeafe; color: #0f172a; font-weight: 600; }
+        .ordutegi-fitxa-grid td.selected:hover { background:#bfdbfe; }
+        .ordutegi-cell-content { cursor:pointer; border-radius:.45rem; padding:.2rem .3rem; line-height:1.2; }
+        .ordutegi-cell-content:hover { background:rgba(255,255,255,.65); box-shadow: inset 0 0 0 1px rgba(30,64,175,.25); }
         .ordutegi-cell-content + .ordutegi-cell-content { margin-top: .35rem; padding-top: .35rem; border-top: 1px solid rgba(15, 23, 42, .18); }
+        .ordutegi-popup { display:none; position:absolute; background:#fff; border:1px solid #cbd5e1; padding:1rem; z-index:1000; border-radius:10px; box-shadow:0 8px 24px rgba(15,23,42,.18); min-width:280px; }
+        .ordutegi-popup label { display:block; font-size:.85rem; font-weight:600; margin-top:.55rem; }
+        .ordutegi-popup input { width:100%; padding:.4rem .5rem; margin-top:.2rem; border:1px solid #cbd5e1; border-radius:.45rem; }
+        .ordutegi-popup-actions { display:flex; justify-content:flex-end; gap:.5rem; margin-top:.8rem; }
     </style>
 </head>
 <body>
@@ -50,7 +61,7 @@
             </p>
             <table class="ordutegi-fitxa-grid">
                 <colgroup>
-                    <col>
+                    <col class="ordua-col">
                     <col span="5">
                 </colgroup>
                 <thead>
@@ -66,8 +77,13 @@
                         th:classappend="${gelaxka.beteta()} ? 'selected' : ''">
                         <div th:if="${gelaxka.beteta()}"
                              th:each="edukia : ${gelaxka.edukiak}"
-                             class="ordutegi-cell-content"
-                             th:text="${edukia}">SRED · 1SM2A · G01</div>
+                             class="ordutegi-cell-content ordutegi-editable"
+                             th:attr="data-action=@{|/kudeatzaile/irakasleak/${irakaslea.id}/ordutegia/lerroa/${edukia.id}|},
+                                      data-modulua=${edukia.irakasgaia},
+                                      data-taldea=${edukia.taldea},
+                                      data-gela=${edukia.gela},
+                                      data-laburpena=${edukia.laburpena}"
+                             th:text="${edukia.laburpena}">SRED · 1SM2A · G01</div>
                     </td>
                 </tr>
                 </tbody>
@@ -108,6 +124,85 @@
         </div>
     </section>
 </main>
+<div id="ordutegiLerroPopup" class="ordutegi-popup" aria-hidden="true">
+    <strong id="ordutegiPopupTitle">Ordutegi gelaxka</strong>
+    <form id="ordutegiLerroForm" method="post" action="#">
+        <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <input type="hidden" name="ikasturteaId" th:value="${ikasturteaId}"/>
+
+        <label for="popupModulua">Irakasgaia / modulu kodea</label>
+        <input id="popupModulua" name="moduluKodea" type="text" placeholder="SRED"/>
+
+        <label for="popupTaldea">Talde kodea</label>
+        <input id="popupTaldea" name="taldeKodea" type="text" placeholder="1SM2A"/>
+
+        <label for="popupGela">Gela</label>
+        <input id="popupGela" name="gelaKodea" type="text" placeholder="G01"/>
+
+        <div class="ordutegi-popup-actions">
+            <button type="button" id="ordutegiPopupItxi" class="btn btn-secondary">Itxi</button>
+            <button type="submit" class="btn btn-primary">Gorde</button>
+        </div>
+    </form>
+</div>
+
+<script>
+(function(){
+  const popup = document.getElementById('ordutegiLerroPopup');
+  const form = document.getElementById('ordutegiLerroForm');
+  const title = document.getElementById('ordutegiPopupTitle');
+  const modulua = document.getElementById('popupModulua');
+  const taldea = document.getElementById('popupTaldea');
+  const gela = document.getElementById('popupGela');
+  const itxi = document.getElementById('ordutegiPopupItxi');
+
+  function itxiPopup(){
+    popup.style.display = 'none';
+    popup.setAttribute('aria-hidden', 'true');
+  }
+
+  function irekiPopup(el, ev){
+    if (!el || !el.dataset.action) return;
+    form.action = el.dataset.action;
+    title.textContent = el.dataset.laburpena || 'Ordutegi gelaxka';
+    modulua.value = el.dataset.modulua || '';
+    taldea.value = el.dataset.taldea || '';
+    gela.value = el.dataset.gela || '';
+    popup.style.left = (ev.pageX + 10) + 'px';
+    popup.style.top = (ev.pageY + 10) + 'px';
+    popup.style.display = 'block';
+    popup.setAttribute('aria-hidden', 'false');
+    modulua.focus();
+  }
+
+  document.addEventListener('click', function(e){
+    const entry = e.target.closest('.ordutegi-editable');
+    if (entry) {
+      e.preventDefault();
+      irekiPopup(entry, e);
+      return;
+    }
+    const cell = e.target.closest('td.selected');
+    if (cell) {
+      const firstEntry = cell.querySelector('.ordutegi-editable');
+      if (firstEntry) {
+        e.preventDefault();
+        irekiPopup(firstEntry, e);
+        return;
+      }
+    }
+    if (popup.style.display === 'block' && !popup.contains(e.target)) {
+      itxiPopup();
+    }
+  });
+
+  if (itxi) itxi.addEventListener('click', function(e){ e.preventDefault(); itxiPopup(); });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && popup.style.display === 'block') itxiPopup();
+  });
+})();
+</script>
+
 <script th:src="@{/js/kudeatzaile-nav.js}"></script>
 </body>
 </html>
