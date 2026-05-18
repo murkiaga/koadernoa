@@ -1,5 +1,6 @@
 package com.koadernoa.app.funtzionalitateak.kudeatzaile;
 
+import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -111,6 +112,32 @@ public class IrakasleKudeatzaileController {
         return "redirect:/kudeatzaile/irakasleak";
     }
 
+    @PostMapping("/{id}/ordutegia/lerroa")
+    public String sortuOrdutegiLerroa(@PathVariable("id") Long id,
+                                      @RequestParam("ikasturteaId") Long ikasturteaId,
+                                      @RequestParam("asteguna") Astegunak asteguna,
+                                      @RequestParam("orduZenbakia") Integer orduZenbakia,
+                                      @RequestParam(name = "moduluKodea", required = false) String moduluKodea,
+                                      @RequestParam(name = "taldeKodea", required = false) String taldeKodea,
+                                      @RequestParam(name = "gelaKodea", required = false) String gelaKodea,
+                                      RedirectAttributes ra) {
+        Irakaslea irakaslea = irakasleaRepository.findById(id).orElseThrow();
+        IrakasleOrdutegia ordutegia = irakasleOrdutegiaRepository.findByIrakasleaIdAndIkasturteaId(id, ikasturteaId)
+                .orElseGet(() -> sortuEskuzkoOrdutegia(irakaslea, ikasturteaId));
+
+        IrakasleOrdutegiLerroa lerroa = new IrakasleOrdutegiLerroa();
+        lerroa.setIrakasleOrdutegia(ordutegia);
+        lerroa.setAsteguna(asteguna);
+        lerroa.setOrduZenbakia(orduZenbakia);
+        lerroa.setSaioKopurua(1);
+        lerroa.setModuluKodea(normalizatuTestua(moduluKodea));
+        lerroa.setTaldeKodea(normalizatuTestua(taldeKodea));
+        lerroa.setGelaKodea(normalizatuTestua(gelaKodea));
+        irakasleOrdutegiLerroaRepository.save(lerroa);
+        ra.addFlashAttribute("success", "Ordutegi gelaxka sortu da.");
+        return redirectIrakasleFitxara(id, ikasturteaId);
+    }
+
     @PostMapping("/{id}/ordutegia/lerroa/{lerroaId}")
     public String eguneratuOrdutegiLerroa(@PathVariable("id") Long id,
                                           @PathVariable("lerroaId") Long lerroaId,
@@ -119,19 +146,24 @@ public class IrakasleKudeatzaileController {
                                           @RequestParam(name = "taldeKodea", required = false) String taldeKodea,
                                           @RequestParam(name = "gelaKodea", required = false) String gelaKodea,
                                           RedirectAttributes ra) {
-        IrakasleOrdutegiLerroa lerroa = irakasleOrdutegiLerroaRepository.findWithIrakasleOrdutegiaById(lerroaId).orElseThrow();
-        if (lerroa.getIrakasleOrdutegia() == null
-                || lerroa.getIrakasleOrdutegia().getIrakaslea() == null
-                || !id.equals(lerroa.getIrakasleOrdutegia().getIrakaslea().getId())) {
-            throw new IllegalArgumentException("Ordutegi lerroa ez dagokio irakasle honi");
-        }
+        IrakasleOrdutegiLerroa lerroa = bilatuEtaEgiaztatuOrdutegiLerroa(id, lerroaId);
         lerroa.setModuluKodea(normalizatuTestua(moduluKodea));
         lerroa.setTaldeKodea(normalizatuTestua(taldeKodea));
         lerroa.setGelaKodea(normalizatuTestua(gelaKodea));
         irakasleOrdutegiLerroaRepository.save(lerroa);
         ra.addFlashAttribute("success", "Ordutegi gelaxka eguneratu da.");
-        String redirect = "redirect:/kudeatzaile/irakasleak/" + id;
-        return ikasturteaId != null ? redirect + "?ikasturteaId=" + ikasturteaId : redirect;
+        return redirectIrakasleFitxara(id, ikasturteaId);
+    }
+
+    @PostMapping("/{id}/ordutegia/lerroa/{lerroaId}/ezabatu")
+    public String ezabatuOrdutegiLerroa(@PathVariable("id") Long id,
+                                        @PathVariable("lerroaId") Long lerroaId,
+                                        @RequestParam(name = "ikasturteaId", required = false) Long ikasturteaId,
+                                        RedirectAttributes ra) {
+        IrakasleOrdutegiLerroa lerroa = bilatuEtaEgiaztatuOrdutegiLerroa(id, lerroaId);
+        irakasleOrdutegiLerroaRepository.delete(lerroa);
+        ra.addFlashAttribute("success", "Ordutegi gelaxka ezabatu da.");
+        return redirectIrakasleFitxara(id, ikasturteaId);
     }
 
     @PostMapping("/{id}/fitxa")
@@ -142,6 +174,36 @@ public class IrakasleKudeatzaileController {
                                  RedirectAttributes ra) {
         eguneratuIrakaslea(id, familiaId, ordutegiKodea);
         ra.addFlashAttribute("success", "Irakaslearen datuak eguneratu dira.");
+        String redirect = "redirect:/kudeatzaile/irakasleak/" + id;
+        return ikasturteaId != null ? redirect + "?ikasturteaId=" + ikasturteaId : redirect;
+    }
+
+    private IrakasleOrdutegia sortuEskuzkoOrdutegia(Irakaslea irakaslea, Long ikasturteaId) {
+        Ikasturtea ikasturtea = ikasturteaService.getById(ikasturteaId);
+        if (ikasturtea == null) {
+            throw new IllegalArgumentException("Ikasturtea ez da aurkitu: " + ikasturteaId);
+        }
+        IrakasleOrdutegia ordutegia = new IrakasleOrdutegia();
+        ordutegia.setIkasturtea(ikasturtea);
+        ordutegia.setIrakaslea(irakaslea);
+        ordutegia.setXmlIrakasleKodea(irakaslea.getOrdutegiKodea());
+        ordutegia.setXmlIrakasleIzena(irakaslea.getIzena());
+        ordutegia.setJatorria("ESKUZ");
+        ordutegia.setInportazioData(LocalDateTime.now());
+        return irakasleOrdutegiaRepository.save(ordutegia);
+    }
+
+    private IrakasleOrdutegiLerroa bilatuEtaEgiaztatuOrdutegiLerroa(Long irakasleId, Long lerroaId) {
+        IrakasleOrdutegiLerroa lerroa = irakasleOrdutegiLerroaRepository.findWithIrakasleOrdutegiaById(lerroaId).orElseThrow();
+        if (lerroa.getIrakasleOrdutegia() == null
+                || lerroa.getIrakasleOrdutegia().getIrakaslea() == null
+                || !irakasleId.equals(lerroa.getIrakasleOrdutegia().getIrakaslea().getId())) {
+            throw new IllegalArgumentException("Ordutegi lerroa ez dagokio irakasle honi");
+        }
+        return lerroa;
+    }
+
+    private String redirectIrakasleFitxara(Long id, Long ikasturteaId) {
         String redirect = "redirect:/kudeatzaile/irakasleak/" + id;
         return ikasturteaId != null ? redirect + "?ikasturteaId=" + ikasturteaId : redirect;
     }
