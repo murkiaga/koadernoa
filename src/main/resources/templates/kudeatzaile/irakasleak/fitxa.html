@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Irakasle fitxa</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" th:href="@{/css/navbar.css}">
+    <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .ordutegi-fitxa-wrap { overflow-x:auto; }
+        .ordutegi-fitxa-grid { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: .9rem; }
+        .ordutegi-fitxa-grid .ordua-col { width: 42px; }
+        .ordutegi-fitxa-grid th, .ordutegi-fitxa-grid td { border: 1px solid #d1d5db; padding: .35rem; text-align: center; vertical-align: middle; }
+        .ordutegi-fitxa-grid thead th { background:#f8fafc; font-weight:700; }
+        .ordutegi-fitxa-grid tbody th { width:42px; min-width:42px; max-width:42px; background:#f8fafc; color:#475569; font-weight:700; padding:.25rem; }
+        .ordutegi-fitxa-grid td { height: 54px; background: #fff; }
+        .ordutegi-fitxa-grid td.selected { background: #dbeafe; color: #0f172a; font-weight: 600; }
+        .ordutegi-fitxa-grid td.selected:hover { background:#bfdbfe; }
+        .ordutegi-cell-content { cursor:pointer; border-radius:.45rem; padding:.2rem .3rem; line-height:1.2; }
+        .ordutegi-cell-content:hover { background:rgba(255,255,255,.65); box-shadow: inset 0 0 0 1px rgba(30,64,175,.25); }
+        .ordutegi-cell-content + .ordutegi-cell-content { margin-top: .35rem; padding-top: .35rem; border-top: 1px solid rgba(15, 23, 42, .18); }
+        .ordutegi-popup { display:none; position:absolute; background:#fff; border:1px solid #cbd5e1; padding:1rem; z-index:1000; border-radius:10px; box-shadow:0 8px 24px rgba(15,23,42,.18); min-width:280px; }
+        .ordutegi-popup label { display:block; font-size:.85rem; font-weight:600; margin-top:.55rem; }
+        .ordutegi-popup input { width:100%; padding:.4rem .5rem; margin-top:.2rem; border:1px solid #cbd5e1; border-radius:.45rem; }
+        .ordutegi-popup-actions { display:flex; justify-content:flex-end; gap:.5rem; margin-top:.8rem; }
+        .ordutegi-popup-actions .delete-btn { margin-right:auto; background:#fee2e2; color:#991b1b; border-color:#fecaca; }
+    </style>
+</head>
+<body>
+<div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+<main class="page">
+    <p><a th:href="@{/kudeatzaile/irakasleak}">← Irakasle zerrendara itzuli</a></p>
+    <h1 th:text="${irakaslea.izena}">Irakaslea</h1>
+
+    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+
+
+    <form class="filters" method="get" th:action="@{|/kudeatzaile/irakasleak/${irakaslea.id}|}">
+        <label>
+            <span>Ikasturtea</span>
+            <select name="ikasturteaId" onchange="this.form.submit()">
+                <option value="" th:selected="${ikasturteaId == null}">(Ikasturte guztiak)</option>
+                <option th:each="ik : ${ikasturteak}"
+                        th:value="${ik.id}"
+                        th:text="${ik.izena}"
+                        th:selected="${ikasturteaId != null and ikasturteaId == ik.id}">2025-2026</option>
+            </select>
+        </label>
+        <button type="submit">Ikusi</button>
+    </form>
+
+    <section>
+        <h2>Ordutegia</h2>
+        <div th:if="${ikasturteaId == null}" class="empty-msg">
+            Aukeratu ikasturte bat ordutegia editatzeko.
+        </div>
+        <div th:if="${ikasturteaId != null}" class="table-wrap">
+            <p th:if="${ordutegia != null}">
+                <strong>Jatorria:</strong> <span th:text="${ordutegia.jatorria}">KRONOWIN</span>
+                · <strong>XML kodea:</strong> <span th:text="${ordutegia.xmlIrakasleKodea}">URKI</span>
+                · <strong>Inportazio data:</strong> <span th:text="${#temporals.format(ordutegia.inportazioData, 'yyyy-MM-dd HH:mm')}">2026-01-01</span>
+            </p>
+            <p th:if="${ordutegia == null}" class="muted">
+                Ez dago gordetako ordutegirik hautatutako ikasturtean; hutsik dagoen gelaxka batean klik eginda lehen lerroa sor dezakezu.
+            </p>
+            <table class="ordutegi-fitxa-grid">
+                <colgroup>
+                    <col class="ordua-col">
+                    <col span="5">
+                </colgroup>
+                <thead>
+                <tr>
+                    <th></th>
+                    <th th:each="c : ${cols}" th:text="${#strings.capitalize(c.name().toLowerCase())}">Astelehena</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="row : ${ordutegiGridRows}">
+                    <th th:text="${row.orduZenbakia}">1</th>
+                    <td th:each="gelaxka : ${row.gelaxkak}"
+                        th:classappend="${gelaxka.beteta()} ? 'selected' : ''"
+                        th:attr="data-action=@{|/kudeatzaile/irakasleak/${irakaslea.id}/ordutegia/lerroa|},
+                                 data-asteguna=${gelaxka.asteguna},
+                                 data-ordua=${row.orduZenbakia}">
+                        <div th:if="${gelaxka.beteta()}"
+                             th:each="edukia : ${gelaxka.edukiak}"
+                             class="ordutegi-cell-content ordutegi-editable"
+                             th:attr="data-action=@{|/kudeatzaile/irakasleak/${irakaslea.id}/ordutegia/lerroa/${edukia.id}|},
+                                      data-delete-action=@{|/kudeatzaile/irakasleak/${irakaslea.id}/ordutegia/lerroa/${edukia.id}/ezabatu|},
+                                      data-modulua=${edukia.irakasgaia},
+                                      data-taldea=${edukia.taldea},
+                                      data-gela=${edukia.gela},
+                                      data-laburpena=${edukia.laburpena},
+                                      data-asteguna=${gelaxka.asteguna},
+                                      data-ordua=${row.orduZenbakia}"
+                             th:text="${edukia.laburpena}">SRED · 1SM2A · G01</div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section>
+        <h2>Koadernoak</h2>
+        <div th:if="${#lists.isEmpty(koadernoak)}" class="empty-msg">
+            Ez dago irakasle honen koadernorik hautatutako ikasturtean.
+        </div>
+        <div th:if="${!#lists.isEmpty(koadernoak)}" class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>Familia</th>
+                    <th>Taldea</th>
+                    <th>Maila</th>
+                    <th>Mod. kodea</th>
+                    <th>Modulua</th>
+                    <th>Ikasturtea</th>
+                    <th>Jabea</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="k : ${koadernoak}">
+                    <td th:text="${k.moduloa != null and k.moduloa.taldea != null and k.moduloa.taldea.zikloa != null and k.moduloa.taldea.zikloa.familia != null ? k.moduloa.taldea.zikloa.familia.izena : '-'}">Familia</td>
+                    <td th:text="${k.moduloa != null and k.moduloa.taldea != null ? k.moduloa.taldea.izena : '-'}">Taldea</td>
+                    <td th:text="${k.moduloa != null and k.moduloa.maila != null ? k.moduloa.maila.izena : '-'}">Maila</td>
+                    <td th:text="${k.moduloa != null ? k.moduloa.kodea : '-'}">Kodea</td>
+                    <td><a th:href="@{|/irakasle/koadernoa/${k.id}?next=/irakasle|}" th:text="${k.moduloa != null ? k.moduloa.izena : '-'}">Modulua</a></td>
+                    <td th:text="${k.egutegia != null and k.egutegia.ikasturtea != null ? k.egutegia.ikasturtea.izena : '-'}">Ikasturtea</td>
+                    <td th:text="${k.jabea != null ? k.jabea.izena : '(Jaberik gabe)'}">Jabea</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+<div id="ordutegiLerroPopup" class="ordutegi-popup" aria-hidden="true">
+    <strong id="ordutegiPopupTitle">Ordutegi gelaxka</strong>
+    <form id="ordutegiLerroForm" method="post" action="#">
+        <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        <input type="hidden" name="ikasturteaId" th:value="${ikasturteaId}"/>
+        <input type="hidden" name="asteguna" id="popupAsteguna"/>
+        <input type="hidden" name="orduZenbakia" id="popupOrduZenbakia"/>
+
+        <label for="popupModulua">Irakasgaia / modulu kodea</label>
+        <input id="popupModulua" name="moduluKodea" type="text" placeholder="SRED"/>
+
+        <label for="popupTaldea">Talde kodea</label>
+        <input id="popupTaldea" name="taldeKodea" type="text" placeholder="1SM2A"/>
+
+        <label for="popupGela">Gela</label>
+        <input id="popupGela" name="gelaKodea" type="text" placeholder="G01"/>
+
+        <div class="ordutegi-popup-actions">
+            <button type="button" id="ordutegiPopupEzabatu" class="btn btn-secondary delete-btn">Ezabatu</button>
+            <button type="button" id="ordutegiPopupItxi" class="btn btn-secondary">Itxi</button>
+            <button type="submit" class="btn btn-primary">Gorde</button>
+        </div>
+    </form>
+</div>
+
+<script>
+(function(){
+  const popup = document.getElementById('ordutegiLerroPopup');
+  const form = document.getElementById('ordutegiLerroForm');
+  const title = document.getElementById('ordutegiPopupTitle');
+  const modulua = document.getElementById('popupModulua');
+  const taldea = document.getElementById('popupTaldea');
+  const gela = document.getElementById('popupGela');
+  const asteguna = document.getElementById('popupAsteguna');
+  const orduZenbakia = document.getElementById('popupOrduZenbakia');
+  const itxi = document.getElementById('ordutegiPopupItxi');
+  const ezabatu = document.getElementById('ordutegiPopupEzabatu');
+  let deleteAction = '';
+
+  function itxiPopup(){
+    popup.style.display = 'none';
+    popup.setAttribute('aria-hidden', 'true');
+  }
+
+  function irekiPopup(el, ev){
+    if (!el || !el.dataset.action) return;
+    form.action = el.dataset.action;
+    deleteAction = el.dataset.deleteAction || '';
+    title.textContent = el.dataset.laburpena || 'Ordutegi gelaxka berria';
+    modulua.value = el.dataset.modulua || '';
+    taldea.value = el.dataset.taldea || '';
+    gela.value = el.dataset.gela || '';
+    asteguna.value = el.dataset.asteguna || '';
+    orduZenbakia.value = el.dataset.ordua || '';
+    if (ezabatu) ezabatu.style.display = deleteAction ? 'inline-block' : 'none';
+    popup.style.left = (ev.pageX + 10) + 'px';
+    popup.style.top = (ev.pageY + 10) + 'px';
+    popup.style.display = 'block';
+    popup.setAttribute('aria-hidden', 'false');
+    modulua.focus();
+  }
+
+  document.addEventListener('click', function(e){
+    const entry = e.target.closest('.ordutegi-editable');
+    if (entry) {
+      e.preventDefault();
+      irekiPopup(entry, e);
+      return;
+    }
+    const cell = e.target.closest('td[data-action]');
+    if (cell) {
+      const firstEntry = cell.querySelector('.ordutegi-editable');
+      e.preventDefault();
+      irekiPopup(firstEntry || cell, e);
+      return;
+    }
+    if (popup.style.display === 'block' && !popup.contains(e.target)) {
+      itxiPopup();
+    }
+  });
+
+  if (ezabatu) {
+    ezabatu.addEventListener('click', function(e){
+      e.preventDefault();
+      if (!deleteAction) return;
+      if (!window.confirm('Ziur zaude ordutegi gelaxka ezabatu nahi duzula?')) return;
+      form.action = deleteAction;
+      form.submit();
+    });
+  }
+  if (itxi) itxi.addEventListener('click', function(e){ e.preventDefault(); itxiPopup(); });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && popup.style.display === 'block') itxiPopup();
+  });
+})();
+</script>
+
+<script th:src="@{/js/kudeatzaile-nav.js}"></script>
+</body>
+</html>

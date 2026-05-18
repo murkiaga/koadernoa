@@ -28,6 +28,8 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoOrdutegiBlokea;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
+import com.koadernoa.app.objektuak.ordutegiak.entitateak.IrakasleOrdutegiLerroa;
+import com.koadernoa.app.objektuak.ordutegiak.repository.IrakasleOrdutegiaRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -42,6 +44,7 @@ public class IrakasleController {
 	private final EgutegiaService egutegiaService;
 	private final IrakasleModelAttributes irakasleModelAttributes;
 	private final KoadernoaService koadernoaService;
+    private final IrakasleOrdutegiaRepository irakasleOrdutegiaRepository;
 	
 	private static final List<Astegunak> ASTE_ORDENA = List.of(
             Astegunak.ASTELEHENA, Astegunak.ASTEARTEA, Astegunak.ASTEAZKENA,
@@ -119,6 +122,7 @@ public class IrakasleController {
 	    // 6) Ordutegia (rows/cols/selected) — zure jatorrizko logika
 	    model.addAttribute("rows", IntStream.rangeClosed(1, 12).boxed().toList());
 	    model.addAttribute("cols", ASTE_ORDENA);
+        model.addAttribute("irakasleOrdutegiRows", sortuIrakasleOrdutegiRows(irakaslea, koadernoa));
 
 	    var ordutegiakByDate = koadernoaService.getOrdutegiakByHasieraData(koadernoa.getId());
 	    LocalDate today = LocalDate.now();
@@ -176,6 +180,59 @@ public class IrakasleController {
 	    return "irakasleak/index";
 	}
     
+    private List<List<String>> sortuIrakasleOrdutegiRows(Irakaslea irakaslea, Koadernoa koadernoa) {
+        List<List<String>> grid = new ArrayList<>();
+        for (int i = 0; i < 12; i++) {
+            grid.add(new ArrayList<>(java.util.Collections.nCopies(ASTE_ORDENA.size(), null)));
+        }
+        if (irakaslea == null || koadernoa == null || koadernoa.getEgutegia() == null
+                || koadernoa.getEgutegia().getIkasturtea() == null) {
+            return grid;
+        }
+
+        irakasleOrdutegiaRepository
+                .findByIrakasleaIdAndIkasturteaId(irakaslea.getId(), koadernoa.getEgutegia().getIkasturtea().getId())
+                .ifPresent(ordutegia -> {
+                    if (ordutegia.getLerroak() == null) {
+                        return;
+                    }
+                    for (IrakasleOrdutegiLerroa lerroa : ordutegia.getLerroak()) {
+                        if (lerroa.getAsteguna() == null || lerroa.getOrduZenbakia() == null) {
+                            continue;
+                        }
+                        int col = ASTE_ORDENA.indexOf(lerroa.getAsteguna());
+                        if (col < 0) {
+                            continue;
+                        }
+                        int saioKopurua = lerroa.getSaioKopurua() != null && lerroa.getSaioKopurua() > 0
+                                ? lerroa.getSaioKopurua() : 1;
+                        String testua = irakasleOrdutegiGelaxkaTestua(lerroa);
+                        for (int ordua = lerroa.getOrduZenbakia(); ordua < lerroa.getOrduZenbakia() + saioKopurua; ordua++) {
+                            int row = ordua - 1;
+                            if (row < 0 || row >= grid.size()) {
+                                continue;
+                            }
+                            String aurrekoa = grid.get(row).get(col);
+                            grid.get(row).set(col, aurrekoa == null || aurrekoa.isBlank() ? testua : aurrekoa + " / " + testua);
+                        }
+                    }
+                });
+        return grid;
+    }
+
+    private String irakasleOrdutegiGelaxkaTestua(IrakasleOrdutegiLerroa lerroa) {
+        return java.util.stream.Stream.of(lerroa.getModuluKodea(), lerroa.getTaldeKodea(), irakasleOrdutegiGelaTestua(lerroa))
+                .filter(v -> v != null && !v.isBlank())
+                .collect(java.util.stream.Collectors.joining(" · "));
+    }
+
+    private String irakasleOrdutegiGelaTestua(IrakasleOrdutegiLerroa lerroa) {
+        if (lerroa.getGelaKodea() != null && !lerroa.getGelaKodea().isBlank()) {
+            return lerroa.getGelaKodea();
+        }
+        return lerroa.getGelaIzena();
+    }
+
 	@GetMapping("/egutegia")
 	public String koadernoarenEgutegia(@ModelAttribute("koadernoAktiboa") Koadernoa koadernoa, Model model) {
 

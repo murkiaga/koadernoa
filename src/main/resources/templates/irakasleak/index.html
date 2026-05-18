@@ -298,11 +298,13 @@
             </thead>
 
             <tbody id="gridBody">
-            <tr th:each="r : ${rows}">
+            <tr th:each="r, rStat : ${rows}">
               <th th:text="${r}">1</th>
               <td th:each="c, stat : ${cols}"
                   th:attr="data-col=${stat.index + 1}, data-row=${r}"
                   th:classappend="${selected.contains((stat.index + 1) + '-' + r)} ? 'selected' : ''">
+                <span th:if="${irakasleOrdutegiRows != null and irakasleOrdutegiRows[rStat.index][stat.index] != null}"
+                      th:text="${irakasleOrdutegiRows[rStat.index][stat.index]}">SRED · 1SM2A · G01</span>
               </td>
             </tr>
             </tbody>

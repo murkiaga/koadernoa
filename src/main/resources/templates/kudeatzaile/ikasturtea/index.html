@@ -30,6 +30,11 @@
                         <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                         <button type="submit" class="btn btn-secondary">Ikasturte aktiboko falta diren koadernoak sortu</button>
                     </form>
+                    <a th:if="${ikasturtea.aktiboa}"
+                       class="btn btn-primary"
+                       th:href="@{/kudeatzaile/ordutegiak/inportatu(ikasturteaId=${ikasturtea.id})}">
+                        Ordutegiak inportatu
+                    </a>
                 </div>
 	        </li>
 	    </ul>

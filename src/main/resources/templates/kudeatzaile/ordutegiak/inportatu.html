@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>KRONOWIN ordutegien inportazioa</title>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" th:href="@{/css/navbar.css}">
+    <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+<div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+<main class="page">
+    <h1>KRONOWIN irakasleen ordutegiak inportatu</h1>
+
+    <p class="alert alert-success" th:if="${mezua != null}" th:text="${mezua}"></p>
+    <p class="alert alert-danger" th:if="${errorea != null}" th:text="${errorea}"></p>
+
+    <form th:action="@{/kudeatzaile/ordutegiak/inportatu}" method="post" enctype="multipart/form-data" class="form-card">
+        <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+        <label for="ikasturteaId">Ikasturtea</label>
+        <select id="ikasturteaId" name="ikasturteaId" required>
+            <option value="">— Aukeratu —</option>
+            <option th:each="ikasturtea : ${ikasturteak}"
+                    th:value="${ikasturtea.id}"
+                    th:selected="${aukeratutakoIkasturteaId != null and aukeratutakoIkasturteaId == ikasturtea.id}"
+                    th:text="${ikasturtea.izena}">2025-2026</option>
+        </select>
+
+        <label for="fitxategia">ordutegiak.xml / KRONOWIN XML fitxategia</label>
+        <input id="fitxategia" name="fitxategia" type="file" accept=".xml,text/xml,application/xml" required>
+
+        <button class="btn btn-primary" type="submit">Inportatu</button>
+    </form>
+
+    <section th:if="${emaitza != null}" class="table-wrap">
+        <h2>Inportazio-laburpena</h2>
+        <ul>
+            <li>XMLtik irakurritako SOLUCF kopurua: <strong th:text="${emaitza.solucfKopurua}">0</strong></li>
+            <li>Sortutako ordutegi-lerro kopurua: <strong th:text="${emaitza.sortutakoLerroKopurua}">0</strong></li>
+            <li>DIA=0 edo HORA=0 izateagatik saltatutako kopurua: <strong th:text="${emaitza.saltatutakoKopurua}">0</strong></li>
+        </ul>
+
+        <h3 th:if="${!emaitza.saltatutakoLerroak.isEmpty()}">Saltatutako erregistroak</h3>
+        <table th:if="${!emaitza.saltatutakoLerroak.isEmpty()}">
+            <thead><tr><th>PROF</th><th>ASIG</th><th>AULA</th><th>CODGRUPO</th><th>DIA</th><th>HORA</th><th>Arrazoia</th></tr></thead>
+            <tbody>
+            <tr th:each="lerroa : ${emaitza.saltatutakoLerroak}">
+                <td th:text="${lerroa.prof}">URKI</td>
+                <td th:text="${lerroa.asig}">RELO</td>
+                <td th:text="${lerroa.aula}">TSMA</td>
+                <td th:text="${lerroa.codgrupo}">1SM2A</td>
+                <td th:text="${lerroa.dia}">0</td>
+                <td th:text="${lerroa.hora}">0</td>
+                <td th:text="${lerroa.arrazoia}">arrazoia</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <h3>Lotu gabeko irakasleak</h3>
+        <p th:if="${emaitza.lotuGabekoIrakasleak.isEmpty()}">Ez dago.</p>
+        <ul><li th:each="i : ${emaitza.lotuGabekoIrakasleak}" th:text="${i}"></li></ul>
+
+        <h3>Lotu gabeko taldeak</h3>
+        <p th:if="${emaitza.lotuGabekoTaldeak.isEmpty()}">Ez dago.</p>
+        <ul><li th:each="t : ${emaitza.lotuGabekoTaldeak}" th:text="${t}"></li></ul>
+    </section>
+</main>
+<script th:src="@{/js/kudeatzaile-nav.js}"></script>
+</body>
+</html>
