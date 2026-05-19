@@ -46,6 +46,8 @@
 	.koad-sortu .grid tbody th{background:#fcfcfc;text-align:center;font-weight:500}
 	.koad-sortu .grid td{cursor:pointer}
 	.koad-sortu .grid td.selected{background:#dcdcdc}
+    .koad-sortu .grid td.irakasle-ordua{background:#eef2ff}
+    .koad-sortu .grid td .irakasle-etiketa{display:block;font-size:.72rem;color:#334155;padding:.2rem;line-height:1.2}
 	
 	/* Botoiak (navbarrek ez ukitzeko, prefixatu) */
 	.koad-sortu .actions{margin-top:20px;display:flex;justify-content:space-between;align-items:center}
@@ -132,8 +134,12 @@
               <th th:text="${r}"></th>
               <td th:each="c, stat : ${cols}"
                   th:attr="data-col=${stat.index + 1}, data-row=${r}"
-                  th:classappend="${selected.contains((stat.index + 1) + '-' + r)} ? 'selected' : ''"
-                  onclick="toggleCell(this)"></td>
+                  th:classappend="(${selected.contains((stat.index + 1) + '-' + r)} ? 'selected ' : '') + (${irakasleOrdutegiRows[r-1][stat.index] != null} ? 'irakasle-ordua' : '')"
+                  onclick="toggleCell(this)">
+                  <span th:if="${irakasleOrdutegiRows[r-1][stat.index] != null}"
+                        class="irakasle-etiketa"
+                        th:text="${irakasleOrdutegiRows[r-1][stat.index]}"></span>
+              </td>
             </tr>
           </tbody>
         </table>

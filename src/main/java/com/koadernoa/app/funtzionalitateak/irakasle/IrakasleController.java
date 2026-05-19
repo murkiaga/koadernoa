@@ -1,6 +1,7 @@
 package com.koadernoa.app.funtzionalitateak.irakasle;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -80,7 +81,7 @@ public class IrakasleController {
 
 	    if (!sesioanDago) {
 	        if (!koadernoZerrenda.isEmpty()) {
-	            Long lehenId = koadernoZerrenda.get(0).getId();
+	            Long lehenId = aukeratuHasierakoKoadernoAktiboa(koadernoZerrenda, LocalDate.now(), LocalTime.now());
 	            // KoadernoaController-ek sartuko du sesioan, eta gero berriz etorriko gara /irakasle-ra
 	            return "redirect:/irakasle/koadernoa/" + lehenId + "?next=/irakasle";
 	        } else {
@@ -231,6 +232,64 @@ public class IrakasleController {
             return lerroa.getGelaKodea();
         }
         return lerroa.getGelaIzena();
+    }
+
+    private Long aukeratuHasierakoKoadernoAktiboa(List<Koadernoa> koadernoak, LocalDate gaur, LocalTime orain) {
+        if (koadernoak == null || koadernoak.isEmpty()) {
+            return null;
+        }
+        Astegunak gaurkoAsteguna = Astegunak.fromDayOfWeek(gaur.getDayOfWeek());
+        Integer unekoSlota = kalkulatuUnekoSlota(orain);
+
+        Koadernoa egunEtaSlotBat = null;
+        Koadernoa egunBat = null;
+
+        for (Koadernoa k : koadernoak) {
+            if (k == null || k.getId() == null) {
+                continue;
+            }
+            var kargatuaOpt = koadernoaRepository.findWithOrdutegiaById(k.getId());
+            if (kargatuaOpt.isEmpty()) {
+                continue;
+            }
+            Koadernoa kargatua = kargatuaOpt.get();
+            var ordutegiByDate = koadernoaService.getOrdutegiakByHasieraData(kargatua.getId());
+            if (ordutegiByDate.isEmpty()) {
+                continue;
+            }
+            LocalDate hasieraData = ordutegiByDate.floorKey(gaur) != null ? ordutegiByDate.floorKey(gaur) : ordutegiByDate.firstKey();
+            List<KoadernoOrdutegiBlokea> blokeak = ordutegiByDate.getOrDefault(hasieraData, List.of());
+
+            boolean egunKointzidentzia = blokeak.stream()
+                    .anyMatch(b -> !b.isDualOrdutegia() && !b.isTarteHutsa() && b.getAsteguna() == gaurkoAsteguna);
+            if (!egunKointzidentzia) {
+                continue;
+            }
+            if (egunBat == null) {
+                egunBat = k;
+            }
+            if (unekoSlota != null) {
+                boolean slotKointzidentzia = blokeak.stream()
+                        .anyMatch(b -> !b.isDualOrdutegia() && !b.isTarteHutsa()
+                                && b.getAsteguna() == gaurkoAsteguna
+                                && unekoSlota >= b.getHasieraSlot() && unekoSlota <= b.bukaeraSlot());
+                if (slotKointzidentzia) {
+                    egunEtaSlotBat = k;
+                    break;
+                }
+            }
+        }
+        if (egunEtaSlotBat != null) return egunEtaSlotBat.getId();
+        if (egunBat != null) return egunBat.getId();
+        return koadernoak.get(0).getId();
+    }
+
+    private Integer kalkulatuUnekoSlota(LocalTime orain) {
+        if (orain == null) return null;
+        int minutuak = orain.getHour() * 60 + orain.getMinute();
+        int lehenSlotHasiera = 8 * 60 + 30; // 08:30
+        int slot = ((minutuak - lehenSlotHasiera) / 60) + 1;
+        return (slot >= 1 && slot <= 12) ? slot : null;
     }
 
 	@GetMapping("/egutegia")
