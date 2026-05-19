@@ -27,6 +27,8 @@ import com.koadernoa.app.objektuak.koadernoak.service.KoadernoSorreraEmaitza;
 import com.koadernoa.app.objektuak.koadernoak.service.ProgramazioaService;
 import com.koadernoa.app.objektuak.konfigurazioa.service.AplikazioAukeraService;
 import com.koadernoa.app.objektuak.modulua.service.IkasleaService;
+import com.koadernoa.app.objektuak.ordutegiak.entitateak.IrakasleOrdutegiLerroa;
+import com.koadernoa.app.objektuak.ordutegiak.repository.IrakasleOrdutegiaRepository;
 import com.koadernoa.app.objektuak.zikloak.service.FamiliaService;
 
 import jakarta.transaction.Transactional;
@@ -53,6 +55,7 @@ public class KoadernoaController {
 	private final KoadernoaRepository koadernoaRepository;
 	private final FamiliaService familiaService;
 	private final AplikazioAukeraService aplikazioAukeraService;
+    private final IrakasleOrdutegiaRepository irakasleOrdutegiaRepository;
 	
 	private static final List<Astegunak> ASTE_ORDENA = List.of(
 	        Astegunak.ASTELEHENA,
@@ -165,14 +168,59 @@ public class KoadernoaController {
 	    model.addAttribute("rows", IntStream.rangeClosed(1, 12).boxed().toList());
 	    model.addAttribute("cols", ASTE_ORDENA);
 	    model.addAttribute("selected", Set.of());
+        model.addAttribute("irakasleOrdutegiRows", sortuIrakasleOrdutegiRows(irakaslea));
 
 	    return "irakasleak/koadernoa-sortu";
+    }
+
+    private List<List<String>> sortuIrakasleOrdutegiRows(Irakaslea irakaslea) {
+        List<List<String>> grid = new ArrayList<>();
+        for (int i = 0; i < 12; i++) {
+            grid.add(new ArrayList<>(java.util.Collections.nCopies(ASTE_ORDENA.size(), null)));
+        }
+        if (irakaslea == null) {
+            return grid;
+        }
+        irakasleOrdutegiaRepository
+                .findAktiboenaByIrakasleaId(irakaslea.getId())
+                .ifPresent(ordutegia -> {
+                    if (ordutegia.getLerroak() == null) {
+                        return;
+                    }
+                    for (IrakasleOrdutegiLerroa lerroa : ordutegia.getLerroak()) {
+                        if (lerroa.getAsteguna() == null || lerroa.getOrduZenbakia() == null) continue;
+                        int col = ASTE_ORDENA.indexOf(lerroa.getAsteguna());
+                        if (col < 0) continue;
+                        int saioKopurua = lerroa.getSaioKopurua() != null && lerroa.getSaioKopurua() > 0
+                                ? lerroa.getSaioKopurua() : 1;
+                        String testua = irakasleOrdutegiGelaxkaTestua(lerroa);
+                        for (int ordua = lerroa.getOrduZenbakia(); ordua < lerroa.getOrduZenbakia() + saioKopurua; ordua++) {
+                            int row = ordua - 1;
+                            if (row < 0 || row >= grid.size()) continue;
+                            String aurrekoa = grid.get(row).get(col);
+                            grid.get(row).set(col, aurrekoa == null || aurrekoa.isBlank() ? testua : aurrekoa + " / " + testua);
+                        }
+                    }
+                });
+        return grid;
+    }
+
+    private String irakasleOrdutegiGelaxkaTestua(IrakasleOrdutegiLerroa lerroa) {
+        return java.util.stream.Stream.of(lerroa.getModuluKodea(), lerroa.getTaldeKodea(), irakasleOrdutegiGelaTestua(lerroa))
+                .filter(v -> v != null && !v.isBlank())
+                .collect(java.util.stream.Collectors.joining(" · "));
+    }
+
+    private String irakasleOrdutegiGelaTestua(IrakasleOrdutegiLerroa lerroa) {
+        if (lerroa.getGelaKodea() != null && !lerroa.getGelaKodea().isBlank()) return lerroa.getGelaKodea();
+        return lerroa.getGelaIzena();
     }
 
 	@PostMapping("/berria")
 	public String submit(@ModelAttribute("koadernoaDto") KoadernoaSortuDto dto,
 	                     Authentication auth,
-                     RedirectAttributes ra,
+	                     Model model,
+	                     RedirectAttributes ra,
 	                     @RequestParam(name = "cells", required = false) List<String> cells) {
 
 	    Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
@@ -189,10 +237,11 @@ public class KoadernoaController {
                 return "redirect:/irakasle/koadernoa/berria";
             }
 
-            Koadernoa koadernoa = emaitza.koadernoa();
-            try {
-                ikasleaService.syncKoadernoBakarra(koadernoa.getId());
-            } catch (Exception e) {
+	            Koadernoa koadernoa = emaitza.koadernoa();
+	            model.addAttribute("koadernoAktiboa", koadernoa);
+	            try {
+	                ikasleaService.syncKoadernoBakarra(koadernoa.getId());
+	            } catch (Exception e) {
             }
             ra.addFlashAttribute("success", emaitza.mezua());
             return "redirect:/irakasle";

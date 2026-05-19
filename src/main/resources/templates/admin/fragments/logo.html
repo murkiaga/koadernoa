@@ -49,6 +49,51 @@
       Fitxategia <code>/uploads/logoa/</code> azpikarpetan gordeko da, eta aukeran <code>APP_LOGO_URL</code> giltzan.
     </p>
   </form>
+
+  <hr style="margin:20px 0; border:none; border-top:1px solid var(--b);">
+
+  <h3 style="margin:0 0 8px;">Favicon</h3>
+  <p class="muted">PNG edo JPG irudia. Gehienezko tamaina: <strong>32x32</strong>.</p>
+
+  <div class="table-wrap" style="margin:12px 0;">
+    <div style="padding:12px; border:1px solid var(--b); border-radius:12px;">
+      <div th:if="${faviconBadago}">
+        <div class="muted" style="margin-bottom:8px;">Uneko favicon-a:</div>
+        <img th:src="${faviconUrl}"
+             alt="Aplikazioaren favicon-a"
+             style="height:32px; width:32px; object-fit:contain; display:block; margin-bottom:12px; image-rendering:auto;">
+
+        <form method="post" th:action="@{/admin/favicon/ezabatu}">
+          <input type="hidden"
+                 th:if="${_csrf != null}"
+                 th:name="${_csrf.parameterName}"
+                 th:value="${_csrf.token}"/>
+          <button type="submit" class="btn">Favicon-a ezabatu</button>
+        </form>
+      </div>
+
+      <div th:if="${!faviconBadago}">
+        <div class="muted">Ez dago favicon-ik konfiguratuta.</div>
+      </div>
+    </div>
+  </div>
+
+  <form method="post" th:action="@{/admin/favicon}" enctype="multipart/form-data">
+    <input type="hidden"
+           th:if="${_csrf != null}"
+           th:name="${_csrf.parameterName}"
+           th:value="${_csrf.token}"/>
+
+    <div class="row" style="align-items:end;">
+      <label>
+        <div class="muted">Igo fitxategia</div>
+        <input type="file" name="faviconFile" accept="image/png,image/jpeg" required>
+      </label>
+      <div style="align-self:end;">
+        <button type="submit" class="btn btn-primary">Gorde</button>
+      </div>
+    </div>
+  </form>
 </div>
 </body>
 </html>
