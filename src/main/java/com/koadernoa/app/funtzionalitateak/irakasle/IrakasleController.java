@@ -1,6 +1,7 @@
 package com.koadernoa.app.funtzionalitateak.irakasle;
 
 import java.time.LocalDate;
+import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -238,7 +239,7 @@ public class IrakasleController {
         if (koadernoak == null || koadernoak.isEmpty()) {
             return null;
         }
-        Astegunak gaurkoAsteguna = Astegunak.fromDayOfWeek(gaur.getDayOfWeek());
+        Astegunak gaurkoAsteguna = toAstegunak(gaur.getDayOfWeek());
         Integer unekoSlota = kalkulatuUnekoSlota(orain);
 
         Koadernoa egunEtaSlotBat = null;
@@ -290,6 +291,18 @@ public class IrakasleController {
         int lehenSlotHasiera = 8 * 60 + 30; // 08:30
         int slot = ((minutuak - lehenSlotHasiera) / 60) + 1;
         return (slot >= 1 && slot <= 12) ? slot : null;
+    }
+
+    private Astegunak toAstegunak(DayOfWeek dayOfWeek) {
+        return switch (dayOfWeek) {
+            case MONDAY -> Astegunak.ASTELEHENA;
+            case TUESDAY -> Astegunak.ASTEARTEA;
+            case WEDNESDAY -> Astegunak.ASTEAZKENA;
+            case THURSDAY -> Astegunak.OSTEGUNA;
+            case FRIDAY -> Astegunak.OSTIRALA;
+            case SATURDAY -> Astegunak.LARUNBATA;
+            case SUNDAY -> Astegunak.IGANDEA;
+        };
     }
 
 	@GetMapping("/egutegia")
