@@ -219,7 +219,8 @@ public class KoadernoaController {
 	@PostMapping("/berria")
 	public String submit(@ModelAttribute("koadernoaDto") KoadernoaSortuDto dto,
 	                     Authentication auth,
-                     RedirectAttributes ra,
+	                     Model model,
+	                     RedirectAttributes ra,
 	                     @RequestParam(name = "cells", required = false) List<String> cells) {
 
 	    Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
@@ -236,10 +237,11 @@ public class KoadernoaController {
                 return "redirect:/irakasle/koadernoa/berria";
             }
 
-            Koadernoa koadernoa = emaitza.koadernoa();
-            try {
-                ikasleaService.syncKoadernoBakarra(koadernoa.getId());
-            } catch (Exception e) {
+	            Koadernoa koadernoa = emaitza.koadernoa();
+	            model.addAttribute("koadernoAktiboa", koadernoa);
+	            try {
+	                ikasleaService.syncKoadernoBakarra(koadernoa.getId());
+	            } catch (Exception e) {
             }
             ra.addFlashAttribute("success", emaitza.mezua());
             return "redirect:/irakasle";
