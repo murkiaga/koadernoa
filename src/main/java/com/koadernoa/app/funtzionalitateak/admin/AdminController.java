@@ -9,6 +9,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Set;
+import javax.imageio.ImageIO;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -47,6 +48,8 @@ public class AdminController {
 
     @Value("${koadernoa.uploads.logo-subdir:logoa}")
     private String logoSubdir;
+    @Value("${koadernoa.uploads.favicon-subdir:favicon}")
+    private String faviconSubdir;
 
     @Value("${koadernoa.txostenak.md6309.path:src/main/resources/templates/txostenak/MD6309-falten-jakinarazpena.dotx}")
     private String md6309TxostenPath;
@@ -67,6 +70,9 @@ public class AdminController {
         String logoUrl = aukService.get(AplikazioAukeraService.APP_LOGO_URL, "");
         model.addAttribute("logoUrl", logoUrl);
         model.addAttribute("logoBadago", logoUrl != null && !logoUrl.isBlank());
+        String faviconUrl = aukService.get(AplikazioAukeraService.APP_FAVICON_URL, "");
+        model.addAttribute("faviconUrl", faviconUrl);
+        model.addAttribute("faviconBadago", faviconUrl != null && !faviconUrl.isBlank());
         
         model.addAttribute("googleEnabled", statusService.isGoogleEnabled());
         model.addAttribute("googleConfigured", statusService.isGoogleConfigured());
@@ -182,6 +188,47 @@ public class AdminController {
 
         aukService.set(AplikazioAukeraService.APP_LOGO_URL, "");
         return "redirect:/admin/?success=Logoa%20ezabatuta";
+    }
+
+    @PostMapping("/favicon")
+    public String uploadFavicon(@RequestParam("faviconFile") MultipartFile file) throws IOException {
+        if (file == null || file.isEmpty()) return "redirect:/admin/?error=Fitxategia%20hutsa%20da";
+        String ct = file.getContentType();
+        if (ct == null || !ALLOWED_CT.contains(ct)) {
+            return "redirect:/admin/?error=Onartutako%20formatuak:%20PNG%20edo%20JPG";
+        }
+        var img = ImageIO.read(file.getInputStream());
+        if (img == null) return "redirect:/admin/?error=Irudi%20formatu%20baliogabea";
+        if (img.getWidth() > 32 || img.getHeight() > 32) {
+            return "redirect:/admin/?error=Faviconak%20gehienez%2032x32%20izan%20behar%20du";
+        }
+
+        Path root = Paths.get(baseDir).toAbsolutePath().normalize();
+        Path faviconDir = root.resolve(faviconSubdir).normalize();
+        Files.createDirectories(faviconDir);
+
+        String ext = "image/jpeg".equals(ct) ? "jpg" : "png";
+        String filename = "favicon." + ext;
+        Path target = faviconDir.resolve(filename).normalize();
+        Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
+
+        String faviconUrl = "/uploads/" + faviconSubdir + "/" + filename + "?v=" + System.currentTimeMillis();
+        aukService.set(AplikazioAukeraService.APP_FAVICON_URL, faviconUrl);
+        return "redirect:/admin/?success=Favicon%20gordeta";
+    }
+
+    @PostMapping("/favicon/ezabatu")
+    public String deleteFavicon() throws IOException {
+        String faviconUrl = aukService.get(AplikazioAukeraService.APP_FAVICON_URL, "");
+        Path root = Paths.get(baseDir).toAbsolutePath().normalize();
+        Path faviconDir = root.resolve(faviconSubdir).normalize();
+        if (faviconUrl != null && !faviconUrl.isBlank()) {
+            String clean = faviconUrl.split("\\?")[0];
+            String filename = StringUtils.getFilename(clean);
+            if (filename != null) Files.deleteIfExists(faviconDir.resolve(filename));
+        }
+        aukService.set(AplikazioAukeraService.APP_FAVICON_URL, "");
+        return "redirect:/admin/?success=Favicon%20ezabatuta";
     }
 
     @PostMapping("/auth-providers")
