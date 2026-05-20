@@ -225,11 +225,19 @@ public class KoadernoaController {
 
 	    Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
 
+        List<String> selectedCells = cells == null ? List.of() : cells.stream()
+                .filter(v -> v != null && !v.isBlank())
+                .toList();
+        if (selectedCells.isEmpty()) {
+            ra.addFlashAttribute("error", "Ordutegi taulan gutxienez gelaxka bat hautatu behar duzu koadernoa sortzeko.");
+            return "redirect:/irakasle/koadernoa/berria";
+        }
+
         try {
             KoadernoSorreraEmaitza emaitza = koadernoaService.sortuEdoEsleituKoadernoa(
                     dto,
                     irakaslea,
-                    cells == null ? List.of() : cells
+                    selectedCells
             );
 
             if (emaitza.egoera() == KoadernoSorreraEmaitza.Egoera.EXISTITZEN_DA) {
