@@ -68,9 +68,9 @@
 <div class="page">
   <div class="card koad-sortu">
     <h2>Koaderno berria</h2>
-    <div th:if="${error}" style="margin:10px 0;padding:10px;border:1px solid #fecaca;background:#fee2e2;color:#991b1b;border-radius:8px;" th:text="${error}"></div>
+    <div id="formError" th:if="${error}" style="margin:10px 0;padding:10px;border:1px solid #fecaca;background:#fee2e2;color:#991b1b;border-radius:8px;" th:text="${error}"></div>
 
-    <form th:action="@{/irakasle/koadernoa/berria}" th:object="${koadernoaDto}" method="post">
+    <form th:action="@{/irakasle/koadernoa/berria}" th:object="${koadernoaDto}" method="post" id="koadernoaSortuForm">
       <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
       <!-- 0) Familia -->
@@ -204,6 +204,28 @@ function changeFilters(changed) {
 
   window.location.href = url.toString();
 }
+const form = document.getElementById('koadernoaSortuForm');
+
+form?.addEventListener('submit', function (e) {
+  const selectedCount = document.querySelectorAll('#gridBody td.selected').length;
+  if (selectedCount > 0) return;
+
+  e.preventDefault();
+  let errorBox = document.getElementById('formError');
+  if (!errorBox) {
+    errorBox = document.createElement('div');
+    errorBox.id = 'formError';
+    errorBox.style.margin = '10px 0';
+    errorBox.style.padding = '10px';
+    errorBox.style.border = '1px solid #fecaca';
+    errorBox.style.background = '#fee2e2';
+    errorBox.style.color = '#991b1b';
+    errorBox.style.borderRadius = '8px';
+    form.insertBefore(errorBox, form.firstChild.nextSibling);
+  }
+  errorBox.textContent = 'Ordutegi taulan gutxienez gelaxka bat hautatu behar duzu koadernoa sortzeko.';
+  errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+});
 </script>
 
 </body>
