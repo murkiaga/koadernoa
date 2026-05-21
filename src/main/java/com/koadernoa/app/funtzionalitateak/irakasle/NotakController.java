@@ -82,6 +82,14 @@ public class NotakController {
                             if (m.getNotak() == null || m.getNotak().isEmpty()) {
                                 return false;
                             }
+                            boolean bigarrenFinaleanUkoEginda = m.getNotak().stream()
+                                    .filter(Objects::nonNull)
+                                    .filter(n -> n.getEbaluazioMomentua() != null
+                                            && "2_FINAL".equalsIgnoreCase(n.getEbaluazioMomentua().getKodea()))
+                                    .anyMatch(this::daUkoEginda);
+                            if (bigarrenFinaleanUkoEginda) {
+                                return true;
+                            }
                             boolean lehenFinaleanBaliorikBadago = m.getNotak().stream()
                                     .filter(Objects::nonNull)
                                     .filter(n -> n.getEbaluazioMomentua() != null
@@ -172,5 +180,11 @@ public class NotakController {
         }
         return "1_FINAL".equalsIgnoreCase(momentua.getKodea())
                 || "2_FINAL".equalsIgnoreCase(momentua.getKodea());
+    }
+
+    private boolean daUkoEginda(EbaluazioNota nota) {
+        return nota != null
+                && nota.getEgoera() != null
+                && "UKO_EGINDA".equalsIgnoreCase(nota.getEgoera().getKodea());
     }
 }

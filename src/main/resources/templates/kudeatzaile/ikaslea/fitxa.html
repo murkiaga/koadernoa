@@ -82,7 +82,14 @@
       </thead>
       <tbody>
       <tr th:each="m : ${matrikulak}">
-        <td th:text="${m.koadernoa != null ? m.koadernoa.izena : '-'}">-</td>
+        <td>
+          <a th:if="${m.koadernoa != null}"
+             th:href="@{|/irakasle/koadernoa/${m.koadernoa.id}?next=/irakasle|}"
+             th:text="${m.koadernoa.izena}">
+            Koadernoa
+          </a>
+          <span th:if="${m.koadernoa == null}">-</span>
+        </td>
         <td th:text="${m.koadernoa != null and m.koadernoa.moduloa != null ? m.koadernoa.moduloa.izena : '-'}">-</td>
         <td th:text="${m.koadernoa != null and m.koadernoa.moduloa != null ? m.koadernoa.moduloa.eeiKodea : '-'}">-</td>
         <td>
