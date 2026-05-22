@@ -217,20 +217,24 @@
       .inportatu-highlight::before{
         content: "";
         position: absolute;
-        inset: -130%;
-        background: conic-gradient(
-          from 0deg,
-          rgba(20,136,252,0) 0deg,
-          rgba(20,136,252,.08) 120deg,
-          rgba(20,136,252,.95) 185deg,
-          rgba(20,136,252,.08) 250deg,
-          rgba(20,136,252,0) 360deg
+        left: 50%;
+        top: 50%;
+        width: 42%;
+        height: 320%;
+        transform: translate(-50%, -50%) rotate(0deg);
+        transform-origin: center center;
+        background: linear-gradient(
+          180deg,
+          rgba(20,136,252,0) 0%,
+          rgba(20,136,252,.9) 45%,
+          rgba(20,136,252,.9) 55%,
+          rgba(20,136,252,0) 100%
         );
         animation: inportatu-argi-biratu 3s linear infinite;
         z-index: 0;
       }
       @keyframes inportatu-argi-biratu {
-        to { transform: rotate(360deg); }
+        to { transform: translate(-50%, -50%) rotate(360deg); }
       }
       @media (prefers-reduced-motion: reduce){
         .inportatu-highlight::before{
