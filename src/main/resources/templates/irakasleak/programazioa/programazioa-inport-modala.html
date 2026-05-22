@@ -21,7 +21,7 @@
     .modal-overlay.show { display: flex; }
     .modal-card {
       background: #fff;
-      max-width: 900px;
+      max-width: 1050px;
       width: 95%;
       max-height: 90vh;
       overflow: auto;
@@ -65,6 +65,37 @@
       font-size:0.7rem;
       background:#e5e7eb;
     }
+    .import-actions{
+      display:flex;
+      gap:.4rem;
+      flex-wrap:wrap;
+    }
+    .btn-mini{
+      border:1px solid #d1d5db;
+      border-radius:.55rem;
+      padding:.32rem .6rem;
+      font-size:.8rem;
+      font-weight:600;
+      cursor:pointer;
+      transition:all .15s ease;
+    }
+    .btn-mini.preview{
+      background:#f3f4f6;
+      color:#111827;
+    }
+    .btn-mini.preview:hover{ background:#e5e7eb; }
+    .btn-mini.import{
+      background:#2563eb;
+      border-color:#2563eb;
+      color:#fff;
+    }
+    .btn-mini.import:hover{ background:#1d4ed8; border-color:#1d4ed8; }
+    .btn-mini.import:disabled{
+      background:#bfdbfe;
+      border-color:#bfdbfe;
+      color:#eff6ff;
+      cursor:not-allowed;
+    }
   </style>
 
   <div id="programazioaImportModal" class="modal-overlay">
@@ -88,7 +119,8 @@
             </thead>
             <tbody>
             <!-- Koadernoen zerrenda -->
-            <tr th:each="k : ${inportatzekoKoadernoak}">
+            <tr th:each="k : ${inportatzekoKoadernoak}"
+                th:attr="data-ikasturtea-id=${k.egutegia != null and k.egutegia.ikasturtea != null ? k.egutegia.ikasturtea.id : 0},data-koaderno-id=${k.id}">
               <td>
                 <!-- Koadernoa -> egutegia -> ikasturtea -> izena, null kasuak zainduta -->
                 <span th:text="${k.egutegia != null ? (k.egutegia.ikasturtea != null ? k.egutegia.ikasturtea.izena : '—') : '—'}">
@@ -101,18 +133,25 @@
                       th:text="${k.moduloa != null ? k.moduloa.kodea : '-'}">
                   ADAT
                 </span>
+                <span class="badge"
+                      th:text="${k.moduloa != null and k.moduloa.taldea != null ? k.moduloa.taldea.izena : 'Taldearik gabe'}">
+                  1A
+                </span>
               </td>
               <td>
-                <button type="button"
-                        class="aurreikusi-btn"
-                        th:attr="data-id=${k.id}">
-                  Aurreikusi
-                </button>
-                <button type="button"
-                        class="inportatu-btn"
-                        th:attr="data-id=${k.id}">
-                  Inportatu
-                </button>
+                <div class="import-actions">
+                  <button type="button"
+                          class="btn-mini preview aurreikusi-btn"
+                          th:attr="data-id=${k.id}">
+                    Aurreikusi
+                  </button>
+                  <button type="button"
+                          class="btn-mini import inportatu-btn"
+                          th:attr="data-id=${k.id}"
+                          disabled>
+                    Inportatu
+                  </button>
+                </div>
               </td>
             </tr>
 

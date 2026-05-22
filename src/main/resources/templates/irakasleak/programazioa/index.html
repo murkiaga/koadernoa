@@ -195,10 +195,56 @@
 	  .ebal-edit-btn{
 	    display:none;
 	  }
-	  .edit-mode .ebal-edit-btn{
-	    display:inline-flex;
-	  }
-  </style>
+		  .edit-mode .ebal-edit-btn{
+		    display:inline-flex;
+		  }
+
+      /* Programazioa inportatu botoia nabarmenduta (estiloa mantenduta) */
+      .inportatu-highlight{
+        --inportatu-radius: 10px;
+        position: relative;
+        display: inline-flex;
+        border-radius: var(--inportatu-radius);
+        overflow: hidden;
+        padding: 2px;
+        isolation: isolate;
+      }
+      .inportatu-highlight > .btn{
+        position: relative;
+        z-index: 1;
+        border-radius: calc(var(--inportatu-radius) - 2px);
+      }
+      .inportatu-highlight::before{
+        content: "";
+        display: block;
+        position: absolute;
+        top: 50%;
+        width: 40px;
+        height: 200px;
+        z-index: 0;
+        background: linear-gradient(
+          90deg,
+          rgba(20,136,252,0) 0%,
+          rgba(20,136,252,.8) 40%,
+          rgba(20,136,252,.8) 50%,
+          rgba(20,136,252,0) 100%
+        );
+        transform-origin: top center;
+        animation: inportatu-argi-biratu 3s linear infinite;
+      }
+      @keyframes inportatu-argi-biratu {
+        0% { transform: rotate(0deg) scaleX(4); }
+        25% { transform: rotate(90deg) scaleX(1); }
+        50% { transform: rotate(180deg) scaleX(4); }
+        75% { transform: rotate(270deg) scaleX(1); }
+        100% { transform: rotate(360deg) scaleX(4); }
+      }
+      @media (prefers-reduced-motion: reduce){
+        .inportatu-highlight::before{
+          animation: none;
+        }
+      }
+	  </style>
 </head>
 
 <body>
@@ -236,11 +282,12 @@
           
           <!-- Programazioa inportatzeko botoia
 		       soilik programazioa hutsik badago eta badago beste koadernorik -->
-		      <button id="programazioaInportatuBtn"
-		              class="btn"
-		              th:if="${programazioaHutsik and !#lists.isEmpty(inportatzekoKoadernoak)}">
-		        Programazioa inportatu
-		      </button>
+            <span class="inportatu-highlight"
+                  th:if="${programazioaHutsik and !#lists.isEmpty(inportatzekoKoadernoak)}">
+              <button id="programazioaInportatuBtn" class="btn">
+                Programazioa inportatu
+              </button>
+            </span>
 
           <button id="txantiloiEkarriBtn"
                   class="btn"
@@ -1026,8 +1073,33 @@
     const previewBox = document.getElementById('aurreikuspenEdukia');
     const inportForm = document.getElementById('inportatuForm');
     const iturburuaInput = document.getElementById('iturburuaId');
+    let aurreikusitakoKoadernoId = null;
+
+    function ordenatuInportatzekoTaula() {
+      const tbody = overlay.querySelector('tbody');
+      if (!tbody) return;
+      const rows = Array.from(tbody.querySelectorAll('tr[data-koaderno-id]'));
+      rows.sort((a, b) => {
+        const ikA = Number(a.dataset.ikasturteaId || 0);
+        const ikB = Number(b.dataset.ikasturteaId || 0);
+        if (ikA !== ikB) return ikB - ikA; // berrienak goian
+        const kA = Number(a.dataset.koadernoId || 0);
+        const kB = Number(b.dataset.koadernoId || 0);
+        return kB - kA;
+      });
+      rows.forEach(r => tbody.appendChild(r));
+    }
+
+    function desaktibatuInportatuGuztiak() {
+      overlay.querySelectorAll('.inportatu-btn').forEach(btn => {
+        btn.disabled = true;
+      });
+    }
 
     function openModal() {
+      ordenatuInportatzekoTaula();
+      aurreikusitakoKoadernoId = null;
+      desaktibatuInportatuGuztiak();
       overlay.classList.add('show');
     }
     function closeModal() {
@@ -1045,6 +1117,10 @@
       btn.addEventListener('click', async () => {
         const id = btn.dataset.id;
         if (!id || !previewBox) return;
+        aurreikusitakoKoadernoId = id;
+        desaktibatuInportatuGuztiak();
+        const inportBtn = overlay.querySelector(`.inportatu-btn[data-id="${id}"]`);
+        if (inportBtn) inportBtn.disabled = false;
 
         try {
           const res = await fetch(`/irakasle/programazioa/aurreikusi/${id}`, {
@@ -1065,6 +1141,10 @@
       btn.addEventListener('click', () => {
         const id = btn.dataset.id;
         if (!id || !inportForm || !iturburuaInput) return;
+        if (aurreikusitakoKoadernoId !== id) {
+          alert('Lehenik, koaderno honen programazioa aurreikusi behar duzu.');
+          return;
+        }
 
         const onartu = confirm(
           'Ziur zaude koaderno honen programazioa inportatu nahi duzula?\n' +
