@@ -1073,8 +1073,33 @@
     const previewBox = document.getElementById('aurreikuspenEdukia');
     const inportForm = document.getElementById('inportatuForm');
     const iturburuaInput = document.getElementById('iturburuaId');
+    let aurreikusitakoKoadernoId = null;
+
+    function ordenatuInportatzekoTaula() {
+      const tbody = overlay.querySelector('tbody');
+      if (!tbody) return;
+      const rows = Array.from(tbody.querySelectorAll('tr[data-koaderno-id]'));
+      rows.sort((a, b) => {
+        const ikA = Number(a.dataset.ikasturteaId || 0);
+        const ikB = Number(b.dataset.ikasturteaId || 0);
+        if (ikA !== ikB) return ikB - ikA; // berrienak goian
+        const kA = Number(a.dataset.koadernoId || 0);
+        const kB = Number(b.dataset.koadernoId || 0);
+        return kB - kA;
+      });
+      rows.forEach(r => tbody.appendChild(r));
+    }
+
+    function desaktibatuInportatuGuztiak() {
+      overlay.querySelectorAll('.inportatu-btn').forEach(btn => {
+        btn.disabled = true;
+      });
+    }
 
     function openModal() {
+      ordenatuInportatzekoTaula();
+      aurreikusitakoKoadernoId = null;
+      desaktibatuInportatuGuztiak();
       overlay.classList.add('show');
     }
     function closeModal() {
@@ -1092,6 +1117,10 @@
       btn.addEventListener('click', async () => {
         const id = btn.dataset.id;
         if (!id || !previewBox) return;
+        aurreikusitakoKoadernoId = id;
+        desaktibatuInportatuGuztiak();
+        const inportBtn = overlay.querySelector(`.inportatu-btn[data-id="${id}"]`);
+        if (inportBtn) inportBtn.disabled = false;
 
         try {
           const res = await fetch(`/irakasle/programazioa/aurreikusi/${id}`, {
@@ -1112,6 +1141,10 @@
       btn.addEventListener('click', () => {
         const id = btn.dataset.id;
         if (!id || !inportForm || !iturburuaInput) return;
+        if (aurreikusitakoKoadernoId !== id) {
+          alert('Lehenik, koaderno honen programazioa aurreikusi behar duzu.');
+          return;
+        }
 
         const onartu = confirm(
           'Ziur zaude koaderno honen programazioa inportatu nahi duzula?\n' +
