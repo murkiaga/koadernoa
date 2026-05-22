@@ -42,6 +42,7 @@
            th:value="${egutegia.bigarrenEbalBukaera != null ? #temporals.format(egutegia.bigarrenEbalBukaera, 'yyyy-MM-dd') : ''}">
 
 	    <input type="hidden" name="ikasturtea.id" th:value="${egutegia.ikasturtea.id}"/>
+        <input type="hidden" name="itzuliIkasturtera" th:value="${itzuliIkasturtera != null and itzuliIkasturtera}"/>
 
         <div th:if="${editatzen}" style="margin-top:.75rem;">
             <label for="berrezarri">
@@ -52,7 +53,8 @@
 
 		<div class="form-actions">
             <button class="btn btn-primary" type="submit" th:text="${editatzen} ? 'Eguneratu' : 'Gorde'">Gorde</button>
-	    	<a class="btn btn-secondary" th:href="@{/kudeatzaile/egutegia}">Atzera</a>
+	    	<a class="btn btn-secondary"
+               th:href="${itzuliIkasturtera != null and itzuliIkasturtera} ? @{|/kudeatzaile/ikasturteak/${egutegia.ikasturtea.id}|} : @{/kudeatzaile/egutegia}">Atzera</a>
 	    </div>
 	</form>
 </main>

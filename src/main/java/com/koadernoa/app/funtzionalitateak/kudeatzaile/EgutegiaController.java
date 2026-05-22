@@ -156,10 +156,12 @@ public class EgutegiaController {
 	}
 	
 	@GetMapping("/sortu")
-	public String sortuForm(Model model) {
-	    Ikasturtea aktiboa = ikasturteaService.getAktiboa().orElse(null);
+	public String sortuForm(@RequestParam(name = "ikasturteaId", required = false) Long ikasturteaId, Model model) {
+	    Ikasturtea aktiboa = (ikasturteaId != null)
+	            ? ikasturteaService.getById(ikasturteaId)
+	            : ikasturteaService.getAktiboa().orElse(null);
 	    if (aktiboa == null) {
-	        model.addAttribute("errorea", "Ez dago ikasturte aktiborik");
+	        model.addAttribute("errorea", "Ez dago ikasturterik erabilgarri");
 	        return "error/404";
 	    }
 
@@ -168,6 +170,7 @@ public class EgutegiaController {
 
 	    model.addAttribute("egutegia", egutegia);
 	    model.addAttribute("editatzen", false);
+	    model.addAttribute("itzuliIkasturtera", ikasturteaId != null);
 	    model.addAttribute("mailak", mailaRepository.findAllByAktiboTrueOrderByOrdenaAscIzenaAsc());
 	    return "kudeatzaile/egutegia/form";
 	}
@@ -184,20 +187,27 @@ public class EgutegiaController {
 
 	@PostMapping("/ezabatu/{egutegiaId}")
 	public String ezabatuEgutegia(@PathVariable Long egutegiaId,
+	                             @RequestParam(name = "ikasturteaId", required = false) Long ikasturteaId,
 	                             org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
 	    if (koadernoaRepository.existsByEgutegia_Id(egutegiaId)) {
 	        ra.addFlashAttribute("error", "Ezin da egutegia ezabatu: koadernoek erabiltzen dute.");
+	        if (ikasturteaId != null) return "redirect:/kudeatzaile/ikasturteak/" + ikasturteaId;
 	        return "redirect:/kudeatzaile/egutegia";
 	    }
 	    egutegiaService.ezabatu(egutegiaId);
 	    ra.addFlashAttribute("success", "Egutegia ondo ezabatu da.");
+	    if (ikasturteaId != null) return "redirect:/kudeatzaile/ikasturteak/" + ikasturteaId;
 	    return "redirect:/kudeatzaile/egutegia";
 	}
 
 
 	@PostMapping("/gorde")
-	public String gordeEgutegia(@ModelAttribute Egutegia egutegia) {
+	public String gordeEgutegia(@ModelAttribute Egutegia egutegia,
+	                           @RequestParam(name = "itzuliIkasturtera", defaultValue = "false") boolean itzuliIkasturtera) {
 	    egutegiaService.sortuLektiboEgunak(egutegia);
+	    if (itzuliIkasturtera && egutegia.getIkasturtea() != null && egutegia.getIkasturtea().getId() != null) {
+	        return "redirect:/kudeatzaile/ikasturteak/" + egutegia.getIkasturtea().getId();
+	    }
 	    return "redirect:/kudeatzaile/egutegia?egutegiaId=" + egutegia.getId();
 	}
 
@@ -211,6 +221,7 @@ public class EgutegiaController {
 	@PostMapping("/kopiatu")
 	public String kopiatuEgutegia(@RequestParam("jatorrizkoEgutegiaId") Long jatorrizkoEgutegiaId,
 	                              @RequestParam("mailaId") Long mailaId,
+	                              @RequestParam(name = "ikasturteaId", required = false) Long ikasturteaId,
 	                              org.springframework.web.servlet.mvc.support.RedirectAttributes ra) {
 	    Egutegia jatorrizkoa = egutegiaService.getById(jatorrizkoEgutegiaId);
 	    Ikasturtea ikasturtea = jatorrizkoa.getIkasturtea();
@@ -222,6 +233,7 @@ public class EgutegiaController {
 	            .anyMatch(e -> e.getMaila() != null && e.getMaila().getId().equals(mailaId));
 	    if (existitzenDa) {
 	        ra.addFlashAttribute("error", "Maila hori jada erabiltzen ari da ikasturte honetan.");
+	        if (ikasturteaId != null) return "redirect:/kudeatzaile/ikasturteak/" + ikasturteaId;
 	        return "redirect:/kudeatzaile/egutegia";
 	    }
 
@@ -229,6 +241,7 @@ public class EgutegiaController {
 	            .orElseThrow(() -> new IllegalArgumentException("Maila ez da aurkitu: " + mailaId));
 	    egutegiaService.kopiatuEgutegia(jatorrizkoa, maila);
 	    ra.addFlashAttribute("success", "Egutegia ondo kopiatu da: " + maila.getIzena());
+	    if (ikasturteaId != null) return "redirect:/kudeatzaile/ikasturteak/" + ikasturteaId;
 	    return "redirect:/kudeatzaile/egutegia";
 	}
 

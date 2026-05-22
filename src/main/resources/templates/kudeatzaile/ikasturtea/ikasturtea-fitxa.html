@@ -47,13 +47,39 @@
 	
 	
 	    <h2>Egutegiak</h2>
-	    <ul>
-	        <li th:each="egutegia : ${ikasturtea.egutegiak}">
-	            <span th:text="${egutegia.maila.getIzena}"></span> |
-	            <span th:text="${#temporals.format(egutegia.hasieraData, 'yyyy-MM-dd')}"></span> →
-	            <span th:text="${#temporals.format(egutegia.bukaeraData, 'yyyy-MM-dd')}"></span>
-	        </li>
-	    </ul>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>Maila</th>
+                    <th>Ekintzak</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="egutegia : ${ikasturtea.egutegiak}">
+                    <td th:text="${egutegia.maila.getKodea}"></td>
+                    <td>
+                        <a class="btn btn-secondary" th:href="@{'/kudeatzaile/egutegia/' + ${egutegia.id}}">Ikusi</a>
+                        <a class="btn btn-primary" style="margin-left:.5rem;" th:href="@{'/kudeatzaile/egutegia/editatu/' + ${egutegia.id}}">Editatu</a>
+                        <button type="button"
+                                class="btn btn-secondary kopiatu-btn"
+                                style="margin-left:.5rem;"
+                                th:attr="data-egutegia-id=${egutegia.id}"
+                                th:disabled="${erabiliGabekoMailak == null or erabiliGabekoMailak.isEmpty()}">Kopiatu</button>
+                        <form th:action="@{|/kudeatzaile/egutegia/ezabatu/${egutegia.id}(ikasturteaId=${ikasturtea.id})|}" method="post" style="display:inline-block;margin-left:.5rem;" onsubmit="return confirm('Ziur zaude egutegia ezabatu nahi duzula?');">
+                            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <button type="submit" class="btn btn-danger">Ezabatu</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${ikasturtea.egutegiak == null or ikasturtea.egutegiak.isEmpty()}">
+                    <td colspan="2">Ez dago egutegirik ikasturte honetarako.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <br>
+        <a class="btn btn-primary" th:href="@{/kudeatzaile/egutegia/sortu(ikasturteaId=${ikasturtea.id})}">Egutegi berria sortu</a>
 	    
 	    <div id="confirmModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
 		     background-color:rgba(0,0,0,0.5); z-index:9999; justify-content:center; align-items:center;">
@@ -63,7 +89,42 @@
 		        <button onclick="itxiModala()">Ez</button>
 		    </div>
 		</div>
+
+        <div id="kopiatuModalOverlay" style="position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; z-index:1000;" aria-hidden="true">
+            <div style="background:#fff; border-radius:.5rem; width:min(95vw, 420px); padding:1rem 1.25rem; box-shadow:0 12px 32px rgba(0,0,0,.25);">
+                <h3>Zein maila izango du kopiatutako egutegiak?</h3>
+                <form th:action="@{/kudeatzaile/egutegia/kopiatu}" method="post">
+                    <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <input type="hidden" name="ikasturteaId" th:value="${ikasturtea.id}"/>
+                    <input type="hidden" id="jatorrizkoEgutegiaIdInput" name="jatorrizkoEgutegiaId"/>
+                    <label for="mailaIdSelect">Aukeratu erabilita ez dagoen maila:</label>
+                    <select id="mailaIdSelect" name="mailaId" class="form-select" required style="margin-top:.5rem;">
+                        <option value="" selected disabled>-- Aukeratu maila --</option>
+                        <option th:each="m : ${erabiliGabekoMailak}" th:value="${m.id}" th:text="${m.izena + ' (' + m.kodea + ')'}"></option>
+                    </select>
+                    <div style="display:flex; gap:.5rem; justify-content:flex-end; margin-top:1rem;">
+                        <button type="button" id="kopiatuModalItxiBtn" class="btn btn-secondary">Utzi</button>
+                        <button type="submit" class="btn btn-primary">Kopiatu</button>
+                    </div>
+                </form>
+            </div>
+        </div>
 	</main>
 <script th:src="@{/js/kudeatzaile-nav.js}"></script>
+<script>
+    const modalOverlay = document.getElementById('kopiatuModalOverlay');
+    const idInput = document.getElementById('jatorrizkoEgutegiaIdInput');
+    const closeBtn = document.getElementById('kopiatuModalItxiBtn');
+    const kopiatuBtns = document.querySelectorAll('.kopiatu-btn');
+
+    kopiatuBtns.forEach(btn => btn.addEventListener('click', () => {
+        idInput.value = btn.getAttribute('data-egutegia-id');
+        modalOverlay.style.display = 'flex';
+    }));
+    if (closeBtn) closeBtn.addEventListener('click', () => modalOverlay.style.display = 'none');
+    if (modalOverlay) modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) modalOverlay.style.display = 'none';
+    });
+</script>
 </body>
 </html>
