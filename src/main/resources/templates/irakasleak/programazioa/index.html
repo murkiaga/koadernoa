@@ -195,10 +195,49 @@
 	  .ebal-edit-btn{
 	    display:none;
 	  }
-	  .edit-mode .ebal-edit-btn{
-	    display:inline-flex;
-	  }
-  </style>
+		  .edit-mode .ebal-edit-btn{
+		    display:inline-flex;
+		  }
+
+      /* Programazioa inportatu botoia nabarmenduta (estiloa mantenduta) */
+      .inportatu-highlight{
+        --inportatu-radius: 10px;
+        position: relative;
+        display: inline-flex;
+        border-radius: var(--inportatu-radius);
+        overflow: hidden;
+        padding: 2px;
+        isolation: isolate;
+      }
+      .inportatu-highlight > .btn{
+        position: relative;
+        z-index: 1;
+        border-radius: calc(var(--inportatu-radius) - 2px);
+      }
+      .inportatu-highlight::before{
+        content: "";
+        position: absolute;
+        inset: -130%;
+        background: conic-gradient(
+          from 0deg,
+          rgba(20,136,252,0) 0deg,
+          rgba(20,136,252,.08) 120deg,
+          rgba(20,136,252,.95) 185deg,
+          rgba(20,136,252,.08) 250deg,
+          rgba(20,136,252,0) 360deg
+        );
+        animation: inportatu-argi-biratu 3s linear infinite;
+        z-index: 0;
+      }
+      @keyframes inportatu-argi-biratu {
+        to { transform: rotate(360deg); }
+      }
+      @media (prefers-reduced-motion: reduce){
+        .inportatu-highlight::before{
+          animation: none;
+        }
+      }
+	  </style>
 </head>
 
 <body>
@@ -236,11 +275,12 @@
           
           <!-- Programazioa inportatzeko botoia
 		       soilik programazioa hutsik badago eta badago beste koadernorik -->
-		      <button id="programazioaInportatuBtn"
-		              class="btn"
-		              th:if="${programazioaHutsik and !#lists.isEmpty(inportatzekoKoadernoak)}">
-		        Programazioa inportatu
-		      </button>
+            <span class="inportatu-highlight"
+                  th:if="${programazioaHutsik and !#lists.isEmpty(inportatzekoKoadernoak)}">
+              <button id="programazioaInportatuBtn" class="btn">
+                Programazioa inportatu
+              </button>
+            </span>
 
           <button id="txantiloiEkarriBtn"
                   class="btn"
