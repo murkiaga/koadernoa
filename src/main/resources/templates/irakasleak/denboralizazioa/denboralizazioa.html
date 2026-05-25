@@ -419,9 +419,19 @@ function itxiTxantiloiModala() {
   if (input) input.value = '';
 }
 
+function postAuditAction(url) {
+  const metaToken = document.querySelector('meta[name="_csrf"]');
+  const metaHeader = document.querySelector('meta[name="_csrf_header"]');
+  const token = metaToken ? metaToken.content : null;
+  const header = metaHeader && metaHeader.content ? metaHeader.content : "X-CSRF-TOKEN";
+  const h = {}; if (token) h[header]=token;
+  fetch(url, {method:"POST", credentials:"same-origin", headers:h}).catch(() => {});
+}
+
 function irekiFaltenInportModal() {
   const modal = document.getElementById('faltenInportModal');
   if (modal) modal.style.display = 'flex';
+  postAuditAction('/irakasle/denboralizazioa/audit/faltak-inport-modal');
 }
 
 function itxiFaltenInportModal() {
@@ -431,6 +441,11 @@ function itxiFaltenInportModal() {
 
 	//Jardueren drag&drop
 document.addEventListener('DOMContentLoaded', function(){
+  document.body.addEventListener('click', function(e){
+    if (e.target.closest('a.btn-asistentzia')) {
+      postAuditAction('/irakasle/denboralizazioa/audit/asistentzia-pasatu');
+    }
+  });
   const faltakInput = document.getElementById('faltenInportFileInput');
   const faltakDropzone = document.getElementById('faltenDropzone');
   const faltakFileName = document.getElementById('faltenInportFileName');

@@ -28,8 +28,15 @@ import org.springframework.web.bind.annotation.SessionAttribute;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.koadernoa.app.objektuak.audit.entitateak.AuditAtala;
+import com.koadernoa.app.objektuak.audit.entitateak.AuditEkintza;
+import com.koadernoa.app.objektuak.audit.service.AuditService;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
 import com.koadernoa.app.objektuak.egutegia.entitateak.EgunBerezi;
 import com.koadernoa.app.objektuak.egutegia.entitateak.EgunMota;
@@ -78,6 +85,7 @@ public class DenboralizazioaController {
 	private final ProgramazioaService programazioaService;
 	private final IrakasleaService irakasleaService;
 	private final LogService logService;
+	private final AuditService auditService;
 
 	@GetMapping({"","/"})
 	public String erakutsiHilabetekoDenboralizazioa(
@@ -382,7 +390,8 @@ public class DenboralizazioaController {
 	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", ex.getMessage()));
 	    }
 
-	    String fitxIzena = "falten-jakinarazpena-" + matrikulaId + "-" + urtea + "-" + hilabetea + ".pdf";
+	    auditDenbAction(auth, AuditEkintza.FALTEN_JAKINARAZPENA_DESKARGATU, koadernoa.getId(), "Matrikula", String.valueOf(matrikulaId));
+    String fitxIzena = "falten-jakinarazpena-" + matrikulaId + "-" + urtea + "-" + hilabetea + ".pdf";
 	    return ResponseEntity.ok()
 	        .contentType(MediaType.APPLICATION_PDF)
 	        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fitxIzena + "\"")
@@ -404,8 +413,13 @@ public class DenboralizazioaController {
 	        throw new IllegalStateException("Koaderno aktiborik ez");
 	    }
 
-	    if (id == null) koadernoaService.gordeJarduera(koadernoa, dto);
-	    else koadernoaService.eguneratuJarduera(koadernoa, id, dto);
+	    if (id == null) {
+	        koadernoaService.gordeJarduera(koadernoa, dto);
+	        auditDenbAction(null, AuditEkintza.JARDUERA_SORTU, koadernoa.getId(), "Jarduera", null);
+	    } else {
+	        koadernoaService.eguneratuJarduera(koadernoa, id, dto);
+	        auditDenbAction(null, AuditEkintza.JARDUERA_EDITATU, koadernoa.getId(), "Jarduera", String.valueOf(id));
+	    }
 
 	    String redirect = "redirect:/irakasle/denboralizazioa?urtea=" + urtea + "&hilabetea=" + hilabetea + "&egutegiMota=" + egutegiMota;
 	    if ("astea".equalsIgnoreCase(egutegiMota) && asteHasiera != null && !asteHasiera.isBlank()) {
@@ -565,6 +579,7 @@ public class DenboralizazioaController {
 
 	    try {
 	        koadernoaService.aldatuJardueraData(koadernoa, id, dataBerria);
+	        auditDenbAction(null, AuditEkintza.JARDUERA_MUGITU, koadernoa.getId(), "Jarduera", String.valueOf(id));
 	        return ResponseEntity.ok(Map.of("ok", true));
 	    } catch (IllegalArgumentException ex) {
 	        return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -593,4 +608,47 @@ public class DenboralizazioaController {
 	    }
 	    return redirect;
 	}
+	@PostMapping("/audit/asistentzia-pasatu")
+	@ResponseBody
+	public ResponseEntity<?> auditAsistentziaPasatu(@SessionAttribute(value = "koadernoAktiboa", required = false) Koadernoa koadernoa,
+	                                               Authentication auth) {
+	    if (koadernoa == null || koadernoa.getId() == null) return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("ok", false));
+	    auditDenbAction(auth, AuditEkintza.ASISTENTZIA_PASATU, koadernoa.getId(), "Koadernoa", String.valueOf(koadernoa.getId()));
+	    return ResponseEntity.ok(Map.of("ok", true));
+	}
+
+	@PostMapping("/audit/faltak-inport-modal")
+	@ResponseBody
+	public ResponseEntity<?> auditFaltakModal(@SessionAttribute(value = "koadernoAktiboa", required = false) Koadernoa koadernoa,
+	                                          Authentication auth) {
+	    if (koadernoa == null || koadernoa.getId() == null) return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("ok", false));
+	    auditDenbAction(auth, AuditEkintza.FALTAK_HEZKUNTZATIK_INPORTATU, koadernoa.getId(), "Koadernoa", String.valueOf(koadernoa.getId()));
+	    return ResponseEntity.ok(Map.of("ok", true));
+	}
+
+	private void auditDenbAction(Authentication auth, AuditEkintza ekintza, Long koadernoId, String entitateMota, String entitateId) {
+	    Authentication a = auth != null ? auth : SecurityContextHolder.getContext().getAuthentication();
+	    Irakaslea ir = null;
+	    try { ir = irakasleaService.getLogeatutaDagoenIrakaslea(a); } catch (Exception ignored) {}
+	    HttpServletRequest req = (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes sra) ? sra.getRequest() : null;
+	    var e = auditService.buildBaseEvent(
+	        ir != null ? ir.getId() : null,
+	        ir != null ? ir.getEmaila() : (a != null ? a.getName() : null),
+	        ir != null ? ir.getIzena() : (a != null ? a.getName() : null),
+	        ir != null && ir.getRola() != null ? ir.getRola().name() : null,
+	        req != null ? req.getRequestURI() : "/irakasle/denboralizazioa",
+	        req != null ? req.getMethod() : "POST",
+	        req != null ? req.getRemoteAddr() : null,
+	        req != null ? req.getHeader("User-Agent") : null,
+	        "Ekintza=" + ekintza,
+	        AuditAtala.DENBORALIZAZIOA,
+	        ekintza
+	    );
+	    e.setKoadernoId(koadernoId);
+	    e.setEntitateMota(entitateMota);
+	    e.setEntitateId(entitateId);
+	    e.setArrakastatsua(true);
+	    auditService.recordAction(e);
+	}
+
 }
