@@ -571,6 +571,16 @@ public class KoadernoaController {
 	                + ", izena=" + izenaEsperotakoa);
 
 	        koadernoaService.ezabatuKoadernoa(k, irakaslea);
+            var event = auditService.buildBaseEvent(
+                    null, null, null, null,
+                    "/irakasle/koadernoa/" + id + "/ezabatu", "POST", null, null,
+                    "Ekintza=KOADERNOA_EZABATU",
+                    AuditAtala.IRAKASLE, AuditEkintza.KOADERNOA_EZABATU);
+            event.setKoadernoId(id);
+            event.setEntitateMota("Koadernoa");
+            event.setEntitateId(String.valueOf(id));
+            event.setArrakastatsua(true);
+            auditService.recordAction(event);
 
 	        ra.addFlashAttribute("success", "Koadernoa ondo ezabatu da.");
 	    } catch (org.springframework.dao.DataIntegrityViolationException ex) {
