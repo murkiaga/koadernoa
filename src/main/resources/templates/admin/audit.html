@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin · Audit</title>
+  <link rel="stylesheet" th:href="@{/css/navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    .grid{display:grid;gap:12px}.cards{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+    .card{background:#fff;border:1px solid #ddd;border-radius:10px;padding:12px}
+    .table-wrap{overflow:auto;background:#fff;border:1px solid #ddd;border-radius:10px;padding:10px}
+    table{width:100%;border-collapse:collapse}th,td{padding:8px;border-bottom:1px solid #eee;text-align:left}
+    .two{grid-template-columns:1fr 1fr}.muted{color:#666}.filters{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));}
+  </style>
+</head>
+<body>
+<div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+<main class="page">
+  <h1>Audit dashboard</h1>
+
+  <form method="get" th:action="@{/admin/audit}" class="card">
+    <div class="filters">
+      <label>Hasiera <input type="date" name="hasieraData" th:value="${hasieraData}"></label>
+      <label>Bukaera <input type="date" name="bukaeraData" th:value="${bukaeraData}"></label>
+      <label>Mota
+        <select name="mota"><option value="">-</option>
+          <option th:each="m : ${motaGuztiak}" th:value="${m}" th:selected="${mota == m}" th:text="${m}"></option>
+        </select>
+      </label>
+      <label>Atala
+        <select name="atala"><option value="">-</option>
+          <option th:each="a : ${atalaGuztiak}" th:value="${a}" th:selected="${atala == a}" th:text="${a}"></option>
+        </select>
+      </label>
+      <label>Ekintza
+        <select name="ekintza"><option value="">-</option>
+          <option th:each="e : ${ekintzaGuztiak}" th:value="${e}" th:selected="${ekintza == e}" th:text="${e}"></option>
+        </select>
+      </label>
+      <label>Emaila <input type="text" name="erabiltzaileEmaila" th:value="${erabiltzaileEmaila}"></label>
+    </div>
+    <button type="submit">Iragazi</button>
+  </form>
+
+  <section class="grid cards" style="margin-top:12px;">
+    <div class="card"><div class="muted">Login OK</div><div th:text="${loginOkCount}">0</div></div>
+    <div class="card"><div class="muted">Login FAIL</div><div th:text="${loginFailCount}">0</div></div>
+    <div class="card"><div class="muted">Page views</div><div th:text="${pageViewCount}">0</div></div>
+    <div class="card"><div class="muted">Action</div><div th:text="${actionCount}">0</div></div>
+    <div class="card"><div class="muted">Erabiltzaile aktiboak</div><div th:text="${erabiltzaileAktiboak}">0</div></div>
+  </section>
+
+  <section class="grid two" style="margin-top:12px;">
+    <div class="table-wrap"><h3>Atal erabilienak</h3><table><tr><th>Atala</th><th>Kop</th></tr>
+      <tr th:each="r : ${atalTop}"><td th:text="${r.izena}"></td><td th:text="${r.kopurua}"></td></tr></table></div>
+    <div class="table-wrap"><h3>Ekintza erabilienak</h3><table><tr><th>Ekintza</th><th>Kop</th></tr>
+      <tr th:each="r : ${ekintzaTop}"><td th:text="${r.izena}"></td><td th:text="${r.kopurua}"></td></tr></table></div>
+  </section>
+
+  <section class="table-wrap" style="margin-top:12px;">
+    <h3>Login fail gehien</h3>
+    <table><tr><th>Emaila</th><th>Kop</th></tr>
+      <tr th:each="r : ${loginFailTop}"><td th:text="${r.izena}"></td><td th:text="${r.kopurua}"></td></tr>
+    </table>
+  </section>
+
+  <section class="table-wrap" style="margin-top:12px;">
+    <h3>Azken eventuak</h3>
+    <table>
+      <tr><th>Data</th><th>Mota</th><th>Atala</th><th>Emaila</th><th>Url</th><th>Method</th><th>UserAgent</th></tr>
+      <tr th:each="e : ${eventsPage.content}">
+        <td th:text="${e.dataOrdua}"></td><td th:text="${e.mota}"></td><td th:text="${e.atala}"></td>
+        <td th:text="${e.erabiltzaileEmaila}"></td><td th:text="${e.url}"></td><td th:text="${e.httpMethod}"></td>
+        <td th:text="${e.userAgent != null && #strings.length(e.userAgent) > 80 ? #strings.substring(e.userAgent,0,80) + '…' : e.userAgent}"></td>
+      </tr>
+    </table>
+    <div style="margin-top:8px;display:flex;gap:8px;">
+      <a th:if="${eventsPage.hasPrevious()}" th:href="@{/admin/audit(page=${eventsPage.number-1},size=${size},hasieraData=${hasieraData},bukaeraData=${bukaeraData},mota=${mota},atala=${atala},ekintza=${ekintza},erabiltzaileEmaila=${erabiltzaileEmaila})}">Aurrekoa</a>
+      <span th:text="|${eventsPage.number+1} / ${eventsPage.totalPages}|">1 / 1</span>
+      <a th:if="${eventsPage.hasNext()}" th:href="@{/admin/audit(page=${eventsPage.number+1},size=${size},hasieraData=${hasieraData},bukaeraData=${bukaeraData},mota=${mota},atala=${atala},ekintza=${ekintza},erabiltzaileEmaila=${erabiltzaileEmaila})}">Hurrengoa</a>
+    </div>
+  </section>
+</main>
+<script th:src="@{/js/kudeatzaile-nav.js}"></script>
+</body>
+</html>
