@@ -3,6 +3,8 @@ package com.koadernoa.app.common.advice;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+
+import com.koadernoa.app.security.audit.PageViewAuditInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -20,6 +22,12 @@ import org.springframework.security.web.csrf.CsrfToken;
 @Configuration
 public class CsrfTokenConfig implements WebMvcConfigurer {
 
+    private final PageViewAuditInterceptor pageViewAuditInterceptor;
+
+    public CsrfTokenConfig(PageViewAuditInterceptor pageViewAuditInterceptor) {
+        this.pageViewAuditInterceptor = pageViewAuditInterceptor;
+    }
+
     @Value("${koadernoa.uploads.dir:uploads}")
     private String baseDir;
 
@@ -32,6 +40,10 @@ public class CsrfTokenConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(pageViewAuditInterceptor)
+                .addPathPatterns("/irakasle", "/irakasle/programazioa", "/irakasle/denboralizazioa", "/irakasle/notak", "/irakasle/estatistikak", "/kudeatzaile/**", "/admin/**")
+                .excludePathPatterns("/css/**", "/js/**", "/images/**", "/webjars/**", "/favicon.ico", "/uploads/**", "/error", "/login");
+
         registry.addInterceptor(new HandlerInterceptor() {
             @Override
             public void postHandle(HttpServletRequest request, HttpServletResponse response,

@@ -6,6 +6,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
+import com.koadernoa.app.objektuak.audit.entitateak.AuditAtala;
+import com.koadernoa.app.objektuak.audit.entitateak.AuditEkintza;
+import com.koadernoa.app.objektuak.audit.service.AuditService;
 import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Ebaluaketa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
@@ -21,6 +24,12 @@ import com.koadernoa.app.objektuak.koadernoak.service.ProgramazioTxantiloiServic
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import jakarta.servlet.http.HttpServletRequest;
 
 import static com.koadernoa.app.security.SecurityUtils.isKudeatzailea;
 
@@ -44,6 +53,7 @@ public class ProgramazioaController {
     private final ProgramazioaRepository programazioaRepository;
     private final DenboralizazioGeneratorService denboralizazioGeneratorService;
     private final ProgramazioTxantiloiService programazioTxantiloiService;
+    private final AuditService auditService;
     
 
     @GetMapping
@@ -176,6 +186,7 @@ public class ProgramazioaController {
             programazioaService.inportatuProgramazioa(iturburua, helburua);
 
             ra.addFlashAttribute("success", "Programazioa ondo inportatu da.");
+            auditAction(AuditEkintza.PROGRAMAZIOA_INPORTATU, helburua.getId(), "Koadernoa", String.valueOf(helburua.getId()));
         } catch (Exception ex) {
             ex.printStackTrace(); // behin-behinean, logean ikusteko
             ra.addFlashAttribute("error", "Ezin izan da programazioa inportatu: " + ex.getMessage());
@@ -198,6 +209,7 @@ public class ProgramazioaController {
                 txantiloiId, koadernoAktiboa, irakaslea
             );
             ra.addFlashAttribute("success", "Txantiloia aplikatu da: " + kopurua + " jarduera gehitu dira.");
+            auditAction(AuditEkintza.AURREKO_URTEKO_DENBORALIZAZIOA_INPORTATU, koadernoAktiboa.getId(), "Koadernoa", String.valueOf(koadernoAktiboa.getId()));
         } catch (IllegalArgumentException ex) {
             ra.addFlashAttribute("error", "Ezin izan da txantiloia aplikatu: " + ex.getMessage());
         }
@@ -221,6 +233,7 @@ public class ProgramazioaController {
         }
         // UD berria ebaluaketa horren barruan sortu
         programazioaService.addUdToEbaluaketa(ebaluaketaId, kodea, izenburua, orduak, posizioa);
+        auditAction(AuditEkintza.UDA_SORTU, koadernoAktiboa.getId(), "UnitateDidaktikoa", null);
         ra.addFlashAttribute("ok", "UD sortuta.");
         return "redirect:/irakasle/programazioa";
     }
@@ -258,6 +271,7 @@ public class ProgramazioaController {
     @PostMapping("/ud/{udId}/ezabatu")
     public String ezabatuUd(@PathVariable Long udId, RedirectAttributes ra) {
         programazioaService.deleteUd(udId);
+        auditAction(AuditEkintza.UDA_EZABATU, null, "UnitateDidaktikoa", String.valueOf(udId));
         ra.addFlashAttribute("ok", "UD ezabatuta.");
         return "redirect:/irakasle/programazioa";
     }
@@ -271,6 +285,7 @@ public class ProgramazioaController {
         RedirectAttributes ra
     ) {
         programazioaService.addJardueraPlanifikatua(udId, izenburua, orduak);
+        auditAction(AuditEkintza.UDAN_JARDUERA_PLANIFIKATU, null, "JardueraPlanifikatua", null);
         ra.addFlashAttribute("ok", "Jarduera planifikatua sortuta.");
         return "redirect:/irakasle/programazioa";
     }
@@ -290,6 +305,7 @@ public class ProgramazioaController {
     @PostMapping("/planifikatuak/{jpId}/ezabatu")
     public String ezabatuPlanifikatua(@PathVariable Long jpId, RedirectAttributes ra) {
         programazioaService.deleteJardueraPlanifikatua(jpId);
+        auditAction(AuditEkintza.UDAN_JARDUERA_EZABATU, null, "JardueraPlanifikatua", String.valueOf(jpId));
         ra.addFlashAttribute("ok", "Jarduera planifikatua ezabatuta.");
         return "redirect:/irakasle/programazioa";
     }
@@ -323,9 +339,73 @@ public class ProgramazioaController {
                 : "Bolketa eginda: " + items.size() + " jarduera sortu dira.";
 
         ra.addFlashAttribute("success", mezua);
+        auditAction(ebaluaketaId != null ? AuditEkintza.UDA_DENBORALIZAZIORA_BOLKATU : AuditEkintza.PROGRAMAZIOA_DENBORALIZAZIORA_BOLKATU, koadernoId, ebaluaketaId != null ? "Ebaluaketa" : "Programazioa", ebaluaketaId != null ? String.valueOf(ebaluaketaId) : String.valueOf(koadernoId));
         return "redirect:/irakasle/denboralizazioa";
     }
 	
+    private void auditAction(AuditEkintza ekintza, Long koadernoId, String entitateMota, String entitateId) {
+        Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        PrincipalInfo p = principalInfo(auth);
+        HttpServletRequest req = currentRequest();
+        var e = auditService.buildBaseEvent(
+            p.erabiltzaileId,
+            p.emaila,
+            p.izena,
+            p.rola,
+            req != null ? req.getRequestURI() : "/irakasle/programazioa",
+            req != null ? req.getMethod() : "POST",
+            clientIp(req),
+            req != null ? req.getHeader("User-Agent") : null,
+            "Ekintza=" + ekintza,
+            AuditAtala.PROGRAMAZIOA,
+            ekintza
+        );
+        e.setKoadernoId(koadernoId);
+        e.setEntitateMota(entitateMota);
+        e.setEntitateId(entitateId);
+        e.setArrakastatsua(true);
+        auditService.recordAction(e);
+    }
+
+    private PrincipalInfo principalInfo(Authentication auth) {
+        if (auth == null) return new PrincipalInfo(null, null, null, null);
+        Object principal = auth.getPrincipal();
+        if (principal instanceof com.koadernoa.app.objektuak.irakasleak.entitateak.IrakasleUserDetails iu) {
+            var ir = iu.getIrakaslea();
+            return new PrincipalInfo(ir.getId(), ir.getEmaila(), ir.getIzena(), ir.getRola()!=null?ir.getRola().name():null);
+        }
+        if (principal instanceof OidcUser ou) {
+            return new PrincipalInfo(null, firstNonBlank(ou.getEmail(), ou.getPreferredUsername()), firstNonBlank(ou.getFullName(), ou.getName()), null);
+        }
+        if (principal instanceof OAuth2User ou) {
+            Object em = ou.getAttributes().get("email"); Object nm = ou.getAttributes().get("name");
+            return new PrincipalInfo(null, firstNonBlank((String)em, auth.getName()), firstNonBlank((String)nm, auth.getName()), null);
+        }
+        if (principal instanceof UserDetails ud) {
+            return new PrincipalInfo(null, ud.getUsername(), ud.getUsername(), null);
+        }
+        return new PrincipalInfo(null, auth.getName(), auth.getName(), null);
+    }
+
+    private HttpServletRequest currentRequest() {
+        if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes a) return a.getRequest();
+        return null;
+    }
+
+    private String clientIp(HttpServletRequest req) {
+        if (req == null) return null;
+        String f = req.getHeader("X-Forwarded-For");
+        if (f != null && !f.isBlank()) return f.split(",")[0].trim();
+        return req.getRemoteAddr();
+    }
+
+    private String firstNonBlank(String a, String b) {
+        if (a != null && !a.isBlank()) return a;
+        return (b != null && !b.isBlank()) ? b : null;
+    }
+
+    private record PrincipalInfo(Long erabiltzaileId, String emaila, String izena, String rola) {}
+
     /** Programazioa -> Denboralizazio baldintza azkarrak:
      *  egutegia + ordutegia + gutxienez UD bat (programazioan edo ebaluaketa horretan)
      */
