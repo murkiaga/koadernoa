@@ -15,8 +15,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
+import org.springframework.security.core.Authentication;
 
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Asistentzia;
+import com.koadernoa.app.objektuak.audit.entitateak.AuditAtala;
+import com.koadernoa.app.objektuak.audit.entitateak.AuditEkintza;
+import com.koadernoa.app.objektuak.audit.service.AuditService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Saioa;
 import com.koadernoa.app.objektuak.koadernoak.repository.AsistentziaRepository;
@@ -41,6 +45,7 @@ public class AsistentziaController {
 	  private final SaioaRepository saioaRepository;
 	  private final MatrikulaRepository matrikulaRepository;
 	  private final KoadernoaService koadernoaService;
+	  private final AuditService auditService;
 
 	  /** GET: Eguneko taula (Saioa-ren lazy-create. Behar denean sortu) */
 	  @GetMapping({"","/"})
@@ -48,6 +53,7 @@ public class AsistentziaController {
 	  public String egunekoAsistentzia(
 	      @SessionAttribute("koadernoAktiboa") Koadernoa koadernoa,
 	      @RequestParam("data") String dataIso,
+	      Authentication auth,
 	      Model model) {
 
 	    if (koadernoa == null || koadernoa.getId() == null) {
@@ -74,6 +80,24 @@ public class AsistentziaController {
 	    model.addAttribute("saioak", saioak);
 	    model.addAttribute("matrikulak", matrikulak);
 	    model.addAttribute("egoeraMap", asistentziaService.mapEgoerak(saioak, matrikulak));
+	    var event = auditService.buildBaseEvent(
+	        null,
+	        auth != null ? auth.getName() : null,
+	        auth != null ? auth.getName() : null,
+	        null,
+	        "/irakasle/asistentzia",
+	        "GET",
+	        null,
+	        null,
+	        "Ekintza=ASISTENTZIA_PASATU data=" + dataIso,
+	        AuditAtala.DENBORALIZAZIOA,
+	        AuditEkintza.ASISTENTZIA_PASATU
+	    );
+	    event.setKoadernoId(kargatutakoKoadernoa.getId());
+	    event.setEntitateMota("Koadernoa");
+	    event.setEntitateId(String.valueOf(kargatutakoKoadernoa.getId()));
+	    event.setArrakastatsua(true);
+	    auditService.recordAction(event);
 	    return "irakasleak/asistentzia/eguna";
 	  }
 	  
