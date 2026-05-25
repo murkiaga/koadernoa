@@ -572,7 +572,10 @@ public class KoadernoaController {
 
 	        koadernoaService.ezabatuKoadernoa(k, irakaslea);
             var event = auditService.buildBaseEvent(
-                    null, null, null, null,
+                    irakaslea != null ? irakaslea.getId() : null,
+                    irakaslea != null ? irakaslea.getEmaila() : null,
+                    irakaslea != null ? irakaslea.getIzena() : null,
+                    irakaslea != null && irakaslea.getRola() != null ? irakaslea.getRola().name() : null,
                     "/irakasle/koadernoa/" + id + "/ezabatu", "POST", null, null,
                     "Ekintza=KOADERNOA_EZABATU",
                     AuditAtala.IRAKASLE, AuditEkintza.KOADERNOA_EZABATU);
