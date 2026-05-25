@@ -11,7 +11,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.core.user.OAuth2User;
-import org.springframework.security.web.authentication.logout.LogoutSuccessEvent;
+import org.springframework.security.authentication.event.LogoutSuccessEvent;
 import org.springframework.security.authentication.event.AuthenticationSuccessEvent;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
