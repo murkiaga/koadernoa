@@ -17,6 +17,12 @@ import org.springframework.http.HttpStatus;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.Map;
 
@@ -304,14 +310,66 @@ public class ProgramazioaApiController {
 
 
     private void auditAction(Authentication auth, AuditEkintza ekintza, Long koadernoId, String entitateMota, String entitateId) {
-        var e = auditService.buildBaseEvent(null, auth != null ? auth.getName() : null, auth != null ? auth.getName() : null, null,
-            "/irakasle/programazioa/api", null, null, null, null, AuditAtala.PROGRAMAZIOA, ekintza);
+        PrincipalInfo p = principalInfo(auth);
+        HttpServletRequest req = currentRequest();
+        var e = auditService.buildBaseEvent(
+            p.erabiltzaileId,
+            p.emaila,
+            p.izena,
+            p.rola,
+            req != null ? req.getRequestURI() : "/irakasle/programazioa/api",
+            req != null ? req.getMethod() : null,
+            clientIp(req),
+            req != null ? req.getHeader("User-Agent") : null,
+            "Ekintza=" + ekintza,
+            AuditAtala.PROGRAMAZIOA,
+            ekintza
+        );
         e.setKoadernoId(koadernoId);
         e.setEntitateMota(entitateMota);
         e.setEntitateId(entitateId);
         e.setArrakastatsua(true);
         auditService.recordAction(e);
     }
+
+    private PrincipalInfo principalInfo(Authentication auth) {
+        if (auth == null) return new PrincipalInfo(null, null, null, null);
+        Object principal = auth.getPrincipal();
+        if (principal instanceof com.koadernoa.app.objektuak.irakasleak.entitateak.IrakasleUserDetails iu) {
+            var ir = iu.getIrakaslea();
+            return new PrincipalInfo(ir.getId(), ir.getEmaila(), ir.getIzena(), ir.getRola()!=null?ir.getRola().name():null);
+        }
+        if (principal instanceof OidcUser ou) {
+            return new PrincipalInfo(null, firstNonBlank(ou.getEmail(), ou.getPreferredUsername()), firstNonBlank(ou.getFullName(), ou.getName()), null);
+        }
+        if (principal instanceof OAuth2User ou) {
+            Object em = ou.getAttributes().get("email"); Object nm = ou.getAttributes().get("name");
+            return new PrincipalInfo(null, firstNonBlank((String)em, auth.getName()), firstNonBlank((String)nm, auth.getName()), null);
+        }
+        if (principal instanceof UserDetails ud) {
+            return new PrincipalInfo(null, ud.getUsername(), ud.getUsername(), null);
+        }
+        return new PrincipalInfo(null, auth.getName(), auth.getName(), null);
+    }
+
+    private HttpServletRequest currentRequest() {
+        if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes a) return a.getRequest();
+        return null;
+    }
+
+    private String clientIp(HttpServletRequest req) {
+        if (req == null) return null;
+        String f = req.getHeader("X-Forwarded-For");
+        if (f != null && !f.isBlank()) return f.split(",")[0].trim();
+        return req.getRemoteAddr();
+    }
+
+    private String firstNonBlank(String a, String b) {
+        if (a != null && !a.isBlank()) return a;
+        return (b != null && !b.isBlank()) ? b : null;
+    }
+
+    private record PrincipalInfo(Long erabiltzaileId, String emaila, String izena, String rola) {}
 
     // ======== Error JSON garbiak ========
     @ExceptionHandler(IllegalArgumentException.class)
