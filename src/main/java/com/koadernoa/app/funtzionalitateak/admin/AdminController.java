@@ -5,9 +5,6 @@ import java.io.InputStream;
 import java.nio.file.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.Set;
 import javax.imageio.ImageIO;
 
@@ -27,8 +24,6 @@ import com.koadernoa.app.funtzionalitateak.admin.seed.dto.SeedImportRequest;
 import com.koadernoa.app.funtzionalitateak.admin.seed.dto.SeedImportResult;
 import com.koadernoa.app.funtzionalitateak.admin.seed.service.KatalogoAkademikoaSeedService;
 import com.koadernoa.app.objektuak.konfigurazioa.service.AplikazioAukeraService;
-import com.koadernoa.app.objektuak.logak.entitateak.LogMota;
-import com.koadernoa.app.objektuak.logak.service.LogService;
 import com.koadernoa.app.security.AuthProviderStatusService;
 
 import lombok.RequiredArgsConstructor;
@@ -40,7 +35,6 @@ public class AdminController {
 
     private final AplikazioAukeraService aukService;
     private final AuthProviderStatusService statusService;
-    private final LogService logService;
     private final KatalogoAkademikoaSeedService katalogoAkademikoaSeedService;
 
     @Value("${koadernoa.uploads.dir:uploads}")
@@ -58,11 +52,7 @@ public class AdminController {
     private static final long MAX_BYTES = 300_000; // 300KB
 
     @GetMapping({"", "/"})
-    public String editForm(@RequestParam(name = "mota", required = false) String mota,
-                           @RequestParam(name = "eragilea", required = false) String eragilea,
-                           @RequestParam(name = "from", required = false) LocalDate from,
-                           @RequestParam(name = "to", required = false) LocalDate to,
-                           Model model) {
+    public String editForm(Model model) {
         model.addAttribute("ebal1Kolore", aukService.get(AplikazioAukeraService.EBAL1_KOLORE, "#b3d9ff"));
         model.addAttribute("ebal2Kolore", aukService.get(AplikazioAukeraService.EBAL2_KOLORE, "#ffd699"));
         model.addAttribute("ebal3Kolore", aukService.get(AplikazioAukeraService.EBAL3_KOLORE, "#b2f2bb"));
@@ -79,31 +69,6 @@ public class AdminController {
         model.addAttribute("ldapEnabled", statusService.isLdapEnabled());
         model.addAttribute("ldapConfigured", statusService.isLdapConfigured());
 
-        LocalDateTime fromDt = from != null ? from.atStartOfDay() : null;
-        LocalDateTime toDt = to != null ? to.plusDays(1).atStartOfDay() : null;
-
-        final LogMota motaEnum = parseMota(mota);
-
-        String eragileaQ = eragilea != null ? eragilea.trim().toLowerCase() : "";
-
-        var logak = logService.findAllOrderByDataDesc().stream()
-                .filter(l -> motaEnum == null || motaEnum == l.getMota())
-                .filter(l -> fromDt == null || (l.getData() != null && !l.getData().isBefore(fromDt)))
-                .filter(l -> toDt == null || (l.getData() != null && l.getData().isBefore(toDt)))
-                .filter(l -> {
-                    if (eragileaQ.isBlank()) return true;
-                    String izena = l.getEragileaIzena() != null ? l.getEragileaIzena().toLowerCase() : "";
-                    String emaila = l.getEragileaEmaila() != null ? l.getEragileaEmaila().toLowerCase() : "";
-                    return izena.contains(eragileaQ) || emaila.contains(eragileaQ);
-                })
-                .toList();
-
-        model.addAttribute("logak", logak);
-        model.addAttribute("logMotaGuztiak", Arrays.asList(LogMota.values()));
-        model.addAttribute("mota", mota);
-        model.addAttribute("eragilea", eragilea);
-        model.addAttribute("from", from);
-        model.addAttribute("to", to);
         model.addAttribute("md6309TxostenaBadago", Files.exists(getMd6309Path()));
         model.addAttribute("seedEgoera", katalogoAkademikoaSeedService.kalkulatuEgoera());
         model.addAttribute("seedImportRequest", new SeedImportRequest());
@@ -113,15 +78,6 @@ public class AdminController {
 
     private Path getMd6309Path() {
         return Paths.get(md6309TxostenPath).toAbsolutePath().normalize();
-    }
-
-    private LogMota parseMota(String mota) {
-        if (mota == null || mota.isBlank()) return null;
-        try {
-            return LogMota.valueOf(mota);
-        } catch (IllegalArgumentException ignored) {
-            return null;
-        }
     }
 
     @PostMapping("/ebalu-koloreak")

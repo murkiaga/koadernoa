@@ -52,14 +52,6 @@
     <button type="button" class="tab-btn"
             role="tab"
             aria-selected="false"
-            aria-controls="panel-logak"
-            id="tab-logak">
-      Logak
-    </button>
-
-    <button type="button" class="tab-btn"
-            role="tab"
-            aria-selected="false"
             aria-controls="panel-txostenak"
             id="tab-txostenak">
       Txostenak
@@ -72,7 +64,9 @@
             id="tab-seed">
       Seed
     </button>
-    </div>
+
+
+        </div>
     <a class="audit-link-btn" th:href="@{/admin/audit}">Audit</a>
   </div>
 
@@ -92,10 +86,6 @@
   <section id="panel-auth" class="tab-panel" role="tabpanel"
            aria-labelledby="tab-auth" tabindex="0" aria-hidden="true">
     <div th:replace="~{admin/fragments/auth-providers :: auth-providers-panel}"></div>
-  </section>
-  <section id="panel-logak" class="tab-panel" role="tabpanel"
-           aria-labelledby="tab-logak" tabindex="0" aria-hidden="true">
-    <div th:replace="~{admin/fragments/logak :: logak-panel}"></div>
   </section>
 
   <section id="panel-txostenak" class="tab-panel" role="tabpanel"
