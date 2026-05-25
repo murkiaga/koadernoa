@@ -16,6 +16,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Asistentzia;
 import com.koadernoa.app.objektuak.audit.entitateak.AuditAtala;
@@ -80,11 +83,12 @@ public class AsistentziaController {
 	    model.addAttribute("saioak", saioak);
 	    model.addAttribute("matrikulak", matrikulak);
 	    model.addAttribute("egoeraMap", asistentziaService.mapEgoerak(saioak, matrikulak));
+	    PrincipalInfo p = resolvePrincipalInfo(auth);
 	    var event = auditService.buildBaseEvent(
-	        null,
-	        auth != null ? auth.getName() : null,
-	        auth != null ? auth.getName() : null,
-	        null,
+	        p.erabiltzaileId,
+	        p.emaila,
+	        p.izena,
+	        p.rola,
 	        "/irakasle/asistentzia",
 	        "GET",
 	        null,
@@ -100,6 +104,41 @@ public class AsistentziaController {
 	    auditService.recordAction(event);
 	    return "irakasleak/asistentzia/eguna";
 	  }
+
+	  private PrincipalInfo resolvePrincipalInfo(Authentication auth) {
+	    if (auth == null) return new PrincipalInfo(null, null, null, null);
+	    Object principal = auth.getPrincipal();
+
+	    if (principal instanceof com.koadernoa.app.objektuak.irakasleak.entitateak.IrakasleUserDetails iu) {
+	      var ir = iu.getIrakaslea();
+	      return new PrincipalInfo(ir.getId(), ir.getEmaila(), ir.getIzena(), ir.getRola() != null ? ir.getRola().name() : null);
+	    }
+	    if (principal instanceof OidcUser oidcUser) {
+	      return new PrincipalInfo(null,
+	          firstNonBlank(oidcUser.getEmail(), oidcUser.getPreferredUsername()),
+	          firstNonBlank(oidcUser.getFullName(), oidcUser.getName()),
+	          null);
+	    }
+	    if (principal instanceof OAuth2User oauth2User) {
+	      Object email = oauth2User.getAttributes().get("email");
+	      Object name = oauth2User.getAttributes().get("name");
+	      return new PrincipalInfo(null,
+	          firstNonBlank((String) email, auth.getName()),
+	          firstNonBlank((String) name, auth.getName()),
+	          null);
+	    }
+	    if (principal instanceof UserDetails ud) {
+	      return new PrincipalInfo(null, ud.getUsername(), ud.getUsername(), null);
+	    }
+	    return new PrincipalInfo(null, auth.getName(), auth.getName(), null);
+	  }
+
+	  private String firstNonBlank(String first, String second) {
+	    if (first != null && !first.isBlank()) return first;
+	    return (second != null && !second.isBlank()) ? second : null;
+	  }
+
+	  private record PrincipalInfo(Long erabiltzaileId, String emaila, String izena, String rola) {}
 	  
 	  /** POST: taula gorde */
 	  @PostMapping({"","/"})
