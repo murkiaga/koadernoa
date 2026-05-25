@@ -6,6 +6,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
+import com.koadernoa.app.objektuak.audit.entitateak.AuditAtala;
+import com.koadernoa.app.objektuak.audit.entitateak.AuditEkintza;
+import com.koadernoa.app.objektuak.audit.service.AuditService;
 import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Ebaluaketa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
@@ -44,6 +47,7 @@ public class ProgramazioaController {
     private final ProgramazioaRepository programazioaRepository;
     private final DenboralizazioGeneratorService denboralizazioGeneratorService;
     private final ProgramazioTxantiloiService programazioTxantiloiService;
+    private final AuditService auditService;
     
 
     @GetMapping
@@ -176,6 +180,7 @@ public class ProgramazioaController {
             programazioaService.inportatuProgramazioa(iturburua, helburua);
 
             ra.addFlashAttribute("success", "Programazioa ondo inportatu da.");
+            auditAction(AuditEkintza.PROGRAMAZIOA_INPORTATU, helburua.getId(), "Koadernoa", String.valueOf(helburua.getId()));
         } catch (Exception ex) {
             ex.printStackTrace(); // behin-behinean, logean ikusteko
             ra.addFlashAttribute("error", "Ezin izan da programazioa inportatu: " + ex.getMessage());
@@ -198,6 +203,7 @@ public class ProgramazioaController {
                 txantiloiId, koadernoAktiboa, irakaslea
             );
             ra.addFlashAttribute("success", "Txantiloia aplikatu da: " + kopurua + " jarduera gehitu dira.");
+            auditAction(AuditEkintza.AURREKO_URTEKO_DENBORALIZAZIOA_INPORTATU, koadernoAktiboa.getId(), "Koadernoa", String.valueOf(koadernoAktiboa.getId()));
         } catch (IllegalArgumentException ex) {
             ra.addFlashAttribute("error", "Ezin izan da txantiloia aplikatu: " + ex.getMessage());
         }
@@ -221,6 +227,7 @@ public class ProgramazioaController {
         }
         // UD berria ebaluaketa horren barruan sortu
         programazioaService.addUdToEbaluaketa(ebaluaketaId, kodea, izenburua, orduak, posizioa);
+        auditAction(AuditEkintza.UDA_SORTU, koadernoAktiboa.getId(), "UnitateDidaktikoa", null);
         ra.addFlashAttribute("ok", "UD sortuta.");
         return "redirect:/irakasle/programazioa";
     }
@@ -258,6 +265,7 @@ public class ProgramazioaController {
     @PostMapping("/ud/{udId}/ezabatu")
     public String ezabatuUd(@PathVariable Long udId, RedirectAttributes ra) {
         programazioaService.deleteUd(udId);
+        auditAction(AuditEkintza.UDA_EZABATU, null, "UnitateDidaktikoa", String.valueOf(udId));
         ra.addFlashAttribute("ok", "UD ezabatuta.");
         return "redirect:/irakasle/programazioa";
     }
@@ -271,6 +279,7 @@ public class ProgramazioaController {
         RedirectAttributes ra
     ) {
         programazioaService.addJardueraPlanifikatua(udId, izenburua, orduak);
+        auditAction(AuditEkintza.UDAN_JARDUERA_PLANIFIKATU, null, "JardueraPlanifikatua", null);
         ra.addFlashAttribute("ok", "Jarduera planifikatua sortuta.");
         return "redirect:/irakasle/programazioa";
     }
@@ -290,6 +299,7 @@ public class ProgramazioaController {
     @PostMapping("/planifikatuak/{jpId}/ezabatu")
     public String ezabatuPlanifikatua(@PathVariable Long jpId, RedirectAttributes ra) {
         programazioaService.deleteJardueraPlanifikatua(jpId);
+        auditAction(AuditEkintza.UDAN_JARDUERA_EZABATU, null, "JardueraPlanifikatua", String.valueOf(jpId));
         ra.addFlashAttribute("ok", "Jarduera planifikatua ezabatuta.");
         return "redirect:/irakasle/programazioa";
     }
@@ -323,9 +333,32 @@ public class ProgramazioaController {
                 : "Bolketa eginda: " + items.size() + " jarduera sortu dira.";
 
         ra.addFlashAttribute("success", mezua);
+        auditAction(ebaluaketaId != null ? AuditEkintza.UDA_DENBORALIZAZIORA_BOLKATU : AuditEkintza.PROGRAMAZIOA_DENBORALIZAZIORA_BOLKATU, koadernoId, ebaluaketaId != null ? "Ebaluaketa" : "Programazioa", ebaluaketaId != null ? String.valueOf(ebaluaketaId) : String.valueOf(koadernoId));
         return "redirect:/irakasle/denboralizazioa";
     }
 	
+    private void auditAction(AuditEkintza ekintza, Long koadernoId, String entitateMota, String entitateId) {
+        Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        var e = auditService.buildBaseEvent(
+            null,
+            auth != null ? auth.getName() : null,
+            auth != null ? auth.getName() : null,
+            null,
+            "/irakasle/programazioa",
+            "POST",
+            null,
+            null,
+            null,
+            AuditAtala.PROGRAMAZIOA,
+            ekintza
+        );
+        e.setKoadernoId(koadernoId);
+        e.setEntitateMota(entitateMota);
+        e.setEntitateId(entitateId);
+        e.setArrakastatsua(true);
+        auditService.recordAction(e);
+    }
+
     /** Programazioa -> Denboralizazio baldintza azkarrak:
      *  egutegia + ordutegia + gutxienez UD bat (programazioan edo ebaluaketa horretan)
      */

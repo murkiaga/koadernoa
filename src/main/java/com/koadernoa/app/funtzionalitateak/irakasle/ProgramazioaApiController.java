@@ -4,6 +4,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
+import com.koadernoa.app.objektuak.audit.entitateak.AuditAtala;
+import com.koadernoa.app.objektuak.audit.entitateak.AuditEkintza;
+import com.koadernoa.app.objektuak.audit.service.AuditService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Ebaluaketa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
@@ -27,6 +30,7 @@ public class ProgramazioaApiController {
     private final ProgramazioaService programazioaService;
     private final IrakasleaService irakasleaService;
     private final KoadernoaService koadernoaService;
+    private final AuditService auditService;
 
  // ======== ACCESS ========
     private void checkAccess(Authentication auth, Koadernoa k) {
@@ -131,7 +135,8 @@ public class ProgramazioaApiController {
         java.time.LocalDate has = (sHas == null || sHas.isBlank()) ? null : java.time.LocalDate.parse(sHas);
         java.time.LocalDate buk = (sBuk == null || sBuk.isBlank()) ? null : java.time.LocalDate.parse(sBuk);
 
-        programazioaService.addEbaluaketaForKoadernoa(k.getId(), izena, has, buk);
+        var e = programazioaService.addEbaluaketaForKoadernoa(k.getId(), izena, has, buk);
+        auditAction(auth, AuditEkintza.EBALUAKETA_BERRIA, k.getId(), "Ebaluaketa", String.valueOf(e.getId()));
         return ResponseEntity.ok(Map.of("ok", true));
     }
 
@@ -152,6 +157,7 @@ public class ProgramazioaApiController {
         java.time.LocalDate buk = (sBuk == null || sBuk.isBlank()) ? null : java.time.LocalDate.parse(sBuk);
 
         programazioaService.updateEbaluaketa(id, izena, has, buk);
+        auditAction(auth, AuditEkintza.EBALUAZIOA_EDITATU, k.getId(), "Ebaluaketa", String.valueOf(id));
         return ResponseEntity.ok(Map.of("ok", true));
     }
 
@@ -178,13 +184,14 @@ public class ProgramazioaApiController {
 
         Long ebaluaketaId = ((Number) body.get("ebaluaketaId")).longValue();
 
-        programazioaService.addUdToEbaluaketa(
+        var ud = programazioaService.addUdToEbaluaketa(
             ebaluaketaId,
             (String) body.get("kodea"),
             (String) body.get("izenburua"),
             ((Number) body.getOrDefault("orduak", 0)).intValue(),
             999
         );
+        auditAction(auth, AuditEkintza.UDA_SORTU, k.getId(), "UnitateDidaktikoa", String.valueOf(ud.getId()));
         return ResponseEntity.ok(Map.of("ok", true));
     }
 
@@ -235,6 +242,7 @@ public class ProgramazioaApiController {
         if (!programazioaService.udDagokioKoadernoari(id, k.getId()))
             throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
         programazioaService.deleteUd(id);
+        auditAction(auth, AuditEkintza.UDA_EZABATU, k.getId(), "UnitateDidaktikoa", String.valueOf(id));
         return ResponseEntity.ok(Map.of("ok", true));
     }
 
@@ -250,6 +258,7 @@ public class ProgramazioaApiController {
         programazioaService.addJardueraPlanifikatua(udId,
                 (String) body.get("izenburua"),
                 ((Number) body.getOrDefault("orduak", 0)).intValue());
+        auditAction(auth, AuditEkintza.UDAN_JARDUERA_PLANIFIKATU, k.getId(), "JardueraPlanifikatua", null);
         return ResponseEntity.ok(Map.of("ok", true));
     }
 
@@ -289,7 +298,19 @@ public class ProgramazioaApiController {
         if (!programazioaService.jpDagokioKoadernoari(id, k.getId()))
             throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
         programazioaService.deleteJardueraPlanifikatua(id);
+        auditAction(auth, AuditEkintza.UDAN_JARDUERA_EZABATU, k.getId(), "JardueraPlanifikatua", String.valueOf(id));
         return ResponseEntity.ok(Map.of("ok", true));
+    }
+
+
+    private void auditAction(Authentication auth, AuditEkintza ekintza, Long koadernoId, String entitateMota, String entitateId) {
+        var e = auditService.buildBaseEvent(null, auth != null ? auth.getName() : null, auth != null ? auth.getName() : null, null,
+            "/irakasle/programazioa/api", null, null, null, null, AuditAtala.PROGRAMAZIOA, ekintza);
+        e.setKoadernoId(koadernoId);
+        e.setEntitateMota(entitateMota);
+        e.setEntitateId(entitateId);
+        e.setArrakastatsua(true);
+        auditService.recordAction(e);
     }
 
     // ======== Error JSON garbiak ========
