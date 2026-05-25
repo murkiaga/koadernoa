@@ -16,6 +16,9 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
+import com.koadernoa.app.objektuak.audit.entitateak.AuditAtala;
+import com.koadernoa.app.objektuak.audit.entitateak.AuditEkintza;
+import com.koadernoa.app.objektuak.audit.service.AuditService;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Rola;
 import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
@@ -52,6 +55,7 @@ public class KoadernoaController {
 	private final KoadernoaService koadernoaService;
     private final ProgramazioaService programazioaService;
 	private final IkasleaService ikasleaService;
+    private final AuditService auditService;
 	private final KoadernoaRepository koadernoaRepository;
 	private final FamiliaService familiaService;
 	private final AplikazioAukeraService aplikazioAukeraService;
@@ -252,6 +256,16 @@ public class KoadernoaController {
 	            } catch (Exception e) {
             }
             ra.addFlashAttribute("success", emaitza.mezua());
+            var event = auditService.buildBaseEvent(
+                    null, null, null, null,
+                    "/irakasle/koadernoa/berria", "POST", null, null,
+                    "Ekintza=KOADERNOA_SORTU",
+                    AuditAtala.IRAKASLE, AuditEkintza.KOADERNOA_SORTU);
+            event.setKoadernoId(koadernoa.getId());
+            event.setEntitateMota("Koadernoa");
+            event.setEntitateId(String.valueOf(koadernoa.getId()));
+            event.setArrakastatsua(true);
+            auditService.recordAction(event);
             return "redirect:/irakasle";
         } catch (Exception ex) {
             ra.addFlashAttribute("error", ex.getMessage());
@@ -284,6 +298,16 @@ public class KoadernoaController {
                                             @RequestParam(name = "dualOrdutegia", defaultValue = "false") boolean dualOrdutegia) {
         LocalDate created = koadernoaService.sortuOrdutegiBerria(id, hasieraData, dualOrdutegia);
         programazioaService.syncDualUdForKoaderno(id);
+        var event = auditService.buildBaseEvent(
+                null, null, null, null,
+                "/irakasle/koadernoa/" + id + "/ordutegia/berria", "POST", null, null,
+                "hasieraData=" + hasieraData,
+                AuditAtala.IRAKASLE, AuditEkintza.ORDUTEGI_BERRIA_SORTU);
+        event.setKoadernoId(id);
+        event.setEntitateMota("Koadernoa");
+        event.setEntitateId(String.valueOf(id));
+        event.setArrakastatsua(true);
+        auditService.recordAction(event);
         return ResponseEntity.ok(Map.of("ok", true, "hasieraData", created.toString()));
     }
 
@@ -384,6 +408,16 @@ public class KoadernoaController {
         // 6) Gehitu eta gorde
         koadernoa.getIrakasleak().add(target);
         koadernoaRepository.save(koadernoa);
+        var event = auditService.buildBaseEvent(
+                null, null, null, null,
+                "/irakasle/koadernoa/" + id + "/partekatu", "POST", null, null,
+                "irakasleId=" + target.getId(),
+                AuditAtala.IRAKASLE, AuditEkintza.KOADERNOA_PARTEKATU);
+        event.setKoadernoId(id);
+        event.setEntitateMota("Koadernoa");
+        event.setEntitateId(String.valueOf(id));
+        event.setArrakastatsua(true);
+        auditService.recordAction(event);
 
         String izenOsoa = target.getIzena(); // edo target.getIzenaOsoa(), zuk daukazunaren arabera
         ra.addFlashAttribute("success",

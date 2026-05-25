@@ -27,6 +27,9 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.EzadostasunFitxa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.EzadostasunMota;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.EstatistikaLaburpenDto;
+import com.koadernoa.app.objektuak.audit.entitateak.AuditAtala;
+import com.koadernoa.app.objektuak.audit.entitateak.AuditEkintza;
+import com.koadernoa.app.objektuak.audit.service.AuditService;
 import com.koadernoa.app.objektuak.koadernoak.repository.EzadostasunFitxaRepository;
 import com.koadernoa.app.objektuak.koadernoak.service.EstatistikaService;
 
@@ -41,6 +44,7 @@ public class EstatistikakController {
 	
 	private final EstatistikaService estatistikaService;
     private final EzadostasunFitxaRepository ezadostasunFitxaRepository;
+    private final AuditService auditService;
 
 	
 	@GetMapping({"/",""})
@@ -79,6 +83,16 @@ public class EstatistikakController {
             @SessionAttribute("koadernoAktiboa") Koadernoa koadernoAktiboa) {
 
         estatistikaService.berkalkulatuEstatistika(koadernoAktiboa, estatId);
+        var event = auditService.buildBaseEvent(
+                null, null, null, null,
+                "/irakasle/estatistikak/" + estatId + "/berkalkulatu", "POST", null, null,
+                "estatistikaId=" + estatId,
+                AuditAtala.ESTATISTIKAK, AuditEkintza.ESTATISTIKA_BERKALKULATU);
+        event.setKoadernoId(koadernoAktiboa != null ? koadernoAktiboa.getId() : null);
+        event.setEntitateMota("EstatistikaEbaluazioan");
+        event.setEntitateId(String.valueOf(estatId));
+        event.setArrakastatsua(true);
+        auditService.recordAction(event);
 
         // fetch bidez deituko dugu; JSON txiki bat bueltatu
         Map<String, Object> resp = new HashMap<>();

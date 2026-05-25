@@ -21,6 +21,9 @@ import com.koadernoa.app.objektuak.ebaluazioa.repository.EbaluazioMomentuaReposi
 import com.koadernoa.app.objektuak.ebaluazioa.repository.EbaluazioNotaRepository;
 import com.koadernoa.app.objektuak.ebaluazioa.service.EbaluazioNotaService;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
+import com.koadernoa.app.objektuak.audit.entitateak.AuditAtala;
+import com.koadernoa.app.objektuak.audit.entitateak.AuditEkintza;
+import com.koadernoa.app.objektuak.audit.service.AuditService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.modulua.entitateak.Matrikula;
 import com.koadernoa.app.objektuak.modulua.entitateak.MatrikulaEgoera;
@@ -40,6 +43,7 @@ public class NotakController {
     private final EbaluazioMomentuaRepository ebaluazioMomentuaRepository;
     private final EbaluazioNotaRepository ebaluazioNotaRepository;
     private final EbaluazioNotaService ebaluazioNotaService;
+    private final AuditService auditService;
 
     @GetMapping
     public String notakPantaila(@ModelAttribute("koadernoAktiboa") Koadernoa koadernoa,
@@ -165,6 +169,16 @@ public class NotakController {
             redirectAttributes.addFlashAttribute("error", errorHtml);
         } else {
             redirectAttributes.addFlashAttribute("success", "Notak ondo gorde dira.");
+            var event = auditService.buildBaseEvent(
+                    null, null, null, null,
+                    "/irakasle/notak", "POST", null, null,
+                    "Ekintza=NOTAK_GORDE",
+                    AuditAtala.NOTAK, AuditEkintza.NOTAK_GORDE);
+            event.setKoadernoId(koadernoa.getId());
+            event.setEntitateMota("Koadernoa");
+            event.setEntitateId(String.valueOf(koadernoa.getId()));
+            event.setArrakastatsua(true);
+            auditService.recordAction(event);
         }
 
         return "redirect:/irakasle/notak";
