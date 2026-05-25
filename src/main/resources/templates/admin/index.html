@@ -7,9 +7,6 @@
   <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    .admin-tabs-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
-    .audit-link-btn{display:inline-block;padding:8px 12px;border:1px solid #0d6efd;border-radius:8px;text-decoration:none;font-weight:600;background:#0d6efd;color:#fff;}
-    .audit-link-btn:hover{background:#0b5ed7;border-color:#0b5ed7;}
   </style>
 </head>
 <body>
@@ -23,8 +20,7 @@
   <div th:if="${param.error}" class="alert alert-error" th:text="${param.error}"></div>
 
   <!-- Tab botoiak -->
-  <div class="admin-tabs-row">
-    <div class="tabs" role="tablist" aria-label="Admin atalak">
+  <div class="tabs" role="tablist" aria-label="Admin atalak">
     <button type="button" class="tab-btn"
             role="tab"
             aria-selected="true"
@@ -52,14 +48,6 @@
     <button type="button" class="tab-btn"
             role="tab"
             aria-selected="false"
-            aria-controls="panel-logak"
-            id="tab-logak">
-      Logak
-    </button>
-
-    <button type="button" class="tab-btn"
-            role="tab"
-            aria-selected="false"
             aria-controls="panel-txostenak"
             id="tab-txostenak">
       Txostenak
@@ -72,8 +60,9 @@
             id="tab-seed">
       Seed
     </button>
-    </div>
-    <a class="audit-link-btn" th:href="@{/admin/audit}">Audit</a>
+
+
+    <a class="btn btn-secondary" th:href="@{/admin/audit}">Audit</a>
   </div>
 
   <!-- LOGOA PANELA -->
@@ -92,10 +81,6 @@
   <section id="panel-auth" class="tab-panel" role="tabpanel"
            aria-labelledby="tab-auth" tabindex="0" aria-hidden="true">
     <div th:replace="~{admin/fragments/auth-providers :: auth-providers-panel}"></div>
-  </section>
-  <section id="panel-logak" class="tab-panel" role="tabpanel"
-           aria-labelledby="tab-logak" tabindex="0" aria-hidden="true">
-    <div th:replace="~{admin/fragments/logak :: logak-panel}"></div>
   </section>
 
   <section id="panel-txostenak" class="tab-panel" role="tabpanel"

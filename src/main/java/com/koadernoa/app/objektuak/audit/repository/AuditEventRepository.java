@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -117,4 +118,23 @@ public interface AuditEventRepository extends JpaRepository<AuditEvent, Long> {
                              @Param("atala") AuditAtala atala,
                              @Param("ekintza") AuditEkintza ekintza,
                              @Param("emaila") String emaila);
+
+    @Modifying
+    @Query(value = """
+        DELETE FROM audit_event
+        WHERE id IN (
+            SELECT id FROM (
+                SELECT id
+                FROM audit_event
+                WHERE data_ordua < :cutoff
+                  AND mota IN (:motak)
+                ORDER BY data_ordua ASC
+                LIMIT :batchSize
+            ) t
+        )
+    """, nativeQuery = true)
+    int deleteBatchOlderThanByMota(@Param("cutoff") LocalDateTime cutoff,
+                                   @Param("motak") List<String> motak,
+                                   @Param("batchSize") int batchSize);
+
 }

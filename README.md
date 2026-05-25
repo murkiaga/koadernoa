@@ -109,3 +109,15 @@ Koaderno Berria / Zornotza LHII - Mikel Urkiaga **CC BY-NC-SA 4.0** lizentziarek
 ---
 
 Dokumentu hau aurkezpen orokor gisa pentsatuta dago. Erabilera operatiborako, jo rol bakoitzari dagokion gidara.
+
+## Audit cleanup konfigurazioa
+
+`audit_event` taulako erregistro zaharrak automatikoki ezabatzeko scheduler bat dago. Konfigurazioa `application.properties` bidez egiten da:
+
+- `audit.cleanup.enabled`: cleanup schedulerra aktibatu/desaktibatu (`true`/`false`).
+- `audit.cleanup.cron`: cleanup exekuzioaren cron adierazpena.
+- `audit.cleanup.batch-size`: batch bakoitzean gehienez zenbat audit event ezabatu.
+- `audit.retention.page-view-days`: `PAGE_VIEW` event motaren retention egunak.
+- `audit.retention.action-days`: `ACTION` event motaren retention egunak.
+- `audit.retention.login-days`: `LOGIN_OK`, `LOGIN_FAIL` eta `LOGOUT` event moten retention egunak.
+- `audit.retention.error-days`: `ERROR` event motaren retention egunak.
