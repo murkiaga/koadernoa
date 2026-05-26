@@ -47,8 +47,6 @@ import com.koadernoa.app.objektuak.koadernoak.repository.SaioaRepository;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 import com.koadernoa.app.objektuak.modulua.repository.MatrikulaRepository;
 import com.koadernoa.app.objektuak.modulua.repository.MintegiModuluBaimenaRepository;
-import com.koadernoa.app.objektuak.logak.entitateak.LogMota;
-import com.koadernoa.app.objektuak.logak.service.LogService;
 import com.koadernoa.app.objektuak.modulua.repository.ModuloaRepository;
 import com.koadernoa.app.objektuak.konfigurazioa.service.AplikazioAukeraService;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Zikloa;
@@ -67,7 +65,6 @@ public class KoadernoaService {
     private final EbaluazioMomentuaRepository ebaluazioMomentuaRepository;
     private final ProgramazioaRepository programazioaRepository;
     private final UnitateDidaktikoaRepository unitateDidaktikoaRepository;
-    private final LogService logService;
     private final EstatistikaEbaluazioanRepository estatistikaRepository;
     private final SaioaRepository saioaRepository;
     private final MatrikulaRepository matrikulaRepository;
@@ -870,14 +867,7 @@ public class KoadernoaService {
         programazioaRepository.deleteByKoadernoaId(id);
 
         // 9) Ezabaketa loga (orokorra)
-        String deskribapena = "Koadernoa ezabatuta: " + koadernoa.getIzena()
-                + " | modulua=" + (koadernoa.getModuloa() != null ? koadernoa.getModuloa().getKodea() : "-")
-                + " | ikasturtea=" + (koadernoa.getEgutegia() != null && koadernoa.getEgutegia().getIkasturtea() != null
-                        ? koadernoa.getEgutegia().getIkasturtea().getIzena()
-                        : "-");
-        logService.gorde(LogMota.KOADERNO_EZABAKETA, ezabatzailea, "Koadernoa", id, deskribapena);
-
-        // 10) Koadernoa bera
+        // 9) Koadernoa bera
         koadernoaRepository.delete(koadernoa);
     }
     

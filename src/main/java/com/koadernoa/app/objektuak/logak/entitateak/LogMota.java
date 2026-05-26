@@ -1,9 +1,0 @@
-package com.koadernoa.app.objektuak.logak.entitateak;
-
-public enum LogMota {
-    KOADERNO_EZABAKETA,
-    DESMATRIKULATZEA,
-    MATRIKULATZEA,
-    UKO_EGITEA,
-    HUTSEGITE_INPORTAZIOA
-}

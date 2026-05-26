@@ -33,8 +33,6 @@ import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
 import com.koadernoa.app.objektuak.egutegia.repository.IkasturteaRepository;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
-import com.koadernoa.app.objektuak.logak.entitateak.LogMota;
-import com.koadernoa.app.objektuak.logak.service.LogService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.mezuak.entitateak.Mezua;
@@ -66,7 +64,6 @@ public class IkasleaKudeatzaileController {
     private final ZikloaRepository zikloaRepository;
     private final TaldeaRepository taldeaRepository;
     private final KoadernoaRepository koadernoaRepository;
-    private final LogService logService;
 
     @GetMapping("/kudeatzaile/ikasleak")
     public String ikasleZerrenda(@RequestParam(name = "zikloaId", required = false) Long zikloaId,
@@ -349,7 +346,6 @@ public class IkasleaKudeatzaileController {
                 + " | ikaslea=" + ikasleIzena
                 + " | HNA=" + (matrikula.getIkaslea() != null ? matrikula.getIkaslea().getHna() : "-")
                 + " | koadernoa=" + koadernoIzena;
-        logService.gorde(LogMota.UKO_EGITEA, eragilea, "Matrikula", matrikula.getId(), deskribapena);
 
         bidaliUkoMezua(matrikula, finalLabela, auth);
         redirectAttributes.addFlashAttribute("successMessage", "UKO markatu da " + finalLabela);
