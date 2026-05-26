@@ -31,6 +31,7 @@ import com.koadernoa.app.objektuak.ebaluazioa.repository.EbaluazioMomentuaReposi
 import com.koadernoa.app.objektuak.ebaluazioa.repository.EbaluazioNotaRepository;
 import com.koadernoa.app.objektuak.audit.entitateak.AuditAtala;
 import com.koadernoa.app.objektuak.audit.entitateak.AuditEkintza;
+import com.koadernoa.app.objektuak.audit.entitateak.AuditEvent;
 import com.koadernoa.app.objektuak.audit.service.AuditService;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
 import com.koadernoa.app.objektuak.egutegia.repository.IkasturteaRepository;
@@ -360,10 +361,10 @@ public class IkasleaKudeatzaileController {
     private void gordeUkoAudit(Authentication auth, Matrikula matrikula, String deskribapena) {
         Irakaslea eragilea = unekoEragilea(auth);
         Long koadernoId = matrikula.getKoadernoa() != null ? matrikula.getKoadernoa().getId() : null;
-        var event = auditService.buildBaseEvent(
+        AuditEvent event = auditService.buildBaseEvent(
                 eragilea != null ? eragilea.getId() : null,
                 eragilea != null ? eragilea.getEmaila() : null,
-                eragilea != null ? eragilea.getIzenOsoa() : null,
+                eragilea != null ? eragilea.getIzena() : null,
                 eragilea != null && eragilea.getRola() != null ? eragilea.getRola().name() : null,
                 null, null, null, null,
                 deskribapena,
