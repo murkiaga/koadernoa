@@ -50,7 +50,8 @@ public class AuditSchemaUpdater {
                     'KOADERNOA_SORTU',
                     'KOADERNOA_EZABATU',
                     'ORDUTEGI_BERRIA_SORTU',
-                    'KOADERNOA_PARTEKATU'
+                    'KOADERNOA_PARTEKATU',
+                    'UKO_EGITEA'
                 ) NULL
                 """);
         } catch (Exception ignored) {
