@@ -21,6 +21,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioEgoera;
@@ -50,6 +52,7 @@ import com.koadernoa.app.objektuak.modulua.service.IkasleaService;
 import com.koadernoa.app.objektuak.zikloak.repository.TaldeaRepository;
 import com.koadernoa.app.objektuak.zikloak.repository.ZikloaRepository;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 @Controller
@@ -366,7 +369,10 @@ public class IkasleaKudeatzaileController {
                 eragilea != null ? eragilea.getEmaila() : null,
                 eragilea != null ? eragilea.getIzena() : null,
                 eragilea != null && eragilea.getRola() != null ? eragilea.getRola().name() : null,
-                null, null, null, null,
+                currentRequestUri(),
+                currentRequestMethod(),
+                currentClientIp(),
+                currentUserAgent(),
                 deskribapena,
                 AuditAtala.KUDEATZAILE,
                 AuditEkintza.UKO_EGITEA
@@ -375,6 +381,42 @@ public class IkasleaKudeatzaileController {
         event.setEntitateMota("Matrikula");
         event.setEntitateId(String.valueOf(matrikula.getId()));
         auditService.recordAction(event);
+    }
+
+    private HttpServletRequest currentRequest() {
+        if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes sra) {
+            return sra.getRequest();
+        }
+        return null;
+    }
+
+    private String currentRequestUri() {
+        HttpServletRequest req = currentRequest();
+        return req != null ? req.getRequestURI() : "/kudeatzaile/ikaslea";
+    }
+
+    private String currentRequestMethod() {
+        HttpServletRequest req = currentRequest();
+        return req != null ? req.getMethod() : "POST";
+    }
+
+    private String currentUserAgent() {
+        HttpServletRequest req = currentRequest();
+        return req != null ? req.getHeader("User-Agent") : null;
+    }
+
+    private String currentClientIp() {
+        HttpServletRequest req = currentRequest();
+        if (req == null) return null;
+        String xff = req.getHeader("X-Forwarded-For");
+        if (xff != null && !xff.isBlank()) {
+            return xff.split(",")[0].trim();
+        }
+        String xrip = req.getHeader("X-Real-IP");
+        if (xrip != null && !xrip.isBlank()) {
+            return xrip.trim();
+        }
+        return req.getRemoteAddr();
     }
 
     private void bidaliUkoMezua(Matrikula matrikula, String finalLabela, Authentication auth) {
