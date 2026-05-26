@@ -29,6 +29,9 @@ import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioNota;
 import com.koadernoa.app.objektuak.ebaluazioa.repository.EbaluazioEgoeraRepository;
 import com.koadernoa.app.objektuak.ebaluazioa.repository.EbaluazioMomentuaRepository;
 import com.koadernoa.app.objektuak.ebaluazioa.repository.EbaluazioNotaRepository;
+import com.koadernoa.app.objektuak.audit.entitateak.AuditAtala;
+import com.koadernoa.app.objektuak.audit.entitateak.AuditEkintza;
+import com.koadernoa.app.objektuak.audit.service.AuditService;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
 import com.koadernoa.app.objektuak.egutegia.repository.IkasturteaRepository;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
@@ -64,6 +67,7 @@ public class IkasleaKudeatzaileController {
     private final ZikloaRepository zikloaRepository;
     private final TaldeaRepository taldeaRepository;
     private final KoadernoaRepository koadernoaRepository;
+    private final AuditService auditService;
 
     @GetMapping("/kudeatzaile/ikasleak")
     public String ikasleZerrenda(@RequestParam(name = "zikloaId", required = false) Long zikloaId,
@@ -347,9 +351,29 @@ public class IkasleaKudeatzaileController {
                 + " | HNA=" + (matrikula.getIkaslea() != null ? matrikula.getIkaslea().getHna() : "-")
                 + " | koadernoa=" + koadernoIzena;
 
+        gordeUkoAudit(auth, matrikula, deskribapena);
         bidaliUkoMezua(matrikula, finalLabela, auth);
         redirectAttributes.addFlashAttribute("successMessage", "UKO markatu da " + finalLabela);
         return redirectIkasleFitxara(ikasleaId, ikasturteaId);
+    }
+
+    private void gordeUkoAudit(Authentication auth, Matrikula matrikula, String deskribapena) {
+        Irakaslea eragilea = unekoEragilea(auth);
+        Long koadernoId = matrikula.getKoadernoa() != null ? matrikula.getKoadernoa().getId() : null;
+        var event = auditService.buildBaseEvent(
+                eragilea != null ? eragilea.getId() : null,
+                eragilea != null ? eragilea.getEmaila() : null,
+                eragilea != null ? eragilea.getIzenOsoa() : null,
+                eragilea != null && eragilea.getRola() != null ? eragilea.getRola().name() : null,
+                null, null, null, null,
+                deskribapena,
+                AuditAtala.KUDEATZAILE,
+                AuditEkintza.UKO_EGITEA
+        );
+        event.setKoadernoId(koadernoId);
+        event.setEntitateMota("Matrikula");
+        event.setEntitateId(String.valueOf(matrikula.getId()));
+        auditService.recordAction(event);
     }
 
     private void bidaliUkoMezua(Matrikula matrikula, String finalLabela, Authentication auth) {
