@@ -45,8 +45,6 @@ import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
 import com.koadernoa.app.objektuak.egutegia.service.EgutegiaService;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
-import com.koadernoa.app.objektuak.logak.entitateak.LogMota;
-import com.koadernoa.app.objektuak.logak.service.LogService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Jarduera;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.JardueraEditDto;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.JardueraSortuDto;
@@ -84,7 +82,6 @@ public class DenboralizazioaController {
 	private final ProgramazioTxantiloiService programazioTxantiloiService;
 	private final ProgramazioaService programazioaService;
 	private final IrakasleaService irakasleaService;
-	private final LogService logService;
 	private final AuditService auditService;
 
 	@GetMapping({"","/"})
@@ -469,7 +466,6 @@ public class DenboralizazioaController {
 	                                       Koadernoa koadernoa,
 	                                       FaltenExcelInportService.InportEmaitza emaitza,
 	                                       String errorea) {
-	    Irakaslea eragilea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
 	    String deskribapena;
 	    if (emaitza != null) {
 	        String oharrak = emaitza.getOharrak() == null || emaitza.getOharrak().isEmpty()
@@ -489,13 +485,6 @@ public class DenboralizazioaController {
 	        deskribapena = deskribapena.substring(0, 2500);
 	    }
 
-	    logService.gorde(
-	            LogMota.HUTSEGITE_INPORTAZIOA,
-	            eragilea,
-	            "Koadernoa",
-	            koadernoa != null ? koadernoa.getId() : null,
-	            deskribapena
-	    );
 	}
 
 	private boolean dagoTxantiloiAldia(Egutegia egutegia) {

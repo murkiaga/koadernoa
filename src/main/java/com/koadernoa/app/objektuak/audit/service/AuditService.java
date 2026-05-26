@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.koadernoa.app.objektuak.audit.entitateak.AuditAtala;
 import com.koadernoa.app.objektuak.audit.entitateak.AuditEkintza;
@@ -22,29 +24,34 @@ public class AuditService {
 
     private final AuditEventRepository auditEventRepository;
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordLoginOk(AuditEvent event) {
         event.setMota(AuditEventMota.LOGIN_OK);
         event.setArrakastatsua(true);
         saveSafely(event);
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordLoginFail(AuditEvent event) {
         event.setMota(AuditEventMota.LOGIN_FAIL);
         event.setArrakastatsua(false);
         saveSafely(event);
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordLogout(AuditEvent event) {
         event.setMota(AuditEventMota.LOGOUT);
         event.setArrakastatsua(true);
         saveSafely(event);
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordPageView(AuditEvent event) {
         event.setMota(AuditEventMota.PAGE_VIEW);
         saveSafely(event);
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordAction(AuditEvent event) {
         event.setMota(AuditEventMota.ACTION);
         saveSafely(event);

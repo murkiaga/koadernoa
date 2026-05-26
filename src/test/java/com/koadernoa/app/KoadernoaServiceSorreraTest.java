@@ -37,7 +37,6 @@ import com.koadernoa.app.objektuak.koadernoak.repository.UnitateDidaktikoaReposi
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoSorreraEmaitza;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
 import com.koadernoa.app.objektuak.konfigurazioa.service.AplikazioAukeraService;
-import com.koadernoa.app.objektuak.logak.service.LogService;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 import com.koadernoa.app.objektuak.modulua.repository.MatrikulaRepository;
 import com.koadernoa.app.objektuak.modulua.repository.MintegiModuluBaimenaRepository;
@@ -65,7 +64,6 @@ class KoadernoaServiceSorreraTest {
             ebaluazioMomentuaRepository,
             mock(ProgramazioaRepository.class),
             mock(UnitateDidaktikoaRepository.class),
-            mock(LogService.class),
             mock(EstatistikaEbaluazioanRepository.class),
             mock(SaioaRepository.class),
             mock(MatrikulaRepository.class),
