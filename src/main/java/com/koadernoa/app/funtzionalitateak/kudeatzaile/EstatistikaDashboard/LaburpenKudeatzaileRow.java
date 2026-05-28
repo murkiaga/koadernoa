@@ -14,13 +14,14 @@ public class LaburpenKudeatzaileRow {
     private final int orduakAurreikusiak;
     private final int aprobatuak;
     private final int ebaluatuak;
+    private final int bertaratzeOinarriOrduak;
     private final int hutsegiteOrduak;
     private final boolean kalkulatua;
     private final LocalDateTime azkenKalkulua;
 
     public LaburpenKudeatzaileRow(Long koadernoId, String taldea, String moduloa, String maila, String irakasleak,
                                   int unitateakEmanda, int unitateakAurreikusiak, int orduakEmanda,
-                                  int orduakAurreikusiak, int aprobatuak, int ebaluatuak, int hutsegiteOrduak,
+                                  int orduakAurreikusiak, int aprobatuak, int ebaluatuak, int bertaratzeOinarriOrduak, int hutsegiteOrduak,
                                   boolean kalkulatua, LocalDateTime azkenKalkulua) {
         this.koadernoId = koadernoId;
         this.taldea = taldea;
@@ -33,6 +34,7 @@ public class LaburpenKudeatzaileRow {
         this.orduakAurreikusiak = orduakAurreikusiak;
         this.aprobatuak = aprobatuak;
         this.ebaluatuak = ebaluatuak;
+        this.bertaratzeOinarriOrduak = bertaratzeOinarriOrduak;
         this.hutsegiteOrduak = hutsegiteOrduak;
         this.kalkulatua = kalkulatua;
         this.azkenKalkulua = azkenKalkulua;
@@ -69,10 +71,8 @@ public class LaburpenKudeatzaileRow {
     }
 
     public Double getBertaratzePortzentaia() {
-        if (ebaluatuak <= 0 || orduakAurreikusiak <= 0) return null;
-        int totalTeoriko = ebaluatuak * orduakAurreikusiak;
-        if (totalTeoriko <= 0) return null;
-        double raw = 100.0 * (1.0 - ((double) hutsegiteOrduak / (double) totalTeoriko));
+        if (bertaratzeOinarriOrduak <= 0) return null;
+        double raw = 100.0 * (1.0 - ((double) hutsegiteOrduak / (double) bertaratzeOinarriOrduak));
         return Math.round(raw * 100.0) / 100.0;
     }
 }

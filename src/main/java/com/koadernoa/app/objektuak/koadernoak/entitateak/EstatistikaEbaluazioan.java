@@ -30,7 +30,7 @@ public class EstatistikaEbaluazioan {
     private int ebaluatuak;
     private int aprobatuak;
     
-    //private int ikasleKopurua; Ez da behar? ebaluatuak-ekin badakigu zenbat ikasle dauden
+    private int bertaratzeOinarriOrduak;
     private int hutsegiteOrduak;
 
     @ManyToOne
@@ -72,22 +72,11 @@ public class EstatistikaEbaluazioan {
 
     @Transient
     public Double getBertaratzePortzentaia() {
-        // 0 edo negatibo bada, ez dauka zentzurik ehunekoa kalkulatzea
-        if (this.ebaluatuak <= 0 || this.orduakAurreikusiak <= 0) {
+        if (this.bertaratzeOinarriOrduak <= 0) {
             return null;
         }
 
-        int totalTeoriko = this.ebaluatuak * this.orduakAurreikusiak;
-        if (totalTeoriko <= 0) {
-            return null;
-        }
-
-        int hutsOrdu = this.hutsegiteOrduak; // int bada, ez dago null arriskurik
-
-        // 100 * (1 - hutsOrdu / totalTeoriko)
-        double raw = 100.0 * (1.0 - (double) hutsOrdu / (double) totalTeoriko);
-
-        // 2 dezimaletara biribildu: adib. 87.234 → 87.23
+        double raw = 100.0 * (1.0 - (double) this.hutsegiteOrduak / (double) this.bertaratzeOinarriOrduak);
         return Math.round(raw * 100.0) / 100.0;
     }
 
