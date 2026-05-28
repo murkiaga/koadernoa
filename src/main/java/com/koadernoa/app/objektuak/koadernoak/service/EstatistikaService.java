@@ -148,6 +148,8 @@ public class EstatistikaService {
         // ---------- HUTSEGITE ORDUAK ----------
         int hutsOrdu = bigarrenFinalaDa ? 0 : kalkulatuHutsegiteOrduak(koadernoa, tartea);
         est.setHutsegiteOrduak(hutsOrdu);
+        int bertaratzeOinarriOrduak = bigarrenFinalaDa ? 0 : kalkulatuBertaratzeOinarriOrduak(koadernoa, tartea);
+        est.setBertaratzeOinarriOrduak(bertaratzeOinarriOrduak);
 
         est.setKalkulatua(true);
         est.setAzkenKalkulua(LocalDateTime.now());
@@ -571,6 +573,28 @@ public class EstatistikaService {
 
         return totalHutsegiteOrduak;
     }
+
+    private int kalkulatuBertaratzeOinarriOrduak(Koadernoa k, DateRange tartea) {
+        if (k == null || k.getId() == null || tartea == null) return 0;
+
+        long ikasleAktiboak = matrikulaRepository.countByKoadernoa_IdAndEgoera(k.getId(), MatrikulaEgoera.MATRIKULATUA);
+        if (ikasleAktiboak <= 0) return 0;
+
+        List<Saioa> saioak = saioaRepository.findByKoadernoa_IdAndDataBetweenAndEgoera(
+                k.getId(),
+                tartea.from(),
+                tartea.to(),
+                SaioEgoera.AKTIBOA
+        );
+
+        int saioOrduAktiboak = saioak.stream()
+                .map(Saioa::getIraupenaSlot)
+                .filter(Objects::nonNull)
+                .mapToInt(Integer::intValue)
+                .sum();
+
+        return (int) (ikasleAktiboak * saioOrduAktiboak);
+    }
     
 	 // Koaderno honetako estatistika-lerro GUZTIAK lortzeko metodo sinplea.
 	 // Controllerrek erabiltzen du bai GET pantailarako, bai POST eguneratzeko.
@@ -637,6 +661,7 @@ public class EstatistikaService {
                 lehenFinala.getOrduakAurreikusiak(),
                 aprobatuak,
                 ebaluatuak,
+                lehenFinala.getBertaratzeOinarriOrduak(),
                 lehenFinala.getHutsegiteOrduak()
         );
     }

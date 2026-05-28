@@ -452,6 +452,7 @@ public class EstatistikakKudeatzaileService {
                     lehenFinala.getOrduakAurreikusiak(),
                     aprobatuak,
                     ebaluatuak,
+                    lehenFinala.getBertaratzeOinarriOrduak(),
                     lehenFinala.getHutsegiteOrduak(),
                     kalkulatua,
                     azkenKalkulua

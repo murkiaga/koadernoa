@@ -8,6 +8,7 @@ public class EstatistikaLaburpenDto {
     private final int orduakAurreikusiak;
     private final int aprobatuak;
     private final int ebaluatuak;
+    private final int bertaratzeOinarriOrduak;
     private final int hutsegiteOrduak;
 
     public EstatistikaLaburpenDto(int unitateakEmanda,
@@ -16,6 +17,7 @@ public class EstatistikaLaburpenDto {
                                   int orduakAurreikusiak,
                                   int aprobatuak,
                                   int ebaluatuak,
+                                  int bertaratzeOinarriOrduak,
                                   int hutsegiteOrduak) {
         this.unitateakEmanda = unitateakEmanda;
         this.unitateakAurreikusiak = unitateakAurreikusiak;
@@ -23,6 +25,7 @@ public class EstatistikaLaburpenDto {
         this.orduakAurreikusiak = orduakAurreikusiak;
         this.aprobatuak = aprobatuak;
         this.ebaluatuak = ebaluatuak;
+        this.bertaratzeOinarriOrduak = bertaratzeOinarriOrduak;
         this.hutsegiteOrduak = hutsegiteOrduak;
     }
 
@@ -70,14 +73,10 @@ public class EstatistikaLaburpenDto {
     }
 
     public Double getBertaratzePortzentaia() {
-        if (ebaluatuak <= 0 || orduakAurreikusiak <= 0) {
+        if (bertaratzeOinarriOrduak <= 0) {
             return null;
         }
-        int totalTeoriko = ebaluatuak * orduakAurreikusiak;
-        if (totalTeoriko <= 0) {
-            return null;
-        }
-        double raw = 100.0 * (1.0 - (double) hutsegiteOrduak / (double) totalTeoriko);
+        double raw = 100.0 * (1.0 - (double) hutsegiteOrduak / (double) bertaratzeOinarriOrduak);
         return Math.round(raw * 100.0) / 100.0;
     }
 }
