@@ -268,6 +268,11 @@
 				    )
 				  </span>
 			  </div>
+              <div th:if="${!e.bigarrenFinala and e.orduakAurreikusiak > 0}"
+                   class="muted" style="display:none;font-size:.7rem;margin-top:0.1rem;"
+                   th:text="|oinarria=${e.bertaratzeOinarriOrduak}, ikasleAktiboak=${e.bertaratzeOinarriOrduak / e.orduakAurreikusiak}, orduak=${e.orduakAurreikusiak}|">
+                oinarria=1848, ikasleAktiboak=24, orduak=77
+              </div>
 		    </td>
 		
 		    <!-- Ekintzak: Berkalkulatu botoia -->
