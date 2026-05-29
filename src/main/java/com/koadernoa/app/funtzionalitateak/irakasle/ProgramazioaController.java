@@ -90,7 +90,7 @@ public class ProgramazioaController {
 
       //Ebaluazioen ordu erabilgarriak:
       Map<Long,Integer> ebalDispon =
-    		    programazioaService.ebalOrduErabilgarriakBlokeekin(programazioa, k.getEgutegia(), k.getOrdutegiak());
+          programazioaService.kalkulatuEbaluazioOrduak(programazioa, k);
 
       //(aukeran) UD orduen batura ebaluazioz
       Map<Long,Integer> ebalUdOrduak = programazioa.getEbaluaketak().stream()

@@ -46,6 +46,7 @@ public class EstatistikaService {
     private final SaioaRepository saioaRepository;
     private final MatrikulaRepository matrikulaRepository;
     private final AsistentziaRepository asistentziaRepository; // hutsegiteetarako, aurrerago
+    private final ProgramazioaService programazioaService;
     
     public long countGuztira(){ return estatRepo.countGuztira(); } //KENDU
     public long countIkasturteAktiboan(){ return estatRepo.countIkasturteAktiboan(); } //KENDU
@@ -124,15 +125,16 @@ public class EstatistikaService {
         }
 
         // ---------- ORDUAK ----------
+        int ebaluazioOrduak = 0;
         if (bigarrenFinalaDa) {
             // 2_FINALean ez dira saio/bertaratze metrikak erakutsi edo kalkulatu behar.
             est.setOrduakAurreikusiak(0);
             est.setOrduakEmanda(0);
         } else {
-            int aurreikusOrdu = (programazioa != null)
-                    ? kalkulatuOrduakAurreikusiak(programazioa, tartea)
+            ebaluazioOrduak = (programazioa != null)
+                    ? kalkulatuOrduakAurreikusiak(programazioa, koadernoa, tartea)
                     : 0;
-            est.setOrduakAurreikusiak(aurreikusOrdu);
+            est.setOrduakAurreikusiak(ebaluazioOrduak);
 
             int emandakoOrdu = kalkulatuOrduakEmanda(koadernoa, tartea);
             est.setOrduakEmanda(emandakoOrdu);
@@ -148,7 +150,7 @@ public class EstatistikaService {
         // ---------- HUTSEGITE ORDUAK ----------
         int hutsOrdu = bigarrenFinalaDa ? 0 : kalkulatuHutsegiteOrduak(koadernoa, tartea);
         est.setHutsegiteOrduak(hutsOrdu);
-        int bertaratzeOinarriOrduak = bigarrenFinalaDa ? 0 : kalkulatuBertaratzeOinarriOrduak(koadernoa, tartea);
+        int bertaratzeOinarriOrduak = bigarrenFinalaDa ? 0 : kalkulatuBertaratzeOinarriOrduak(koadernoa, ebaluazioOrduak);
         est.setBertaratzeOinarriOrduak(bertaratzeOinarriOrduak);
 
         est.setKalkulatua(true);
@@ -357,20 +359,19 @@ public class EstatistikaService {
     // ============================================================
 
     /**
-     * Orduak aurreikusiak:
-     *  - Programaziotik (UD-en orduen batura) tarte horretan.
-     *  - `urteOsoa = true` bada → programazio osoaren orduen batura.
+     * Orduak aurreikusiak: programazio-pantailako ebaluazio bakoitzeko ordu lektibo
+     * kalkulu bera berrerabiltzen du.
      */
-    private int kalkulatuOrduakAurreikusiak(Programazioa p, DateRange tartea) {
-        if (p == null || tartea == null || p.getEbaluaketak() == null) return 0;
+    private int kalkulatuOrduakAurreikusiak(Programazioa p, Koadernoa k, DateRange tartea) {
+        if (p == null || k == null || tartea == null || p.getEbaluaketak() == null) return 0;
 
+        Map<Long, Integer> ebaluazioOrduak = programazioaService.kalkulatuEbaluazioOrduak(p, k);
         return p.getEbaluaketak().stream()
                 .filter(eb -> ebTarteanDago(eb, tartea))
-                .flatMap(eb -> eb.getUnitateak().stream())
-                .mapToInt(ud -> {
-                    Integer orduak = ud.getOrduak(); // Integer dela suposatuz
-                    return (orduak != null ? orduak : 0);
-                })
+                .map(Ebaluaketa::getId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .mapToInt(id -> ebaluazioOrduak.getOrDefault(id, 0))
                 .sum();
     }
 
@@ -574,26 +575,13 @@ public class EstatistikaService {
         return totalHutsegiteOrduak;
     }
 
-    private int kalkulatuBertaratzeOinarriOrduak(Koadernoa k, DateRange tartea) {
-        if (k == null || k.getId() == null || tartea == null) return 0;
+    private int kalkulatuBertaratzeOinarriOrduak(Koadernoa k, int ebaluazioOrduak) {
+        if (k == null || k.getId() == null || ebaluazioOrduak <= 0) return 0;
 
         long ikasleAktiboak = matrikulaRepository.countByKoadernoa_IdAndEgoera(k.getId(), MatrikulaEgoera.MATRIKULATUA);
         if (ikasleAktiboak <= 0) return 0;
 
-        List<Saioa> saioak = saioaRepository.findByKoadernoa_IdAndDataBetweenAndEgoera(
-                k.getId(),
-                tartea.from(),
-                tartea.to(),
-                SaioEgoera.AKTIBOA
-        );
-
-        int saioOrduAktiboak = saioak.stream()
-                .map(Saioa::getIraupenaSlot)
-                .filter(Objects::nonNull)
-                .mapToInt(Integer::intValue)
-                .sum();
-
-        return (int) (ikasleAktiboak * saioOrduAktiboak);
+        return (int) (ikasleAktiboak * ebaluazioOrduak);
     }
     
 	 // Koaderno honetako estatistika-lerro GUZTIAK lortzeko metodo sinplea.

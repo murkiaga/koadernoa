@@ -662,6 +662,24 @@ public class ProgramazioaService {
     }
 
     @Transactional(readOnly = true)
+    public Map<Long, Integer> kalkulatuEbaluazioOrduak(Programazioa programazioa, Koadernoa koadernoa) {
+        if (programazioa == null || koadernoa == null) {
+            return Map.of();
+        }
+
+        Koadernoa ordutegidunKoadernoa = koadernoa;
+        if (koadernoa.getId() != null) {
+            ordutegidunKoadernoa = koadernoaRepository.findWithOrdutegiaById(koadernoa.getId())
+                    .orElse(koadernoa);
+        }
+
+        return ebalOrduErabilgarriakBlokeekin(
+                programazioa,
+                ordutegidunKoadernoa.getEgutegia(),
+                ordutegidunKoadernoa.getOrdutegiak());
+    }
+
+    @Transactional(readOnly = true)
     public Map<Long, Integer> ebalOrduErabilgarriakBlokeekin(
             Programazioa programazioa,
             Egutegia egutegia,
