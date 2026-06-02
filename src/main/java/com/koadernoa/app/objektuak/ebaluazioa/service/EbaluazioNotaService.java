@@ -2,11 +2,13 @@ package com.koadernoa.app.objektuak.ebaluazioa.service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
+import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioEgoera;
 import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioMomentua;
 import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioNota;
 import com.koadernoa.app.objektuak.ebaluazioa.repository.EbaluazioNotaRepository;
@@ -42,6 +44,16 @@ public class EbaluazioNotaService {
                              List<Matrikula> matrikulak,
                              HttpServletRequest request,
                              boolean kontrolatuBigarrenFinala) {
+        return gordeNotak(koadernoa, momentuak, matrikulak, request, kontrolatuBigarrenFinala, null);
+    }
+
+    @Transactional
+    public String gordeNotak(Koadernoa koadernoa,
+                             List<EbaluazioMomentua> momentuak,
+                             List<Matrikula> matrikulak,
+                             HttpServletRequest request,
+                             boolean kontrolatuBigarrenFinala,
+                             Map<String, Set<EbaluazioEgoera>> egoeraOnartuakKodearenArabera) {
 
         StringBuilder errorBuilder = new StringBuilder();
         Map<Long, LehenFinalEgoera> lehenFinalEgoeraMap = matrikulak.stream()
@@ -81,7 +93,9 @@ public class EbaluazioNotaService {
 
                 // ===== 1) Saiatu egoera berezi bat dela (kodea) =====
                 final String kodeValue = value; // lambda-rako "effectively final"
-                var egoeraOpt = momentua.getEgoeraOnartuak().stream()
+                Set<EbaluazioEgoera> egoeraOnartuak = lortuEgoeraOnartuak(
+                        momentua, egoeraOnartuakKodearenArabera);
+                var egoeraOpt = egoeraOnartuak.stream()
                         .filter(e -> e.getKodea().equalsIgnoreCase(kodeValue))
                         .findFirst();
 
@@ -183,6 +197,22 @@ public class EbaluazioNotaService {
         }
         // Lerro-jauziak HTML <br>-ekin
         return errorBuilder.toString();
+    }
+
+
+    private Set<EbaluazioEgoera> lortuEgoeraOnartuak(EbaluazioMomentua momentua,
+                                                     Map<String, Set<EbaluazioEgoera>> egoeraOnartuakKodearenArabera) {
+        if (momentua == null) {
+            return Set.of();
+        }
+        if (egoeraOnartuakKodearenArabera == null) {
+            return momentua.getEgoeraOnartuak();
+        }
+        if (momentua.getKodea() == null) {
+            return Set.of();
+        }
+        return egoeraOnartuakKodearenArabera.getOrDefault(
+                momentua.getKodea().toUpperCase(), Set.of());
     }
 
     private LehenFinalEgoera lortuLehenFinalEgoera(Matrikula matrikula) {

@@ -206,7 +206,7 @@
                                  and notaMap[mat.id + '_' + em.id].egoera.kodea == 'UKO_EGINDA')}">
                   <button type="button"
                           class="nota-egoera-op"
-                          th:each="ego : ${em.egoeraOnartuak}"
+                          th:each="ego : ${pendienteEgoerakKodearenArabera[em.kodea]}"
                           th:data-value="${ego.kodea}"
                           th:text="${ego.kodea}">
                     EZ_AURKEZTUA
@@ -221,7 +221,7 @@
 
       <section th:if="${!#lists.isEmpty(pendienteak)}">
         <h2 class="section-title">Pendienteak</h2>
-        <p class="section-help">Ikasle pendienteentzat 1_FINAL eta 2_FINAL notak bakarrik sar daitezke.</p>
+        <p class="section-help">Ikasle pendienteentzat <strong>Urte osoko datuak?</strong> aktibatuta duten ebaluazio momentuak bakarrik sar daitezke.</p>
         <table>
           <thead>
           <tr>
@@ -259,20 +259,22 @@
                 </span>
                 <button type="button"
                         class="nota-egoera-btn"
-                        th:if="${!#lists.isEmpty(em.egoeraOnartuak)
+                        th:if="${#maps.containsKey(pendienteEgoerakKodearenArabera, em.kodea)
+                                and !#lists.isEmpty(pendienteEgoerakKodearenArabera[em.kodea])
                                 and !(#maps.containsKey(notaMap, mat.id + '_' + em.id)
                                     and notaMap[mat.id + '_' + em.id].egoera != null
                                     and notaMap[mat.id + '_' + em.id].egoera.kodea == 'UKO_EGINDA')}">
                   +
                 </button>
                 <div class="nota-egoera-menu" style="display:none;"
-                     th:if="${!#lists.isEmpty(em.egoeraOnartuak)
+                     th:if="${#maps.containsKey(pendienteEgoerakKodearenArabera, em.kodea)
+                             and !#lists.isEmpty(pendienteEgoerakKodearenArabera[em.kodea])
                              and !(#maps.containsKey(notaMap, mat.id + '_' + em.id)
                                  and notaMap[mat.id + '_' + em.id].egoera != null
                                  and notaMap[mat.id + '_' + em.id].egoera.kodea == 'UKO_EGINDA')}">
                   <button type="button"
                           class="nota-egoera-op"
-                          th:each="ego : ${em.egoeraOnartuak}"
+                          th:each="ego : ${pendienteEgoerakKodearenArabera[em.kodea]}"
                           th:data-value="${ego.kodea}"
                           th:text="${ego.kodea}">
                     EZ_AURKEZTUA

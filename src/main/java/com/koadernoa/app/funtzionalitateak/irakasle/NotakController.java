@@ -1,7 +1,9 @@
 package com.koadernoa.app.funtzionalitateak.irakasle;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.function.Function;
@@ -16,9 +18,12 @@ import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioMomentua;
+import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioEgoera;
 import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioNota;
+import com.koadernoa.app.objektuak.ebaluazioa.entitateak.PendienteEbaluazioMomentuKonfig;
 import com.koadernoa.app.objektuak.ebaluazioa.repository.EbaluazioMomentuaRepository;
 import com.koadernoa.app.objektuak.ebaluazioa.repository.EbaluazioNotaRepository;
+import com.koadernoa.app.objektuak.ebaluazioa.repository.PendienteEbaluazioMomentuKonfigRepository;
 import com.koadernoa.app.objektuak.ebaluazioa.service.EbaluazioNotaService;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
 import com.koadernoa.app.objektuak.audit.entitateak.AuditAtala;
@@ -42,6 +47,7 @@ public class NotakController {
     private final MatrikulaRepository matrikulaRepository;
     private final EbaluazioMomentuaRepository ebaluazioMomentuaRepository;
     private final EbaluazioNotaRepository ebaluazioNotaRepository;
+    private final PendienteEbaluazioMomentuKonfigRepository pendienteEbaluazioMomentuKonfigRepository;
     private final EbaluazioNotaService ebaluazioNotaService;
     private final AuditService auditService;
 
@@ -71,6 +77,8 @@ public class NotakController {
         List<EbaluazioMomentua> pendienteMomentuak = momentuak.stream()
                 .filter(this::daFinalMomentua)
                 .toList();
+        Map<String, Set<EbaluazioEgoera>> pendienteEgoerakKodearenArabera =
+                lortuPendienteEgoerakKodearenArabera();
 
         // 3) Jadanik gordeta dauden notak kargatu
         List<EbaluazioNota> notak = ebaluazioNotaRepository.findByMatrikulaKoadernoa(koadernoa);
@@ -116,6 +124,7 @@ public class NotakController {
         model.addAttribute("matrikulak", matrikulak);
         model.addAttribute("pendienteak", pendienteak);
         model.addAttribute("pendienteMomentuak", pendienteMomentuak);
+        model.addAttribute("pendienteEgoerakKodearenArabera", pendienteEgoerakKodearenArabera);
         model.addAttribute("notaMap", notaMap);
         model.addAttribute("bigarrenFinalaErakutsiMap", bigarrenFinalaErakutsiMap);
 
@@ -144,6 +153,8 @@ public class NotakController {
         List<EbaluazioMomentua> pendienteMomentuak = momentuak.stream()
                 .filter(this::daFinalMomentua)
                 .toList();
+        Map<String, Set<EbaluazioEgoera>> pendienteEgoerakKodearenArabera =
+                lortuPendienteEgoerakKodearenArabera();
 
         for (Matrikula m : matrikulak) {
             String oh = request.getParameter("oharra_" + m.getId());
@@ -158,7 +169,7 @@ public class NotakController {
 
         String errorHtml = ebaluazioNotaService.gordeNotak(koadernoa, momentuak, matrikulak, request);
         String pendienteErrorHtml = ebaluazioNotaService.gordeNotak(
-                koadernoa, pendienteMomentuak, pendienteak, request, false);
+                koadernoa, pendienteMomentuak, pendienteak, request, false, pendienteEgoerakKodearenArabera);
         if (pendienteErrorHtml != null && !pendienteErrorHtml.isBlank()) {
             errorHtml = (errorHtml == null || errorHtml.isBlank())
                     ? pendienteErrorHtml
@@ -189,11 +200,20 @@ public class NotakController {
     }
 
     private boolean daFinalMomentua(EbaluazioMomentua momentua) {
-        if (momentua == null || momentua.getKodea() == null) {
-            return false;
+        return momentua != null && Boolean.TRUE.equals(momentua.getUrteOsoa());
+    }
+
+    private Map<String, Set<EbaluazioEgoera>> lortuPendienteEgoerakKodearenArabera() {
+        Map<String, Set<EbaluazioEgoera>> egoerakByKodea = new LinkedHashMap<>();
+        List<PendienteEbaluazioMomentuKonfig> konfigurazioak =
+                pendienteEbaluazioMomentuKonfigRepository.findAllByOrderByKodeaAsc();
+        for (PendienteEbaluazioMomentuKonfig cfg : konfigurazioak) {
+            if (cfg.getKodea() != null) {
+                egoerakByKodea.put(cfg.getKodea(), cfg.getEgoeraOnartuak());
+                egoerakByKodea.put(cfg.getKodea().toUpperCase(), cfg.getEgoeraOnartuak());
+            }
         }
-        return "1_FINAL".equalsIgnoreCase(momentua.getKodea())
-                || "2_FINAL".equalsIgnoreCase(momentua.getKodea());
+        return egoerakByKodea;
     }
 
     private boolean daUkoEginda(EbaluazioNota nota) {
