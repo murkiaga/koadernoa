@@ -2,8 +2,10 @@ package com.koadernoa.app.funtzionalitateak.kudeatzaile;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.springframework.data.domain.Sort;
@@ -16,10 +18,12 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioEgoera;
 import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioMomentua;
 import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EzadostasunKonfig;
+import com.koadernoa.app.objektuak.ebaluazioa.entitateak.PendienteEbaluazioMomentuKonfig;
 import com.koadernoa.app.objektuak.ebaluazioa.repository.EbaluazioEgoeraRepository;
 import com.koadernoa.app.objektuak.ebaluazioa.repository.EbaluazioMomentuaRepository;
 import com.koadernoa.app.objektuak.ebaluazioa.repository.EbaluazioNotaRepository;
 import com.koadernoa.app.objektuak.ebaluazioa.repository.EzadostasunKonfigRepository;
+import com.koadernoa.app.objektuak.ebaluazioa.repository.PendienteEbaluazioMomentuKonfigRepository;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
 import com.koadernoa.app.objektuak.egutegia.repository.MailaRepository;
 import com.koadernoa.app.objektuak.modulua.entitateak.MintegiModuluBaimena;
@@ -46,6 +50,7 @@ public class KonfigurazioaController {
     private final EbaluazioEgoeraRepository ebaluazioEgoeraRepository;
     private final EbaluazioNotaRepository ebaluazioNotaRepository;
     private final EzadostasunKonfigRepository ezadostasunKonfigRepository;
+    private final PendienteEbaluazioMomentuKonfigRepository pendienteEbaluazioMomentuKonfigRepository;
     private final AplikazioAukeraService aplikazioAukeraService;
     private final MintegiModuluBaimenaRepository mintegiModuluBaimenaRepository;
 
@@ -76,6 +81,9 @@ public class KonfigurazioaController {
         List<EzadostasunKonfig> ezadKonfigList =
                 ezadostasunKonfigRepository.findAll(org.springframework.data.domain.Sort.by("kodea").ascending());
 
+        // PENDIENTEEN EBALUAZIO MOMENTUEN KONFIGURAZIOA
+        List<PendienteMomentuKonfigRow> pendienteMomentuKonfigRows = lortuPendienteMomentuKonfigRows();
+
         // MINTEGI-MODULU BAIMENAK
         List<MintegiModuluBaimena> mintegiModuluBaimenak = mintegiModuluBaimenaRepository.findAllOrdenatuta();
 
@@ -91,6 +99,7 @@ public class KonfigurazioaController {
         model.addAttribute("sortuEgoeraForm", new SortuEbaluazioEgoeraForm());
 
         model.addAttribute("ezadostasunKonfigList", ezadKonfigList);
+        model.addAttribute("pendienteMomentuKonfigRows", pendienteMomentuKonfigRows);
 
         model.addAttribute("mintegiModuluBaimenak", mintegiModuluBaimenak);
         model.addAttribute("sortuMintegiModuluBaimenaForm", new SortuMintegiModuluBaimenaForm());
@@ -99,6 +108,38 @@ public class KonfigurazioaController {
         koadernoKonfigForm.setBikoiztuakBaimendu(aplikazioAukeraService.getBool(AplikazioAukeraService.KOADERNO_BIKOIZTUAK_BAIMENDU, true));
         koadernoKonfigForm.setBesteMintegiaBaimendu(aplikazioAukeraService.getBool(AplikazioAukeraService.KOADERNO_BESTE_MINTEGIA_BAIMENDU, false));
         model.addAttribute("koadernoKonfigForm", koadernoKonfigForm);
+    }
+
+
+    private List<PendienteMomentuKonfigRow> lortuPendienteMomentuKonfigRows() {
+        Map<String, PendienteMomentuKonfigRow> rowsByKodea = new LinkedHashMap<>();
+        List<EbaluazioMomentua> urteOsokoMomentuak =
+                ebaluazioMomentuaRepository.findByUrteOsoaTrueOrderByOrdenaAscKodeaAsc();
+        List<PendienteEbaluazioMomentuKonfig> konfigurazioak =
+                pendienteEbaluazioMomentuKonfigRepository.findAllByOrderByKodeaAsc();
+
+        Map<String, PendienteEbaluazioMomentuKonfig> konfigurazioakByKodea = new LinkedHashMap<>();
+        for (PendienteEbaluazioMomentuKonfig cfg : konfigurazioak) {
+            if (cfg.getKodea() != null) {
+                konfigurazioakByKodea.put(cfg.getKodea().toUpperCase(), cfg);
+            }
+        }
+
+        for (EbaluazioMomentua momentua : urteOsokoMomentuak) {
+            if (momentua.getKodea() == null || momentua.getKodea().isBlank()) {
+                continue;
+            }
+            String kodea = momentua.getKodea().trim();
+            String key = kodea.toUpperCase();
+            PendienteEbaluazioMomentuKonfig cfg = konfigurazioakByKodea.get(key);
+            rowsByKodea.computeIfAbsent(key, ignored -> new PendienteMomentuKonfigRow(
+                    kodea,
+                    momentua.getIzena(),
+                    cfg != null ? cfg.getEgoeraOnartuak() : Set.of()
+            )).gehituMomentua();
+        }
+
+        return List.copyOf(rowsByKodea.values());
     }
 
     // ---- MAILAK: aktibo/desaktibo bulk ----
@@ -338,6 +379,51 @@ public class KonfigurazioaController {
             return false;
         }
     }
+
+    @PostMapping("/pendienteak/gorde")
+    @Transactional
+    public String gordePendienteenEbaluazioMomentuak(HttpServletRequest request,
+                                                     RedirectAttributes redirectAttributes) {
+        String[] kodeak = request.getParameterValues("kodeak");
+        if (kodeak == null) {
+            redirectAttributes.addFlashAttribute("success", "Pendienteen konfigurazioa gorde da.");
+            return "redirect:/kudeatzaile/konfigurazioa#pendienteak";
+        }
+
+        for (String kodeaRaw : kodeak) {
+            if (kodeaRaw == null || kodeaRaw.isBlank()) {
+                continue;
+            }
+            String kodea = kodeaRaw.trim();
+            PendienteEbaluazioMomentuKonfig cfg = pendienteEbaluazioMomentuKonfigRepository
+                    .findByKodeaIgnoreCase(kodea)
+                    .orElseGet(() -> {
+                        PendienteEbaluazioMomentuKonfig berria = new PendienteEbaluazioMomentuKonfig();
+                        berria.setKodea(kodea);
+                        return berria;
+                    });
+
+            Set<EbaluazioEgoera> egoeraOnartuak = new LinkedHashSet<>();
+            String[] egoeraIdArray = request.getParameterValues("pendienteEgoerak_" + kodea);
+            if (egoeraIdArray != null) {
+                for (String egoeraIdStr : egoeraIdArray) {
+                    try {
+                        Long egoeraId = Long.valueOf(egoeraIdStr);
+                        ebaluazioEgoeraRepository.findById(egoeraId)
+                                .ifPresent(egoeraOnartuak::add);
+                    } catch (NumberFormatException ignored) {}
+                }
+            }
+
+            cfg.getEgoeraOnartuak().clear();
+            cfg.getEgoeraOnartuak().addAll(egoeraOnartuak);
+            pendienteEbaluazioMomentuKonfigRepository.save(cfg);
+        }
+
+        redirectAttributes.addFlashAttribute("success", "Pendienteen konfigurazioa gorde da.");
+        return "redirect:/kudeatzaile/konfigurazioa#pendienteak";
+    }
+
     // ===== Ebaluazio Momentuak =====
  // GET: zerrenda + formularioa
     @GetMapping("/mailak/{mailaId}/ebaluazioak")
@@ -613,10 +699,12 @@ public class KonfigurazioaController {
                     // → KONTROLA: ezabatu aurretik begiratu ea erabiltzen den
                     boolean erabiltzenDaMomentuetan =
                             ebaluazioMomentuaRepository.existsByEgoeraOnartuakContains(egoera);
+                    boolean erabiltzenDaPendienteKonfigurazioan =
+                            pendienteEbaluazioMomentuKonfigRepository.existsByEgoeraOnartuakContains(egoera);
                     boolean erabiltzenDaNotetan =
                             ebaluazioNotaRepository.existsByEgoera(egoera);
 
-                    if (erabiltzenDaMomentuetan || erabiltzenDaNotetan) {
+                    if (erabiltzenDaMomentuetan || erabiltzenDaPendienteKonfigurazioan || erabiltzenDaNotetan) {
                         redirectAttributes.addFlashAttribute("error",
                                 "Ezin da ezabatu egoera, erabilia dagoelako (kodea: " + egoera.getKodea() + ").");
                         return "redirect:/kudeatzaile/konfigurazioa#egoerak";
@@ -824,6 +912,18 @@ public class KonfigurazioaController {
     }
 
     // ===== DTO txikiak =====
+    @Data
+    public static class PendienteMomentuKonfigRow {
+        private final String kodea;
+        private final String izena;
+        private final Set<EbaluazioEgoera> egoeraOnartuak;
+        private int momentuKopurua;
+
+        public void gehituMomentua() {
+            momentuKopurua++;
+        }
+    }
+
     @Data
     public static class ActiveMailakForm {
         private List<Long> aktiboIds;

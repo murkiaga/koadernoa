@@ -12,10 +12,12 @@ import com.koadernoa.app.objektuak.zikloak.repository.FamiliaRepository;
 import com.koadernoa.app.objektuak.zikloak.repository.TaldeaRepository;
 import com.koadernoa.app.objektuak.zikloak.repository.ZikloaRepository;
 
-@Configuration
+// Desgaituta: datu hauek eskuz editatuta daude DBan, eta berrabiaraztean ez berriz sortzeko.
+// @Configuration
 public class ZikloEtaTaldeSeedConfig {
 
-    @Bean
+    // Desgaituta: seed hau ez exekutatzeko.
+    // @Bean
     CommandLineRunner seedFamiliaZikloEtaTaldeak(
             FamiliaRepository familiaRepo,
             ZikloaRepository zikloRepo,

@@ -59,6 +59,14 @@
 	          id="tab-ezadostasunak">
 	    Ezadostasunak
 	  </button>
+
+  <button type="button" class="tab-btn"
+          role="tab"
+          aria-selected="false"
+          aria-controls="panel-pendienteak"
+          id="tab-pendienteak">
+    Pendienteak
+  </button>
   <button type="button" class="tab-btn"
           role="tab"
           aria-selected="false"
@@ -478,6 +486,64 @@
 
 	  <!-- Modal fragment-a -->
 	  <div th:replace="~{kudeatzaile/konfigurazioa/ezadostasun-konfig-berria :: ezadostasun-konfig-berria-modal}"></div>
+	</section>
+
+	<section id="panel-pendienteak" class="tab-panel" role="tabpanel"
+	         aria-labelledby="tab-pendienteak" tabindex="0" aria-hidden="true">
+	  <h2>Pendienteak</h2>
+	  <p class="muted">
+	    Hemen konfiguratzen dira ikasle pendienteen atalean erabil daitezkeen egoera bereziak.
+	    Zerrendan <strong>Urte osoko datuak?</strong> aktibatuta duten ebaluazio momentuen kode bakarrak agertzen dira;
+	    beraz maila ezberdinetako <code>1_FINAL</code> momentuak lerro bakarrean bateratzen dira.
+	  </p>
+
+	  <form th:action="@{/kudeatzaile/konfigurazioa/pendienteak/gorde}" method="post">
+	    <input type="hidden"
+	           th:if="${_csrf != null}"
+	           th:name="${_csrf.parameterName}"
+	           th:value="${_csrf.token}"/>
+	    <div class="table-wrap">
+	      <table>
+	        <thead>
+	        <tr>
+	          <th>Kodea</th>
+	          <th>Izena</th>
+	          <th>Momentu kopurua</th>
+	          <th>Egoera bereziak pendienteentzat</th>
+	        </tr>
+	        </thead>
+	        <tbody>
+	        <tr th:if="${#lists.isEmpty(pendienteMomentuKonfigRows)}">
+	          <td colspan="4" class="muted">Ez dago <strong>Urte osoko datuak?</strong> aktibatuta duen ebaluazio momenturik.</td>
+	        </tr>
+	        <tr th:each="row : ${pendienteMomentuKonfigRows}">
+	          <td>
+	            <input type="hidden" name="kodeak" th:value="${row.kodea}"/>
+	            <strong th:text="${row.kodea}">1_FINAL</strong>
+	          </td>
+	          <td th:text="${row.izena}">1. finala</td>
+	          <td th:text="${row.momentuKopurua}">3</td>
+	          <td>
+	            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+	              <label th:each="egoera : ${egoerak}"
+	                     style="display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border:1px solid #d1d5db;border-radius:999px;background:#f9fafb;white-space:nowrap;">
+	                <input type="checkbox"
+	                       th:name="|pendienteEgoerak_${row.kodea}|"
+	                       th:value="${egoera.id}"
+	                       th:checked="${row.egoeraOnartuak.contains(egoera)}"/>
+	                <span th:text="${egoera.kodea}">EZ_AURKEZTUA</span>
+	              </label>
+	            </div>
+	          </td>
+	        </tr>
+	        </tbody>
+	      </table>
+	    </div>
+	    <div class="actions" style="margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
+	      <span class="muted">Aldaketa hauek /irakasle/notak-ko pendienteen atalean bakarrik aplikatuko dira.</span>
+	      <button type="submit">Gorde aldaketak</button>
+	    </div>
+	  </form>
 	</section>
 
 	<section id="panel-koadernoak" class="tab-panel" role="tabpanel"
