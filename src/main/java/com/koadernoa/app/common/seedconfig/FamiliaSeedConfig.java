@@ -7,9 +7,11 @@ import org.springframework.context.annotation.Configuration;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Familia;
 import com.koadernoa.app.objektuak.zikloak.repository.FamiliaRepository;
 
-@Configuration
+// Desgaituta: datu hauek eskuz editatuta daude DBan, eta berrabiaraztean ez berriz sortzeko.
+// @Configuration
 public class FamiliaSeedConfig {
-    @Bean
+    // Desgaituta: seed hau ez exekutatzeko.
+    // @Bean
     CommandLineRunner seedFamilia(FamiliaRepository repo) {
         return args -> {
             for (String iz : new String[]{

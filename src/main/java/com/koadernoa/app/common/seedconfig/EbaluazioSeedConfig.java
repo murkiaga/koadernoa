@@ -12,10 +12,12 @@ import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
 import com.koadernoa.app.objektuak.egutegia.repository.MailaRepository;
 
 
-@Configuration
+// Desgaituta: datu hauek eskuz editatuta daude DBan, eta berrabiaraztean ez berriz sortzeko.
+// @Configuration
 public class EbaluazioSeedConfig {
 
-    @Bean
+    // Desgaituta: seed hau ez exekutatzeko.
+    // @Bean
     CommandLineRunner seedMailakMomentuakEtaEgoerak(
             MailaRepository mailaRepository,
             EbaluazioMomentuaRepository emRepo,
