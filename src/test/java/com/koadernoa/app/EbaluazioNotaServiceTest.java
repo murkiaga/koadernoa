@@ -23,6 +23,22 @@ import com.koadernoa.app.objektuak.modulua.entitateak.Matrikula;
 class EbaluazioNotaServiceTest {
 
     @Test
+    void notaHustenDeneanAurrekoNotaEzabatzenDu() {
+        EbaluazioNotaRepository repo = org.mockito.Mockito.mock(EbaluazioNotaRepository.class);
+        EbaluazioNotaService service = new EbaluazioNotaService(repo);
+        Matrikula matrikula = matrikula(304L);
+        EbaluazioMomentua momentua = momentua(1L, false);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setParameter("nota_304_1", "");
+
+        String error = service.gordeNotak(null, List.of(momentua), List.of(matrikula), request, false);
+
+        assertNull(error);
+        verify(repo).deleteByMatrikulaIdAndMomentuaId(304L, 1L);
+        verify(repo, never()).save(any(EbaluazioNota.class));
+    }
+
+    @Test
     void hamartarrakDesaktibatutaDaudeneanNotaDezimalaBaztertzenDu() {
         EbaluazioNotaRepository repo = org.mockito.Mockito.mock(EbaluazioNotaRepository.class);
         EbaluazioNotaService service = new EbaluazioNotaService(repo);

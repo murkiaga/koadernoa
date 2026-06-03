@@ -68,9 +68,7 @@ public class EbaluazioNotaService {
                 if (kontrolatuBigarrenFinala
                         && daBigarrenFinala(momentua)
                         && !daBigarrenFinalaEbaluagarria(lehenFinalEgoeraMap.get(matrikula.getId()))) {
-                    ebaluazioNotaRepository
-                            .findByMatrikulaAndEbaluazioMomentua(matrikula, momentua)
-                            .ifPresent(ebaluazioNotaRepository::delete);
+                    ezabatuNota(matrikula, momentua);
                     continue;
                 }
 
@@ -82,9 +80,7 @@ public class EbaluazioNotaService {
                 String value = rawValue.trim();
                 if (value.isEmpty()) {
                     // Hutsa → nota ezabatu (egoera eta nota)
-                    ebaluazioNotaRepository
-                            .findByMatrikulaAndEbaluazioMomentua(matrikula, momentua)
-                            .ifPresent(ebaluazioNotaRepository::delete);
+                    ezabatuNota(matrikula, momentua);
                     if (daLehenFinala(momentua)) {
                         lehenFinalEgoeraMap.put(matrikula.getId(), LehenFinalEgoera.BALIORIK_GABE);
                     }
@@ -212,6 +208,13 @@ public class EbaluazioNotaService {
         return errorBuilder.toString();
     }
 
+    private void ezabatuNota(Matrikula matrikula, EbaluazioMomentua momentua) {
+        if (matrikula == null || matrikula.getId() == null
+                || momentua == null || momentua.getId() == null) {
+            return;
+        }
+        ebaluazioNotaRepository.deleteByMatrikulaIdAndMomentuaId(matrikula.getId(), momentua.getId());
+    }
 
     private Set<EbaluazioEgoera> lortuEgoeraOnartuak(EbaluazioMomentua momentua,
                                                      Map<String, Set<EbaluazioEgoera>> egoeraOnartuakKodearenArabera) {
