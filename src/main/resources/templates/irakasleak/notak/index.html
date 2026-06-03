@@ -206,7 +206,7 @@
                                  and notaMap[mat.id + '_' + em.id].egoera.kodea == 'UKO_EGINDA')}">
                   <button type="button"
                           class="nota-egoera-op"
-                          th:each="ego : ${pendienteEgoerakKodearenArabera[em.kodea]}"
+                          th:each="ego : ${em.egoeraOnartuak}"
                           th:data-value="${ego.kodea}"
                           th:text="${ego.kodea}">
                     EZ_AURKEZTUA
