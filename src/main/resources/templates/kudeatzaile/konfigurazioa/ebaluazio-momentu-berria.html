@@ -134,6 +134,13 @@
 
         <div class="field">
           <label>
+            <input type="checkbox" name="onartuHamartarrak"/>
+            Hamartarrak onartu?
+          </label>
+        </div>
+
+        <div class="field">
+          <label>
             <input type="checkbox" name="urteOsoa"/>
             Urte osoko datuak erabili (estatistiketan)
           </label>
@@ -176,6 +183,24 @@
 
         if (!modal) return;
 
+        const onartu = modal.querySelector('input[name="onartuNotaZenbakizkoa"]');
+        const hamartarrak = modal.querySelector('input[name="onartuHamartarrak"]');
+
+        function syncHamartarrak(){
+          if (!hamartarrak || !onartu) return;
+          if (!onartu.checked) {
+            hamartarrak.checked = false;
+            hamartarrak.disabled = true;
+          } else {
+            hamartarrak.disabled = false;
+          }
+        }
+
+        if (onartu) {
+          onartu.addEventListener('change', syncHamartarrak);
+          syncHamartarrak();
+        }
+
         if (btnNew) {
           btnNew.addEventListener('click', function(){
             if (form) {
@@ -184,8 +209,13 @@
             // Lehenespenez aktibo + 1-10 onartua markatu
             const aktibo = modal.querySelector('input[name="aktibo"]');
             const onartu = modal.querySelector('input[name="onartuNotaZenbakizkoa"]');
+            const hamartarrak = modal.querySelector('input[name="onartuHamartarrak"]');
             if (aktibo) aktibo.checked = true;
             if (onartu) onartu.checked = true;
+            if (hamartarrak) {
+              hamartarrak.checked = false;
+              hamartarrak.disabled = !onartu || !onartu.checked;
+            }
 
             modal.showModal();
           });

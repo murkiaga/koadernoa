@@ -130,6 +130,7 @@
 	          <th>Izena</th>
 	          <th>Ordena</th>
 	          <th>1–10 nota?</th>
+	          <th>Hamartarrak onartu?</th>
 	          <th>Urte osoko datuak?</th>
 	          <th>Egoera bereziak</th>
 	          <th>Ezadostasun konfigurazioa</th>
@@ -145,7 +146,7 @@
 	                   th:name="|aktibo_${em.id}|"
 	                   th:checked="${em.aktibo}"/>
 	          </td>
-	
+
 	          <!-- KODEA: irakurri-soilik (ez editagarria) -->
 	          <td>
 	            <span th:text="${em.kodea}">1_EBAL</span>
@@ -154,7 +155,7 @@
 	                   th:name="|kodea_${em.id}|"
 	                   th:value="${em.kodea}"/>
 	          </td>
-	
+
 	          <!-- IZENA: editagarria -->
 	          <td>
 	            <input type="text"
@@ -162,7 +163,7 @@
 	                   th:value="${em.izena}"
 	                   style="width:100%;"/>
 	          </td>
-	
+
 	          <!-- ORDENA -->
 	          <td>
 	            <input type="number"
@@ -170,21 +171,30 @@
 	                   th:value="${em.ordena}"
 	                   style="width:4rem;"/>
 	          </td>
-	
+
 	          <!-- 0-10 nota? -->
 	          <td style="text-align:center;">
 	            <input type="checkbox"
 	                   th:name="|onartuNotaZenbakizkoa_${em.id}|"
 	                   th:checked="${em.onartuNotaZenbakizkoa}"/>
 	          </td>
-	
+
+	          <!-- HAMARTARRAK ONARTU? -->
+	          <td style="text-align:center;">
+	            <input type="checkbox"
+	                   th:name="|onartuHamartarrak_${em.id}|"
+	                   th:checked="${em.onartuHamartarrak}"
+	                   th:disabled="${!em.onartuNotaZenbakizkoa}"
+	                   data-hamartarrak-checkbox="true"/>
+	          </td>
+
 	          <!-- URTE OSOKO DATUAK? -->
 	          <td style="text-align:center;">
 	            <input type="checkbox"
 	                   th:name="|urteOsoa_${em.id}|"
 	                   th:checked="${em.urteOsoa}"/>
 	          </td>
-	
+
 	          <!-- EGOERA BEREZIAK -->
 	          <td>
 	            <div class="egoera-list">
@@ -198,7 +208,7 @@
 	              </label>
 	            </div>
 	          </td>
-	          
+
 	          <!-- Ezadostasun konfigurazioa: select -->
 			  <td>
 			    <select th:name="|ezadostasunKonfigId_${em.id}|"
@@ -215,7 +225,7 @@
 			      </option>
 			    </select>
 			  </td>
-	
+
 	          <!-- EZABATU -->
 	          <td style="text-align:center;">
 	            <input type="checkbox"
@@ -239,6 +249,28 @@
 
   <!-- Modal berria (fragment-a) -->
   <div th:replace="~{kudeatzaile/konfigurazioa/ebaluazio-momentu-berria :: ebaluazio-momentu-berria-modal}"></div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function(){
+      document.querySelectorAll('input[name^="onartuNotaZenbakizkoa_"]').forEach(function(notaCheckbox){
+        const row = notaCheckbox.closest('tr');
+        const hamartarrakCheckbox = row ? row.querySelector('[data-hamartarrak-checkbox="true"]') : null;
+        if (!hamartarrakCheckbox) return;
+
+        function syncHamartarrak(){
+          if (!notaCheckbox.checked) {
+            hamartarrakCheckbox.checked = false;
+            hamartarrakCheckbox.disabled = true;
+          } else {
+            hamartarrakCheckbox.disabled = false;
+          }
+        }
+
+        notaCheckbox.addEventListener('change', syncHamartarrak);
+        syncHamartarrak();
+      });
+    });
+  </script>
 
 </main>
 </body>

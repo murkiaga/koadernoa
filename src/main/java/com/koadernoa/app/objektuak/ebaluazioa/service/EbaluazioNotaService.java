@@ -149,6 +149,19 @@ public class EbaluazioNotaService {
                         continue;
                     }
 
+                    if (!Boolean.TRUE.equals(momentua.getOnartuHamartarrak())
+                            && !value.matches("[+-]?\\d+")) {
+                        errorBuilder.append("Ikaslea ")
+                                .append(ikasleIzena)
+                                .append(", \"")
+                                .append(momentua.getIzena())
+                                .append("\" momentuan: nota ")
+                                .append(value)
+                                .append(" ez da baliozkoa (zenbaki osoa izan behar du; hamartarrak ez daude baimenduta).")
+                                .append('\n');
+                        continue;
+                    }
+
                     // 1–10 tartea
                     if (notaZenbaki < 1 || notaZenbaki > 10) {
                         errorBuilder.append("Ikaslea ")
