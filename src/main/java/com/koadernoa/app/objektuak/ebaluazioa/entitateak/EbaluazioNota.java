@@ -3,6 +3,9 @@ package com.koadernoa.app.objektuak.ebaluazioa.entitateak;
 import com.koadernoa.app.objektuak.modulua.entitateak.Matrikula;
 import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioMomentua;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,7 +32,7 @@ public class EbaluazioNota {
     private EbaluazioMomentua ebaluazioMomentua;
 
     /**
-     * Nota zenbakizkoa (0-10). 
+     * Nota zenbakizkoa (0-10).
      * Egoera berezia dagoenean, normalean NULL egongo da.
      */
     private Double nota;
@@ -44,4 +47,19 @@ public class EbaluazioNota {
 
 
     private String oharra;   // “berreskuratu behar du…”
+
+    @Transient
+    public String getNotaBistaratzeko() {
+        if (nota == null) {
+            return "";
+        }
+        if (ebaluazioMomentua != null
+                && Boolean.TRUE.equals(ebaluazioMomentua.getOnartuNotaZenbakizkoa())
+                && !Boolean.TRUE.equals(ebaluazioMomentua.getOnartuHamartarrak())) {
+            return BigDecimal.valueOf(nota)
+                    .setScale(0, RoundingMode.HALF_UP)
+                    .toPlainString();
+        }
+        return nota.toString();
+    }
 }

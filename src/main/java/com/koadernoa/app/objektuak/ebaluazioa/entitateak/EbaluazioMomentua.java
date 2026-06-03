@@ -41,19 +41,26 @@ public class EbaluazioMomentua {
     private String izena;   // erakusteko izena: "1. ebaluazioa", "2. finala"...
 
     private Integer ordena; // pantailan ordenatzeko
-    
+
     @Column(nullable = false)
     private Boolean urteOsoa = false; //1. finala eta 2. finalerako
 
     private Boolean aktibo = true;
-    
+
     /**
      * TRUE → ikasleari 0-10 arteko nota jar dakioke ebaluazio momentu honetan.
      * FALSE → ezin da nota zenbakizkorik jarri (edo bakarrik egoera bereziak).
      */
     @Column(nullable = false)
     private Boolean onartuNotaZenbakizkoa = true;
-    
+
+    /**
+     * TRUE → nota zenbakizkoetan hamartarrak onartzen dira.
+     * FALSE → onartuNotaZenbakizkoa aktibo badago ere, nota osoak bakarrik onartzen dira.
+     */
+    @Column(nullable = false)
+    private Boolean onartuHamartarrak = false;
+
     /**
      * Ebaluazio egoera bereziak (EZ_AURKEZTUA, EZ_EBAL_FALTA, …)
      * momentu honetan erabil daitezkeenak.
@@ -66,7 +73,7 @@ public class EbaluazioMomentua {
     )
     @OrderBy("kodea ASC")
     private java.util.Set<EbaluazioEgoera> egoeraOnartuak = new java.util.LinkedHashSet<>();
-    
+
     @ManyToOne
-    private EzadostasunKonfig ezadostasunKonfig; 
+    private EzadostasunKonfig ezadostasunKonfig;
 }

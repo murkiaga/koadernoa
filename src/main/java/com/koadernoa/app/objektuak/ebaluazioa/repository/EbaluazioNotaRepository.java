@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -17,6 +18,15 @@ public interface EbaluazioNotaRepository extends JpaRepository<EbaluazioNota, Lo
 
     Optional<EbaluazioNota> findByMatrikulaAndEbaluazioMomentua(Matrikula matrikula,
                                                                 EbaluazioMomentua ebaluazioMomentua);
+
+    @Modifying(flushAutomatically = true)
+    @Query("""
+        delete from EbaluazioNota n
+        where n.matrikula.id = :matrikulaId
+          and n.ebaluazioMomentua.id = :momentuaId
+    """)
+    void deleteByMatrikulaIdAndMomentuaId(@Param("matrikulaId") Long matrikulaId,
+                                          @Param("momentuaId") Long momentuaId);
 
     // Koaderno bereko nota guztiak kargatzeko (hasierako pantailarako)
     List<EbaluazioNota> findByMatrikulaKoadernoa(Koadernoa koadernoa);

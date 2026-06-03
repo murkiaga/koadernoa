@@ -239,7 +239,7 @@ public class KonfigurazioaController {
 
         return "redirect:/kudeatzaile/konfigurazioa#familiak";
     }
-    
+
     // ---- MINTEGI-MODULU BAIMENAK: sortu ----
     @PostMapping("/mintegi-modulu-baimenak/sortu")
     @Transactional
@@ -369,7 +369,7 @@ public class KonfigurazioaController {
         s = s.replaceAll("^-+|-+$", "");
         return s.isBlank() ? "item" : s;
     }
-    
+
     // existsBySlugIgnoreCase baduzu erabili; bestela helper “false” itzuli
     private static boolean hasExistsBySlug(FamiliaRepository repo) {
         try {
@@ -444,7 +444,7 @@ public class KonfigurazioaController {
         // Egoera berezi guztiak (checkbox zerrendan erakusteko)
         List<EbaluazioEgoera> egoeraGuztiak =
                 ebaluazioEgoeraRepository.findAllByOrderByKodeaAsc();
-        
+
         List<EzadostasunKonfig> ezadostasunKonfigurazioak =
                 ezadostasunKonfigRepository.findAllByOrderByKodeaAsc();
 
@@ -530,6 +530,8 @@ public class KonfigurazioaController {
                 boolean aktibo = request.getParameter("aktibo_" + id) != null;
                 boolean onartuNotaZenbakizkoa =
                         request.getParameter("onartuNotaZenbakizkoa_" + id) != null;
+                boolean onartuHamartarrak = onartuNotaZenbakizkoa
+                        && request.getParameter("onartuHamartarrak_" + id) != null;
                 boolean urteOsoa =
                         request.getParameter("urteOsoa_" + id) != null;
 
@@ -558,6 +560,7 @@ public class KonfigurazioaController {
                 // BOOLEARRAK
                 em.setAktibo(aktibo);
                 em.setOnartuNotaZenbakizkoa(onartuNotaZenbakizkoa);
+                em.setOnartuHamartarrak(onartuHamartarrak);
                 em.setUrteOsoa(urteOsoa);
 
                 // Ordena
@@ -585,7 +588,7 @@ public class KonfigurazioaController {
 
                 em.getEgoeraOnartuak().clear();
                 em.getEgoeraOnartuak().addAll(egoeraOnartuak);
-                
+
                 // === Ezadostasun konfigurazioa ===
                 String ezadCfgIdStr = request.getParameter("ezadostasunKonfigId_" + id);
                 if (ezadCfgIdStr == null || ezadCfgIdStr.isBlank()) {
@@ -626,6 +629,7 @@ public class KonfigurazioaController {
         String ordenaStr = request.getParameter("ordena");
         boolean aktibo   = request.getParameter("aktibo") != null;
         boolean onartu   = request.getParameter("onartuNotaZenbakizkoa") != null;
+        boolean onartuHamartarrak = onartu && request.getParameter("onartuHamartarrak") != null;
         boolean urteOsoa = request.getParameter("urteOsoa") != null;
 
         EbaluazioMomentua em = new EbaluazioMomentua();
@@ -634,6 +638,7 @@ public class KonfigurazioaController {
         em.setIzena(izena != null ? izena.trim() : null);
         em.setAktibo(aktibo);
         em.setOnartuNotaZenbakizkoa(onartu);
+        em.setOnartuHamartarrak(onartuHamartarrak);
         em.setUrteOsoa(urteOsoa);
 
         if (ordenaStr != null && !ordenaStr.isBlank()) {
@@ -783,7 +788,7 @@ public class KonfigurazioaController {
         redirectAttributes.addFlashAttribute("success", "Ebaluazio egoera berria sortu da.");
         return "redirect:/kudeatzaile/konfigurazioa#egoerak";
     }
-    
+
     // ===== Ezadostasunak =====
     @PostMapping("/ezadostasunak/sortu")
     @Transactional
@@ -835,7 +840,7 @@ public class KonfigurazioaController {
         ra.addFlashAttribute("success", "Ezadostasun konfigurazio berria sortu da.");
         return "redirect:/kudeatzaile/konfigurazioa#ezadostasunak";
     }
-    
+
     @PostMapping("/ezadostasunak/gorde")
     @Transactional
     public String gordeEzadostasunKonfigurazioak(HttpServletRequest request,
