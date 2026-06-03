@@ -19,7 +19,7 @@ public interface EbaluazioNotaRepository extends JpaRepository<EbaluazioNota, Lo
     Optional<EbaluazioNota> findByMatrikulaAndEbaluazioMomentua(Matrikula matrikula,
                                                                 EbaluazioMomentua ebaluazioMomentua);
 
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Modifying(flushAutomatically = true)
     @Query("""
         delete from EbaluazioNota n
         where n.matrikula.id = :matrikulaId
