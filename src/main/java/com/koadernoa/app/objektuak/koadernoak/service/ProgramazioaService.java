@@ -25,6 +25,7 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.Programazioa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.UnitateDidaktikoa;
 import com.koadernoa.app.objektuak.koadernoak.repository.EbaluaketaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.JardueraPlanifikatuaRepository;
+import com.koadernoa.app.objektuak.koadernoak.repository.JardueraRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.ProgramazioaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.UnitateDidaktikoaRepository;
@@ -38,6 +39,7 @@ public class ProgramazioaService {
     private final ProgramazioaRepository programazioaRepository;
     private final UnitateDidaktikoaRepository udRepository;
     private final JardueraPlanifikatuaRepository jpRepository;
+    private final JardueraRepository jardueraRepository;
     private final EbaluaketaRepository ebaluaketaRepository;
     private final KoadernoaRepository koadernoaRepository;
     private final DenboralizazioGeneratorService denboralizazioGeneratorService;
@@ -174,8 +176,7 @@ public class ProgramazioaService {
     public void deleteUd(Long udId) {
         UnitateDidaktikoa ud = udRepository.findById(udId)
             .orElseThrow(() -> new IllegalArgumentException("UD ez da existitzen: " + udId));
-        // orphanRemoval + cascade direla eta, azpi-jarduerak ere ezabatuko dira
-        udRepository.delete(ud);
+        deleteUdSafely(ud);
     }
 
     @Transactional
@@ -596,50 +597,75 @@ public class ProgramazioaService {
         LocalDate ikastBukaera = koadernoa.getEgutegia() != null ? koadernoa.getEgutegia().getBukaeraData() : null;
 
         java.util.Set<String> activeCodes = new java.util.HashSet<>();
-        for (LocalDate hasiera : dualHasierak) {
-            LocalDate dualBuk = dualRangeEnd(hasiera, ordutegiHasierak, ikastBukaera);
-            Ebaluaketa targetEbal = findBestEbaluaketaForRange(programazioa.getEbaluaketak(), hasiera, dualBuk);
-            if (targetEbal == null) continue;
+        if (dualOrduak > 0) {
+            for (LocalDate hasiera : dualHasierak) {
+                LocalDate dualBuk = dualRangeEnd(hasiera, ordutegiHasierak, ikastBukaera);
+                Ebaluaketa targetEbal = findBestEbaluaketaForRange(programazioa.getEbaluaketak(), hasiera, dualBuk);
+                if (targetEbal == null) continue;
 
-            String code = "DUAL-" + hasiera.toString().replace("-", "");
-            activeCodes.add(code);
-            if (targetEbal.getUnitateak() == null) {
-                targetEbal.setUnitateak(new ArrayList<>());
-            }
+                String code = "DUAL-" + hasiera.toString().replace("-", "");
+                activeCodes.add(code);
+                if (targetEbal.getUnitateak() == null) {
+                    targetEbal.setUnitateak(new ArrayList<>());
+                }
 
-            UnitateDidaktikoa existing = findUdByKodeaInProgramazioa(programazioa, code);
-            if (dualOrduak <= 0) continue;
-            if (existing == null) {
-                UnitateDidaktikoa ud = new UnitateDidaktikoa();
-                ud.setProgramazioa(programazioa);
-                ud.setEbaluaketa(targetEbal);
-                ud.setKodea(code);
-                ud.setIzenburua("DUALA");
-                ud.setOrduak(dualOrduak);
-                int maxPos = targetEbal.getUnitateak().stream().mapToInt(UnitateDidaktikoa::getPosizioa).max().orElse(0);
-                ud.setPosizioa(maxPos + 1);
-                targetEbal.getUnitateak().add(ud);
-            } else {
-                existing.setIzenburua("DUALA");
-                existing.setOrduak(dualOrduak);
-                if (!isSameEbaluaketa(existing.getEbaluaketa(), targetEbal)) {
-                    existing.setEbaluaketa(targetEbal);
-                    int maxPos = targetEbal.getUnitateak().stream()
-                            .filter(u -> !Objects.equals(u.getId(), existing.getId()))
-                            .mapToInt(UnitateDidaktikoa::getPosizioa)
-                            .max().orElse(0);
-                    existing.setPosizioa(maxPos + 1);
+                UnitateDidaktikoa existing = findUdByKodeaInProgramazioa(programazioa, code);
+                if (existing == null) {
+                    UnitateDidaktikoa ud = new UnitateDidaktikoa();
+                    ud.setProgramazioa(programazioa);
+                    ud.setEbaluaketa(targetEbal);
+                    ud.setKodea(code);
+                    ud.setIzenburua("DUALA");
+                    ud.setOrduak(dualOrduak);
+                    int maxPos = targetEbal.getUnitateak().stream().mapToInt(UnitateDidaktikoa::getPosizioa).max().orElse(0);
+                    ud.setPosizioa(maxPos + 1);
+                    targetEbal.getUnitateak().add(ud);
+                } else {
+                    existing.setIzenburua("DUALA");
+                    existing.setOrduak(dualOrduak);
+                    if (!isSameEbaluaketa(existing.getEbaluaketa(), targetEbal)) {
+                        existing.setEbaluaketa(targetEbal);
+                        int maxPos = targetEbal.getUnitateak().stream()
+                                .filter(u -> !Objects.equals(u.getId(), existing.getId()))
+                                .mapToInt(UnitateDidaktikoa::getPosizioa)
+                                .max().orElse(0);
+                        existing.setPosizioa(maxPos + 1);
+                    }
                 }
             }
         }
 
-        for (Ebaluaketa e : programazioa.getEbaluaketak()) {
-            e.getUnitateak().removeIf(u -> {
-                boolean dualKodea = u.getKodea() != null && u.getKodea().startsWith("DUAL-");
-                return dualKodea && !activeCodes.contains(u.getKodea());
-            });
+        List<UnitateDidaktikoa> obsoleteDualUds = programazioa.getEbaluaketak().stream()
+                .filter(Objects::nonNull)
+                .flatMap(e -> java.util.Optional.ofNullable(e.getUnitateak()).orElse(List.of()).stream())
+                .filter(u -> u.getKodea() != null && u.getKodea().startsWith("DUAL-"))
+                .filter(u -> !activeCodes.contains(u.getKodea()))
+                .distinct()
+                .toList();
+
+        for (UnitateDidaktikoa obsoleteDualUd : obsoleteDualUds) {
+            deleteUdSafely(obsoleteDualUd);
+            removeUdFromEbaluaketak(programazioa, obsoleteDualUd);
         }
         programazioaRepository.save(programazioa);
+    }
+
+    private void removeUdFromEbaluaketak(Programazioa programazioa, UnitateDidaktikoa ud) {
+        for (Ebaluaketa ebaluaketa : programazioa.getEbaluaketak()) {
+            if (ebaluaketa.getUnitateak() != null) {
+                ebaluaketa.getUnitateak().removeIf(candidate -> candidate == ud
+                        || (candidate.getId() != null && Objects.equals(candidate.getId(), ud.getId())));
+            }
+        }
+        ud.setEbaluaketa(null);
+    }
+
+    private void deleteUdSafely(UnitateDidaktikoa ud) {
+        if (ud.getId() != null) {
+            jardueraRepository.clearUnitateaByUnitateaId(ud.getId());
+        }
+        // orphanRemoval + cascade direla eta, azpi-jarduerak ere ezabatuko dira
+        udRepository.delete(ud);
     }
     
 	
