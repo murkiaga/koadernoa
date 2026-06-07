@@ -3,6 +3,7 @@ package com.koadernoa.app;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.Programazioa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.UnitateDidaktikoa;
 import com.koadernoa.app.objektuak.koadernoak.repository.EbaluaketaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.JardueraPlanifikatuaRepository;
+import com.koadernoa.app.objektuak.koadernoak.repository.JardueraRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.ProgramazioaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.UnitateDidaktikoaRepository;
@@ -36,6 +38,7 @@ class ProgramazioaServiceTest {
                 programazioaRepository,
                 mock(UnitateDidaktikoaRepository.class),
                 mock(JardueraPlanifikatuaRepository.class),
+                mock(JardueraRepository.class),
                 mock(EbaluaketaRepository.class),
                 mock(KoadernoaRepository.class),
                 mock(DenboralizazioGeneratorService.class));
@@ -81,11 +84,114 @@ class ProgramazioaServiceTest {
     }
 
     @Test
+    void deleteUdClearsScheduledActivitiesBeforeDeletingTheUnit() {
+        UnitateDidaktikoaRepository udRepository = mock(UnitateDidaktikoaRepository.class);
+        JardueraRepository jardueraRepository = mock(JardueraRepository.class);
+        ProgramazioaService service = new ProgramazioaService(
+                mock(ProgramazioaRepository.class),
+                udRepository,
+                mock(JardueraPlanifikatuaRepository.class),
+                jardueraRepository,
+                mock(EbaluaketaRepository.class),
+                mock(KoadernoaRepository.class),
+                mock(DenboralizazioGeneratorService.class));
+        UnitateDidaktikoa ud = new UnitateDidaktikoa();
+        ud.setId(10L);
+        when(udRepository.findById(10L)).thenReturn(java.util.Optional.of(ud));
+
+        service.deleteUd(10L);
+
+        var inOrder = org.mockito.Mockito.inOrder(jardueraRepository, udRepository);
+        inOrder.verify(jardueraRepository).clearUnitateaByUnitateaId(10L);
+        inOrder.verify(udRepository).delete(ud);
+    }
+
+    @Test
+    void syncDualUdForProgramazioaDeletesObsoleteDualUdWhenScheduleIsRemoved() {
+        ProgramazioaRepository programazioaRepository = mock(ProgramazioaRepository.class);
+        UnitateDidaktikoaRepository udRepository = mock(UnitateDidaktikoaRepository.class);
+        JardueraRepository jardueraRepository = mock(JardueraRepository.class);
+        ProgramazioaService service = new ProgramazioaService(
+                programazioaRepository,
+                udRepository,
+                mock(JardueraPlanifikatuaRepository.class),
+                jardueraRepository,
+                mock(EbaluaketaRepository.class),
+                mock(KoadernoaRepository.class),
+                mock(DenboralizazioGeneratorService.class));
+
+        Koadernoa koadernoa = new Koadernoa();
+        Moduloa moduloa = new Moduloa();
+        moduloa.setDualOrduak(120);
+        koadernoa.setModuloa(moduloa);
+        koadernoa.setOrdutegiak(List.of());
+
+        Programazioa programazioa = new Programazioa();
+        Ebaluaketa ebaluaketa = ebaluaketa(programazioa, 1L, LocalDate.of(2025, 9, 1), LocalDate.of(2026, 6, 30));
+        programazioa.setEbaluaketak(new ArrayList<>(List.of(ebaluaketa)));
+        UnitateDidaktikoa dualUd = new UnitateDidaktikoa();
+        dualUd.setId(10L);
+        dualUd.setProgramazioa(programazioa);
+        dualUd.setEbaluaketa(ebaluaketa);
+        dualUd.setKodea("DUAL-20260225");
+        ebaluaketa.getUnitateak().add(dualUd);
+
+        service.syncDualUdForProgramazioa(koadernoa, programazioa);
+
+        assertThat(ebaluaketa.getUnitateak()).isEmpty();
+        verify(jardueraRepository).clearUnitateaByUnitateaId(10L);
+        verify(udRepository).delete(dualUd);
+        verify(programazioaRepository).save(programazioa);
+    }
+
+    @Test
+    void syncDualUdForProgramazioaDeletesExistingDualUdWhenDualHoursAreZero() {
+        ProgramazioaRepository programazioaRepository = mock(ProgramazioaRepository.class);
+        UnitateDidaktikoaRepository udRepository = mock(UnitateDidaktikoaRepository.class);
+        JardueraRepository jardueraRepository = mock(JardueraRepository.class);
+        ProgramazioaService service = new ProgramazioaService(
+                programazioaRepository,
+                udRepository,
+                mock(JardueraPlanifikatuaRepository.class),
+                jardueraRepository,
+                mock(EbaluaketaRepository.class),
+                mock(KoadernoaRepository.class),
+                mock(DenboralizazioGeneratorService.class));
+
+        Koadernoa koadernoa = new Koadernoa();
+        Moduloa moduloa = new Moduloa();
+        moduloa.setDualOrduak(0);
+        koadernoa.setModuloa(moduloa);
+        KoadernoOrdutegiBlokea dualBlokea = new KoadernoOrdutegiBlokea();
+        dualBlokea.setDualOrdutegia(true);
+        dualBlokea.setHasieraData(LocalDate.of(2026, 2, 25));
+        koadernoa.setOrdutegiak(List.of(dualBlokea));
+
+        Programazioa programazioa = new Programazioa();
+        Ebaluaketa ebaluaketa = ebaluaketa(programazioa, 1L, LocalDate.of(2025, 9, 1), LocalDate.of(2026, 6, 30));
+        programazioa.setEbaluaketak(new ArrayList<>(List.of(ebaluaketa)));
+        UnitateDidaktikoa dualUd = new UnitateDidaktikoa();
+        dualUd.setId(10L);
+        dualUd.setProgramazioa(programazioa);
+        dualUd.setEbaluaketa(ebaluaketa);
+        dualUd.setKodea("DUAL-20260225");
+        ebaluaketa.getUnitateak().add(dualUd);
+
+        service.syncDualUdForProgramazioa(koadernoa, programazioa);
+
+        assertThat(ebaluaketa.getUnitateak()).isEmpty();
+        verify(jardueraRepository).clearUnitateaByUnitateaId(10L);
+        verify(udRepository).delete(dualUd);
+        verify(programazioaRepository).save(programazioa);
+    }
+
+    @Test
     void ebalOrduErabilgarriakUsesTarteHutsaAsZeroHourScheduleFromStartDate() {
         ProgramazioaService service = new ProgramazioaService(
                 mock(ProgramazioaRepository.class),
                 mock(UnitateDidaktikoaRepository.class),
                 mock(JardueraPlanifikatuaRepository.class),
+                mock(JardueraRepository.class),
                 mock(EbaluaketaRepository.class),
                 mock(KoadernoaRepository.class),
                 mock(DenboralizazioGeneratorService.class));

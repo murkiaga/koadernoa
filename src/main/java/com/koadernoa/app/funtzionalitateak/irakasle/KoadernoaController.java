@@ -316,7 +316,6 @@ public class KoadernoaController {
     public ResponseEntity<?> ezabatuOrdutegia(@PathVariable Long id,
                                               @RequestParam LocalDate hasieraData) {
         boolean deleted = koadernoaService.ezabatuOrdutegia(id, hasieraData);
-        programazioaService.syncDualUdForKoaderno(id);
         return ResponseEntity.ok(Map.of("ok", true, "deleted", deleted));
     }
 

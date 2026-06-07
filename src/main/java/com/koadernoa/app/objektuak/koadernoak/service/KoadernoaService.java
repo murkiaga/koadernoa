@@ -74,6 +74,7 @@ public class KoadernoaService {
     private final KoadernoOrdutegiBlokeaRepository koadernoOrdutegiBlokeaRepository;
     private final AplikazioAukeraService aplikazioAukeraService;
     private final MintegiModuluBaimenaRepository mintegiModuluBaimenaRepository;
+    private final ProgramazioaService programazioaService;
     
     //Aste-orden estandarra (astelehen-ostiral)
     private static final List<Astegunak> ASTE_ORDENA = List.of(
@@ -792,7 +793,11 @@ public class KoadernoaService {
             k.getOrdutegiak().removeIf(b -> java.util.Objects.equals(b.getHasieraData(), hasieraData));
         }
         int after = k.getOrdutegiak() != null ? k.getOrdutegiak().size() : 0;
-        return after < before;
+        boolean deleted = after < before;
+        if (deleted) {
+            programazioaService.syncDualUdForKoaderno(koadernoId);
+        }
+        return deleted;
     }
 
     private KoadernoOrdutegiBlokea findCovering(List<KoadernoOrdutegiBlokea> blocks, int slot){

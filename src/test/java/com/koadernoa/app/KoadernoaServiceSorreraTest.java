@@ -23,6 +23,7 @@ import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
 import com.koadernoa.app.objektuak.egutegia.repository.EgutegiaRepository;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoOrdutegiBlokea;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoaSortuDto;
 import com.koadernoa.app.objektuak.koadernoak.repository.AsistentziaRepository;
@@ -36,6 +37,7 @@ import com.koadernoa.app.objektuak.koadernoak.repository.SaioaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.UnitateDidaktikoaRepository;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoSorreraEmaitza;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
+import com.koadernoa.app.objektuak.koadernoak.service.ProgramazioaService;
 import com.koadernoa.app.objektuak.konfigurazioa.service.AplikazioAukeraService;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 import com.koadernoa.app.objektuak.modulua.repository.MatrikulaRepository;
@@ -54,6 +56,7 @@ class KoadernoaServiceSorreraTest {
     private final EbaluazioMomentuaRepository ebaluazioMomentuaRepository = mock(EbaluazioMomentuaRepository.class);
     private final AplikazioAukeraService aplikazioAukeraService = mock(AplikazioAukeraService.class);
     private final MintegiModuluBaimenaRepository mintegiModuluBaimenaRepository = mock(MintegiModuluBaimenaRepository.class);
+    private final ProgramazioaService programazioaService = mock(ProgramazioaService.class);
 
     private final KoadernoaService service = new KoadernoaService(
             moduloaRepository,
@@ -72,7 +75,26 @@ class KoadernoaServiceSorreraTest {
             mock(EbaluazioNotaRepository.class),
             mock(KoadernoOrdutegiBlokeaRepository.class),
             aplikazioAukeraService,
-            mintegiModuluBaimenaRepository);
+            mintegiModuluBaimenaRepository,
+            programazioaService);
+
+    @Test
+    void ezabatuOrdutegiaSynchronizesDualUdInsideTheServiceOperation() {
+        LocalDate hasieraData = LocalDate.of(2026, 2, 25);
+        Koadernoa koadernoa = new Koadernoa();
+        koadernoa.setId(99L);
+        KoadernoOrdutegiBlokea dualBlokea = new KoadernoOrdutegiBlokea();
+        dualBlokea.setHasieraData(hasieraData);
+        dualBlokea.setDualOrdutegia(true);
+        koadernoa.setOrdutegiak(new ArrayList<>(List.of(dualBlokea)));
+        when(koadernoaRepository.findWithOrdutegiaById(99L)).thenReturn(Optional.of(koadernoa));
+
+        boolean deleted = service.ezabatuOrdutegia(99L, hasieraData);
+
+        assertThat(deleted).isTrue();
+        assertThat(koadernoa.getOrdutegiak()).isEmpty();
+        verify(programazioaService).syncDualUdForKoaderno(99L);
+    }
 
     @Test
     void sortuEdoEsleituKoadernoaAssignsExistingOwnerlessNotebook() {
