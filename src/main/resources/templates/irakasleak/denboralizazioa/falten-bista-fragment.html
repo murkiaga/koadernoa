@@ -93,9 +93,14 @@
                   </a>
 			</td>
 
-              <td th:each="egun : ${faltaEgunak}"
-                  th:text="${row.balioa(egun)}">
-                  <!-- adib: 2 edo b -->
+              <td th:each="egun : ${faltaEgunak}" class="ikasle-egun-gelaxka"
+                  th:attr="data-ikaslea-id=${row.matrikula.ikaslea.id},data-data=${egun},data-izena=${row.ikasleIzenOsoa}"
+                  onclick="irekiIkasleEgunOharra(this.dataset.ikasleaId,this.dataset.data,this.dataset.izena,this)">
+                  <span th:text="${row.balioa(egun)}"></span>
+                  <span class="ie-ikonoak">
+                    <span th:if="${oharGakoak.contains(row.matrikula.ikaslea.id.toString() + '|' + egun.toString())}" title="Oharra dago">📝</span>
+                    <span th:if="${jokabideGakoak.contains(row.matrikula.ikaslea.id.toString() + '|' + egun.toString())}" title="Jokabide desegokia dago">⚠️</span>
+                  </span>
               </td>
           </tr>
           </tbody>

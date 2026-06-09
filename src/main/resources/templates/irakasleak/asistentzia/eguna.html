@@ -92,7 +92,16 @@
           </thead>
           <tbody>
             <tr th:each="m : ${matrikulak}">
-              <td th:text="${m.ikaslea.izena + ' ' + m.ikaslea.abizena1}">Ikasle 1</td>
+              <td><span th:text="${m.ikaslea.izena + ' ' + m.ikaslea.abizena1}">Ikasle 1</span>
+                <button type="button" class="btn btn-secondary" style="margin-left:8px;padding:3px 7px"
+                  th:attr="data-ikaslea-id=${m.ikaslea.id},data-data=${data},data-izena=${m.ikaslea.izena + ' ' + m.ikaslea.abizena1}"
+                  onclick="irekiIkasleEgunOharra(this.dataset.ikasleaId,this.dataset.data,this.dataset.izena,this)">Oharra</button>
+                <span class="ie-ikonoak" th:if="${oharGakoak.contains(m.ikaslea.id.toString() + '|' + data.toString())}" title="Oharra dago">📝</span>
+                <button type="button" class="btn btn-secondary" style="padding:3px 7px"
+                  th:attr="data-ikaslea-id=${m.ikaslea.id},data-data=${data},data-izena=${m.ikaslea.izena + ' ' + m.ikaslea.abizena1}"
+                  onclick="irekiIkasleEgunOharra(this.dataset.ikasleaId,this.dataset.data,this.dataset.izena,this); setTimeout(irekiJokabideModal,100)">Jokabide desegokia</button>
+                <span th:each="j : ${egunekoJokabideak.get(m.ikaslea.id)}"><a th:href="@{|/irakasle/jokabide-desegokia/${j.id}/pdf|}" target="_blank" title="PDFa ikusi">⚠️</a></span>
+              </td>
 
               <td th:each="s : ${saioak}">
                 <!-- Fallback submiterako hidden input (balioa JS-ak eguneratzen du) -->
@@ -217,5 +226,6 @@
 })();
 </script>
 
+<div th:replace="~{irakasleak/fragments/ikasle-egun-modalak :: modalak}"></div>
 </body>
 </html>

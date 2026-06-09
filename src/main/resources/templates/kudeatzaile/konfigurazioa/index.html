@@ -74,6 +74,7 @@
           id="tab-koadernoak">
     Koadernoak
   </button>
+  <button type="button" class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-jokabide-desegokia" id="tab-jokabide-desegokia">Jokabide desegokia</button>
 	</div>
 
 	<!-- Mailak PANELA -->
@@ -563,6 +564,18 @@
 	    </div>
 	  </form>
 	</section>
+
+  <section id="panel-jokabide-desegokia" class="tab-panel" role="tabpanel" aria-labelledby="tab-jokabide-desegokia" tabindex="0" aria-hidden="true">
+    <h2>Jokabide desegokia</h2><p class="muted">Ohartarazpenetan erabiliko diren portaera arrazoiak eta neurri zuzentzaileak kudeatu.</p>
+    <h3>Portaera arrazoiak</h3>
+    <div class="table-wrap"><table><thead><tr><th>Kodea</th><th>Testua</th><th>Ordena</th><th>Aktibo</th><th>Defektuzkoa</th><th>Ekintzak</th></tr></thead><tbody>
+    <tr th:each="a : ${portaeraArrazoiak}"><td colspan="6"><form th:action="@{|/kudeatzaile/konfigurazioa/jokabide-desegokia/portaera-arrazoiak/${a.id}/gorde|}" method="post" style="display:grid;grid-template-columns:100px 1fr 80px 70px 100px auto;gap:8px;align-items:center"><input name="kodea" th:value="${a.kodea}" required/><input name="testua" th:value="${a.testua}" required/><input type="number" name="ordena" th:value="${a.ordena}"/><input type="checkbox" name="aktibo" value="true" th:checked="${a.aktibo}"/><input type="checkbox" name="defektuzkoa" value="true" th:checked="${a.defektuzkoa}"/><button type="submit">Gorde</button></form><form th:action="@{|/kudeatzaile/konfigurazioa/jokabide-desegokia/portaera-arrazoiak/${a.id}/ezabatu|}" method="post" style="text-align:right"><button type="submit" class="btn btn-secondary">Desaktibatu</button></form></td></tr>
+    </tbody></table></div>
+    <form th:action="@{/kudeatzaile/konfigurazioa/jokabide-desegokia/portaera-arrazoiak/sortu}" method="post" class="row"><input name="kodea" placeholder="30.d" required/><input name="testua" placeholder="Portaera arrazoia" required style="min-width:360px"/><input type="number" name="ordena" value="10"/><label><input type="checkbox" name="defektuzkoa" value="true"/> Defektuzkoa</label><button type="submit">Sortu</button></form>
+    <h3>Neurri zuzentzaileak</h3>
+    <div class="table-wrap"><table><tbody><tr th:each="n : ${neurriZuzentzaileak}"><td><form th:action="@{|/kudeatzaile/konfigurazioa/jokabide-desegokia/neurri-zuzentzaileak/${n.id}/gorde|}" method="post" style="display:grid;grid-template-columns:100px 1fr 80px 70px 100px auto;gap:8px;align-items:center"><input name="kodea" th:value="${n.kodea}" required/><input name="testua" th:value="${n.testua}" required/><input type="number" name="ordena" th:value="${n.ordena}"/><input type="checkbox" name="aktibo" value="true" th:checked="${n.aktibo}"/><input type="checkbox" name="defektuzkoa" value="true" th:checked="${n.defektuzkoa}"/><button type="submit">Gorde</button></form><form th:action="@{|/kudeatzaile/konfigurazioa/jokabide-desegokia/neurri-zuzentzaileak/${n.id}/ezabatu|}" method="post" style="text-align:right"><button type="submit" class="btn btn-secondary">Desaktibatu</button></form></td></tr></tbody></table></div>
+    <form th:action="@{/kudeatzaile/konfigurazioa/jokabide-desegokia/neurri-zuzentzaileak/sortu}" method="post" class="row"><input name="kodea" placeholder="34.a" required/><input name="testua" placeholder="Neurri zuzentzailea" required style="min-width:360px"/><input type="number" name="ordena" value="10"/><label><input type="checkbox" name="defektuzkoa" value="true"/> Defektuzkoa</label><button type="submit">Sortu</button></form>
+  </section>
 
 </main>
 

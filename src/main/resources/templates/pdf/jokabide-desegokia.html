@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu"><head><meta charset="UTF-8"/>
+<style>
+@page { size: A4; margin: 20mm; } body { font-family: sans-serif; font-size: 11pt; line-height: 1.45; color:#111; }
+h1,h2 { text-align:center; margin:0 0 12px; } h1{font-size:14pt} h2{font-size:12pt}.eremua{border:1px solid #222;padding:9px;margin:8px 0;min-height:24px}.etiketa{font-weight:bold}.sinadurak{margin-top:45px;display:flex;justify-content:space-between}.sinadura{width:44%;border-top:1px solid #555;padding-top:8px}.jasota{margin-top:60px;border-top:1px solid #333;padding-top:12px}
+</style></head><body>
+<h1>I. ERANSKINA</h1><h2>IDATZIZKO OHARTARAZPENA, JOKABIDE DESEGOKIAGATIK (57.2. art.)</h2>
+<div class="eremua"><span class="etiketa">Ikaslea: </span><span th:text="${ikaslea}"></span></div>
+<div class="eremua"><span class="etiketa">Maila: </span><span th:text="${maila}"></span></div>
+<p>Guraso agurgarriok:</p><p>Honen bidez jakinarazten dizuegu zuen seme-alabak jokabide desegokia izan duela. Ondoren, gertatutakoaren eta ezarritako neurri zuzentzailearen berri ematen da.</p>
+<div class="eremua"><div class="etiketa">Portaera arrazoia</div><div th:text="${portaeraArrazoia}"></div></div>
+<div class="eremua"><div class="etiketa">Deskribapen zehatza (eguna, lekua eta gertatutakoa)</div><div style="white-space:pre-wrap" th:text="${deskribapenZehatza}"></div></div>
+<div class="eremua"><div class="etiketa">Neurri zuzentzailea</div><div th:text="${neurriZuzentzailea}"></div></div>
+<p th:text="${herriaEtaData}"></p>
+<div class="sinadurak"><div class="sinadura">Irakaslearen sinadura<br/><span th:text="${irakaslea}"></span></div><div class="sinadura">Ikastetxeko arduradunaren sinadura</div></div>
+<div class="jasota"><strong>Jakinarazpena jaso izanaren agiria</strong><p>Ikaslearen guraso edo legezko ordezkariaren izena, sinadura eta data:</p></div>
+</body></html>
