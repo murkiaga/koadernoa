@@ -2,7 +2,6 @@ package com.koadernoa.app.objektuak.jokabidea.service;
 
 import java.io.*;
 import java.nio.file.*;
-import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -32,7 +31,7 @@ public class JokabideDesegokiaPdfService {
         c.setVariable("portaeraArrazoia", j.getPortaeraArrazoia().getKodea() + " - " + j.getPortaeraArrazoia().getTestua());
         c.setVariable("deskribapenZehatza", j.getDeskribapenZehatza());
         c.setVariable("neurriZuzentzailea", j.getNeurriZuzentzailea().getKodea() + " - " + j.getNeurriZuzentzailea().getTestua());
-        c.setVariable("herriaEtaData", (herria == null || herria.isBlank() ? "" : herria.trim() + ", ") + j.getData().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+        c.setVariable("herriaEtaData", herriaEtaData(j));
         c.setVariable("irakaslea", j.getIrakaslea().getIzena());
         String html = templateEngine.process("pdf/jokabide-desegokia", c);
         try (OutputStream os = Files.newOutputStream(target, StandardOpenOption.CREATE_NEW)) {
@@ -43,5 +42,13 @@ public class JokabideDesegokiaPdfService {
     public void ezabatuIsilean(String path) { if (path != null) try { Files.deleteIfExists(Paths.get(path)); } catch (IOException ignored) {} }
     private String ikasleIzena(JokabideDesegokia j) { var i=j.getIkaslea(); return ((i.getIzena()==null?"":i.getIzena())+" "+(i.getAbizena1()==null?"":i.getAbizena1())+" "+(i.getAbizena2()==null?"":i.getAbizena2())).trim(); }
     private String maila(JokabideDesegokia j) { var m=j.getModuloa().getMaila(); var t=j.getModuloa().getTaldea(); String base=m==null?"":(m.getIzena()==null?m.getKodea():m.getIzena()); return t!=null&&t.getIzena()!=null?base+" - "+t.getIzena():base; }
+    private String herriaEtaData(JokabideDesegokia j) {
+        String[] hilabeteak = { "urtarril", "otsail", "martxo", "apiril", "maiatz", "ekain",
+                "uztail", "abuztu", "irail", "urri", "azaro", "abendu" };
+        String kokapena = herria == null || herria.isBlank() ? "………….…………." : herria.trim();
+        var data = j.getData();
+        return kokapena + "(e)n, " + data.getYear() + "(e)ko "
+                + hilabeteak[data.getMonthValue() - 1] + "aren " + data.getDayOfMonth() + "(e)(a)n";
+    }
     public record SortutakoPdfa(String path, String filename) {}
 }
