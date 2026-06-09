@@ -42,5 +42,10 @@ public class JokabideDesegokia {
     private String pdfFilename;
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean jasota = false;
+    private LocalDateTime jasotaAt;
+    @ManyToOne @JoinColumn(name = "jasota_nork_id")
+    private Irakaslea jasotaNork;
     @PrePersist void sortzean() { createdAt = LocalDateTime.now(); }
 }

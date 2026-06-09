@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}"/>
+  <title>Jokabide desegokiak</title>
+  <link rel="stylesheet" th:href="@{/css/navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
+  <style>
+    .jok-filtroak { display:grid; grid-template-columns:repeat(6,minmax(140px,1fr)); gap:10px; align-items:end; padding:14px; border:1px solid #e5e7eb; border-radius:10px; background:#f8fafc; }
+    .jok-filtroak label { display:flex; flex-direction:column; gap:4px; font-size:.84rem; color:#475569; }
+    .jok-filtroak input,.jok-filtroak select { width:100%; padding:7px 8px; border:1px solid #cbd5e1; border-radius:7px; background:#fff; }
+    .jok-filtro-ekintzak { display:flex; gap:7px; align-items:center; }
+    .jok-taula-wrap { margin-top:16px; overflow:auto; }
+    .jok-taula { min-width:1200px; }
+    .jok-taula tbody tr.ez-jasota { background:#fff7ed; }
+    .jok-taula .deskribapena { max-width:340px; white-space:pre-wrap; }
+    .jok-taula .kode-testua { max-width:260px; }
+    .jasota-egoera { display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
+    .jasota-xehetasuna { display:block; margin-top:3px; color:#64748b; font-size:.75rem; }
+    @media (max-width:1100px) { .jok-filtroak { grid-template-columns:repeat(3,minmax(150px,1fr)); } }
+    @media (max-width:650px) { .jok-filtroak { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+<div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+<main class="page">
+  <div class="page-header">
+    <div>
+      <h1>Jokabide desegokiak</h1>
+      <p class="muted">Irakasleek sortutako idatzizko ohartarazpenak, berrienetik zaharrenera.</p>
+    </div>
+  </div>
+
+  <form class="jok-filtroak" method="get" th:action="@{/kudeatzaile/jokabide-desegokiak}">
+    <label>Hasiera-data<input type="date" name="dataHasiera" th:value="${dataHasiera}"/></label>
+    <label>Amaiera-data<input type="date" name="dataAmaiera" th:value="${dataAmaiera}"/></label>
+    <label>Ikaslea<input type="search" name="ikaslea" th:value="${ikaslea}" placeholder="Izena edo abizenak"/></label>
+    <label>Modulua<select name="moduloaId"><option value="">Modulu guztiak</option><option th:each="m : ${moduloak}" th:value="${m.id}" th:selected="${m.id == moduloaId}" th:text="${m.kodea + ' - ' + m.izena}"></option></select></label>
+    <label>Taldea<select name="taldeaId"><option value="">Talde guztiak</option><option th:each="t : ${taldeak}" th:value="${t.id}" th:selected="${t.id == taldeaId}" th:text="${t.izena}"></option></select></label>
+    <label>Jasota<select name="jasota"><option value="">Guztiak</option><option value="false" th:selected="${jasota != null and !jasota}">Jaso gabe</option><option value="true" th:selected="${jasota != null and jasota}">Jasota</option></select></label>
+    <div class="jok-filtro-ekintzak"><button class="btn btn-primary" type="submit">Filtratu</button><a class="btn btn-secondary" th:href="@{/kudeatzaile/jokabide-desegokiak}">Garbitu</a></div>
+  </form>
+
+  <div class="jok-taula-wrap">
+    <table class="jok-taula">
+      <thead><tr><th>Sortuta</th><th>Data</th><th>Ikaslea</th><th>Taldea</th><th>Modulua</th><th>Irakaslea</th><th>Portaera arrazoia</th><th>Neurri zuzentzailea</th><th>Deskribapena</th><th>Jasota</th><th>PDFa</th></tr></thead>
+      <tbody>
+        <tr th:if="${#lists.isEmpty(jokabideak)}"><td colspan="11">Ez da jokabide desegokirik aurkitu hautatutako filtroekin.</td></tr>
+        <tr th:each="j : ${jokabideak}" th:classappend="${!j.jasota} ? ' ez-jasota'">
+          <td th:text="${#temporals.format(j.createdAt, 'yyyy-MM-dd HH:mm')}"></td>
+          <td th:text="${#temporals.format(j.data, 'yyyy-MM-dd')}"></td>
+          <td th:text="${j.ikaslea.izenOsoa}"></td>
+          <td th:text="${j.moduloa.taldea != null ? j.moduloa.taldea.izena : '—'}"></td>
+          <td th:text="${j.moduloa.kodea + ' - ' + j.moduloa.izena}"></td>
+          <td th:text="${j.irakaslea.izena}"></td>
+          <td class="kode-testua"><strong th:text="${j.portaeraArrazoia.kodea}"></strong><br><span th:text="${j.portaeraArrazoia.testua}"></span></td>
+          <td class="kode-testua"><strong th:text="${j.neurriZuzentzailea.kodea}"></strong><br><span th:text="${j.neurriZuzentzailea.testua}"></span></td>
+          <td class="deskribapena" th:text="${j.deskribapenZehatza}"></td>
+          <td><label class="jasota-egoera"><input class="jasota-check" type="checkbox" th:data-id="${j.id}" th:checked="${j.jasota}"> Jasota</label><span class="jasota-xehetasuna" th:if="${j.jasotaAt != null}" th:text="${#temporals.format(j.jasotaAt, 'yyyy-MM-dd HH:mm') + (j.jasotaNork != null ? ' · ' + j.jasotaNork.izena : '')}"></span></td>
+          <td><a class="btn btn-secondary pdf-deskarga" th:data-id="${j.id}" th:href="@{|/kudeatzaile/jokabide-desegokiak/${j.id}/pdf|}" th:attr="download=${j.pdfFilename}">📄 Deskargatu</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+<script>
+(function () {
+  const csrf = document.querySelector('meta[name="_csrf"]')?.content || '';
+  const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
+
+  async function markatu(check) {
+    const params = new URLSearchParams({ jasota: check.checked });
+    const response = await fetch(`/kudeatzaile/jokabide-desegokiak/${check.dataset.id}/jasota`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8', [csrfHeader]: csrf },
+      body: params.toString()
+    });
+    const json = await response.json();
+    if (!response.ok) throw new Error(json.errorea || 'Ezin izan da jasota egoera gorde.');
+    check.closest('tr')?.classList.toggle('ez-jasota', !json.jasota);
+  }
+
+  document.addEventListener('change', async function (event) {
+    if (!event.target.classList.contains('jasota-check')) return;
+    const check = event.target;
+    const aurrekoa = !check.checked;
+    try { await markatu(check); } catch (error) { check.checked = aurrekoa; alert(error.message); }
+  });
+
+  document.addEventListener('click', async function (event) {
+    const link = event.target.closest('.pdf-deskarga');
+    if (!link) return;
+    event.preventDefault();
+    try {
+      const response = await fetch(link.href);
+      if (!response.ok) throw new Error('Ezin izan da PDFa deskargatu.');
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const download = document.createElement('a');
+      download.href = url;
+      download.download = link.getAttribute('download') || 'jokabide-desegokia.pdf';
+      document.body.appendChild(download);
+      download.click();
+      download.remove();
+      URL.revokeObjectURL(url);
+      const check = link.closest('tr')?.querySelector('.jasota-check');
+      if (check) { check.checked = true; link.closest('tr')?.classList.remove('ez-jasota'); }
+    } catch (error) { alert(error.message); }
+  });
+})();
+</script>
+<script th:src="@{/js/kudeatzaile-nav.js}"></script>
+</body>
+</html>
