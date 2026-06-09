@@ -116,11 +116,13 @@ public class JokabideDesegokiaController {
                     || !j.getData().equals(data)) {
                 throw new SecurityException("Ez duzu jokabide desegoki hau editatzeko baimenik.");
             }
+            Long unekoArrazoiaId = j.getPortaeraArrazoia().getId();
+            Long unekoNeurriaId = j.getNeurriZuzentzailea().getId();
             var arrazoia = arrazoiRepository.findById(portaeraArrazoiaId)
-                .filter(a -> a.isAktibo() || a.getId().equals(j.getPortaeraArrazoia().getId()))
+                .filter(a -> a.isAktibo() || a.getId().equals(unekoArrazoiaId))
                 .orElseThrow(() -> new IllegalArgumentException("Portaera arrazoia ez da baliozkoa."));
             var neurria = neurriRepository.findById(neurriZuzentzaileaId)
-                .filter(n -> n.isAktibo() || n.getId().equals(j.getNeurriZuzentzailea().getId()))
+                .filter(n -> n.isAktibo() || n.getId().equals(unekoNeurriaId))
                 .orElseThrow(() -> new IllegalArgumentException("Neurri zuzentzailea ez da baliozkoa."));
 
             aurrekoArrazoia = j.getPortaeraArrazoia();
