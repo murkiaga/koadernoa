@@ -98,8 +98,8 @@
                   onclick="irekiIkasleEgunOharra(this.dataset.ikasleaId,this.dataset.data,this.dataset.izena,this)">
                   <span th:text="${row.balioa(egun)}"></span>
                   <span class="ie-ikonoak">
-                    <span th:if="${oharGakoak.contains(row.matrikula.ikaslea.id.toString() + '|' + egun.toString())}" title="Oharra dago">📝</span>
-                    <span th:if="${jokabideGakoak.contains(row.matrikula.ikaslea.id.toString() + '|' + egun.toString())}" title="Jokabide desegokia dago">⚠️</span>
+                    <span data-mota="oharra" th:if="${oharGakoak.contains(row.matrikula.ikaslea.id.toString() + '|' + egun.toString())}" title="Oharra dago">📝</span>
+                    <span data-mota="jokabidea" th:if="${jokabideGakoak.contains(row.matrikula.ikaslea.id.toString() + '|' + egun.toString())}" title="Jokabide desegokia dago">⚠️</span>
                   </span>
               </td>
           </tr>
