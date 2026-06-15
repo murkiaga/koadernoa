@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8"/>
+  <style>
+    @page { size: A4; margin: 15mm 17mm; }
+    body {
+      color: #000;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 10.5pt;
+      line-height: 1.45;
+    }
+    h1 {
+      margin: 0 0 20px;
+      font-size: 12pt;
+      text-align: center;
+    }
+    p { margin: 0 0 7px; }
+    .datu-lerroa { margin-bottom: 5px; }
+    .datu-balioa {
+      display: inline-block;
+      min-width: 72%;
+      padding: 0 3px 1px;
+      border-bottom: 1px dotted #555;
+    }
+    .maila-balioa { min-width: 31%; }
+    .lege-testua { text-align: justify; }
+    .aukera {
+      margin: 2px 0 8px;
+      font-size: 12pt;
+      font-weight: bold;
+    }
+    .deskribapena {
+      min-height: 58px;
+      margin: 2px 0 3px;
+      padding: 2px 0 5px;
+      border-bottom: 1px dotted #555;
+      white-space: pre-wrap;
+    }
+    .deskribapen-azalpena {
+      margin: 0 0 12px;
+      font-size: 8pt;
+      font-style: italic;
+      line-height: 1.2;
+    }
+    .amaierako-testua { margin-top: 12px; text-align: justify; }
+    .lekua-data { margin: 6px 0 8px; text-align: center; }
+    .sinadura-blokea { margin-left: 27%; width: 50%; text-align: center; }
+    .sinadura-tartea { height: 38px; }
+    .jasota {
+      margin-top: 14px;
+      padding-top: 10px;
+      border-top: 1px dotted #555;
+    }
+    .jasota-izenburua { margin-bottom: 8px; font-weight: bold; }
+    .oharra {
+      margin-top: 8px;
+      font-size: 8pt;
+      font-style: italic;
+      line-height: 1.2;
+      text-align: justify;
+    }
+  </style>
+</head>
+<body>
+  <h1>IDATZIZKO OHARTARAZPENA, JOKABIDE DESEGOKIAGATIK (57.2. art.)</h1>
+
+  <p class="datu-lerroa">Ikaslea: <span class="datu-balioa" th:text="${ikaslea}"></span></p>
+  <p class="datu-lerroa">Maila: <span class="datu-balioa maila-balioa" th:text="${maila}"></span></p>
+
+  <p>Guraso agurgarriok:</p>
+  <p class="lege-testua">
+    <strong>Abenduaren 2ko 201/2008 Dekretuaren arabera, Euskal Autonomia Erkidegoko unibertsitatez besteko ikastetxeetako ikasleen eskubideei eta betebeharrei buruzkoa</strong>
+    (2008ko abenduaren 16(e)ko EHAA), zuen semearen/alabaren portaeraz informatu behar zaituztet. Hain zuzen ere:
+  </p>
+
+  <p class="aukera" th:text="${portaeraArrazoia}">30.d - Irakasleek edo agintari akademikoek agindutakoa ez betetzea.</p>
+  <div class="deskribapena" th:text="${deskribapenZehatza}"></div>
+  <p class="deskribapen-azalpena">Leporatzen zaizkion ekintza, portaera eta jokabideen deskribapen zehatza: eguna, ordua, lekua. Idazkiak bere oinarrian bat etorri behar du Dekretuan, Antolakuntza eta Jarduera Araudian edo Barne Araudian datozen jokabideekin.</p>
+
+  <p>Horregatik, <strong>neurri zuzentzaile</strong> hau aplikatu zaio:</p>
+  <p class="aukera" th:text="${neurriZuzentzailea}">34.a - Izandako jokabide desegokiari eta haren ondorioei buruzko hausnarketa</p>
+
+  <p class="amaierako-testua">Zuen seme/alabarentzat eta Ikastetxearen jarduera onarentzat kaltegarria den jokabide hau berriro gerta ez dadin laguntza eskatu nahi dizuet, eta gogorarazten dizuet horrelako portaerak errepikatzea ikastetxeko <strong>bizikidetzaren kontrako jokabide</strong> gisa har daitekeela, 31.1.m artikuluaren arabera).</p>
+  <p>Adeitasunez agurtzen zaituzte,</p>
+
+  <p class="lekua-data"><span th:text="${herriaEtaData}">………….………….(e)n, 2….(e)ko ………..aren ….(e)(a)n</span></p>
+  <div class="sinadura-blokea">
+    <p>Irakaslea: <span th:text="${irakaslea}">………………………………..</span></p>
+    <div class="sinadura-tartea"></div>
+    <p>Izpta.:……………………………….</p>
+  </div>
+
+  <div class="jasota">
+    <p class="jasota-izenburua">Jaso dut jakinarazpena:</p>
+    <p>Hartzailea: ……………………………………………………………………………………………</p>
+    <p>Aitaren, amaren edo legezko tutorearen (adinduna bada, interesatuaren) izenpea</p>
+    <p>Jaso den eguna: …………………………………………………</p>
+    <p class="oharra">Oharra: Jakinarazpen hau helaraziko zaie interesatuei (guraso, legezko tutore edo, adinduna bada, ikasleari) ikastetxe honetako Antolakuntza eta Jarduera Araudiak edo Barne Araudiak zehazten dituen bideei jarraituz.</p>
+  </div>
+</body>
+</html>

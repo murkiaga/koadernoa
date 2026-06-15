@@ -9,9 +9,16 @@
       <nav class="k-desktop" aria-label="Kudeatzaile nabigazioa">
         <ul>
           <li><a th:href="@{/kudeatzaile}" th:classappend="${currentPath == '/kudeatzaile' or currentPath == '/kudeatzaile/'} ? 'active'">Hasiera</a></li>
-          <li><a th:href="@{/kudeatzaile/zikloak}" th:classappend="${currentPath == '/kudeatzaile/zikloak'} ? 'active'">Zikloak</a></li>
-          <li><a th:href="@{/kudeatzaile/taldeak}" th:classappend="${currentPath == '/kudeatzaile/taldeak'} ? 'active'">Taldeak</a></li>
-          <li><a th:href="@{/kudeatzaile/moduloa}" th:classappend="${currentPath.startsWith('/kudeatzaile/moduloa')} ? 'active'">Moduluak</a></li>
+          <li class="k-dropdown">
+            <details>
+              <summary th:classappend="${currentPath.startsWith('/kudeatzaile/zikloak') or currentPath.startsWith('/kudeatzaile/moduloa') or currentPath.startsWith('/kudeatzaile/taldeak')} ? 'active'">Eskaintza</summary>
+              <ul class="k-dropdown-menu">
+                <li><a th:href="@{/kudeatzaile/zikloak}" th:classappend="${currentPath.startsWith('/kudeatzaile/zikloak')} ? 'active'">Zikloak</a></li>
+                <li><a th:href="@{/kudeatzaile/moduloa}" th:classappend="${currentPath.startsWith('/kudeatzaile/moduloa')} ? 'active'">Moduluak</a></li>
+                <li><a th:href="@{/kudeatzaile/taldeak}" th:classappend="${currentPath.startsWith('/kudeatzaile/taldeak')} ? 'active'">Taldeak</a></li>
+              </ul>
+            </details>
+          </li>
           <li><a th:href="@{/kudeatzaile/ikasleak}" th:classappend="${currentPath.startsWith('/kudeatzaile/ikasleak') or currentPath.startsWith('/kudeatzaile/ikaslea/')} ? 'active'">Ikasleak</a></li>
           <li><a th:href="@{/kudeatzaile/irakasleak}" th:classappend="${currentPath.startsWith('/kudeatzaile/irakasleak')} ? 'active'">Irakasleak</a></li>
           <li><a th:href="@{/kudeatzaile/ikasturteak}" th:classappend="${currentPath.startsWith('/kudeatzaile/ikasturteak')} ? 'active'">Ikasturteak</a></li>
@@ -19,6 +26,7 @@
           <li><a th:href="@{/kudeatzaile/konfigurazioa}" th:classappend="${currentPath == '/kudeatzaile/konfigurazioa'} ? 'active'">Konfigurazioa</a></li>
           <li><a th:href="@{/kudeatzaile/koadernoak}" th:classappend="${currentPath == '/kudeatzaile/koadernoak'} ? 'active'">Koadernoak</a></li>
           <li><a th:href="@{/kudeatzaile/estatistikak}" th:classappend="${currentPath == '/kudeatzaile/estatistikak'} ? 'active'">Estatistikak</a></li>
+          <li><a th:href="@{/kudeatzaile/jokabide-desegokiak}" th:classappend="${currentPath.startsWith('/kudeatzaile/jokabide-desegokiak')} ? 'active'">Jokabide desegokiak</a></li>
           <li><a th:href="@{/kudeatzaile/mezuak}" th:classappend="${currentPath == '/kudeatzaile/mezuak'} ? 'active'">Mezuak</a></li>
           <li><a th:href="@{/irakasle}">Irakasle ikuspegia</a></li>
           <li th:if="${#authorization.expression('hasRole(''ADMIN'')')}"><a th:href="@{/admin}">Admin</a></li>
@@ -40,9 +48,16 @@
       <div class="k-panel-content">
         <ul class="k-list" aria-label="Kudeatzaile nabigazioa, mugikorra">
           <li><a th:href="@{/kudeatzaile}" th:classappend="${currentPath == '/kudeatzaile' or currentPath == '/kudeatzaile/'} ? 'active'">Hasiera</a></li>
-          <li><a th:href="@{/kudeatzaile/zikloak}" th:classappend="${currentPath == '/kudeatzaile/zikloak'} ? 'active'">Zikloak</a></li>
-          <li><a th:href="@{/kudeatzaile/taldeak}" th:classappend="${currentPath == '/kudeatzaile/taldeak'} ? 'active'">Taldeak</a></li>
-          <li><a th:href="@{/kudeatzaile/moduloa}" th:classappend="${currentPath.startsWith('/kudeatzaile/moduloa')} ? 'active'">Moduluak</a></li>
+          <li class="k-mobile-group">
+            <details th:attr="open=${currentPath.startsWith('/kudeatzaile/zikloak') or currentPath.startsWith('/kudeatzaile/moduloa') or currentPath.startsWith('/kudeatzaile/taldeak')} ? 'open' : null">
+              <summary th:classappend="${currentPath.startsWith('/kudeatzaile/zikloak') or currentPath.startsWith('/kudeatzaile/moduloa') or currentPath.startsWith('/kudeatzaile/taldeak')} ? 'active'">Eskaintza</summary>
+              <ul>
+                <li><a th:href="@{/kudeatzaile/zikloak}" th:classappend="${currentPath.startsWith('/kudeatzaile/zikloak')} ? 'active'">Zikloak</a></li>
+                <li><a th:href="@{/kudeatzaile/moduloa}" th:classappend="${currentPath.startsWith('/kudeatzaile/moduloa')} ? 'active'">Moduluak</a></li>
+                <li><a th:href="@{/kudeatzaile/taldeak}" th:classappend="${currentPath.startsWith('/kudeatzaile/taldeak')} ? 'active'">Taldeak</a></li>
+              </ul>
+            </details>
+          </li>
           <li><a th:href="@{/kudeatzaile/irakasleak}" th:classappend="${currentPath.startsWith('/kudeatzaile/irakasleak')} ? 'active'">Irakasleak</a></li>
           <li><a th:href="@{/kudeatzaile/ikasturteak}" th:classappend="${currentPath.startsWith('/kudeatzaile/ikasturteak')} ? 'active'">Ikasturteak</a></li>
           <li><a th:href="@{/kudeatzaile/egutegia}" th:classappend="${currentPath.startsWith('/kudeatzaile/egutegia')} ? 'active'">Egutegiak</a></li>
@@ -50,6 +65,7 @@
           <li><a th:href="@{/kudeatzaile/koadernoak}" th:classappend="${currentPath == '/kudeatzaile/koadernoak'} ? 'active'">Koadernoak</a></li>
           <li><a th:href="@{/kudeatzaile/ikasleak}" th:classappend="${currentPath.startsWith('/kudeatzaile/ikasleak') or currentPath.startsWith('/kudeatzaile/ikaslea/')} ? 'active'">Ikasleak</a></li>
           <li><a th:href="@{/kudeatzaile/estatistikak}" th:classappend="${currentPath == '/kudeatzaile/estatistikak'} ? 'active'">Estatistikak</a></li>
+          <li><a th:href="@{/kudeatzaile/jokabide-desegokiak}" th:classappend="${currentPath.startsWith('/kudeatzaile/jokabide-desegokiak')} ? 'active'">Jokabide desegokiak</a></li>
           <li><a th:href="@{/kudeatzaile/mezuak}" th:classappend="${currentPath == '/kudeatzaile/mezuak'} ? 'active'">Mezuak</a></li>
           <li><a th:href="@{/irakasle}">Irakasle ikuspegia</a></li>
           <li th:if="${#authorization.expression('hasRole(''ADMIN'')')}"><a th:href="@{/admin}">Admin</a></li>

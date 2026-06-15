@@ -66,7 +66,7 @@
                                 style="margin-left:.5rem;"
                                 th:attr="data-egutegia-id=${egutegia.id}"
                                 th:disabled="${erabiliGabekoMailak == null or erabiliGabekoMailak.isEmpty()}">Kopiatu</button>
-                        <form th:action="@{|/kudeatzaile/egutegia/ezabatu/${egutegia.id}(ikasturteaId=${ikasturtea.id})|}" method="post" style="display:inline-block;margin-left:.5rem;" onsubmit="return confirm('Ziur zaude egutegia ezabatu nahi duzula?');">
+                        <form th:action="@{/kudeatzaile/egutegia/ezabatu/{egutegiaId}(egutegiaId=${egutegia.id},ikasturteaId=${ikasturtea.id})}" method="post" style="display:inline-block;margin-left:.5rem;" onsubmit="return confirm('Ziur zaude egutegia ezabatu nahi duzula?');">
                             <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                             <button type="submit" class="btn btn-danger">Ezabatu</button>
                         </form>

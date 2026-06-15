@@ -11,6 +11,7 @@ import com.koadernoa.app.objektuak.modulua.entitateak.MatrikulaEgoera;
 
 public interface MatrikulaRepository extends JpaRepository<Matrikula, Long> {
 	boolean existsByIkasleaIdAndKoadernoaId(Long ikasleaId, Long koadernoaId);
+	java.util.Optional<Matrikula> findByIkasleaIdAndKoadernoaId(Long ikasleaId, Long koadernoaId);
 	
 	@Query("""
 			  select m from Matrikula m

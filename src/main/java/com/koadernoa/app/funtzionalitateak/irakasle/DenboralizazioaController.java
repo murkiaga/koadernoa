@@ -61,6 +61,7 @@ import com.koadernoa.app.objektuak.koadernoak.service.FaltenExcelInportService;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
 import com.koadernoa.app.objektuak.koadernoak.service.ProgramazioTxantiloiService;
 import com.koadernoa.app.objektuak.koadernoak.service.ProgramazioaService;
+import com.koadernoa.app.objektuak.jokabidea.service.IkasleEgunJardueraService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -83,6 +84,7 @@ public class DenboralizazioaController {
 	private final ProgramazioaService programazioaService;
 	private final IrakasleaService irakasleaService;
 	private final AuditService auditService;
+	private final IkasleEgunJardueraService ikasleEgunJardueraService;
 
 	@GetMapping({"","/"})
 	public String erakutsiHilabetekoDenboralizazioa(
@@ -290,6 +292,8 @@ public class DenboralizazioaController {
 	        model.addAttribute("faltaEgunak", faltak.getEgunak());
 	        model.addAttribute("faltaEgunOrduak", faltak.getEgunekoOrduak());
 	        model.addAttribute("faltakIkasleak", faltak.getIkasleRows());
+            model.addAttribute("oharGakoak", ikasleEgunJardueraService.oharGakoak(kargatutakoKoadernoa.getId(), hasiera, amaiera));
+            model.addAttribute("jokabideGakoak", ikasleEgunJardueraService.jokabideGakoak(kargatutakoKoadernoa.getId(), hasiera, amaiera));
 	    }
 
 	    // Egutegiko oharrak hartzeko:

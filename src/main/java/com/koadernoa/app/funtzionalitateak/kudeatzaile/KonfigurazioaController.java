@@ -31,6 +31,8 @@ import com.koadernoa.app.objektuak.modulua.repository.MintegiModuluBaimenaReposi
 import com.koadernoa.app.objektuak.zikloak.entitateak.Familia;
 import com.koadernoa.app.objektuak.zikloak.repository.FamiliaRepository;
 import com.koadernoa.app.objektuak.konfigurazioa.service.AplikazioAukeraService;
+import com.koadernoa.app.objektuak.jokabidea.repository.PortaeraArrazoiaRepository;
+import com.koadernoa.app.objektuak.jokabidea.repository.NeurriZuzentzaileaRepository;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
@@ -53,6 +55,8 @@ public class KonfigurazioaController {
     private final PendienteEbaluazioMomentuKonfigRepository pendienteEbaluazioMomentuKonfigRepository;
     private final AplikazioAukeraService aplikazioAukeraService;
     private final MintegiModuluBaimenaRepository mintegiModuluBaimenaRepository;
+    private final PortaeraArrazoiaRepository portaeraArrazoiaRepository;
+    private final NeurriZuzentzaileaRepository neurriZuzentzaileaRepository;
 
     // ---- GET: orria ----
     @GetMapping
@@ -103,6 +107,8 @@ public class KonfigurazioaController {
 
         model.addAttribute("mintegiModuluBaimenak", mintegiModuluBaimenak);
         model.addAttribute("sortuMintegiModuluBaimenaForm", new SortuMintegiModuluBaimenaForm());
+        model.addAttribute("portaeraArrazoiak", portaeraArrazoiaRepository.findAllByOrderByOrdenaAscIdAsc());
+        model.addAttribute("neurriZuzentzaileak", neurriZuzentzaileaRepository.findAllByOrderByOrdenaAscIdAsc());
 
         KoadernoKonfigForm koadernoKonfigForm = new KoadernoKonfigForm();
         koadernoKonfigForm.setBikoiztuakBaimendu(aplikazioAukeraService.getBool(AplikazioAukeraService.KOADERNO_BIKOIZTUAK_BAIMENDU, true));

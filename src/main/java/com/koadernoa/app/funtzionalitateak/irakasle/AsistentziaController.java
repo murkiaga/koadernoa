@@ -31,6 +31,7 @@ import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoOrdutegiBlokeaR
 import com.koadernoa.app.objektuak.koadernoak.repository.SaioaRepository;
 import com.koadernoa.app.objektuak.koadernoak.service.AsistentziaService;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
+import com.koadernoa.app.objektuak.jokabidea.service.IkasleEgunJardueraService;
 import com.koadernoa.app.objektuak.modulua.entitateak.Matrikula;
 import com.koadernoa.app.objektuak.modulua.repository.MatrikulaRepository;
 
@@ -49,6 +50,7 @@ public class AsistentziaController {
 	  private final MatrikulaRepository matrikulaRepository;
 	  private final KoadernoaService koadernoaService;
 	  private final AuditService auditService;
+	  private final IkasleEgunJardueraService ikasleEgunJardueraService;
 
 	  /** GET: Eguneko taula (Saioa-ren lazy-create. Behar denean sortu) */
 	  @GetMapping({"","/"})
@@ -83,6 +85,8 @@ public class AsistentziaController {
 	    model.addAttribute("saioak", saioak);
 	    model.addAttribute("matrikulak", matrikulak);
 	    model.addAttribute("egoeraMap", asistentziaService.mapEgoerak(saioak, matrikulak));
+    model.addAttribute("oharGakoak", ikasleEgunJardueraService.oharGakoak(kargatutakoKoadernoa.getId(), data, data));
+    model.addAttribute("egunekoJokabideak", ikasleEgunJardueraService.egunekoJokabideak(kargatutakoKoadernoa.getId(), data));
 	    PrincipalInfo p = resolvePrincipalInfo(auth);
 	    var event = auditService.buildBaseEvent(
 	        p.erabiltzaileId,

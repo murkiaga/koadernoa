@@ -92,7 +92,17 @@
           </thead>
           <tbody>
             <tr th:each="m : ${matrikulak}">
-              <td th:text="${m.ikaslea.izena + ' ' + m.ikaslea.abizena1}">Ikasle 1</td>
+              <td><span th:text="${m.ikaslea.izena + ' ' + m.ikaslea.abizena1}">Ikasle 1</span>
+                <button type="button" data-mota="oharra"
+                  th:class="|ikasle-egun-ikonoa ${oharGakoak.contains(m.ikaslea.id.toString() + '|' + data.toString()) ? 'aktibo' : 'inaktibo'}|"
+                  th:attr="data-ikaslea-id=${m.ikaslea.id},data-data=${data},data-izena=${m.ikaslea.izena + ' ' + m.ikaslea.abizena1},aria-label=${oharGakoak.contains(m.ikaslea.id.toString() + '|' + data.toString()) ? 'Oharra dago' : 'Ez dago oharrik'}"
+                  title="Oharra" onclick="irekiIkasleEgunOharra(this.dataset.ikasleaId,this.dataset.data,this.dataset.izena,this)">📝</button>
+                <button type="button" data-mota="jokabidea"
+                  th:class="|ikasle-egun-ikonoa ${egunekoJokabideak.containsKey(m.ikaslea.id) ? 'aktibo' : 'inaktibo'}|"
+                  th:attr="data-ikaslea-id=${m.ikaslea.id},data-data=${data},data-izena=${m.ikaslea.izena + ' ' + m.ikaslea.abizena1},aria-label=${egunekoJokabideak.containsKey(m.ikaslea.id) ? 'Jokabide desegokia dago' : 'Ez dago jokabide desegokirik'}"
+                  title="Jokabide desegokia" onclick="irekiJokabideDesegokia(this.dataset.ikasleaId,this.dataset.data,this.dataset.izena,this)">⚠️</button>
+                <span class="ikasle-egun-pdfak" th:if="${egunekoJokabideak.containsKey(m.ikaslea.id)}"><a th:each="j : ${egunekoJokabideak.get(m.ikaslea.id)}" th:href="@{|/irakasle/jokabide-desegokia/${j.id}/pdf|}" target="_blank" title="PDFa ikusi">📄</a></span>
+              </td>
 
               <td th:each="s : ${saioak}">
                 <!-- Fallback submiterako hidden input (balioa JS-ak eguneratzen du) -->
@@ -217,5 +227,6 @@
 })();
 </script>
 
+<div th:replace="~{irakasleak/fragments/ikasle-egun-modalak :: modalak}"></div>
 </body>
 </html>
