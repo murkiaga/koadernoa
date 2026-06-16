@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
+import org.thymeleaf.templatemode.TemplateMode;
+import org.thymeleaf.templateresolver.StringTemplateResolver;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import com.koadernoa.app.objektuak.jokabidea.entitateak.JokabideDesegokia;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,7 @@ public class JokabideDesegokiaPdfService {
     private final TemplateEngine templateEngine;
     @Value("${koadernoa.uploads.dir:uploads}") private String uploadsDir;
     @Value("${koadernoa.uploads.jokabide-desegokiak-subdir:jokabide-desegokiak}") private String subdir;
+    @Value("${koadernoa.txostenak.jokabide-desegokia.path:uploads/txostenak/jokabide-desegokia.html}") private String txantiloiPertsonalizatuaPath;
     @Value("${koadernoa.herria:}") private String herria;
 
     public SortutakoPdfa sortu(JokabideDesegokia j) throws IOException {
@@ -33,12 +36,45 @@ public class JokabideDesegokiaPdfService {
         c.setVariable("neurriZuzentzailea", j.getNeurriZuzentzailea().getKodea() + " - " + j.getNeurriZuzentzailea().getTestua());
         c.setVariable("herriaEtaData", herriaEtaData(j));
         c.setVariable("irakaslea", j.getIrakaslea().getIzena());
-        String html = templateEngine.process("pdf/jokabide-desegokia", c);
+        String html = errendatuHtml(c);
         try (OutputStream os = Files.newOutputStream(target, StandardOpenOption.CREATE_NEW)) {
             new PdfRendererBuilder().useFastMode().withHtmlContent(html, null).toStream(os).run();
         } catch (Exception e) { Files.deleteIfExists(target); throw new IOException("Ezin izan da PDF dokumentua sortu.", e); }
         return new SortutakoPdfa(target.toString(), filename);
     }
+    private String errendatuHtml(Context context) throws IOException {
+        Path txantiloia = Paths.get(txantiloiPertsonalizatuaPath).toAbsolutePath().normalize();
+        if (!Files.exists(txantiloia)) {
+            return templateEngine.process("pdf/jokabide-desegokia", context);
+        }
+
+        StringTemplateResolver resolver = new StringTemplateResolver();
+        resolver.setTemplateMode(TemplateMode.HTML);
+        resolver.setCacheable(false);
+
+        TemplateEngine stringTemplateEngine = new TemplateEngine();
+        stringTemplateEngine.setTemplateResolver(resolver);
+        String html = stringTemplateEngine.process(Files.readString(txantiloia), context);
+        return ordezkatuPlaceholderLiteralak(html, context);
+    }
+
+    private String ordezkatuPlaceholderLiteralak(String html, Context context) {
+        String emaitza = html;
+        for (String izena : context.getVariableNames()) {
+            Object balioa = context.getVariable(izena);
+            emaitza = emaitza.replace("${" + izena + "}", escapeHtml(balioa == null ? "" : balioa.toString()));
+        }
+        return emaitza;
+    }
+
+    private String escapeHtml(String value) {
+        return value.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
+    }
+
     public void ezabatuIsilean(String path) { if (path != null) try { Files.deleteIfExists(Paths.get(path)); } catch (IOException ignored) {} }
     private String ikasleIzena(JokabideDesegokia j) { var i=j.getIkaslea(); return ((i.getIzena()==null?"":i.getIzena())+" "+(i.getAbizena1()==null?"":i.getAbizena1())+" "+(i.getAbizena2()==null?"":i.getAbizena2())).trim(); }
     private String maila(JokabideDesegokia j) { var m=j.getModuloa().getMaila(); var t=j.getModuloa().getTaldea(); String base=m==null?"":(m.getIzena()==null?m.getKodea():m.getIzena()); return t!=null&&t.getIzena()!=null?base+" - "+t.getIzena():base; }

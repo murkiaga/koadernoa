@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <title>Jokabide desegokia txostena editatu</title>
+  <link rel="stylesheet" th:href="@{/css/navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    .editor-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,.9fr);gap:16px;align-items:start;}
+    .editor-card{border:1px solid var(--b);border-radius:12px;padding:14px;background:#fff;}
+    .placeholder-list{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;}
+    .placeholder-btn{border:1px solid #93c5fd;background:#eff6ff;color:#1d4ed8;border-radius:999px;padding:6px 10px;cursor:pointer;font-weight:600;}
+    .dropzone{border:2px dashed #9ca3af;border-radius:12px;padding:16px;text-align:center;color:#4b5563;background:#f9fafb;cursor:pointer;margin:10px 0;}
+    .dropzone.dragover{border-color:#2563eb;background:#eff6ff;}
+    #htmlEdukia{width:100%;min-height:620px;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;font-size:.88rem;line-height:1.45;}
+    #previewFrame{width:100%;height:760px;border:1px solid var(--b);border-radius:8px;background:#fff;}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:12px;}
+    .help-list{margin:8px 0 0 18px;color:#4b5563;}
+    @media (max-width: 980px){.editor-grid{grid-template-columns:1fr;}#previewFrame{height:520px;}}
+  </style>
+</head>
+<body>
+<div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+
+<main class="page">
+  <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;">
+    <div>
+      <h1>Jokabide desegokia txostena editatu</h1>
+      <p class="muted" style="margin-top:0;">
+        Txantiloi hau erabiltzen da jokabide desegokiaren PDFa sortzeko. HTMLa gorde ondoren PDF berriek txantiloi hau erabiliko dute.
+      </p>
+    </div>
+    <a class="btn btn-secondary" th:href="@{/admin#txostenak}">Itzuli txostenetara</a>
+  </div>
+
+  <div th:if="${param.success}" class="alert alert-success" th:text="${param.success}"></div>
+  <div th:if="${param.error}" class="alert alert-error" th:text="${param.error}"></div>
+
+  <div class="editor-grid">
+    <form class="editor-card" method="post" th:action="@{/admin/txostenak/jokabide-desegokia}">
+      <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+      <h2 style="margin-top:0;">HTML txantiloia</h2>
+      <p class="muted">
+        Uneko egoera:
+        <strong th:text="${pertsonalizatua} ? 'pertsonalizatua' : 'defektuzkoa'"></strong>.
+        Logo bat gehitzeko, arrastatu irudia beheko eremura edo klik egin.
+      </p>
+
+      <div>
+        <strong>Hutsune/placeholder erabilgarriak</strong>
+        <div class="placeholder-list" aria-label="Placeholderrak txertatzeko botoiak">
+          <button type="button" class="placeholder-btn" th:each="p : ${placeholderrak}" th:data-placeholder="${p}" th:text="${'${' + p + '}'}">${ikaslea}</button>
+        </div>
+        <ul class="help-list">
+          <li>Klik eginda kurtsorearen lekuan txertatuko da.</li>
+          <li>Adibidez: <code>${ikaslea}</code>, <code>${maila}</code>, <code>${irakaslea}</code>.</li>
+          <li>HTML aurreratua erabil dezakezu, baina scriptak ez dira behar PDF txostenerako.</li>
+        </ul>
+      </div>
+
+      <div id="logoDropzone" class="dropzone" tabindex="0">
+        <strong>Logo/irudia arrastatu hona</strong><br>
+        <span>PNG edo JPG irudi bat HTMLan txertatuko da <code>&lt;img&gt;</code> bezala.</span>
+        <input id="logoInput" type="file" accept="image/png,image/jpeg" hidden>
+      </div>
+
+      <label for="htmlEdukia" class="muted">HTML edukia</label>
+      <textarea id="htmlEdukia" name="htmlEdukia" spellcheck="false" th:text="${htmlEdukia}"></textarea>
+
+      <div class="actions">
+        <button type="submit" class="btn btn-primary">Gorde txantiloia</button>
+        <button type="button" id="previewBtn" class="btn btn-secondary">Aurreikusi</button>
+        <a class="btn btn-secondary" th:href="@{/admin#txostenak}">Utzi</a>
+      </div>
+    </form>
+
+    <aside class="editor-card">
+      <h2 style="margin-top:0;">Aurrebista azkarra</h2>
+      <p class="muted">
+        Aurrebista honek adibide-datuak erabiltzen ditu eta HTMLaren itxura azkar egiaztatzeko da. Benetako PDFa sortzean aplikazioak datu errealak jarriko ditu.
+      </p>
+      <iframe id="previewFrame" sandbox="" title="Jokabide desegokia txostenaren aurrebista"></iframe>
+    </aside>
+  </div>
+</main>
+
+<script>
+(function(){
+  const textarea = document.getElementById('htmlEdukia');
+  const previewFrame = document.getElementById('previewFrame');
+  const dropzone = document.getElementById('logoDropzone');
+  const fileInput = document.getElementById('logoInput');
+  const sampleValues = {
+    ikaslea: 'Ane Ikaslea Etxeberria',
+    maila: '1. maila - A taldea',
+    portaeraArrazoia: '30.d - Irakasleek edo agintari akademikoek agindutakoa ez betetzea.',
+    deskribapenZehatza: '2026-05-12an gelan gertatutakoaren deskribapen zehatza.',
+    neurriZuzentzailea: '34.a - Izandako jokabide desegokiari buruzko hausnarketa.',
+    herriaEtaData: 'Bilbon, 2026(e)ko maiatzaren 12(e)(a)n',
+    irakaslea: 'Irakasle Izena'
+  };
+
+  function insertAtCursor(text) {
+    const start = textarea.selectionStart || 0;
+    const end = textarea.selectionEnd || 0;
+    textarea.value = textarea.value.slice(0, start) + text + textarea.value.slice(end);
+    textarea.focus();
+    textarea.selectionStart = textarea.selectionEnd = start + text.length;
+  }
+
+  document.querySelectorAll('.placeholder-btn').forEach(btn => {
+    btn.addEventListener('click', () => insertAtCursor(`\${${btn.dataset.placeholder}}`));
+  });
+
+  function insertImage(file) {
+    if (!file || !/^image\/(png|jpeg)$/.test(file.type)) {
+      alert('PNG edo JPG irudi bat aukeratu behar da.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      insertAtCursor(`\n<div style="text-align:center;margin-bottom:16px;"><img src="${reader.result}" alt="Logoa" style="max-width:180px;max-height:90px;"></div>\n`);
+      updatePreview();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  dropzone.addEventListener('click', () => fileInput.click());
+  dropzone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); } });
+  fileInput.addEventListener('change', () => insertImage(fileInput.files && fileInput.files[0]));
+  ['dragenter','dragover'].forEach(evt => dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.add('dragover'); }));
+  ['dragleave','drop'].forEach(evt => dropzone.addEventListener(evt, e => { e.preventDefault(); dropzone.classList.remove('dragover'); }));
+  dropzone.addEventListener('drop', e => insertImage(e.dataTransfer.files && e.dataTransfer.files[0]));
+
+  function updatePreview() {
+    let html = textarea.value || '';
+    Object.entries(sampleValues).forEach(([key, value]) => {
+      html = html
+        .replaceAll(`[[\${${key}}]]`, value)
+        .replaceAll(`\${${key}}`, value)
+        .replace(new RegExp(`(<[^>]+)th:text=["']\\$\\{${key}\\}["']([^>]*>)(.*?)(</[^>]+>)`, 'gs'), `$1$2${value}$4`)
+        .replaceAll(new RegExp(`th:text="\\$\\{${key}\\}"`, 'g'), '')
+        .replaceAll(new RegExp(`th:text='\\$\\{${key}\\}'`, 'g'), '');
+    });
+    previewFrame.srcdoc = html;
+  }
+
+  document.getElementById('previewBtn').addEventListener('click', updatePreview);
+  textarea.addEventListener('input', () => window.clearTimeout(textarea.previewTimer) || (textarea.previewTimer = window.setTimeout(updatePreview, 400)));
+  updatePreview();
+})();
+</script>
+</body>
+</html>
