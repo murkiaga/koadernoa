@@ -137,12 +137,15 @@
   function updatePreview() {
     let html = textarea.value || '';
     Object.entries(sampleValues).forEach(([key, value]) => {
+      const literalToken = '${' + key + '}';
+      const inlineToken = '[' + '[' + literalToken + ']' + ']';
+      const thTextPattern = new RegExp("(<[^>]+)th:text=[\"']\\$\\{" + key + "\\}[\"']([^>]*>)(.*?)(</[^>]+>)", 'gs');
       html = html
-        .replaceAll(`[[\${${key}}]]`, value)
-        .replaceAll(`\${${key}}`, value)
-        .replace(new RegExp(`(<[^>]+)th:text=["']\\$\\{${key}\\}["']([^>]*>)(.*?)(</[^>]+>)`, 'gs'), `$1$2${value}$4`)
-        .replaceAll(new RegExp(`th:text="\\$\\{${key}\\}"`, 'g'), '')
-        .replaceAll(new RegExp(`th:text='\\$\\{${key}\\}'`, 'g'), '');
+        .replaceAll(inlineToken, value)
+        .replaceAll(literalToken, value)
+        .replace(thTextPattern, '$1$2' + value + '$4')
+        .replaceAll(new RegExp("th:text=\"\\$\\{" + key + "\\}\"", 'g'), '')
+        .replaceAll(new RegExp("th:text='\\$\\{" + key + "\\}'", 'g'), '');
     });
     previewFrame.srcdoc = html;
   }
