@@ -1,6 +1,7 @@
 package com.koadernoa.app.funtzionalitateak.admin;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
