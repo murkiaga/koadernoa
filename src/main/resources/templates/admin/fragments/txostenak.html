@@ -27,7 +27,20 @@
             <span th:if="${!md6309TxostenaBadago}" class="muted">Ez da txostenik aurkitu.</span>
           </td>
           <td style="padding:10px 8px; border-bottom:1px solid var(--b);">
-            <a class="btn" th:if="${md6309TxostenaBadago}" th:href="@{/admin/txostenak/md6309}">Deskargatu</a>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+              <a class="btn" th:if="${md6309TxostenaBadago}" th:href="@{/admin/txostenak/md6309}">Deskargatu</a>
+              <form method="post" th:action="@{/admin/txostenak/md6309}" enctype="multipart/form-data" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:0;">
+                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <label style="display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:0;">
+                  <span class="muted">.dotx fitxategia</span>
+                  <input type="file"
+                         name="txostenFile"
+                         accept=".dotx,application/vnd.openxmlformats-officedocument.wordprocessingml.template"
+                         required>
+                </label>
+                <button type="submit" class="btn btn-primary">Ordezkatu txostena</button>
+              </form>
+            </div>
           </td>
         </tr>
         <tr>
@@ -52,27 +65,6 @@
       </tbody>
     </table>
   </div>
-
-  <form method="post" th:action="@{/admin/txostenak/md6309}" enctype="multipart/form-data">
-    <input type="hidden"
-           th:if="${_csrf != null}"
-           th:name="${_csrf.parameterName}"
-           th:value="${_csrf.token}"/>
-
-    <div class="row" style="align-items:end;">
-      <label>
-        <div class="muted">Igo .dotx fitxategia MD6309 txostena ordezkatzeko</div>
-        <input type="file"
-               name="txostenFile"
-               accept=".dotx,application/vnd.openxmlformats-officedocument.wordprocessingml.template"
-               required>
-      </label>
-
-      <div style="align-self:end;">
-        <button type="submit" class="btn btn-primary">Ordezkatu txostena</button>
-      </div>
-    </div>
-  </form>
 </div>
 </body>
 </html>
