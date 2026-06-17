@@ -32,6 +32,8 @@ public class JokabideDesegokiaPdfService {
         c.setVariable("portaeraArrazoia", j.getPortaeraArrazoia().getKodea() + " - " + j.getPortaeraArrazoia().getTestua());
         c.setVariable("deskribapenZehatza", j.getDeskribapenZehatza());
         c.setVariable("neurriZuzentzailea", j.getNeurriZuzentzailea().getKodea() + " - " + j.getNeurriZuzentzailea().getTestua());
+        c.setVariable("herria", herriaTestua());
+        c.setVariable("dataTestua", dataTestua(j));
         c.setVariable("herriaEtaData", herriaEtaData(j));
         c.setVariable("irakaslea", j.getIrakaslea().getIzena());
         String html = errendatuHtml(c);
@@ -78,12 +80,19 @@ public class JokabideDesegokiaPdfService {
     private String ikasleIzena(JokabideDesegokia j) { var i=j.getIkaslea(); return ((i.getIzena()==null?"":i.getIzena())+" "+(i.getAbizena1()==null?"":i.getAbizena1())+" "+(i.getAbizena2()==null?"":i.getAbizena2())).trim(); }
     private String maila(JokabideDesegokia j) { var m=j.getModuloa().getMaila(); var t=j.getModuloa().getTaldea(); String base=m==null?"":(m.getIzena()==null?m.getKodea():m.getIzena()); return t!=null&&t.getIzena()!=null?base+" - "+t.getIzena():base; }
     private String herriaEtaData(JokabideDesegokia j) {
+        return herriaTestua() + "(e)n, " + dataTestua(j);
+    }
+
+    private String herriaTestua() {
+        return herria == null || herria.isBlank() ? "………….…………." : herria.trim();
+    }
+
+    private String dataTestua(JokabideDesegokia j) {
         String[] hilabeteak = { "urtarril", "otsail", "martxo", "apiril", "maiatz", "ekain",
                 "uztail", "abuztu", "irail", "urri", "azaro", "abendu" };
-        String kokapena = herria == null || herria.isBlank() ? "………….…………." : herria.trim();
         var data = j.getData();
-        return kokapena + "(e)n, " + data.getYear() + "(e)ko "
-                + hilabeteak[data.getMonthValue() - 1] + "aren " + data.getDayOfMonth() + "(e)(a)n";
+        return data.getYear() + "(e)ko " + hilabeteak[data.getMonthValue() - 1]
+                + "aren " + data.getDayOfMonth() + "(e)(a)n";
     }
     public record SortutakoPdfa(String path, String filename) {}
 }

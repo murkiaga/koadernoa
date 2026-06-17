@@ -244,6 +244,8 @@ public class AdminController {
                 "portaeraArrazoia",
                 "deskribapenZehatza",
                 "neurriZuzentzailea",
+                "herria",
+                "dataTestua",
                 "herriaEtaData",
                 "irakaslea"));
         return "admin/txostenak/jokabide-desegokia-editatu";
