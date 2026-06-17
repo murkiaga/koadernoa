@@ -7,8 +7,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
-import org.thymeleaf.templatemode.TemplateMode;
-import org.thymeleaf.templateresolver.StringTemplateResolver;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import com.koadernoa.app.objektuak.jokabidea.entitateak.JokabideDesegokia;
 import lombok.RequiredArgsConstructor;
@@ -48,21 +46,23 @@ public class JokabideDesegokiaPdfService {
             return templateEngine.process("pdf/jokabide-desegokia", context);
         }
 
-        StringTemplateResolver resolver = new StringTemplateResolver();
-        resolver.setTemplateMode(TemplateMode.HTML);
-        resolver.setCacheable(false);
-
-        TemplateEngine stringTemplateEngine = new TemplateEngine();
-        stringTemplateEngine.setTemplateResolver(resolver);
-        String html = stringTemplateEngine.process(Files.readString(txantiloia), context);
-        return ordezkatuPlaceholderLiteralak(html, context);
+        return ordezkatuPlaceholderak(Files.readString(txantiloia), context);
     }
 
-    private String ordezkatuPlaceholderLiteralak(String html, Context context) {
+    private String ordezkatuPlaceholderak(String html, Context context) {
         String emaitza = html;
         for (String izena : context.getVariableNames()) {
             Object balioa = context.getVariable(izena);
-            emaitza = emaitza.replace("${" + izena + "}", escapeHtml(balioa == null ? "" : balioa.toString()));
+            String balioEscaped = escapeHtml(balioa == null ? "" : balioa.toString());
+            String quotedValue = java.util.regex.Matcher.quoteReplacement(balioEscaped);
+            String quotedName = java.util.regex.Pattern.quote(izena);
+
+            emaitza = java.util.regex.Pattern
+                    .compile("(<[^>]+\\s)th:text=([\"'])\\$\\{" + quotedName + "\\}\\2([^>]*>)(.*?)(</[^>]+>)", java.util.regex.Pattern.DOTALL)
+                    .matcher(emaitza)
+                    .replaceAll("$1$3" + quotedValue + "$5");
+            emaitza = emaitza.replace("[[${" + izena + "}]]", balioEscaped);
+            emaitza = emaitza.replace("${" + izena + "}", balioEscaped);
         }
         return emaitza;
     }
