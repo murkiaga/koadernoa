@@ -210,8 +210,10 @@ public class DenboralizazioaController {
 	                    .withLocale(new java.util.Locale("eu", "ES")));
 
 	    // Hilabetearen muga-datak
-	    LocalDate hasiera = LocalDate.of(unekoUrtea, unekoHilabetea, 1);
-	    LocalDate amaiera = hasiera.withDayOfMonth(hasiera.lengthOfMonth());
+	    LocalDate hilabeteHasiera = LocalDate.of(unekoUrtea, unekoHilabetea, 1);
+	    LocalDate hilabeteAmaiera = hilabeteHasiera.withDayOfMonth(hilabeteHasiera.lengthOfMonth());
+	    LocalDate hasiera = hilabeteHasiera;
+	    LocalDate amaiera = hilabeteAmaiera;
 	    if ("astea".equalsIgnoreCase(egutegiMota) && astekoHasieraEraginkorra != null) {
 	        hasiera = astekoHasieraEraginkorra;
 	        amaiera = astekoHasieraEraginkorra.plusDays(4);
@@ -292,8 +294,8 @@ public class DenboralizazioaController {
 	        model.addAttribute("faltaEgunak", faltak.getEgunak());
 	        model.addAttribute("faltaEgunOrduak", faltak.getEgunekoOrduak());
 	        model.addAttribute("faltakIkasleak", faltak.getIkasleRows());
-            model.addAttribute("oharGakoak", ikasleEgunJardueraService.oharGakoak(kargatutakoKoadernoa.getId(), hasiera, amaiera));
-            model.addAttribute("jokabideGakoak", ikasleEgunJardueraService.jokabideGakoak(kargatutakoKoadernoa.getId(), hasiera, amaiera));
+	        model.addAttribute("oharGakoak", ikasleEgunJardueraService.oharGakoak(kargatutakoKoadernoa.getId(), hilabeteHasiera, hilabeteAmaiera));
+	        model.addAttribute("jokabideGakoak", ikasleEgunJardueraService.jokabideGakoak(kargatutakoKoadernoa.getId(), hilabeteHasiera, hilabeteAmaiera));
 	    }
 
 	    // Egutegiko oharrak hartzeko:

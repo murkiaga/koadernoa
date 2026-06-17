@@ -24,6 +24,7 @@ import com.koadernoa.app.funtzionalitateak.admin.seed.dto.SeedImportRequest;
 import com.koadernoa.app.funtzionalitateak.admin.seed.dto.SeedImportResult;
 import com.koadernoa.app.funtzionalitateak.admin.seed.service.KatalogoAkademikoaSeedService;
 import com.koadernoa.app.objektuak.konfigurazioa.service.AplikazioAukeraService;
+import com.koadernoa.app.objektuak.jokabidea.service.JokabideDesegokiaTxantiloiService;
 import com.koadernoa.app.security.AuthProviderStatusService;
 
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class AdminController {
     private final AplikazioAukeraService aukService;
     private final AuthProviderStatusService statusService;
     private final KatalogoAkademikoaSeedService katalogoAkademikoaSeedService;
+    private final JokabideDesegokiaTxantiloiService jokabideDesegokiaTxantiloiService;
 
     @Value("${koadernoa.uploads.dir:uploads}")
     private String baseDir;
@@ -70,6 +72,7 @@ public class AdminController {
         model.addAttribute("ldapConfigured", statusService.isLdapConfigured());
 
         model.addAttribute("md6309TxostenaBadago", Files.exists(getMd6309Path()));
+        model.addAttribute("jokabideDesegokiaPertsonalizatua", jokabideDesegokiaTxantiloiService.pertsonalizatuaBadago());
         model.addAttribute("seedEgoera", katalogoAkademikoaSeedService.kalkulatuEgoera());
         model.addAttribute("seedImportRequest", new SeedImportRequest());
 
@@ -228,6 +231,41 @@ public class AdminController {
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.wordprocessingml.template"))
                 .contentLength(Files.size(target))
                 .body(resource);
+    }
+
+
+    @GetMapping("/txostenak/jokabide-desegokia/editatu")
+    public String editatuJokabideDesegokiaTxostena(Model model) throws IOException {
+        model.addAttribute("htmlEdukia", jokabideDesegokiaTxantiloiService.irakurriUnekoa());
+        model.addAttribute("pertsonalizatua", jokabideDesegokiaTxantiloiService.pertsonalizatuaBadago());
+        model.addAttribute("placeholderrak", java.util.List.of(
+                "ikaslea",
+                "maila",
+                "portaeraArrazoia",
+                "deskribapenZehatza",
+                "neurriZuzentzailea",
+                "herria",
+                "dataTestua",
+                "herriaEtaData",
+                "irakaslea"));
+        return "admin/txostenak/jokabide-desegokia-editatu";
+    }
+
+    @PostMapping("/txostenak/jokabide-desegokia")
+    public String gordeJokabideDesegokiaTxostena(@RequestParam("htmlEdukia") String htmlEdukia) throws IOException {
+        if (htmlEdukia == null || htmlEdukia.isBlank()) {
+            return "redirect:/admin/txostenak/jokabide-desegokia/editatu?error=HTML%20edukia%20hutsa%20da";
+        }
+
+        jokabideDesegokiaTxantiloiService.gordePertsonalizatua(htmlEdukia);
+
+        return "redirect:/admin/txostenak/jokabide-desegokia/editatu?success=Txantiloia%20gordeta";
+    }
+
+    @PostMapping("/txostenak/jokabide-desegokia/berrezarri")
+    public String berrezarriJokabideDesegokiaTxostena() throws IOException {
+        jokabideDesegokiaTxantiloiService.berrezarri();
+        return "redirect:/admin/?tab=txostenak&success=Jokabide%20desegokia%20txostena%20defektuzkora%20berrezarri%20da";
     }
 
     @PostMapping("/txostenak/md6309")
