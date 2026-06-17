@@ -1,7 +1,6 @@
 package com.koadernoa.app.funtzionalitateak.admin;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -11,7 +10,6 @@ import javax.imageio.ImageIO;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -25,6 +23,7 @@ import com.koadernoa.app.funtzionalitateak.admin.seed.dto.SeedImportRequest;
 import com.koadernoa.app.funtzionalitateak.admin.seed.dto.SeedImportResult;
 import com.koadernoa.app.funtzionalitateak.admin.seed.service.KatalogoAkademikoaSeedService;
 import com.koadernoa.app.objektuak.konfigurazioa.service.AplikazioAukeraService;
+import com.koadernoa.app.objektuak.jokabidea.service.JokabideDesegokiaTxantiloiService;
 import com.koadernoa.app.security.AuthProviderStatusService;
 
 import lombok.RequiredArgsConstructor;
@@ -37,6 +36,7 @@ public class AdminController {
     private final AplikazioAukeraService aukService;
     private final AuthProviderStatusService statusService;
     private final KatalogoAkademikoaSeedService katalogoAkademikoaSeedService;
+    private final JokabideDesegokiaTxantiloiService jokabideDesegokiaTxantiloiService;
 
     @Value("${koadernoa.uploads.dir:uploads}")
     private String baseDir;
@@ -48,9 +48,6 @@ public class AdminController {
 
     @Value("${koadernoa.txostenak.md6309.path:src/main/resources/templates/txostenak/MD6309-falten-jakinarazpena.dotx}")
     private String md6309TxostenPath;
-
-    @Value("${koadernoa.txostenak.jokabide-desegokia.path:uploads/txostenak/jokabide-desegokia.html}")
-    private String jokabideDesegokiaTxostenPath;
 
     private static final Set<String> ALLOWED_CT = Set.of("image/png", "image/jpeg");
     private static final long MAX_BYTES = 300_000; // 300KB
@@ -74,7 +71,7 @@ public class AdminController {
         model.addAttribute("ldapConfigured", statusService.isLdapConfigured());
 
         model.addAttribute("md6309TxostenaBadago", Files.exists(getMd6309Path()));
-        model.addAttribute("jokabideDesegokiaPertsonalizatua", Files.exists(getJokabideDesegokiaPath()));
+        model.addAttribute("jokabideDesegokiaPertsonalizatua", jokabideDesegokiaTxantiloiService.pertsonalizatuaBadago());
         model.addAttribute("seedEgoera", katalogoAkademikoaSeedService.kalkulatuEgoera());
         model.addAttribute("seedImportRequest", new SeedImportRequest());
 
@@ -83,25 +80,6 @@ public class AdminController {
 
     private Path getMd6309Path() {
         return Paths.get(md6309TxostenPath).toAbsolutePath().normalize();
-    }
-
-    private Path getJokabideDesegokiaPath() {
-        return Paths.get(jokabideDesegokiaTxostenPath).toAbsolutePath().normalize();
-    }
-
-    private String readDefaultJokabideDesegokiaTemplate() throws IOException {
-        Resource resource = new ClassPathResource("templates/pdf/jokabide-desegokia.html");
-        try (InputStream input = resource.getInputStream()) {
-            return new String(input.readAllBytes(), StandardCharsets.UTF_8);
-        }
-    }
-
-    private String readCurrentJokabideDesegokiaTemplate() throws IOException {
-        Path target = getJokabideDesegokiaPath();
-        if (Files.exists(target)) {
-            return Files.readString(target, StandardCharsets.UTF_8);
-        }
-        return readDefaultJokabideDesegokiaTemplate();
     }
 
     @PostMapping("/ebalu-koloreak")
@@ -257,8 +235,8 @@ public class AdminController {
 
     @GetMapping("/txostenak/jokabide-desegokia/editatu")
     public String editatuJokabideDesegokiaTxostena(Model model) throws IOException {
-        model.addAttribute("htmlEdukia", readCurrentJokabideDesegokiaTemplate());
-        model.addAttribute("pertsonalizatua", Files.exists(getJokabideDesegokiaPath()));
+        model.addAttribute("htmlEdukia", jokabideDesegokiaTxantiloiService.irakurriUnekoa());
+        model.addAttribute("pertsonalizatua", jokabideDesegokiaTxantiloiService.pertsonalizatuaBadago());
         model.addAttribute("placeholderrak", java.util.List.of(
                 "ikaslea",
                 "maila",
@@ -276,17 +254,14 @@ public class AdminController {
             return "redirect:/admin/txostenak/jokabide-desegokia/editatu?error=HTML%20edukia%20hutsa%20da";
         }
 
-        Path target = getJokabideDesegokiaPath();
-        Files.createDirectories(target.getParent());
-        Files.writeString(target, htmlEdukia, StandardCharsets.UTF_8,
-                StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        jokabideDesegokiaTxantiloiService.gordePertsonalizatua(htmlEdukia);
 
         return "redirect:/admin/txostenak/jokabide-desegokia/editatu?success=Txantiloia%20gordeta";
     }
 
     @PostMapping("/txostenak/jokabide-desegokia/berrezarri")
     public String berrezarriJokabideDesegokiaTxostena() throws IOException {
-        Files.deleteIfExists(getJokabideDesegokiaPath());
+        jokabideDesegokiaTxantiloiService.berrezarri();
         return "redirect:/admin/?tab=txostenak&success=Jokabide%20desegokia%20txostena%20defektuzkora%20berrezarri%20da";
     }
 

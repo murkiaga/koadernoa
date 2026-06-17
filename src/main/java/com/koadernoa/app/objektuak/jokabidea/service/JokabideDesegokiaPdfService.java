@@ -15,9 +15,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class JokabideDesegokiaPdfService {
     private final TemplateEngine templateEngine;
+    private final JokabideDesegokiaTxantiloiService txantiloiService;
     @Value("${koadernoa.uploads.dir:uploads}") private String uploadsDir;
     @Value("${koadernoa.uploads.jokabide-desegokiak-subdir:jokabide-desegokiak}") private String subdir;
-    @Value("${koadernoa.txostenak.jokabide-desegokia.path:uploads/txostenak/jokabide-desegokia.html}") private String txantiloiPertsonalizatuaPath;
     @Value("${koadernoa.herria:}") private String herria;
 
     public SortutakoPdfa sortu(JokabideDesegokia j) throws IOException {
@@ -41,12 +41,11 @@ public class JokabideDesegokiaPdfService {
         return new SortutakoPdfa(target.toString(), filename);
     }
     private String errendatuHtml(Context context) throws IOException {
-        Path txantiloia = Paths.get(txantiloiPertsonalizatuaPath).toAbsolutePath().normalize();
-        if (!Files.exists(txantiloia)) {
+        if (!txantiloiService.pertsonalizatuaBadago()) {
             return templateEngine.process("pdf/jokabide-desegokia", context);
         }
 
-        return ordezkatuPlaceholderak(Files.readString(txantiloia), context);
+        return ordezkatuPlaceholderak(txantiloiService.irakurriPertsonalizatua(), context);
     }
 
     private String ordezkatuPlaceholderak(String html, Context context) {
