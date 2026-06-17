@@ -33,6 +33,7 @@
     <h1 th:text="${irakaslea.izena}">Irakaslea</h1>
 
     <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+    <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
 
 
     <form class="filters" method="get" th:action="@{|/kudeatzaile/irakasleak/${irakaslea.id}|}">
@@ -48,6 +49,27 @@
         </label>
         <button type="submit">Ikusi</button>
     </form>
+
+    <section>
+        <h2>Ordezkoa</h2>
+        <form class="filters" method="post" th:action="@{|/kudeatzaile/irakasleak/${irakaslea.id}/ordezkoa|}">
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <input type="hidden" name="ikasturteaId" th:value="${ikasturteaId}"/>
+            <label>
+                <span>Ordezkoa</span>
+                <select name="ordezkoaId">
+                    <option value="" th:selected="${irakaslea.ordezkoa == null}">(Ordezkorik gabe)</option>
+                    <option th:each="hautagaia : ${irakasleGuztiak}"
+                            th:if="${hautagaia.id != irakaslea.id}"
+                            th:value="${hautagaia.id}"
+                            th:text="${hautagaia.izena + ' (' + hautagaia.emaila + ')'}"
+                            th:selected="${irakaslea.ordezkoa != null and irakaslea.ordezkoa.id == hautagaia.id}">Irakaslea</option>
+                </select>
+            </label>
+            <button type="submit">Gorde ordezkoa</button>
+        </form>
+        <p class="muted">Ordezkoa gordetzean, ordezkoari irakasle honen koadernoetarako sarbidea ematen zaio; hutsik uztean, sarbide hori kentzen da.</p>
+    </section>
 
     <section>
         <h2>Ordutegia</h2>

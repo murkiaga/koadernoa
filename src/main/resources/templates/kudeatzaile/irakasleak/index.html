@@ -19,6 +19,7 @@
 		        <th>Emaila</th>
 		        <th>Rola</th>
 		        <th>Mintegia</th>
+		        <th>Ordezkoa</th>
 		        <th>Aldatu</th>
 		      </tr>
 		    </thead>
@@ -41,6 +42,7 @@
 		              </option>
 		            </select>
 		        </td>
+		        <td th:text="${irakasle.ordezkoa != null ? irakasle.ordezkoa.izena : '-'}">-</td>
 		        <td>
 		            <button class="btn btn-primary" type="submit">Gorde</button>
 		          </form>

@@ -1,6 +1,7 @@
 package com.koadernoa.app.funtzionalitateak.kudeatzaile;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -8,6 +9,7 @@ import java.util.Map;
 import java.util.stream.IntStream;
 
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -95,6 +97,7 @@ public class IrakasleKudeatzaileController {
         List<Koadernoa> koadernoak = koadernoaRepository.findByIrakasleaAndIkasturteaWithRelations(id, selectedIkasturteaId);
 
         model.addAttribute("irakaslea", irakaslea);
+        model.addAttribute("irakasleGuztiak", irakasleaRepository.findAll());
         model.addAttribute("ikasturteak", ikasturteak);
         model.addAttribute("ikasturteaId", selectedIkasturteaId);
         model.addAttribute("ordutegia", ordutegia);
@@ -206,11 +209,72 @@ public class IrakasleKudeatzaileController {
         return ikasturteaId != null ? redirect + "?ikasturteaId=" + ikasturteaId : redirect;
     }
 
+    @Transactional
     private void eguneratuIrakaslea(Long id, Long familiaId) {
         Irakaslea irakaslea = irakasleaRepository.findById(id).orElseThrow();
         Familia familia = familiaRepository.findById(familiaId).orElseThrow();
         irakaslea.setMintegia(familia);
         irakasleaRepository.save(irakaslea);
+    }
+
+    @PostMapping("/{id}/ordezkoa")
+    @Transactional
+    public String aldatuOrdezkoa(@PathVariable("id") Long id,
+                                  @RequestParam(name = "ordezkoaId", required = false) Long ordezkoaId,
+                                  @RequestParam(name = "ikasturteaId", required = false) Long ikasturteaId,
+                                  RedirectAttributes ra) {
+        Irakaslea irakaslea = irakasleaRepository.findById(id).orElseThrow();
+        Long ordezkoZaharraId = irakaslea.getOrdezkoa() != null ? irakaslea.getOrdezkoa().getId() : null;
+        if (ordezkoZaharraId != null) {
+            kenduOrdezkoaKoadernoetatik(irakaslea, ordezkoZaharraId);
+        }
+
+        if (ordezkoaId == null) {
+            irakaslea.setOrdezkoa(null);
+            irakasleaRepository.save(irakaslea);
+            ra.addFlashAttribute("success", "Ordezkoa kendu da.");
+            return redirectIrakasleFitxara(id, ikasturteaId);
+        }
+        if (id.equals(ordezkoaId)) {
+            ra.addFlashAttribute("error", "Irakasle batek ezin du bere burua ordezko izan.");
+            return redirectIrakasleFitxara(id, ikasturteaId);
+        }
+
+        Irakaslea ordezkoa = irakasleaRepository.findById(ordezkoaId).orElseThrow();
+        irakaslea.setOrdezkoa(ordezkoa);
+        irakasleaRepository.save(irakaslea);
+        gehituOrdezkoaKoadernoetan(irakaslea, ordezkoa);
+        ra.addFlashAttribute("success", "Ordezkoa eguneratu da, eta koadernoetarako sarbidea sinkronizatu da.");
+        return redirectIrakasleFitxara(id, ikasturteaId);
+    }
+
+    private void gehituOrdezkoaKoadernoetan(Irakaslea ordezkatua, Irakaslea ordezkoa) {
+        for (Koadernoa koadernoa : koadernoaRepository.findAllByIrakasleak_Id(ordezkatua.getId())) {
+            if (koadernoa.getIrakasleak() == null) {
+                koadernoa.setIrakasleak(new ArrayList<>());
+            } else if (!(koadernoa.getIrakasleak() instanceof ArrayList)) {
+                koadernoa.setIrakasleak(new ArrayList<>(koadernoa.getIrakasleak()));
+            }
+            boolean badago = koadernoa.getIrakasleak().stream()
+                    .anyMatch(i -> i != null && ordezkoa.getId().equals(i.getId()));
+            if (!badago) {
+                koadernoa.getIrakasleak().add(ordezkoa);
+                koadernoaRepository.save(koadernoa);
+            }
+        }
+    }
+
+    private void kenduOrdezkoaKoadernoetatik(Irakaslea ordezkatua, Long ordezkoId) {
+        for (Koadernoa koadernoa : koadernoaRepository.findAllByIrakasleak_Id(ordezkatua.getId())) {
+            if (koadernoa.getIrakasleak() == null) {
+                continue;
+            }
+            koadernoa.setIrakasleak(new ArrayList<>(koadernoa.getIrakasleak()));
+            boolean kenduDa = koadernoa.getIrakasleak().removeIf(i -> i != null && ordezkoId.equals(i.getId()));
+            if (kenduDa) {
+                koadernoaRepository.save(koadernoa);
+            }
+        }
     }
 
     private String normalizatuTestua(String value) {
