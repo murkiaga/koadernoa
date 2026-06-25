@@ -224,12 +224,21 @@ public class IrakasleKudeatzaileController {
                                   @RequestParam(name = "ikasturteaId", required = false) Long ikasturteaId,
                                   RedirectAttributes ra) {
         Irakaslea irakaslea = irakasleaRepository.findById(id).orElseThrow();
-        Long ordezkoZaharraId = irakaslea.getOrdezkoa() != null ? irakaslea.getOrdezkoa().getId() : null;
-        if (ordezkoZaharraId != null) {
-            kenduOrdezkoaKoadernoetatik(irakaslea, ordezkoZaharraId);
+        Irakaslea ordezkoZaharra = irakaslea.getOrdezkoa();
+        Long ordezkoZaharraId = ordezkoZaharra != null ? ordezkoZaharra.getId() : null;
+        boolean ordezkoaKenduEdoAldatu = ordezkoZaharraId != null
+                && (ordezkoaId == null || !ordezkoZaharraId.equals(ordezkoaId));
+
+        if (ordezkoaKenduEdoAldatu && ordezkoZaharra.getOrdezkoa() != null) {
+            ra.addFlashAttribute("error", ordezkoZaharra.getIzena()
+                    + " irakasleak beste ordezko bat dauka, kendu ordezkapen hau lehenengo.");
+            return redirectIrakasleFitxara(id, ikasturteaId);
         }
 
         if (ordezkoaId == null) {
+            if (ordezkoZaharraId != null) {
+                kenduOrdezkoaKoadernoetatik(irakaslea, ordezkoZaharraId);
+            }
             irakaslea.setOrdezkoa(null);
             irakasleaRepository.save(irakaslea);
             ra.addFlashAttribute("success", "Ordezkoa kendu da.");
@@ -239,7 +248,14 @@ public class IrakasleKudeatzaileController {
             ra.addFlashAttribute("error", "Irakasle batek ezin du bere burua ordezko izan.");
             return redirectIrakasleFitxara(id, ikasturteaId);
         }
+        if (ordezkoaId.equals(ordezkoZaharraId)) {
+            ra.addFlashAttribute("success", "Ordezkoa ez da aldatu.");
+            return redirectIrakasleFitxara(id, ikasturteaId);
+        }
 
+        if (ordezkoZaharraId != null) {
+            kenduOrdezkoaKoadernoetatik(irakaslea, ordezkoZaharraId);
+        }
         Irakaslea ordezkoa = irakasleaRepository.findById(ordezkoaId).orElseThrow();
         irakaslea.setOrdezkoa(ordezkoa);
         irakasleaRepository.save(irakaslea);
