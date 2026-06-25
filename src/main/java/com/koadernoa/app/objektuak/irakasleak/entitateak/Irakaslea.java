@@ -48,4 +48,8 @@ public class Irakaslea {
     @OneToOne(mappedBy = "tutorea", fetch = FetchType.LAZY)
     private Taldea tutoreTaldea;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ordezkoa_id")
+    private Irakaslea ordezkoa;
+
 }
