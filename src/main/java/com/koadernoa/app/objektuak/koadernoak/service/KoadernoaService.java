@@ -251,11 +251,13 @@ public class KoadernoaService {
                 irakasleak.forEach(i -> gehituIrakasleaBeharBada(koadernoa, i));
                 eguneratuOrdutegiakKoadernoan(koadernoa, cells);
                 Koadernoa gordeta = koadernoaRepository.save(koadernoa);
+                sortuEstatistikakFaltaBadira(gordeta);
                 return new KoadernoSorreraEmaitza(
                         gordeta,
                         KoadernoSorreraEmaitza.Egoera.ESLEITUA_JABE_GABEA,
                         "Koadernoa zure izenean esleitu da.");
             }
+            sortuEstatistikakFaltaBadira(koadernoa);
             return new KoadernoSorreraEmaitza(
                     koadernoa,
                     KoadernoSorreraEmaitza.Egoera.EXISTITZEN_DA,
@@ -275,11 +277,8 @@ public class KoadernoaService {
         List<KoadernoOrdutegiBlokea> blok = buildBlocksFromCells(k, cells);
         k.setOrdutegiak(blok); // ziurtatu Koadernoa.entitatean cascade=ALL dagoela harreman honetan
 
-        // Estatistikak
-        List<EstatistikaEbaluazioan> estatistikak = sortuEstatistikak(k);
-        k.setEstatistikak(estatistikak);
-
         Koadernoa gordeta = koadernoaRepository.save(k);
+        sortuEstatistikakFaltaBadira(gordeta);
         return new KoadernoSorreraEmaitza(gordeta, KoadernoSorreraEmaitza.Egoera.SORTUA, "Koadernoa sortu da.");
     }
 
@@ -352,21 +351,76 @@ public class KoadernoaService {
     }
 
     @Transactional
-    private List<EstatistikaEbaluazioan> sortuEstatistikak(Koadernoa koadernoa) {
-        Egutegia eg = koadernoa.getEgutegia();
+    public int sortuEstatistikakFaltaBadira(Koadernoa koadernoa) {
+        Egutegia eg = koadernoa != null ? koadernoa.getEgutegia() : null;
         if (eg == null || eg.getMaila() == null) {
-            return List.of();
+            return 0;
         }
 
         var momentuak = ebaluazioMomentuaRepository
                 .findByMailaAndAktiboTrueOrderByOrdenaAsc(eg.getMaila());
+        if (momentuak.isEmpty()) {
+            return 0;
+        }
 
-        return momentuak.stream().map(m -> {
-            EstatistikaEbaluazioan e = new EstatistikaEbaluazioan();
-            e.setEbaluazioMomentua(m);
-            e.setKoadernoa(koadernoa);
-            return e;
-        }).toList();
+        Set<Long> daudenMomentuIdak = new LinkedHashSet<>();
+        if (koadernoa.getId() != null) {
+            estatistikaRepository.findByKoadernoa_Id(koadernoa.getId()).stream()
+                    .map(EstatistikaEbaluazioan::getEbaluazioMomentua)
+                    .filter(java.util.Objects::nonNull)
+                    .map(m -> m.getId())
+                    .filter(java.util.Objects::nonNull)
+                    .forEach(daudenMomentuIdak::add);
+        } else if (koadernoa.getEstatistikak() != null) {
+            koadernoa.getEstatistikak().stream()
+                    .map(EstatistikaEbaluazioan::getEbaluazioMomentua)
+                    .filter(java.util.Objects::nonNull)
+                    .map(m -> m.getId())
+                    .filter(java.util.Objects::nonNull)
+                    .forEach(daudenMomentuIdak::add);
+        }
+
+        List<EstatistikaEbaluazioan> berriak = new ArrayList<>();
+        for (var momentua : momentuak) {
+            if (momentua.getId() == null || daudenMomentuIdak.contains(momentua.getId())) {
+                continue;
+            }
+            if (koadernoa.getId() != null && estatistikaRepository
+                    .existsByKoadernoa_IdAndEbaluazioMomentua_Id(koadernoa.getId(), momentua.getId())) {
+                daudenMomentuIdak.add(momentua.getId());
+                continue;
+            }
+            EstatistikaEbaluazioan estatistika = new EstatistikaEbaluazioan();
+            estatistika.setEbaluazioMomentua(momentua);
+            estatistika.setKoadernoa(koadernoa);
+            berriak.add(estatistika);
+            daudenMomentuIdak.add(momentua.getId());
+        }
+
+        if (berriak.isEmpty()) {
+            return 0;
+        }
+        estatistikaRepository.saveAll(berriak);
+        if (koadernoa.getEstatistikak() != null) {
+            koadernoa.getEstatistikak().addAll(berriak);
+        } else {
+            koadernoa.setEstatistikak(new ArrayList<>(berriak));
+        }
+        return berriak.size();
+    }
+
+    @Transactional
+    public int sortuFaltaDirenEstatistikakIkasturtean(Long ikasturteaId) {
+        if (ikasturteaId == null) {
+            return 0;
+        }
+        int konpondutakoKoadernoak = 0;
+        for (Koadernoa koadernoa : koadernoaRepository.findByEgutegia_Ikasturtea_Id(ikasturteaId)) {
+            if (sortuEstatistikakFaltaBadira(koadernoa) > 0) {
+                konpondutakoKoadernoak++;
+            }
+        }
+        return konpondutakoKoadernoak;
     }
 
     /** INSERT segurua: Koadernoa referentziaz (managed) lotu */

@@ -22,6 +22,7 @@ import com.koadernoa.app.objektuak.egutegia.repository.IkasturteaRepository;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoAutomatikoSorreraService;
+import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 import com.koadernoa.app.objektuak.modulua.repository.ModuloaRepository;
 
@@ -31,9 +32,10 @@ class KoadernoAutomatikoSorreraServiceTest {
     private final EgutegiaRepository egutegiaRepository = mock(EgutegiaRepository.class);
     private final ModuloaRepository moduloaRepository = mock(ModuloaRepository.class);
     private final KoadernoaRepository koadernoaRepository = mock(KoadernoaRepository.class);
+    private final KoadernoaService koadernoaService = mock(KoadernoaService.class);
 
     private final KoadernoAutomatikoSorreraService service = new KoadernoAutomatikoSorreraService(
-            ikasturteaRepository, egutegiaRepository, moduloaRepository, koadernoaRepository);
+            ikasturteaRepository, egutegiaRepository, moduloaRepository, koadernoaRepository, koadernoaService);
 
     @Test
     void sortuFaltaDirenKoadernoakCreatesOnlyMissingActiveYearNotebooksWithoutOwner() {
@@ -46,8 +48,12 @@ class KoadernoAutomatikoSorreraServiceTest {
         when(ikasturteaRepository.findById(1L)).thenReturn(Optional.of(ikasturtea));
         when(egutegiaRepository.findByIkasturtea_Id(1L)).thenReturn(List.of(egutegia));
         when(moduloaRepository.findByMaila_Id(10L)).thenReturn(List.of(berria, existitzenDena));
-        when(koadernoaRepository.existsByModuloa_IdAndEgutegia_Id(30L, 20L)).thenReturn(false);
-        when(koadernoaRepository.existsByModuloa_IdAndEgutegia_Id(31L, 20L)).thenReturn(true);
+        Koadernoa existitzenDenKoadernoa = new Koadernoa();
+        existitzenDenKoadernoa.setId(99L);
+        when(koadernoaRepository.findFirstByModuloa_IdAndEgutegia_IdOrderByIdAsc(30L, 20L)).thenReturn(Optional.empty());
+        when(koadernoaRepository.findFirstByModuloa_IdAndEgutegia_IdOrderByIdAsc(31L, 20L))
+                .thenReturn(Optional.of(existitzenDenKoadernoa));
+        when(koadernoaRepository.save(any(Koadernoa.class))).thenAnswer(inv -> inv.getArgument(0));
 
         KoadernoAutomatikoSorreraService.Emaitza emaitza = service.sortuFaltaDirenKoadernoak(1L);
 
@@ -72,7 +78,10 @@ class KoadernoAutomatikoSorreraServiceTest {
         when(ikasturteaRepository.findById(1L)).thenReturn(Optional.of(ikasturtea));
         when(egutegiaRepository.findByIkasturtea_Id(1L)).thenReturn(List.of(egutegia));
         when(moduloaRepository.findByMaila_Id(10L)).thenReturn(List.of(moduloa));
-        when(koadernoaRepository.existsByModuloa_IdAndEgutegia_Id(30L, 20L)).thenReturn(true);
+        Koadernoa existitzenDenKoadernoa = new Koadernoa();
+        existitzenDenKoadernoa.setId(99L);
+        when(koadernoaRepository.findFirstByModuloa_IdAndEgutegia_IdOrderByIdAsc(30L, 20L))
+                .thenReturn(Optional.of(existitzenDenKoadernoa));
 
         KoadernoAutomatikoSorreraService.Emaitza emaitza = service.sortuFaltaDirenKoadernoak(1L);
 
