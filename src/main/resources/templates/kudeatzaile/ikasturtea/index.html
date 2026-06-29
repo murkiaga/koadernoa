@@ -5,6 +5,31 @@
     <link rel="stylesheet" th:href="@{/css/navbar.css}">
     <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        .btn-loading {
+            display: inline-flex;
+            align-items: center;
+            gap: .5rem;
+        }
+
+        .btn-loading .spinner {
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            display: none;
+            animation: spin .75s linear infinite;
+        }
+
+        .btn-loading.is-loading .spinner {
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
 
 </head>
 <body>
@@ -26,9 +51,12 @@
                           th:action="@{|/kudeatzaile/ikasturteak/${ikasturtea.id}/koadernoak/sortu-faltan|}"
                           method="post"
                           style="display:inline-block;margin:0;"
-                          onsubmit="return confirm('Ziur zaude ikasturte aktiboko falta diren koadernoak sortu nahi dituzula?');">
+                          onsubmit="return erakutsiKoadernoSorreraKarga(this);">
                         <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                        <button type="submit" class="btn btn-secondary">Ikasturte aktiboko falta diren koadernoak sortu</button>
+                        <button type="submit" class="btn btn-secondary btn-loading">
+                            <span class="spinner" aria-hidden="true"></span>
+                            <span class="btn-text">Ikasturte aktiboko falta diren koadernoak sortu</span>
+                        </button>
                     </form>
                     <a th:if="${ikasturtea.aktiboa}"
                        class="btn btn-primary"
@@ -40,5 +68,24 @@
 	    </ul>
     </main>
 <script th:src="@{/js/kudeatzaile-nav.js}"></script>
+<script>
+    function erakutsiKoadernoSorreraKarga(form) {
+        if (!confirm('Ziur zaude ikasturte aktiboko falta diren koadernoak sortu nahi dituzula?')) {
+            return false;
+        }
+
+        const button = form.querySelector('button[type="submit"]');
+        if (button) {
+            button.disabled = true;
+            button.classList.add('is-loading');
+            const text = button.querySelector('.btn-text');
+            if (text) {
+                text.textContent = 'Koadernoak sortzen eta estatistikak eguneratzen...';
+            }
+        }
+
+        return true;
+    }
+</script>
 </body>
 </html>
