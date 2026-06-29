@@ -26,6 +26,7 @@ public class KoadernoAutomatikoSorreraService {
     private final EgutegiaRepository egutegiaRepository;
     private final ModuloaRepository moduloaRepository;
     private final KoadernoaRepository koadernoaRepository;
+    private final KoadernoaService koadernoaService;
 
     @Transactional
     public Emaitza sortuFaltaDirenKoadernoak(Long ikasturteaId) {
@@ -38,6 +39,7 @@ public class KoadernoAutomatikoSorreraService {
 
         int sortuak = 0;
         int lehendikZeudenak = 0;
+        int estatistikakSortuta = 0;
         List<Egutegia> egutegiak = egutegiaRepository.findByIkasturtea_Id(ikasturtea.getId());
 
         for (Egutegia egutegia : egutegiak) {
@@ -52,8 +54,13 @@ public class KoadernoAutomatikoSorreraService {
                     continue;
                 }
 
-                if (koadernoaRepository.existsByModuloa_IdAndEgutegia_Id(moduloa.getId(), egutegia.getId())) {
+                var existitzenDenKoadernoa = koadernoaRepository
+                        .findFirstByModuloa_IdAndEgutegia_IdOrderByIdAsc(moduloa.getId(), egutegia.getId());
+                if (existitzenDenKoadernoa.isPresent()) {
                     lehendikZeudenak++;
+                    if (koadernoaService.sortuEstatistikakFaltaBadira(existitzenDenKoadernoa.get()) > 0) {
+                        estatistikakSortuta++;
+                    }
                     continue;
                 }
 
@@ -62,14 +69,19 @@ public class KoadernoAutomatikoSorreraService {
                 koadernoa.setModuloa(moduloa);
                 koadernoa.setIrakasleak(new ArrayList<>());
                 koadernoa.setJabea(null);
-                koadernoaRepository.save(koadernoa);
+                Koadernoa gordeta = koadernoaRepository.save(koadernoa);
+                if (koadernoaService.sortuEstatistikakFaltaBadira(gordeta) > 0) {
+                    estatistikakSortuta++;
+                }
                 sortuak++;
             }
         }
 
-        return new Emaitza(sortuak, lehendikZeudenak);
+        estatistikakSortuta += koadernoaService.sortuFaltaDirenEstatistikakIkasturtean(ikasturtea.getId());
+
+        return new Emaitza(sortuak, lehendikZeudenak, estatistikakSortuta);
     }
 
-    public record Emaitza(int sortutakoak, int lehendikZeudenak) {
+    public record Emaitza(int sortutakoak, int lehendikZeudenak, int estatistikakSortuta) {
     }
 }

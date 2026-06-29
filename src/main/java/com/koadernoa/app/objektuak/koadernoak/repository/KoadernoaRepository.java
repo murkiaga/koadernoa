@@ -83,6 +83,8 @@ public interface KoadernoaRepository extends JpaRepository<Koadernoa, Long>{
 
     java.util.Optional<Koadernoa> findFirstByModuloa_IdAndEgutegia_IdOrderByIdAsc(Long moduloaId, Long egutegiaId);
 
+    List<Koadernoa> findByEgutegia_Ikasturtea_Id(Long ikasturteaId);
+
     @Query("""
           select k from Koadernoa k
           where k.moduloa.id = :moduloaId

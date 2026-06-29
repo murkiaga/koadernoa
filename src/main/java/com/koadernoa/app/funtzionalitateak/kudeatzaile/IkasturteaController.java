@@ -95,8 +95,9 @@ public class IkasturteaController {
             KoadernoAutomatikoSorreraService.Emaitza emaitza =
                     koadernoAutomatikoSorreraService.sortuFaltaDirenKoadernoak(ikasturteaId);
             ra.addFlashAttribute("success",
-                    emaitza.sortutakoak() + " koaderno sortu dira. "
-                            + emaitza.lehendikZeudenak() + " koaderno jada existitzen ziren.");
+                    emaitza.sortutakoak() + " koaderno berri sortu dira. "
+                            + emaitza.lehendikZeudenak() + " koaderno jada existitzen ziren. "
+                            + emaitza.estatistikakSortuta() + " koadernori estatistikak sortu zaizkie.");
         } catch (IllegalArgumentException | IllegalStateException ex) {
             ra.addFlashAttribute("error", ex.getMessage());
         }
