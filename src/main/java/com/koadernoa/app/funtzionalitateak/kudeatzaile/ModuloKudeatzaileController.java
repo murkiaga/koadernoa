@@ -66,6 +66,7 @@ public class ModuloKudeatzaileController {
     public String moduloZerrenda(@RequestParam(name = "taldeaId", required = false) Long taldeaId,
                                  @RequestParam(name = "zikloaId", required = false) Long zikloaId,
                                  @RequestParam(name = "hautazkoa", required = false) Boolean hautazkoa,
+                                 @RequestParam(name = "aktibo", required = false) Boolean aktibo,
                                  @RequestParam(name = "page", defaultValue = "0") int page,
                                  @RequestParam(name = "size", defaultValue = "20") int size,
                                  Model model) {
@@ -73,7 +74,7 @@ public class ModuloKudeatzaileController {
         int orria = Math.max(0, page);
         PageRequest pageable = PageRequest.of(orria, tamaina, Sort.by("izena").ascending());
 
-        Page<Moduloa> moduluak = moduloaService.bilatuFiltroekin(taldeaId, zikloaId, hautazkoa, pageable);
+        Page<Moduloa> moduluak = moduloaService.bilatuFiltroekin(taldeaId, zikloaId, hautazkoa, aktibo, pageable);
         if (taldeaId != null) {
             model.addAttribute("ikasleak",
                 ikasleaRepository.findByTaldea_IdOrderByAbizena1AscAbizena2AscIzenaAsc(taldeaId));
@@ -82,6 +83,7 @@ public class ModuloKudeatzaileController {
         model.addAttribute("taldeaId", taldeaId);
         model.addAttribute("zikloaId", zikloaId);
         model.addAttribute("hautazkoa", hautazkoa);
+        model.addAttribute("aktibo", aktibo);
         model.addAttribute("moduluak", moduluak.getContent());
         model.addAttribute("zikloak", zikloaService.getAll());
         model.addAttribute("moduloKlikagarriak", koadernoaRepository.findModuloIdsInAktiboIkasturtea());
@@ -310,6 +312,7 @@ public class ModuloKudeatzaileController {
                                  @RequestParam(name = "taldeaId", required = false) Long taldeaId,
                                  @RequestParam(name = "zikloaId", required = false) Long zikloaId,
                                  @RequestParam(name = "hautazkoa", required = false) Boolean hautazkoa,
+                                 @RequestParam(name = "aktibo", required = false) Boolean aktibo,
                                  @RequestParam(name = "page", required = false) Integer page,
                                  @RequestParam(name = "size", required = false) Integer size,
                                  RedirectAttributes redirectAttributes) {
@@ -333,6 +336,9 @@ public class ModuloKudeatzaileController {
         }
         if (hautazkoa != null) {
             redirect.queryParam("hautazkoa", hautazkoa);
+        }
+        if (aktibo != null) {
+            redirect.queryParam("aktibo", aktibo);
         }
         if (page != null) {
             redirect.queryParam("page", page);

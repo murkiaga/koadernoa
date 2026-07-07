@@ -36,10 +36,12 @@ public interface ModuloaRepository extends JpaRepository<Moduloa, Long>{
 		where (:taldeaId is null or t.id = :taldeaId)
 		  and (:zikloaId is null or z.id = :zikloaId)
 		  and (:hautazkoa is null or m.hautazkoa = :hautazkoa)
+		  and (:aktibo is null or m.aktibo = :aktibo)
 	""")
 	Page<Moduloa> bilatuFiltroekin(@Param("taldeaId") Long taldeaId,
 	                                @Param("zikloaId") Long zikloaId,
 	                                @Param("hautazkoa") Boolean hautazkoa,
+	                                @Param("aktibo") Boolean aktibo,
 	                                Pageable pageable);
 
 	@Query("""
