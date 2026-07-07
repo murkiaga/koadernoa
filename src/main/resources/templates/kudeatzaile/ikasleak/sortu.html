@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Ikaslea gehitu</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" th:href="@{/css/navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
+</head>
+<body>
+<div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+
+<main class="page">
+  <h1>Gehitu ikaslea</h1>
+
+  <div th:if="${successMessage}" style="color:green" th:text="${successMessage}"></div>
+  <div th:if="${errorMessage}" style="color:red" th:text="${errorMessage}"></div>
+
+  <form method="post" th:action="@{/kudeatzaile/ikasleak/sortu}" style="max-width:720px; display:grid; gap:.9rem;">
+    <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+    <input type="hidden" name="zikloaId" th:value="${zikloaId}">
+
+    <div>
+      <label for="izena">Izena</label>
+      <input id="izena" name="izena" type="text" required th:value="${formIzena}">
+    </div>
+
+    <div>
+      <label for="abizena1">Abizena 1</label>
+      <input id="abizena1" name="abizena1" type="text" required th:value="${formAbizena1}">
+    </div>
+
+    <div>
+      <label for="abizena2">Abizena 2</label>
+      <input id="abizena2" name="abizena2" type="text" th:value="${formAbizena2}">
+    </div>
+
+    <div>
+      <label for="hna">HNA (DIE)</label>
+      <input id="hna" name="hna" type="text" required th:value="${formHna}">
+    </div>
+
+    <div>
+      <label for="nan">NAN (DNI)</label>
+      <input id="nan" name="nan" type="text" th:value="${formNan}">
+    </div>
+
+    <div>
+      <label for="taldeaId">Taldea</label>
+      <select id="taldeaId" name="taldeaId">
+        <option value="" th:selected="${taldeaId == null}">— Talderik gabe —</option>
+        <option th:each="t : ${taldeak}"
+                th:value="${t.id}"
+                th:text="${t.zikloa != null ? t.izena + ' · ' + t.zikloa.izena : t.izena}"
+                th:selected="${taldeaId != null and t.id == taldeaId}">
+        </option>
+      </select>
+    </div>
+
+    <div style="display:flex; gap:.6rem; justify-content:flex-end; margin-top:.5rem;">
+      <a class="btn btn-secondary" th:href="@{/kudeatzaile/ikasleak(zikloaId=${zikloaId},taldeaId=${taldeaId})}">Utzi</a>
+      <button class="btn btn-primary" type="submit">Gorde</button>
+    </div>
+  </form>
+</main>
+<script th:src="@{/js/kudeatzaile-nav.js}"></script>
+</body>
+</html>

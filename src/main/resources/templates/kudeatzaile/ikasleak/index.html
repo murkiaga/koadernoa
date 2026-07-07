@@ -11,7 +11,13 @@
 <div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
 
 <main class="page">
-  <h1>Ikasleak</h1>
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; flex-wrap:wrap;">
+    <h1 style="margin-bottom:0;">Ikasleak</h1>
+    <a class="btn btn-primary" th:href="@{/kudeatzaile/ikasleak/sortu(zikloaId=${zikloaId},taldeaId=${taldeaId})}">➕ Gehitu ikaslea</a>
+  </div>
+
+  <div th:if="${successMessage}" style="color:green" th:text="${successMessage}"></div>
+  <div th:if="${errorMessage}" style="color:red" th:text="${errorMessage}"></div>
 
   <div style="display:flex; justify-content:space-between; align-items:flex-end; gap:1rem; flex-wrap:wrap; margin: 1em 0;">
     <form method="get" th:action="@{/kudeatzaile/ikasleak}" style="display:flex; align-items:center; gap:.75rem; margin:0; flex-wrap:wrap; max-width:none;">

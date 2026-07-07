@@ -101,6 +101,48 @@ public class IkasleaKudeatzaileController {
         return "kudeatzaile/ikasleak/index";
     }
 
+    @GetMapping("/kudeatzaile/ikasleak/sortu")
+    public String ikasleSortuForm(@RequestParam(name = "zikloaId", required = false) Long zikloaId,
+                                  @RequestParam(name = "taldeaId", required = false) Long taldeaId,
+                                  Model model) {
+        model.addAttribute("zikloak", zikloaRepository.findAllByOrderByIzenaAsc());
+        model.addAttribute("taldeak", zikloaId != null
+                ? taldeaRepository.findByZikloa_IdOrderByIzenaAsc(zikloaId)
+                : taldeaRepository.findAllByOrderByIzenaAsc());
+        model.addAttribute("zikloaId", zikloaId);
+        model.addAttribute("taldeaId", taldeaId);
+        return "kudeatzaile/ikasleak/sortu";
+    }
+
+    @PostMapping("/kudeatzaile/ikasleak/sortu")
+    public String sortuIkaslea(@RequestParam("izena") String izena,
+                               @RequestParam("abizena1") String abizena1,
+                               @RequestParam(name = "abizena2", required = false) String abizena2,
+                               @RequestParam("hna") String hna,
+                               @RequestParam(name = "nan", required = false) String nan,
+                               @RequestParam(name = "taldeaId", required = false) Long taldeaId,
+                               @RequestParam(name = "zikloaId", required = false) Long zikloaId,
+                               RedirectAttributes redirectAttributes) {
+        try {
+            var emaitza = ikasleaService.sortuIkaslea(izena, abizena1, abizena2, hna, nan, taldeaId);
+            redirectAttributes.addFlashAttribute("successMessage",
+                    "Ikaslea sortu da. Sortutako matrikulak: " + emaitza.sortutakoMatrikulak());
+            return "redirect:/kudeatzaile/ikaslea/" + emaitza.ikaslea().getId();
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            redirectAttributes.addFlashAttribute("formIzena", izena);
+            redirectAttributes.addFlashAttribute("formAbizena1", abizena1);
+            redirectAttributes.addFlashAttribute("formAbizena2", abizena2);
+            redirectAttributes.addFlashAttribute("formHna", hna);
+            redirectAttributes.addFlashAttribute("formNan", nan);
+            StringBuilder target = new StringBuilder("redirect:/kudeatzaile/ikasleak/sortu");
+            String sep = "?";
+            if (zikloaId != null) { target.append(sep).append("zikloaId=").append(zikloaId); sep = "&"; }
+            if (taldeaId != null) { target.append(sep).append("taldeaId=").append(taldeaId); }
+            return target.toString();
+        }
+    }
+
     @GetMapping("/kudeatzaile/ikasleak/bilatu")
     @ResponseBody
     public List<Map<String, Object>> bilatuIkasleak(@RequestParam(name = "q", required = false) String q) {
