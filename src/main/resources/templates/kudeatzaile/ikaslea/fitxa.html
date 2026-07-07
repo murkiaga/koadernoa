@@ -73,6 +73,7 @@
       <tr>
         <th>Koadernoa</th>
         <th>Moduloa</th>
+        <th>Taldea</th>
         <th>EEI kodea</th>
         <th>Egoera</th>
         <th>UKO 1F</th>
@@ -91,6 +92,7 @@
           <span th:if="${m.koadernoa == null}">-</span>
         </td>
         <td th:text="${m.koadernoa != null and m.koadernoa.moduloa != null ? m.koadernoa.moduloa.izena : '-'}">-</td>
+        <td th:text="${m.koadernoa != null and m.koadernoa.moduloa != null and m.koadernoa.moduloa.taldea != null ? m.koadernoa.moduloa.taldea.izena : '-'}">-</td>
         <td th:text="${m.koadernoa != null and m.koadernoa.moduloa != null ? m.koadernoa.moduloa.eeiKodea : '-'}">-</td>
         <td>
           <form class="mini-form"
@@ -137,7 +139,7 @@
         </td>
       </tr>
       <tr th:if="${#lists.isEmpty(matrikulak)}">
-        <td colspan="7" style="text-align:center;color:#6b7280;">Ez dago matrikularik ikasturte honetan.</td>
+        <td colspan="8" style="text-align:center;color:#6b7280;">Ez dago matrikularik ikasturte honetan.</td>
       </tr>
       </tbody>
     </table>

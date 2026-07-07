@@ -132,11 +132,12 @@ public interface MatrikulaRepository extends JpaRepository<Matrikula, Long> {
         join fetch m.ikaslea i
         join fetch m.koadernoa k
         join fetch k.moduloa mo
+        left join fetch mo.taldea t
         join fetch k.egutegia e
         join fetch e.ikasturtea ik
         where i.id = :ikasleaId
           and (:ikasturteaId is null or ik.id = :ikasturteaId)
-        order by ik.izena desc, mo.izena asc
+        order by ik.izena desc, t.izena asc, mo.izena asc
     """)
     List<Matrikula> findIkaslearenMatrikulakByIkasturtea(@Param("ikasleaId") Long ikasleaId,
                                                          @Param("ikasturteaId") Long ikasturteaId);
