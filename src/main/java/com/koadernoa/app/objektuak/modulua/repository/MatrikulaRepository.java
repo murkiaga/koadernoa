@@ -66,11 +66,22 @@ public interface MatrikulaRepository extends JpaRepository<Matrikula, Long> {
 	@Query("""
 	        select m from Matrikula m
 	        where m.koadernoa.id = :koadernoaId
+	          and m.egoera = com.koadernoa.app.objektuak.modulua.entitateak.MatrikulaEgoera.MATRIKULATUA
 	          and m.ikaslea.hna is not null
 	          and m.ikaslea.hna not in :hnasExcel
 	    """)
 	    List<Matrikula> findToRemoveByKoadernoAndNotInHnas(@Param("koadernoaId") Long koadernoaId,
 	                                                       @Param("hnasExcel") List<String> hnasExcel);
+
+    @Query("""
+        select m from Matrikula m
+        where m.ikaslea.id = :ikasleaId
+          and m.egoera = com.koadernoa.app.objektuak.modulua.entitateak.MatrikulaEgoera.MATRIKULATUA
+          and m.koadernoa.egutegia.ikasturtea.aktiboa = true
+          and m.koadernoa.moduloa.taldea.id <> :taldeaId
+    """)
+    List<Matrikula> findActiveYearMatrikulatuakByIkasleaAndNotTaldea(@Param("ikasleaId") Long ikasleaId,
+                                                                      @Param("taldeaId") Long taldeaId);
     
 	List<Matrikula> findByKoadernoa_Id(Long koadernoId);
 
@@ -121,11 +132,12 @@ public interface MatrikulaRepository extends JpaRepository<Matrikula, Long> {
         join fetch m.ikaslea i
         join fetch m.koadernoa k
         join fetch k.moduloa mo
+        left join fetch mo.taldea t
         join fetch k.egutegia e
         join fetch e.ikasturtea ik
         where i.id = :ikasleaId
           and (:ikasturteaId is null or ik.id = :ikasturteaId)
-        order by ik.izena desc, mo.izena asc
+        order by ik.izena desc, t.izena asc, mo.izena asc
     """)
     List<Matrikula> findIkaslearenMatrikulakByIkasturtea(@Param("ikasleaId") Long ikasleaId,
                                                          @Param("ikasturteaId") Long ikasturteaId);

@@ -121,7 +121,8 @@ public class InportazioZerbitzua {
                 if (berria) tx.setSortuak(tx.getSortuak() + 1);
                 else        tx.setEguneratuak(tx.getEguneratuak() + 1);
 
-                // Matrikulazioa: ikasturte AKTIBOKO koaderno GUZTIAK (duplicaterik gabe)
+                // Matrikulazioa: ikasturte AKTIBOKO koaderno GUZTIAK (duplicaterik gabe).
+                // Lehendik beste egoera bateko matrikula badago, ez da automatikoki MATRIKULATUA bihurtzen.
                 for (Koadernoa koa : koadernoakAktiboak) {
                     boolean badago = matrikulaRepo.existsByIkasleaIdAndKoadernoaId(ik.getId(), koa.getId());
                     if (!badago) {
@@ -131,6 +132,12 @@ public class InportazioZerbitzua {
                         m.setEgoera(MatrikulaEgoera.MATRIKULATUA);
                         matrikulaRepo.save(m);
                     }
+                }
+
+                List<Matrikula> besteTaldeetakoMatrikulatuak = matrikulaRepo
+                        .findActiveYearMatrikulatuakByIkasleaAndNotTaldea(ik.getId(), taldeaId);
+                if (!besteTaldeetakoMatrikulatuak.isEmpty()) {
+                    matrikulaRepo.deleteAll(besteTaldeetakoMatrikulatuak);
                 }
             }
         }
