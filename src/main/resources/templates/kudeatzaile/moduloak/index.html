@@ -76,6 +76,7 @@
                         <th>Orduak</th>
                         <th>DUAL orduak</th>
 			            <th>Hautazkoa</th>
+			            <th>Aktibo</th>
 			            <th>Maila</th>
 			            <th>Taldea</th>
 			            <th>Aukerak</th>
@@ -98,6 +99,7 @@
                         <td th:text="${moduloa.orduak}">165</td>
                         <td th:text="${moduloa.dualOrduak != null ? moduloa.dualOrduak : 0}">0</td>
 			            <td th:text="${moduloa.hautazkoa ? 'Bai' : 'Ez'}">Ez</td>
+			            <td th:text="${moduloa.aktibo ? 'Bai' : 'Ez'}" th:classappend="${moduloa.aktibo} ? 'text-success' : 'text-danger'">Bai</td>
 			            <td th:text="${moduloa.maila.getKodea}">LEHENENGOA</td>
 			            <td th:text="${moduloa.taldea.izena}">2AM3</td>
 			            <td class="actions-cell">

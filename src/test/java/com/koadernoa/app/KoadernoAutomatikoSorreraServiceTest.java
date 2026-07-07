@@ -47,7 +47,7 @@ class KoadernoAutomatikoSorreraServiceTest {
 
         when(ikasturteaRepository.findById(1L)).thenReturn(Optional.of(ikasturtea));
         when(egutegiaRepository.findByIkasturtea_Id(1L)).thenReturn(List.of(egutegia));
-        when(moduloaRepository.findByMaila_Id(10L)).thenReturn(List.of(berria, existitzenDena));
+        when(moduloaRepository.findByMaila_IdAndAktiboTrue(10L)).thenReturn(List.of(berria, existitzenDena));
         Koadernoa existitzenDenKoadernoa = new Koadernoa();
         existitzenDenKoadernoa.setId(99L);
         when(koadernoaRepository.findFirstByModuloa_IdAndEgutegia_IdOrderByIdAsc(30L, 20L)).thenReturn(Optional.empty());
@@ -77,7 +77,7 @@ class KoadernoAutomatikoSorreraServiceTest {
 
         when(ikasturteaRepository.findById(1L)).thenReturn(Optional.of(ikasturtea));
         when(egutegiaRepository.findByIkasturtea_Id(1L)).thenReturn(List.of(egutegia));
-        when(moduloaRepository.findByMaila_Id(10L)).thenReturn(List.of(moduloa));
+        when(moduloaRepository.findByMaila_IdAndAktiboTrue(10L)).thenReturn(List.of(moduloa));
         Koadernoa existitzenDenKoadernoa = new Koadernoa();
         existitzenDenKoadernoa.setId(99L);
         when(koadernoaRepository.findFirstByModuloa_IdAndEgutegia_IdOrderByIdAsc(30L, 20L))

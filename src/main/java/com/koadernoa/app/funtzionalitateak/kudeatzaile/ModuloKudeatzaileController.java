@@ -113,6 +113,7 @@ public class ModuloKudeatzaileController {
         ModuloaFormDto form = new ModuloaFormDto();
         if (taldeaId != null) form.setTaldeaId(taldeaId);
         form.setDualOrduak(0);
+        form.setAktibo(true);
         model.addAttribute("moduloaForm", form);
         model.addAttribute("taldeak", taldeaService.getAll());
         model.addAttribute("mailak", mailaRepository.findAllByAktiboTrueOrderByOrdenaAscIzenaAsc());
@@ -130,6 +131,7 @@ public class ModuloKudeatzaileController {
         form.setOrduak(m.getOrduak());
         form.setDualOrduak(m.getDualOrduak() != null ? m.getDualOrduak() : 0);
         form.setHautazkoa(m.isHautazkoa());
+        form.setAktibo(m.isAktibo());
         form.setMailaId(m.getMaila() != null ? m.getMaila().getId() : null);
         form.setTaldeaId(m.getTaldea() != null ? m.getTaldea().getId() : null);
 

@@ -1,6 +1,7 @@
 package com.koadernoa.app;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -167,6 +168,16 @@ class KoadernoaServiceSorreraTest {
         assertThat(emaitza.egoera()).isEqualTo(KoadernoSorreraEmaitza.Egoera.EXISTITZEN_DA);
         assertThat(emaitza.mezua()).contains("Jabea: Ane Jabea.");
         assertThat(emaitza.mezua()).doesNotContain("ezezaguna");
+    }
+
+    @Test
+    void sortuEdoEsleituKoadernoaRejectsInactiveModule() {
+        TestDatuak datuak = prestatuDatuak();
+        datuak.moduloa().setAktibo(false);
+
+        assertThatThrownBy(() -> service.sortuEdoEsleituKoadernoa(dto(30L), datuak.irakaslea(), List.of()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Modulua ez dago aktibo. Ezin da koadernorik sortu.");
     }
 
     @Test

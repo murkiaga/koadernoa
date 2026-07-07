@@ -80,6 +80,7 @@ public class ModuloaService {
         target.setOrduak(dto.getOrduak());
         target.setDualOrduak(dto.getDualOrduak());
         target.setHautazkoa(dto.isHautazkoa());
+        target.setAktibo(dto.isAktibo());
         target.setMaila(maila);
         target.setTaldea(taldea);
 

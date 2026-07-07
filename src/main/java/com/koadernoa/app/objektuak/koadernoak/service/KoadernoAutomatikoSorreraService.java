@@ -48,7 +48,7 @@ public class KoadernoAutomatikoSorreraService {
                 continue;
             }
 
-            List<Moduloa> moduluak = moduloaRepository.findByMaila_Id(maila.getId());
+            List<Moduloa> moduluak = moduloaRepository.findByMaila_IdAndAktiboTrue(maila.getId());
             for (Moduloa moduloa : moduluak) {
                 if (moduloa.getId() == null) {
                     continue;
