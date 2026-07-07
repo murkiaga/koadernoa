@@ -24,7 +24,8 @@ public interface ModuloaRepository extends JpaRepository<Moduloa, Long>{
 	Page<Moduloa> findByTaldeaId(Long taldeaId, Pageable pageable);
 	Page<Moduloa> findAll(Pageable pageable);
 	List<Moduloa> findByMaila_Id(Long mailaId);
-	List<Moduloa> findByTaldea_Zikloa_Familia(Familia familia);
+	List<Moduloa> findByMaila_IdAndAktiboTrue(Long mailaId);
+	List<Moduloa> findByTaldea_Zikloa_FamiliaAndAktiboTrue(Familia familia);
 	
 	List<Moduloa> findAllByTaldea_Zikloa_Familia_Id(Long familiaId);
 
@@ -35,18 +36,21 @@ public interface ModuloaRepository extends JpaRepository<Moduloa, Long>{
 		where (:taldeaId is null or t.id = :taldeaId)
 		  and (:zikloaId is null or z.id = :zikloaId)
 		  and (:hautazkoa is null or m.hautazkoa = :hautazkoa)
+		  and (:aktibo is null or m.aktibo = :aktibo)
 	""")
 	Page<Moduloa> bilatuFiltroekin(@Param("taldeaId") Long taldeaId,
 	                                @Param("zikloaId") Long zikloaId,
 	                                @Param("hautazkoa") Boolean hautazkoa,
+	                                @Param("aktibo") Boolean aktibo,
 	                                Pageable pageable);
 
 	@Query("""
 		select distinct z from Moduloa m
 		join m.taldea t
 		join t.zikloa z
-		where (:familiaId is null or z.familia.id = :familiaId)
-		   or upper(m.eeiKodea) in :eeiKodeak
+		where m.aktibo = true
+		  and ((:familiaId is null or z.familia.id = :familiaId)
+		   or upper(m.eeiKodea) in :eeiKodeak)
 		order by z.izena asc
 	""")
 	List<Zikloa> findDistinctZikloakByFamiliaOrEeiKodeak(@Param("familiaId") Long familiaId,
@@ -54,7 +58,8 @@ public interface ModuloaRepository extends JpaRepository<Moduloa, Long>{
 
 	@Query("""
 		select m from Moduloa m
-		where ((:familiaId is null or m.taldea.zikloa.familia.id = :familiaId)
+		where m.aktibo = true
+		  and ((:familiaId is null or m.taldea.zikloa.familia.id = :familiaId)
 		        or upper(m.eeiKodea) in :eeiKodeak)
 		  and (:zikloaId is null or m.taldea.zikloa.id = :zikloaId)
 		  and (:mailaId is null or m.maila.id = :mailaId)
@@ -68,7 +73,8 @@ public interface ModuloaRepository extends JpaRepository<Moduloa, Long>{
 	@Query("""
 		select distinct ma from Moduloa m
 		join m.maila ma
-		where (:familiaId is null or m.taldea.zikloa.familia.id = :familiaId)
+		where m.aktibo = true
+		  and (:familiaId is null or m.taldea.zikloa.familia.id = :familiaId)
 		  and (:zikloaId is null or m.taldea.zikloa.id = :zikloaId)
 		  and ma.aktibo = true
 		order by ma.ordena asc, ma.izena asc
@@ -79,7 +85,8 @@ public interface ModuloaRepository extends JpaRepository<Moduloa, Long>{
 	@Query("""
 		select distinct ma from Moduloa m
 		join m.maila ma
-		where ((:familiaId is null or m.taldea.zikloa.familia.id = :familiaId)
+		where m.aktibo = true
+		  and ((:familiaId is null or m.taldea.zikloa.familia.id = :familiaId)
 		        or upper(m.eeiKodea) in :eeiKodeak)
 		  and (:zikloaId is null or m.taldea.zikloa.id = :zikloaId)
 		  and ma.aktibo = true
@@ -91,7 +98,8 @@ public interface ModuloaRepository extends JpaRepository<Moduloa, Long>{
 
 	@Query("""
 		select m from Moduloa m
-		where (:familiaId is null or m.taldea.zikloa.familia.id = :familiaId)
+		where m.aktibo = true
+		  and (:familiaId is null or m.taldea.zikloa.familia.id = :familiaId)
 		  and (:zikloaId is null or m.taldea.zikloa.id = :zikloaId)
 		  and (:mailaId is null or m.maila.id = :mailaId)
 		order by m.izena asc

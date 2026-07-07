@@ -31,6 +31,7 @@ public interface KoadernoaRepository extends JpaRepository<Koadernoa, Long>{
 	      select k.id
 	      from Koadernoa k
 	      where k.moduloa.taldea.id = :taldeaId
+	        and k.moduloa.aktibo = true
 	        and k.egutegia.ikasturtea.aktiboa = true
 	    """)
 	    List<Long> findActiveYearKoadernoIdsByTaldea(@Param("taldeaId") Long taldeaId);
@@ -60,13 +61,14 @@ public interface KoadernoaRepository extends JpaRepository<Koadernoa, Long>{
 		""")
 		Optional<Koadernoa> findByIdWithEgutegiaAndEgunBereziak(@Param("id") Long id);
     
-    @Query("select k.id from Koadernoa k where k.moduloa.taldea.id = :taldeaId")
+    @Query("select k.id from Koadernoa k where k.moduloa.taldea.id = :taldeaId and k.moduloa.aktibo = true")
     List<Long> findKoadernoIdsByTaldeaId(@Param("taldeaId") Long taldeaId);
 
     @Query("""
           select distinct k.moduloa.id
           from Koadernoa k
-          where k.egutegia.ikasturtea.aktiboa = true
+          where k.moduloa.aktibo = true
+            and k.egutegia.ikasturtea.aktiboa = true
         """)
     List<Long> findModuloIdsInAktiboIkasturtea();
     
@@ -88,6 +90,7 @@ public interface KoadernoaRepository extends JpaRepository<Koadernoa, Long>{
     @Query("""
           select k from Koadernoa k
           where k.moduloa.id = :moduloaId
+            and k.moduloa.aktibo = true
             and k.egutegia.ikasturtea.aktiboa = true
           order by k.id asc
         """)

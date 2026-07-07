@@ -25,6 +25,8 @@ public class ModuloaFormDto {
 
     private boolean hautazkoa;
 
+    private boolean aktibo = true;
+
     @NotNull
     private Long mailaId;
 

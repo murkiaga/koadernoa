@@ -84,7 +84,7 @@ public class KoadernoaService {
     public void sortuKoadernoakIkasturteBerrirako(Ikasturtea ikasturtea) {
         for (Egutegia egutegia : ikasturtea.getEgutegiak()) {
             Maila maila = egutegia.getMaila();
-            List<Moduloa> moduluak = moduloaRepository.findByMaila_Id(maila.getId());
+            List<Moduloa> moduluak = moduloaRepository.findByMaila_IdAndAktiboTrue(maila.getId());
             for (Moduloa moduloa : moduluak) {
                 Koadernoa koadernoa = new Koadernoa();
                 koadernoa.setModuloa(moduloa);
@@ -159,7 +159,7 @@ public class KoadernoaService {
     }
 
     public List<Moduloa> lortuErabilgarriDaudenModuluak(Irakaslea irakaslea) {
-        return moduloaRepository.findByTaldea_Zikloa_Familia(irakaslea.getMintegia());
+        return moduloaRepository.findByTaldea_Zikloa_FamiliaAndAktiboTrue(irakaslea.getMintegia());
     }
 
     public List<Zikloa> lortuErabilgarriDaudenZikloak(Irakaslea irakaslea, Long familiaId) {
@@ -233,6 +233,10 @@ public class KoadernoaService {
     public KoadernoSorreraEmaitza sortuEdoEsleituKoadernoa(KoadernoaSortuDto dto, Irakaslea irakaslea, List<String> cells) {
         Moduloa moduloa = moduloaRepository.findById(dto.getModuloaId())
                 .orElseThrow(() -> new IllegalArgumentException("Ez da modulu hori aurkitu."));
+
+        if (!moduloa.isAktibo()) {
+            throw new IllegalArgumentException("Modulua ez dago aktibo. Ezin da koadernorik sortu.");
+        }
 
         Egutegia egutegia = egutegiaRepository
                 .findByIkasturtea_AktiboaTrueAndMaila_Id(moduloa.getMaila().getId())

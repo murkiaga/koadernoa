@@ -55,8 +55,8 @@ public class ModuloaService {
         return moduloaRepository.findByTaldeaId(taldeaId, pageable);
     }
 
-    public Page<Moduloa> bilatuFiltroekin(Long taldeaId, Long zikloaId, Boolean hautazkoa, Pageable pageable) {
-        return moduloaRepository.bilatuFiltroekin(taldeaId, zikloaId, hautazkoa, pageable);
+    public Page<Moduloa> bilatuFiltroekin(Long taldeaId, Long zikloaId, Boolean hautazkoa, Boolean aktibo, Pageable pageable) {
+        return moduloaRepository.bilatuFiltroekin(taldeaId, zikloaId, hautazkoa, aktibo, pageable);
     }
     
     @Transactional
@@ -80,6 +80,7 @@ public class ModuloaService {
         target.setOrduak(dto.getOrduak());
         target.setDualOrduak(dto.getDualOrduak());
         target.setHautazkoa(dto.isHautazkoa());
+        target.setAktibo(dto.isAktibo());
         target.setMaila(maila);
         target.setTaldea(taldea);
 
