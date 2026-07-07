@@ -104,6 +104,9 @@
 		                th:attr="data-taldea-id=${taldea.id},data-anchor=${'taldea-' + taldea.id}"
 		                onclick="openImportModal(this)">⬆️ Inportatu</button>
 		
+		        <a th:href="@{/kudeatzaile/ikasleak/sortu(zikloaId=${taldea.zikloa != null ? taldea.zikloa.id : null},taldeaId=${taldea.id})}"
+		           style="margin-left:.5rem; text-decoration:none;">➕ Gehitu ikaslea</a>
+
 		        <a th:href="@{/kudeatzaile/taldeak/{id}/argazkiak(id=${taldea.id})}"
 		           style="margin-left:.5rem; text-decoration:none;">📸 Argazkiak gehitu</a>
 		

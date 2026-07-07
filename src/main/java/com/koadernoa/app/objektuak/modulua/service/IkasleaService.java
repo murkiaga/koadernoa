@@ -30,6 +30,7 @@ public class IkasleaService {
 
     public static record ImportResult(int sortuak, int baztertuak, String ohartarazpena) {}
     public static record TaldeAldaketaEmaitza(boolean aldaketaEginDa, String aurrekoTaldea, String taldeBerria, int kendutakoMatrikulak, int sortutakoMatrikulak) {}
+    public static record IkasleSorreraEmaitza(Ikaslea ikaslea, int sortutakoMatrikulak) {}
 
     /**
      * KOADERNO BAKARRA sinkronizatu:
@@ -97,6 +98,61 @@ public class IkasleaService {
             sortuakGuztira += res.sortuak();
         }
         return new ImportResult(sortuakGuztira, 0, null);
+    }
+
+
+    @Transactional
+    public IkasleSorreraEmaitza sortuIkaslea(String izena,
+                                             String abizena1,
+                                             String abizena2,
+                                             String hna,
+                                             String nan,
+                                             Long taldeaId) {
+        String hnaGarbitua = garbitu(hna);
+        if (hnaGarbitua == null) {
+            throw new IllegalArgumentException("HNA (DIE) derrigorrezkoa da.");
+        }
+        if (ikasleaRepo.findByHna(hnaGarbitua).isPresent()) {
+            throw new IllegalArgumentException("HNA (DIE) hori duen ikaslea badago jada.");
+        }
+
+        Ikaslea ikaslea = new Ikaslea();
+        ikaslea.setIzena(garbitu(izena));
+        ikaslea.setAbizena1(garbitu(abizena1));
+        ikaslea.setAbizena2(garbitu(abizena2));
+        ikaslea.setHna(hnaGarbitua);
+        ikaslea.setNan(garbitu(nan));
+
+        Taldea taldea = null;
+        if (taldeaId != null) {
+            taldea = taldeaRepository.findById(taldeaId)
+                    .orElseThrow(() -> new IllegalArgumentException("Taldea ez da aurkitu: " + taldeaId));
+            ikaslea.setTaldea(taldea);
+        }
+
+        ikaslea = ikasleaRepo.save(ikaslea);
+        int sortuak = 0;
+        if (taldea != null) {
+            ikasturteaRepository.findFirstByAktiboaTrueOrderByIdDesc()
+                    .orElseThrow(() -> new IllegalStateException("Ez dago ikasturte aktiborik."));
+            for (Koadernoa koadernoa : koadernoaRepo.findAllById(koadernoaRepo.findActiveYearKoadernoIdsByTaldea(taldeaId))) {
+                if (!matrikulaRepo.existsByIkasleaIdAndKoadernoaId(ikaslea.getId(), koadernoa.getId())) {
+                    Matrikula matrikula = new Matrikula();
+                    matrikula.setIkaslea(ikaslea);
+                    matrikula.setKoadernoa(koadernoa);
+                    matrikula.setEgoera(MatrikulaEgoera.MATRIKULATUA);
+                    matrikulaRepo.save(matrikula);
+                    sortuak++;
+                }
+            }
+        }
+        return new IkasleSorreraEmaitza(ikaslea, sortuak);
+    }
+
+    private String garbitu(String balioa) {
+        if (balioa == null) return null;
+        String garbitua = balioa.trim();
+        return garbitua.isEmpty() ? null : garbitua;
     }
 
     @Transactional
