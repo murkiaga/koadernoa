@@ -87,7 +87,7 @@ public class IkasleaService {
      */
     @Transactional
     public ImportResult syncKoadernoakTalderako(Long taldeaId) {
-        var koadernoIds = koadernoaRepo.findKoadernoIdsByTaldeaId(taldeaId);
+        var koadernoIds = koadernoaRepo.findActiveYearKoadernoIdsByTaldea(taldeaId);
         if (koadernoIds.isEmpty()) {
             return new ImportResult(0, 0, "Ez dago koadernorik talde horretarako.");
         }
@@ -171,18 +171,13 @@ public class IkasleaService {
         ikasturteaRepository.findFirstByAktiboaTrueOrderByIdDesc()
                 .orElseThrow(() -> new IllegalStateException("Ez dago ikasturte aktiborik."));
 
-        List<Long> zaharrekoKoadernoak = unekoTaldeaId == null
-                ? List.of()
-                : koadernoaRepo.findActiveYearKoadernoIdsByTaldea(unekoTaldeaId);
         List<Long> berrikoKoadernoak = koadernoaRepo.findActiveYearKoadernoIdsByTaldea(taldeaBerriaId);
 
-        int kenduak = 0;
-        if (!zaharrekoKoadernoak.isEmpty()) {
-            List<Matrikula> kenduBeharrak = matrikulaRepo.findByIkasleaIdAndKoadernoaIdIn(ikasleaId, zaharrekoKoadernoak);
-            kenduak = kenduBeharrak.size();
-            if (!kenduBeharrak.isEmpty()) {
-                matrikulaRepo.deleteAll(kenduBeharrak);
-            }
+        List<Matrikula> kenduBeharrak = matrikulaRepo
+                .findActiveYearMatrikulatuakByIkasleaAndNotTaldea(ikasleaId, taldeaBerriaId);
+        int kenduak = kenduBeharrak.size();
+        if (!kenduBeharrak.isEmpty()) {
+            matrikulaRepo.deleteAll(kenduBeharrak);
         }
 
         int sortuak = 0;

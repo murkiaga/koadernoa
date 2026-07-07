@@ -66,11 +66,22 @@ public interface MatrikulaRepository extends JpaRepository<Matrikula, Long> {
 	@Query("""
 	        select m from Matrikula m
 	        where m.koadernoa.id = :koadernoaId
+	          and m.egoera = com.koadernoa.app.objektuak.modulua.entitateak.MatrikulaEgoera.MATRIKULATUA
 	          and m.ikaslea.hna is not null
 	          and m.ikaslea.hna not in :hnasExcel
 	    """)
 	    List<Matrikula> findToRemoveByKoadernoAndNotInHnas(@Param("koadernoaId") Long koadernoaId,
 	                                                       @Param("hnasExcel") List<String> hnasExcel);
+
+    @Query("""
+        select m from Matrikula m
+        where m.ikaslea.id = :ikasleaId
+          and m.egoera = com.koadernoa.app.objektuak.modulua.entitateak.MatrikulaEgoera.MATRIKULATUA
+          and m.koadernoa.egutegia.ikasturtea.aktiboa = true
+          and m.koadernoa.moduloa.taldea.id <> :taldeaId
+    """)
+    List<Matrikula> findActiveYearMatrikulatuakByIkasleaAndNotTaldea(@Param("ikasleaId") Long ikasleaId,
+                                                                      @Param("taldeaId") Long taldeaId);
     
 	List<Matrikula> findByKoadernoa_Id(Long koadernoId);
 
