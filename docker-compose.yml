@@ -63,6 +63,18 @@ services:
       - traefik.http.routers.koaderno.tls.certresolver=le
       - traefik.http.services.koaderno.loadbalancer.server.port=8091
 
+      # Alias domeinurako HTTPS routerra: path-a eta query string-a mantenduz
+      # domeinu nagusira redirect iraunkorra egiten du.
+      - traefik.http.routers.koaderno-alias.rule=Host(`${DOMAIN_ALIAS}`)
+      - traefik.http.routers.koaderno-alias.entrypoints=websecure
+      - traefik.http.routers.koaderno-alias.tls=true
+      - traefik.http.routers.koaderno-alias.tls.certresolver=le
+      - traefik.http.routers.koaderno-alias.middlewares=koaderno-alias-redirect
+      - traefik.http.routers.koaderno-alias.service=koaderno
+      - traefik.http.middlewares.koaderno-alias-redirect.redirectregex.regex=^https://${DOMAIN_ALIAS}/(.*)
+      - traefik.http.middlewares.koaderno-alias-redirect.redirectregex.replacement=https://${DOMAIN}/$${1}
+      - traefik.http.middlewares.koaderno-alias-redirect.redirectregex.permanent=true
+
     environment:
       SERVER_PORT: ${APP_PORT}
       SERVER_ADDRESS: ${SERVER_ADDRESS}
