@@ -161,6 +161,35 @@ public class JokabideDesegokiaController {
         }
     }
 
+    @DeleteMapping("/{id}")
+    @Transactional
+    public ResponseEntity<?> ezabatu(
+        @PathVariable Long id,
+        @SessionAttribute(value = "koadernoAktiboa", required = false) Koadernoa koadernoa,
+        Authentication auth) {
+        try {
+            JokabideDesegokia j = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Jokabide desegokia ez da aurkitu."));
+            testuinguruService.egiaztatu(koadernoa, j.getIkaslea().getId(), auth);
+            if (!j.getKoadernoa().getId().equals(koadernoa.getId())) {
+                throw new SecurityException("Ez duzu jokabide desegoki hau ezabatzeko baimenik.");
+            }
+            if (j.isJasota()) {
+                throw new IllegalArgumentException("Kudeatzaileak jasotako jokabide desegokia ezin da ezabatu.");
+            }
+
+            String pdfPath = j.getPdfPath();
+            repository.delete(j);
+            repository.flush();
+            antolatuPdfEzabaketa(pdfPath);
+            return ResponseEntity.ok(Map.of("ok", true, "mezua", "Jokabide desegokia ezabatu da."));
+        } catch (SecurityException e) {
+            return errorea(HttpStatus.FORBIDDEN, e);
+        } catch (IllegalArgumentException e) {
+            return errorea(HttpStatus.BAD_REQUEST, e);
+        }
+    }
+
     private Map<String, Object> jokabideDto(JokabideDesegokia j) {
         return Map.of(
             "badago", true,
@@ -168,8 +197,18 @@ public class JokabideDesegokiaController {
             "portaeraArrazoiaId", j.getPortaeraArrazoia().getId(),
             "neurriZuzentzaileaId", j.getNeurriZuzentzailea().getId(),
             "deskribapenZehatza", j.getDeskribapenZehatza(),
+            "ezabatuDaiteke", !j.isJasota(),
             "pdfUrl", "/irakasle/jokabide-desegokia/" + j.getId() + "/pdf"
         );
+    }
+
+    private void antolatuPdfEzabaketa(String pdfPath) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                pdfService.ezabatuIsilean(pdfPath);
+            }
+        });
     }
 
     private void leheneratu(
