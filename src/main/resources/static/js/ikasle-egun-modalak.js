@@ -65,6 +65,7 @@
     ezarriTestuingurua(ikasleaId, data, izena, trigger);
     document.getElementById('oharErrorea').style.display = 'none';
     document.getElementById('oharTestua').value = '';
+    document.getElementById('oharPopupEzabatuBtn').style.display = 'none';
     kokatuPopup(trigger);
     try {
       const [oharErantzuna] = await Promise.all([
@@ -74,6 +75,7 @@
       const oharra = await oharErantzuna.json();
       if (!oharErantzuna.ok) throw new Error(oharra.errorea);
       document.getElementById('oharTestua').value = oharra.testua || '';
+      document.getElementById('oharPopupEzabatuBtn').style.display = oharra.badago ? 'inline-flex' : 'none';
     } catch (errorea) {
       erakutsiErrorea('oharErrorea', errorea.message);
     }
@@ -104,6 +106,7 @@
   window.irekiJokabideModal = async function () {
     itxiDenak();
     document.getElementById('jokErrorea').style.display = 'none';
+    document.getElementById('jokabideEzabatuBtn').style.display = 'none';
     document.getElementById('jokabideModal').classList.add('open');
     try {
       const [formErantzuna, jokabidea] = await Promise.all([
@@ -117,9 +120,21 @@
       document.getElementById('deskribapenZehatza').value = jokabidea?.deskribapenZehatza || '';
       document.getElementById('jokabideModalIzenburua').textContent = jokabidea ? 'Jokabide desegokia editatu' : 'Jokabide desegokiagatiko idatzizko ohartarazpena';
       document.getElementById('jokabideGordeBtn').textContent = jokabidea ? 'Aldaketak gorde eta PDFa berritu' : 'Sortu eta PDFa prestatu';
+      document.getElementById('jokabideEzabatuBtn').style.display = jokabidea?.ezabatuDaiteke ? 'inline-flex' : 'none';
     } catch (errorea) {
       erakutsiErrorea('jokErrorea', errorea.message);
     }
+  };
+
+  window.ezabatuJokabidea = async function () {
+    if (!unekoJokabidea?.id || !unekoJokabidea.ezabatuDaiteke) return;
+    if (!window.confirm('Ziur zaude jokabide desegokia ezabatu nahi duzula?')) return;
+    await bidali(`/irakasle/jokabide-desegokia/${unekoJokabidea.id}`, 'DELETE', null, 'jokErrorea', function () {
+      unekoJokabidea = null;
+      eguneratuPopupJokabidea(null);
+      markatuInaktibo('jokabidea');
+      itxiDenak();
+    });
   };
 
   window.irekiOharPopupBerriro = function () {
@@ -219,11 +234,18 @@
 
   function markatuInaktibo(mota) {
     const ikonoa = aurkituIkonoa(mota);
-    if (!ikonoa) return;
-    if (unekoa.trigger?.classList.contains('ikasle-egun-gelaxka')) { ikonoa.remove(); return; }
-    ikonoa.classList.remove('aktibo');
-    ikonoa.classList.add('inaktibo');
-    ikonoa.setAttribute('aria-label', 'Ez dago oharrik');
+    if (ikonoa) {
+      if (unekoa.trigger?.classList.contains('ikasle-egun-gelaxka')) ikonoa.remove();
+      else {
+        ikonoa.classList.remove('aktibo');
+        ikonoa.classList.add('inaktibo');
+        ikonoa.setAttribute('aria-label', mota === 'oharra' ? 'Ez dago oharrik' : 'Ez dago jokabide desegokirik');
+      }
+    }
+    if (mota === 'jokabidea') {
+      const edukiontzia = unekoa.trigger?.classList.contains('ikasle-egun-gelaxka') ? unekoa.trigger : unekoa.trigger?.parentElement;
+      edukiontzia?.querySelector('.ikasle-egun-pdfak')?.remove();
+    }
   }
 
   document.addEventListener('keydown', event => { if (event.key === 'Escape') itxiDenak(); });
