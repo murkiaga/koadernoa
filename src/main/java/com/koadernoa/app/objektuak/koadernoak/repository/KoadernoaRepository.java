@@ -14,6 +14,15 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 public interface KoadernoaRepository extends JpaRepository<Koadernoa, Long>{
 
 	List<Koadernoa> findByIrakasleakContaining(Irakaslea irakaslea);
+
+    @Query("""
+          select distinct k from Koadernoa k
+            left join fetch k.egutegia e
+            left join fetch e.ikasturtea i
+          where k.jabea.id = :irakasleId or :irakaslea member of k.irakasleak
+          """)
+    List<Koadernoa> findIrakaslearenKoadernoak(@Param("irakasleId") Long irakasleId,
+                                               @Param("irakaslea") Irakaslea irakaslea);
 	
 	//Tutore entitatearen arabera. Tutorearen taldeko koadernoak:
     List<Koadernoa> findByModuloa_Taldea_Tutorea(Irakaslea tutorea);
@@ -88,7 +97,8 @@ public interface KoadernoaRepository extends JpaRepository<Koadernoa, Long>{
     List<Koadernoa> findByEgutegia_Ikasturtea_Id(Long ikasturteaId);
 
     @Query("""
-          select k from Koadernoa k
+          select distinct k from Koadernoa k
+            left join fetch k.irakasleak
           where k.moduloa.id = :moduloaId
             and k.moduloa.aktibo = true
             and k.egutegia.ikasturtea.aktiboa = true

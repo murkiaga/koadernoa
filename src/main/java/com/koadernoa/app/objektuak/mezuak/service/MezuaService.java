@@ -22,6 +22,24 @@ public class MezuaService {
     private final MezuaRepository mezuaRepository;
 
     @Transactional
+    public int bidaliKoadernokoIrakasleei(Irakaslea bidaltzailea, Koadernoa koadernoa, String edukia) {
+        if (bidaltzailea == null || koadernoa == null || koadernoa.getIrakasleak() == null) return 0;
+        int bidaliak = 0;
+        Set<Long> bidalitakoak = new LinkedHashSet<>();
+        for (Irakaslea hartzailea : koadernoa.getIrakasleak()) {
+            if (hartzailea == null || hartzailea.getId() == null || !bidalitakoak.add(hartzailea.getId())) continue;
+            Mezua mezua = new Mezua();
+            mezua.setBidaltzailea(bidaltzailea);
+            mezua.setHartzailea(hartzailea);
+            mezua.setEdukia(edukia);
+            mezua.setBidalketaData(LocalDateTime.now());
+            mezuaRepository.save(mezua);
+            bidaliak++;
+        }
+        return bidaliak;
+    }
+
+    @Transactional
     public int bidaliEstatistikaFiltrotik(Irakaslea bidaltzailea, List<EstatistikaEbaluazioan> estatistikak, String edukia) {
         Set<Long> hartzaileIds = new LinkedHashSet<>();
         for (EstatistikaEbaluazioan e : estatistikak) {

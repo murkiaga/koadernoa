@@ -3,13 +3,16 @@ package com.koadernoa.app.funtzionalitateak.kudeatzaile;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.time.LocalDate;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -24,8 +27,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.koadernoa.app.objektuak.egutegia.repository.IkasturteaRepository;
 import com.koadernoa.app.objektuak.egutegia.repository.MailaRepository;
+import com.koadernoa.app.objektuak.egutegia.entitateak.EgunMota;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
+import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.modulua.entitateak.Ikaslea;
@@ -36,6 +41,7 @@ import com.koadernoa.app.objektuak.modulua.entitateak.ModuloaFormDto;
 import com.koadernoa.app.objektuak.modulua.repository.IkasleaRepository;
 import com.koadernoa.app.objektuak.modulua.repository.MatrikulaRepository;
 import com.koadernoa.app.objektuak.modulua.service.ModuloaService;
+import com.koadernoa.app.objektuak.mezuak.service.MezuaService;
 import com.koadernoa.app.objektuak.zikloak.service.TaldeaService;
 import com.koadernoa.app.objektuak.zikloak.service.ZikloaService;
 
@@ -56,6 +62,8 @@ public class ModuloKudeatzaileController {
     private final KoadernoaRepository koadernoaRepository;
     private final MatrikulaRepository matrikulaRepository;
     private final IrakasleaRepository irakasleaRepository;
+    private final IrakasleaService irakasleaService;
+    private final MezuaService mezuaService;
 
     @ModelAttribute("ikasturteAktiboa")
     public com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea ikasturteAktiboa() {
@@ -243,8 +251,10 @@ public class ModuloKudeatzaileController {
     }
 
     @PostMapping("/{id}/matrikulak")
+    @Transactional
     public String gehituMatrikula(@PathVariable("id") Long moduloId,
-                                  @RequestParam("ikasleaId") Long ikasleaId) {
+                                  @RequestParam("ikasleaId") Long ikasleaId,
+                                  Authentication auth) {
         List<Koadernoa> koadernoak = koadernoaRepository.findByModuloaIdInAktiboIkasturtea(moduloId);
         if (koadernoak.isEmpty()) {
             return "redirect:/kudeatzaile/moduloa";
@@ -264,9 +274,7 @@ public class ModuloKudeatzaileController {
             List<Matrikula> desmatrikulatzekoak = matrikulaRepository
                     .findByIkasleaAndIkasturteaAndEeiKodeDifferentKoaderno(ikasleaId, ikasturteaId, eeiKodea, koadernoa.getId());
             for (Matrikula zaharra : desmatrikulatzekoak) {
-                String deskribapena = "Ikaslea desmatrikulatuta (eskuz): " + ikaslea.getIzenOsoa()
-                        + " | HNA=" + (ikaslea.getHna() != null ? ikaslea.getHna() : "-")
-                        + " | koadernoa=" + (zaharra.getKoadernoa() != null ? zaharra.getKoadernoa().getIzena() : "-");
+                jakinaraziAldaketa(zaharra.getKoadernoa(), ikaslea, false, auth);
             }
             matrikulaRepository.deleteAll(desmatrikulatzekoak);
         }
@@ -278,9 +286,7 @@ public class ModuloKudeatzaileController {
             m.setEgoera(MatrikulaEgoera.MATRIKULATUA);
             matrikulaRepository.save(m);
 
-            String deskribapena = "Ikaslea matrikulatuta (eskuz): " + ikaslea.getIzenOsoa()
-                    + " | HNA=" + (ikaslea.getHna() != null ? ikaslea.getHna() : "-")
-                    + " | koadernoa=" + koadernoa.getIzena();
+            jakinaraziAldaketa(koadernoa, ikaslea, true, auth);
         }
 
         return "redirect:/kudeatzaile/moduloa/" + moduloId + "/matrikulak";
@@ -288,8 +294,10 @@ public class ModuloKudeatzaileController {
 
 
     @PostMapping("/{id}/matrikulak/{matrikulaId}/ezabatu")
+    @Transactional
     public String ezabatuMatrikula(@PathVariable("id") Long moduloId,
-                                   @PathVariable Long matrikulaId) {
+                                   @PathVariable Long matrikulaId,
+                                   Authentication auth) {
         Optional<Matrikula> opt = matrikulaRepository.findById(matrikulaId);
         if (opt.isEmpty()) {
             return "redirect:/kudeatzaile/moduloa/" + moduloId + "/matrikulak";
@@ -302,9 +310,25 @@ public class ModuloKudeatzaileController {
 
         // Inportazio sinkronizazioan bezala deleteAll erabiltzen dugu,
         // eta kaskadaz lotutako asistentziak/notak ere ezabatzen dira.
+        jakinaraziAldaketa(matrikula.getKoadernoa(), matrikula.getIkaslea(), false, auth);
         matrikulaRepository.deleteAll(List.of(matrikula));
 
         return "redirect:/kudeatzaile/moduloa/" + moduloId + "/matrikulak";
+    }
+
+    private void jakinaraziAldaketa(Koadernoa koadernoa, Ikaslea ikaslea, boolean gehituta, Authentication auth) {
+        if (koadernoa == null || koadernoa.getEgutegia() == null
+                || koadernoa.getIrakasleak() == null || koadernoa.getIrakasleak().isEmpty()) return;
+        LocalDate lehenEgunLektiboa = koadernoa.getEgutegia().getEgunBereziak() == null ? null
+                : koadernoa.getEgutegia().getEgunBereziak().stream()
+                    .filter(e -> e.getData() != null && (e.getMota() == EgunMota.LEKTIBOA || e.getMota() == EgunMota.ORDEZKATUA))
+                    .map(e -> e.getData()).min(LocalDate::compareTo).orElse(null);
+        if (lehenEgunLektiboa == null) lehenEgunLektiboa = koadernoa.getEgutegia().getHasieraData();
+        if (lehenEgunLektiboa == null || !LocalDate.now().isAfter(lehenEgunLektiboa)) return;
+        Irakaslea bidaltzailea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+        String mezua = ikaslea.getIzenOsoa() + " ikaslea " + koadernoa.getIzena()
+                + (gehituta ? " koadernoan gehitu da" : " koadernotik ezabatu da");
+        mezuaService.bidaliKoadernokoIrakasleei(bidaltzailea, koadernoa, mezua);
     }
 
     @GetMapping("/ezabatu/{id}")

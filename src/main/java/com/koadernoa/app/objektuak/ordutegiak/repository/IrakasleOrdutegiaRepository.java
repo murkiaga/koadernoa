@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import com.koadernoa.app.objektuak.ordutegiak.entitateak.IrakasleOrdutegia;
 
 public interface IrakasleOrdutegiaRepository extends JpaRepository<IrakasleOrdutegia, Long> {
+    void deleteByIrakasleaId(Long irakasleaId);
     void deleteByIkasturteaId(Long ikasturteaId);
 
     @EntityGraph(attributePaths = {"lerroak", "lerroak.taldea"})

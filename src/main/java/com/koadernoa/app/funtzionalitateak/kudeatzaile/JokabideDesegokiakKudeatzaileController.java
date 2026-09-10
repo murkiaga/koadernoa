@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
+import com.koadernoa.app.objektuak.egutegia.repository.IkasturteaRepository;
 import com.koadernoa.app.objektuak.jokabidea.entitateak.JokabideDesegokia;
 import com.koadernoa.app.objektuak.jokabidea.repository.JokabideDesegokiaRepository;
 
@@ -38,6 +39,7 @@ public class JokabideDesegokiakKudeatzaileController {
 
     private final JokabideDesegokiaRepository repository;
     private final IrakasleaService irakasleaService;
+    private final IkasturteaRepository ikasturteaRepository;
 
     @GetMapping
     @Transactional(readOnly = true)
@@ -49,6 +51,11 @@ public class JokabideDesegokiakKudeatzaileController {
             @RequestParam(required = false) Long taldeaId,
             @RequestParam(required = false) Boolean jasota,
             Model model) {
+        if (dataHasiera == null) {
+            dataHasiera = ikasturteaRepository.findFirstByAktiboaTrueOrderByIdDesc()
+                    .map(ikasturtea -> ikasturtekoIrailarenLehena(ikasturtea.getIzena()))
+                    .orElse(null);
+        }
         String ikasleFiltroa = ikaslea == null ? null : ikaslea.trim();
         model.addAttribute("jokabideak", repository.bilatuKudeatzailearentzat(
                 dataHasiera, dataAmaiera, ikasleFiltroa, moduloaId, taldeaId, jasota));
@@ -61,6 +68,15 @@ public class JokabideDesegokiakKudeatzaileController {
         model.addAttribute("taldeaId", taldeaId);
         model.addAttribute("jasota", jasota);
         return "kudeatzaile/jokabide-desegokiak/index";
+    }
+
+    private LocalDate ikasturtekoIrailarenLehena(String ikasturteIzena) {
+        if (ikasturteIzena == null) return null;
+        try {
+            return LocalDate.of(Integer.parseInt(ikasturteIzena.trim().substring(0, 4)), 9, 1);
+        } catch (RuntimeException ex) {
+            return null;
+        }
     }
 
     @PostMapping("/{id}/jasota")
