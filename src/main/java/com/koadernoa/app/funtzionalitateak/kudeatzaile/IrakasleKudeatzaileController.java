@@ -26,6 +26,7 @@ import com.koadernoa.app.objektuak.egutegia.service.IkasturteaService;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Rola;
 import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
+import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaEzabatzeService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.ordutegiak.entitateak.IrakasleOrdutegiLerroa;
@@ -48,6 +49,7 @@ public class IrakasleKudeatzaileController {
     private final IrakasleOrdutegiaRepository irakasleOrdutegiaRepository;
     private final IrakasleOrdutegiLerroaRepository irakasleOrdutegiLerroaRepository;
     private final KoadernoaRepository koadernoaRepository;
+    private final IrakasleaEzabatzeService irakasleaEzabatzeService;
 
     private static final List<Astegunak> ASTE_ORDENA = List.of(
             Astegunak.ASTELEHENA, Astegunak.ASTEARTEA, Astegunak.ASTEAZKENA,
@@ -84,7 +86,6 @@ public class IrakasleKudeatzaileController {
 	}
 
     @PostMapping("/{id}/ezabatu")
-    @Transactional
     public String ezabatuIrakaslea(@PathVariable Long id, RedirectAttributes ra) {
         Irakaslea irakaslea = irakasleaRepository.findById(id).orElse(null);
         if (irakaslea == null) {
@@ -100,9 +101,7 @@ public class IrakasleKudeatzaileController {
             return "redirect:/kudeatzaile/irakasleak";
         }
         try {
-            irakasleOrdutegiaRepository.deleteByIrakasleaId(id);
-            irakasleaRepository.delete(irakaslea);
-            irakasleaRepository.flush();
+            irakasleaEzabatzeService.ezabatu(irakaslea);
             ra.addFlashAttribute("success", "Irakaslea ondo ezabatu da.");
         } catch (DataIntegrityViolationException ex) {
             ra.addFlashAttribute("error", "Ezin izan da irakaslea ezabatu, beste datu batzuekin lotuta dagoelako.");
