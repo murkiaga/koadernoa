@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.EstatistikaEbaluazioan;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.mezuak.entitateak.Mezua;
 import com.koadernoa.app.objektuak.mezuak.repository.MezuaRepository;
 
