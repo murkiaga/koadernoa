@@ -252,7 +252,7 @@ public class KoadernoaController {
 	            Koadernoa koadernoa = emaitza.koadernoa();
 	            model.addAttribute("koadernoAktiboa", koadernoa);
 	            try {
-	                ikasleaService.syncKoadernoBakarra(koadernoa.getId());
+	                ikasleaService.syncKoadernoBakarraHutsikBadago(koadernoa.getId());
 	            } catch (Exception e) {
             }
             ra.addFlashAttribute("success", emaitza.mezua());

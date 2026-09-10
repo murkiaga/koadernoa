@@ -82,6 +82,17 @@ public class IkasleaService {
     }
 
     /**
+     * Koadernoa sortu edo jabeak bereganatzeko flow-rako sinkronizazioa:
+     * aurrez prestatutako matrikula-zerrenda errespetatzen du.
+     */
+    @Transactional
+    public void syncKoadernoBakarraHutsikBadago(Long koadernoaId) {
+        if (!matrikulaRepo.existsByKoadernoa_Id(koadernoaId)) {
+            syncKoadernoBakarra(koadernoaId);
+        }
+    }
+
+    /**
      * TALDE batean dauden KOADERNO GUZTIAK sinkronizatu.
      * Kudeatzailearen Excel-inportazioaren ondoren deitzen duzu.
      */
