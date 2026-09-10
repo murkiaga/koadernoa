@@ -40,7 +40,7 @@ class IkasleaMatrikulaSyncTest {
     private final IkasturteaRepository ikasturteaRepo = mock(IkasturteaRepository.class);
 
     @Test
-    void syncKoadernoakTalderakoUsesOnlyActiveYearNotebookIds() {
+    void syncKoadernoakTalderakoAfterExcelStillSyncsAllActiveYearNotebooks() {
         IkasleaService service = new IkasleaService(koadernoaRepo, ikasleaRepo, matrikulaRepo, taldeaRepo, ikasturteaRepo);
         Koadernoa koadernoa = koadernoa(10L, taldea(1L, "2SMA"), true, true);
         when(koadernoaRepo.findActiveYearKoadernoIdsByTaldea(1L)).thenReturn(List.of(10L));
@@ -52,7 +52,36 @@ class IkasleaMatrikulaSyncTest {
         service.syncKoadernoakTalderako(1L);
 
         verify(koadernoaRepo).findActiveYearKoadernoIdsByTaldea(1L);
+        verify(koadernoaRepo).findById(10L);
+        verify(matrikulaRepo, never()).existsByKoadernoa_Id(any());
         verify(koadernoaRepo, never()).findKoadernoIdsByTaldeaId(any());
+    }
+
+    @Test
+    void syncKoadernoBakarraHutsikBadagoSyncsNotebookWithoutEnrollments() {
+        IkasleaService service = new IkasleaService(koadernoaRepo, ikasleaRepo, matrikulaRepo, taldeaRepo, ikasturteaRepo);
+        Koadernoa koadernoa = koadernoa(10L, taldea(1L, "2SMA"), true, true);
+        when(matrikulaRepo.existsByKoadernoa_Id(10L)).thenReturn(false);
+        when(koadernoaRepo.findById(10L)).thenReturn(Optional.of(koadernoa));
+        when(ikasleaRepo.findHnasByTaldeaId(1L)).thenReturn(List.of("A1"));
+        when(matrikulaRepo.findToRemoveByKoadernoAndNotInHnas(10L, List.of("A1"))).thenReturn(List.of());
+        when(ikasleaRepo.findTeamStudentsNotEnrolledInKoaderno(1L, 10L)).thenReturn(List.of(ikaslea(5L, "A1")));
+
+        service.syncKoadernoBakarraHutsikBadago(10L);
+
+        verify(matrikulaRepo).save(any(Matrikula.class));
+    }
+
+    @Test
+    void syncKoadernoBakarraHutsikBadagoKeepsPreparedEnrollmentList() {
+        IkasleaService service = new IkasleaService(koadernoaRepo, ikasleaRepo, matrikulaRepo, taldeaRepo, ikasturteaRepo);
+        when(matrikulaRepo.existsByKoadernoa_Id(10L)).thenReturn(true);
+
+        service.syncKoadernoBakarraHutsikBadago(10L);
+
+        verifyNoInteractions(koadernoaRepo, ikasleaRepo);
+        verify(matrikulaRepo, never()).save(any(Matrikula.class));
+        verify(matrikulaRepo, never()).deleteAll(anyList());
     }
 
     @Test
