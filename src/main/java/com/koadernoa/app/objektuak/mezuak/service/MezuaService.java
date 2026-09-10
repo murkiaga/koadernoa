@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.EstatistikaEbaluazioan;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.mezuak.entitateak.Mezua;
 import com.koadernoa.app.objektuak.mezuak.repository.MezuaRepository;
 
@@ -20,6 +21,24 @@ import lombok.RequiredArgsConstructor;
 public class MezuaService {
 
     private final MezuaRepository mezuaRepository;
+
+    @Transactional
+    public int bidaliKoadernokoIrakasleei(Irakaslea bidaltzailea, Koadernoa koadernoa, String edukia) {
+        if (bidaltzailea == null || koadernoa == null || koadernoa.getIrakasleak() == null) return 0;
+        int bidaliak = 0;
+        Set<Long> bidalitakoak = new LinkedHashSet<>();
+        for (Irakaslea hartzailea : koadernoa.getIrakasleak()) {
+            if (hartzailea == null || hartzailea.getId() == null || !bidalitakoak.add(hartzailea.getId())) continue;
+            Mezua mezua = new Mezua();
+            mezua.setBidaltzailea(bidaltzailea);
+            mezua.setHartzailea(hartzailea);
+            mezua.setEdukia(edukia);
+            mezua.setBidalketaData(LocalDateTime.now());
+            mezuaRepository.save(mezua);
+            bidaliak++;
+        }
+        return bidaliak;
+    }
 
     @Transactional
     public int bidaliEstatistikaFiltrotik(Irakaslea bidaltzailea, List<EstatistikaEbaluazioan> estatistikak, String edukia) {

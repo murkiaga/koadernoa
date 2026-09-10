@@ -7,8 +7,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
+import java.util.Locale;
 
 import org.springframework.stereotype.Controller;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,6 +24,7 @@ import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
 import com.koadernoa.app.objektuak.egutegia.service.IkasturteaService;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
+import com.koadernoa.app.objektuak.irakasleak.entitateak.Rola;
 import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
@@ -52,12 +55,60 @@ public class IrakasleKudeatzaileController {
     );
 	
 	@GetMapping({"","/"})
-	public String zerrenda(Model model) {
-	    List<Irakaslea> irakasleak = irakasleaRepository.findAll();
+	public String zerrenda(@RequestParam(name = "mintegiaId", required = false) Long mintegiaId,
+                         @RequestParam(name = "rola", required = false) Rola rola,
+                         @RequestParam(name = "izena", required = false) String izena,
+                         @RequestParam(name = "ordenatu", defaultValue = "izena") String ordenatu,
+                         @RequestParam(name = "norabidea", defaultValue = "asc") String norabidea,
+                         Model model) {
+	    String bilaketa = izena == null ? "" : izena.trim().toLowerCase(Locale.ROOT);
+	    Comparator<Irakaslea> konparatzailea = Comparator.comparing(
+                ordenatu.equals("emaila") ? Irakaslea::getEmaila : Irakaslea::getIzena,
+                Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+        if (norabidea.equalsIgnoreCase("desc")) konparatzailea = konparatzailea.reversed();
+        List<Irakaslea> irakasleak = irakasleaRepository.findAll().stream()
+                .filter(i -> mintegiaId == null || (i.getMintegia() != null && mintegiaId.equals(i.getMintegia().getId())))
+                .filter(i -> rola == null || rola == i.getRola())
+                .filter(i -> bilaketa.isEmpty() || (i.getIzena() != null && i.getIzena().toLowerCase(Locale.ROOT).contains(bilaketa)))
+                .sorted(konparatzailea.thenComparing(Irakaslea::getId))
+                .toList();
 	    model.addAttribute("irakasleak", irakasleak);
 	    model.addAttribute("familiaGuztiak", familiaRepository.findAll());
+	    model.addAttribute("rolak", Rola.values());
+	    model.addAttribute("mintegiaId", mintegiaId);
+	    model.addAttribute("rola", rola);
+	    model.addAttribute("izena", izena);
+	    model.addAttribute("ordenatu", ordenatu);
+	    model.addAttribute("norabidea", norabidea);
 	    return "kudeatzaile/irakasleak/index";
 	}
+
+    @PostMapping("/{id}/ezabatu")
+    @Transactional
+    public String ezabatuIrakaslea(@PathVariable Long id, RedirectAttributes ra) {
+        Irakaslea irakaslea = irakasleaRepository.findById(id).orElse(null);
+        if (irakaslea == null) {
+            ra.addFlashAttribute("error", "Irakaslea ez da aurkitu.");
+            return "redirect:/kudeatzaile/irakasleak";
+        }
+        List<Koadernoa> koadernoak = koadernoaRepository.findIrakaslearenKoadernoak(id, irakaslea);
+        if (!koadernoak.isEmpty()) {
+            String ikasturtea = koadernoak.get(0).getEgutegia() != null
+                    && koadernoak.get(0).getEgutegia().getIkasturtea() != null
+                    ? koadernoak.get(0).getEgutegia().getIkasturtea().getIzena() : "ikasturte ezezaguneko";
+            ra.addFlashAttribute("error", "Ezin izan da irakaslea ezabatu: " + ikasturtea + "eko koaderno batekin lotuta dago.");
+            return "redirect:/kudeatzaile/irakasleak";
+        }
+        try {
+            irakasleOrdutegiaRepository.deleteByIrakasleaId(id);
+            irakasleaRepository.delete(irakaslea);
+            irakasleaRepository.flush();
+            ra.addFlashAttribute("success", "Irakaslea ondo ezabatu da.");
+        } catch (DataIntegrityViolationException ex) {
+            ra.addFlashAttribute("error", "Ezin izan da irakaslea ezabatu, beste datu batzuekin lotuta dagoelako.");
+        }
+        return "redirect:/kudeatzaile/irakasleak";
+    }
 
     @GetMapping("/{id}")
     public String fitxa(@PathVariable("id") Long id,

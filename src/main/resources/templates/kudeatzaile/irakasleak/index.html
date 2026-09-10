@@ -11,16 +11,25 @@
   <div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
   <main class="page">
 	  <h1>Irakasle zerrenda</h1>
+	  <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+	  <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+	  <form method="get" th:action="@{/kudeatzaile/irakasleak}" style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:16px">
+	    <label>Izena<br><input type="search" name="izena" th:value="${izena}" placeholder="Izenaren zati bat"></label>
+	    <label>Mintegia<br><select name="mintegiaId"><option value="">Guztiak</option><option th:each="fam:${familiaGuztiak}" th:value="${fam.id}" th:text="${fam.izena}" th:selected="${fam.id == mintegiaId}"></option></select></label>
+	    <label>Rola<br><select name="rola"><option value="">Guztiak</option><option th:each="r:${rolak}" th:value="${r}" th:text="${r}" th:selected="${r == rola}"></option></select></label>
+	    <button class="btn btn-primary" type="submit">Filtratu</button><a class="btn btn-secondary" th:href="@{/kudeatzaile/irakasleak}">Garbitu</a>
+	  </form>
 	  <div class="table-wrap">
 		  <table>
 		    <thead>
 		      <tr>
-		        <th>Izena</th>
-		        <th>Emaila</th>
+		        <th><a th:href="@{/kudeatzaile/irakasleak(mintegiaId=${mintegiaId},rola=${rola},izena=${izena},ordenatu='izena',norabidea=${ordenatu == 'izena' and norabidea == 'asc' ? 'desc' : 'asc'})}">Izena <span th:if="${ordenatu == 'izena'}" th:text="${norabidea == 'asc' ? '▲' : '▼'}"></span></a></th>
+		        <th><a th:href="@{/kudeatzaile/irakasleak(mintegiaId=${mintegiaId},rola=${rola},izena=${izena},ordenatu='emaila',norabidea=${ordenatu == 'emaila' and norabidea == 'asc' ? 'desc' : 'asc'})}">Emaila <span th:if="${ordenatu == 'emaila'}" th:text="${norabidea == 'asc' ? '▲' : '▼'}"></span></a></th>
 		        <th>Rola</th>
 		        <th>Mintegia</th>
 		        <th>Ordezkoa</th>
 		        <th>Aldatu</th>
+		        <th>Ezabatu</th>
 		      </tr>
 		    </thead>
 		    <tbody>
@@ -29,7 +38,7 @@
 		        <td th:text="${irakasle.emaila}">Emaila</td>
 		        <td th:text="${irakasle.rola}">Rola</td>
 		        <td>
-		          <form th:action="@{|/kudeatzaile/irakasleak/${irakasle.id}/mintegia|}" method="post">
+		          <form th:action="@{|/kudeatzaile/irakasleak/${irakasle.id}/mintegia|}" method="post" th:id="|mintegia-${irakasle.id}|">
 		            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
 		            <select name="mintegia" required>
 		              <!-- (aukerakoa) placeholder bat -->
@@ -41,12 +50,11 @@
 		                      th:selected="${irakasle.mintegia != null} ? ${irakasle.mintegia.id} == ${fam.id} : false">
 		              </option>
 		            </select>
-		        </td>
-		        <td th:text="${irakasle.ordezkoa != null ? irakasle.ordezkoa.izena : '-'}">-</td>
-		        <td>
-		            <button class="btn btn-primary" type="submit">Gorde</button>
 		          </form>
 		        </td>
+		        <td th:text="${irakasle.ordezkoa != null ? irakasle.ordezkoa.izena : '-'}">-</td>
+		        <td><button class="btn btn-primary" type="submit" th:form="|mintegia-${irakasle.id}|">Gorde</button></td>
+		        <td><form th:action="@{|/kudeatzaile/irakasleak/${irakasle.id}/ezabatu|}" method="post" onsubmit="return confirm('Ziur zaude irakasle hau ezabatu nahi duzula?');"><input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"><button type="submit" class="btn btn-danger" title="Irakaslea ezabatu" aria-label="Irakaslea ezabatu">✕</button></form></td>
 		      </tr>
 		    </tbody>
 		  </table>
