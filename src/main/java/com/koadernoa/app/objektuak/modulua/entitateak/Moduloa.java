@@ -1,11 +1,13 @@
 package com.koadernoa.app.objektuak.modulua.entitateak;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Taldea;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -13,6 +15,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -45,4 +48,12 @@ public class Moduloa {
 
     @OneToMany(mappedBy = "moduloa")
     private List<Koadernoa> koadernoak;
+    
+    @OneToMany(
+	    mappedBy = "moduloa",
+	    cascade = CascadeType.ALL,
+	    orphanRemoval = true
+	)
+	@OrderBy("ordena ASC")
+	private List<IkaskuntzaEmaitza> ikaskuntzaEmaitzak = new ArrayList<>();
 }
