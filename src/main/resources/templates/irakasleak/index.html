@@ -440,8 +440,8 @@
         body: params
       });
 
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const json = await res.json().catch(() => ({ ok: true }));
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || 'HTTP ' + res.status);
       if (!json.ok) throw new Error(json.error || 'Errorea gordetzean');
 
       const key = `${col}-${row}`;
@@ -466,7 +466,7 @@
         schedules[selectedScheduleStartDate].push(key);
       }
       console.error('Ezin izan da gorde slot-a:', err);
-      alert('Ezin izan da gorde. Saiatu berriro, mesedez.');
+      alert(err.message || 'Ezin izan da gorde. Saiatu berriro, mesedez.');
     }
   }
 
@@ -648,8 +648,9 @@
       ),
       body: params
     });
-    if (!res.ok) {
-      alert('Ezin izan da ordutegia ezabatu');
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || !json.ok) {
+      alert(json.error || 'Ezin izan da ordutegia ezabatu');
       return;
     }
     const idx = info.findIndex(i => i.key === selectedScheduleStartDate);

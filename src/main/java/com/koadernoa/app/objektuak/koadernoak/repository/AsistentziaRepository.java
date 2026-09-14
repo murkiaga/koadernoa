@@ -18,6 +18,7 @@ import com.koadernoa.app.objektuak.modulua.entitateak.Matrikula;
 
 public interface AsistentziaRepository extends JpaRepository<Asistentzia, Long> {
 	  List<Asistentzia> findBySaioaId(Long saioaId);
+	  List<Asistentzia> findBySaioa_IdIn(List<Long> saioaIds);
 	  Optional<Asistentzia> findBySaioaIdAndMatrikulaId(Long saioaId, Long matrikulaId);
 	  void deleteBySaioaIdAndMatrikulaId(Long saioaId, Long matrikulaId);
 	  
