@@ -35,6 +35,7 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoOrdutegiBlokea;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoaSortuDto;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Saioa;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.Asistentzia;
 import com.koadernoa.app.objektuak.koadernoak.repository.AsistentziaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.EstatistikaEbaluazioanRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.JardueraRepository;
@@ -56,6 +57,9 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class KoadernoaService {
+
+    public static final String ORDUTEGIA_ASISTENTZIA_MEZUA =
+            "Ezin da ordua kendu: ordu horretan faltak edo bestelako asistentzia-datuak sartuta daude.";
 
     private final ModuloaRepository moduloaRepository;
     private final EgutegiaRepository egutegiaRepository;
@@ -650,6 +654,7 @@ public class KoadernoaService {
 
             if (left != null && right != null) {
                 // bi bloke batu -> left zabaldu + right ezabatu
+                berrizEsleituSaioak(k, activeFrom, right, left, null);
                 left.setIraupenaSlot(left.getIraupenaSlot() + 1 + right.getIraupenaSlot());
                 k.getOrdutegiak().remove(right);
             } else if (left != null) {
@@ -670,6 +675,8 @@ public class KoadernoaService {
         } else {
             KoadernoOrdutegiBlokea covering = findCovering(dayBlocks, row);
             if (covering == null) return; // ez zegoen hautatuta
+
+            garbituEzabatutakoSlotarenSaioak(k, activeFrom, covering, row);
 
             int start = covering.getHasieraSlot();
             int end   = covering.bukaeraSlot();
@@ -702,6 +709,9 @@ public class KoadernoaService {
                 right.setIraupenaSlot(rightEnd - rightStart + 1);
                 right.setHasieraData(activeFrom);
                 k.getOrdutegiak().add(right);
+                koadernoOrdutegiBlokeaRepository.save(right);
+                berrizEsleituSaioak(k, activeFrom, covering, right,
+                        s -> s.getHasieraSlot() >= rightStart);
             }
         }
         validateOrdutegiak(k.getOrdutegiak());
@@ -846,6 +856,13 @@ public class KoadernoaService {
     public boolean ezabatuOrdutegia(Long koadernoId, LocalDate hasieraData) {
         Koadernoa k = koadernoaRepository.findWithOrdutegiaById(koadernoId).orElseThrow();
         if (hasieraData == null) return false;
+        boolean badago = k.getOrdutegiak() != null && k.getOrdutegiak().stream()
+                .anyMatch(b -> java.util.Objects.equals(b.getHasieraData(), hasieraData));
+        if (!badago) return false;
+        LocalDate bukaeraData = ordutegiBukaeraData(k, hasieraData);
+        List<Saioa> saioak = saioaRepository.findByKoadernoa_IdAndDataBetween(
+                koadernoId, hasieraData, bukaeraData);
+        garbituSaioakBenetakoAsistentziarikEzBadute(saioak);
         int before = k.getOrdutegiak() != null ? k.getOrdutegiak().size() : 0;
         if (k.getOrdutegiak() != null) {
             k.getOrdutegiak().removeIf(b -> java.util.Objects.equals(b.getHasieraData(), hasieraData));
@@ -856,6 +873,54 @@ public class KoadernoaService {
             programazioaService.syncDualUdForKoaderno(koadernoId);
         }
         return deleted;
+    }
+
+    private void garbituEzabatutakoSlotarenSaioak(Koadernoa k, LocalDate hasieraData,
+                                                   KoadernoOrdutegiBlokea blokea, int slot) {
+        LocalDate bukaeraData = ordutegiBukaeraData(k, hasieraData);
+        List<Saioa> saioak = saioaRepository.findByKoadernoa_IdAndDataBetween(
+                        k.getId(), hasieraData, bukaeraData).stream()
+                .filter(s -> s.getIturburuBlokea() != null
+                        && java.util.Objects.equals(s.getIturburuBlokea().getId(), blokea.getId()))
+                .filter(s -> s.getHasieraSlot() == slot)
+                .toList();
+        garbituSaioakBenetakoAsistentziarikEzBadute(saioak);
+    }
+
+    private void garbituSaioakBenetakoAsistentziarikEzBadute(List<Saioa> saioak) {
+        if (saioak.isEmpty()) return;
+        List<Long> ids = saioak.stream().map(Saioa::getId).toList();
+        List<Asistentzia> asistentziak = asistentziaRepository.findBySaioa_IdIn(ids);
+        boolean benetakoDatuak = asistentziak.stream()
+                .anyMatch(a -> a.getEgoera() != Asistentzia.AsistentziaEgoera.ETORRI);
+        if (benetakoDatuak) throw new IllegalStateException(ORDUTEGIA_ASISTENTZIA_MEZUA);
+        if (!asistentziak.isEmpty()) asistentziaRepository.deleteAll(asistentziak);
+        saioaRepository.deleteAll(saioak);
+        saioaRepository.flush();
+    }
+
+    private void berrizEsleituSaioak(Koadernoa k, LocalDate hasieraData,
+                                     KoadernoOrdutegiBlokea zaharra, KoadernoOrdutegiBlokea berria,
+                                     java.util.function.Predicate<Saioa> iragazkia) {
+        List<Saioa> saioak = saioaRepository.findByKoadernoa_IdAndDataBetween(
+                        k.getId(), hasieraData, ordutegiBukaeraData(k, hasieraData)).stream()
+                .filter(s -> s.getIturburuBlokea() != null
+                        && java.util.Objects.equals(s.getIturburuBlokea().getId(), zaharra.getId()))
+                .filter(s -> iragazkia == null || iragazkia.test(s))
+                .toList();
+        saioak.forEach(s -> s.setIturburuBlokea(berria));
+        if (!saioak.isEmpty()) saioaRepository.saveAll(saioak);
+    }
+
+    private LocalDate ordutegiBukaeraData(Koadernoa k, LocalDate hasieraData) {
+        Optional<LocalDate> hurrengoa = java.util.Optional.ofNullable(k.getOrdutegiak()).orElse(List.of()).stream()
+                .map(KoadernoOrdutegiBlokea::getHasieraData)
+                .filter(java.util.Objects::nonNull)
+                .filter(d -> d.isAfter(hasieraData))
+                .min(LocalDate::compareTo);
+        if (hurrengoa.isPresent()) return hurrengoa.get().minusDays(1);
+        return k.getEgutegia() != null && k.getEgutegia().getBukaeraData() != null
+                ? k.getEgutegia().getBukaeraData() : LocalDate.of(9999, 12, 31);
     }
 
     private KoadernoOrdutegiBlokea findCovering(List<KoadernoOrdutegiBlokea> blocks, int slot){

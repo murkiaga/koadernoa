@@ -11,6 +11,7 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.Saioa.SaioEgoera;
 public interface SaioaRepository extends JpaRepository<Saioa, Long>{
 
 	List<Saioa> findByKoadernoaIdAndData(Long koadernoaId, LocalDate data);
+	List<Saioa> findByKoadernoa_IdAndDataBetween(Long koadernoaId, LocalDate from, LocalDate to);
 	boolean existsByKoadernoaIdAndDataAndHasieraSlot(Long koadernoaId, LocalDate data, int hasieraSlot);
 	
 	// Estatistiketarako erabiliko duguna:

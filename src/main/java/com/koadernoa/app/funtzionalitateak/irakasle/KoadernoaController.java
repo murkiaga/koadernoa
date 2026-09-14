@@ -315,8 +315,12 @@ public class KoadernoaController {
     @ResponseBody
     public ResponseEntity<?> ezabatuOrdutegia(@PathVariable Long id,
                                               @RequestParam LocalDate hasieraData) {
-        boolean deleted = koadernoaService.ezabatuOrdutegia(id, hasieraData);
-        return ResponseEntity.ok(Map.of("ok", true, "deleted", deleted));
+        try {
+            boolean deleted = koadernoaService.ezabatuOrdutegia(id, hasieraData);
+            return ResponseEntity.ok(Map.of("ok", true, "deleted", deleted));
+        } catch (IllegalStateException ex) {
+            return ResponseEntity.badRequest().body(Map.of("ok", false, "error", ex.getMessage()));
+        }
     }
 
 
