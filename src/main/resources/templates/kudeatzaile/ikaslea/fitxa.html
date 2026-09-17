@@ -21,8 +21,10 @@
     .mini-form{display:inline-flex;align-items:center;gap:.4rem;flex-wrap:nowrap;white-space:nowrap;}
     .mini-form select{width:auto;min-width:180px;}
     .mini-form .btn{width:auto;white-space:nowrap;}
-    .nan-form{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin:0;max-width:none;}
-    .nan-form input{width:min(240px,100%);margin:0;}
+    .ikasle-datuak{table-layout:fixed;}
+    .ikasle-datuak th{width:190px;}
+    .nan-form{display:flex;align-items:center;gap:.75rem;flex-wrap:nowrap;margin:0;max-width:none;min-width:0;}
+    .nan-form input{width:min(240px,calc(100% - 90px));min-width:0;margin:0;}
   </style>
 </head>
 <body>
@@ -37,7 +39,7 @@
        th:text="${errorMessage}">Errorea</div>
 
   <div class="table-wrap" style="margin-bottom:1rem;">
-    <table>
+    <table class="ikasle-datuak">
       <tbody>
       <tr><th>Izena</th><td th:text="${ikaslea.izena != null ? ikaslea.izena : '-'}">-</td></tr>
       <tr><th>Abizena 1</th><td th:text="${ikaslea.abizena1 != null ? ikaslea.abizena1 : '-'}">-</td></tr>
