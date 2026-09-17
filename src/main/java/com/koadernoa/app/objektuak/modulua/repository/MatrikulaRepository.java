@@ -51,7 +51,8 @@ public interface MatrikulaRepository extends JpaRepository<Matrikula, Long> {
 	                                                                   @Param("egoera") MatrikulaEgoera egoera);
 	
 	default List<Matrikula> findByKoadernoaIdAndEgoeraMatrikulatuta(Long koadernoaId){
-        return findByKoadernoaIdAndEgoera(koadernoaId, MatrikulaEgoera.MATRIKULATUA);
+        return findByKoadernoaIdAndEgoeraFetchIkasleaOrderByIzena(
+                koadernoaId, MatrikulaEgoera.MATRIKULATUA);
     }
 	
 	@Query("""
