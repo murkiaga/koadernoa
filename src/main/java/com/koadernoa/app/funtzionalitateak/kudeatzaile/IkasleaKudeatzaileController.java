@@ -207,6 +207,20 @@ public class IkasleaKudeatzaileController {
                 .collect(Collectors.joining(" "));
     }
 
+    @PostMapping("/kudeatzaile/ikaslea/{id}/nan")
+    public String aldatuIkasleNana(@PathVariable Long id,
+                                   @RequestParam(name = "nan", required = false) String nan,
+                                   @RequestParam(name = "ikasturteaId", required = false) Long ikasturteaId,
+                                   RedirectAttributes redirectAttributes) {
+        try {
+            ikasleaService.aldatuIkaslearenNana(id, nan);
+            redirectAttributes.addFlashAttribute("successMessage", "NAN (DNI) eguneratu da.");
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return redirectIkasleFitxara(id, ikasturteaId);
+    }
+
     @PostMapping("/kudeatzaile/ikaslea/{id}/taldea")
     public String aldatuIkasleTaldea(@PathVariable Long id,
                                      @RequestParam("taldeaId") Long taldeaId,
