@@ -30,6 +30,7 @@ import com.koadernoa.app.objektuak.egutegia.repository.IkasturteaRepository;
 import com.koadernoa.app.objektuak.jokabidea.entitateak.JokabideDesegokia;
 import com.koadernoa.app.objektuak.jokabidea.repository.JokabideDesegokiaRepository;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 @Controller
@@ -50,8 +51,11 @@ public class JokabideDesegokiakKudeatzaileController {
             @RequestParam(required = false) Long moduloaId,
             @RequestParam(required = false) Long taldeaId,
             @RequestParam(required = false) Boolean jasota,
+            HttpServletRequest request,
             Model model) {
-        if (dataHasiera == null) {
+        // Parametroa ez badator bakarrik aplikatu defektua. `?dataHasiera=`
+        // erabiltzaileak data-iragazkia berariaz hustu duela esan nahi du.
+        if (dataHasiera == null && !request.getParameterMap().containsKey("dataHasiera")) {
             dataHasiera = ikasturteaRepository.findFirstByAktiboaTrueOrderByIdDesc()
                     .map(ikasturtea -> ikasturtekoIrailarenLehena(ikasturtea.getIzena()))
                     .orElse(null);

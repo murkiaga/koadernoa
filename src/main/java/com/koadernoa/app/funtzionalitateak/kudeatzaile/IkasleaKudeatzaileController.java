@@ -39,6 +39,7 @@ import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
 import com.koadernoa.app.objektuak.egutegia.repository.IkasturteaRepository;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
+import com.koadernoa.app.objektuak.jokabidea.repository.JokabideDesegokiaRepository;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.mezuak.entitateak.Mezua;
@@ -72,6 +73,7 @@ public class IkasleaKudeatzaileController {
     private final TaldeaRepository taldeaRepository;
     private final KoadernoaRepository koadernoaRepository;
     private final AuditService auditService;
+    private final JokabideDesegokiaRepository jokabideDesegokiaRepository;
 
     @GetMapping("/kudeatzaile/ikasleak")
     public String ikasleZerrenda(@RequestParam(name = "zikloaId", required = false) Long zikloaId,
@@ -191,8 +193,18 @@ public class IkasleaKudeatzaileController {
         model.addAttribute("defaultTaldeaId", ikaslea.getTaldea() != null ? ikaslea.getTaldea().getId() : null);
         model.addAttribute("uko1fMap", uko1fMap);
         model.addAttribute("uko2fMap", uko2fMap);
+        if (jokabideDesegokiaRepository.existsByIkasleaId(id)) {
+            model.addAttribute("jokabideDesegokiakFiltroa", jokabideDesegokiakFiltroa(ikaslea));
+        }
 
         return "kudeatzaile/ikaslea/fitxa";
+    }
+
+    private String jokabideDesegokiakFiltroa(Ikaslea ikaslea) {
+        return java.util.stream.Stream.of(ikaslea.getAbizena1(), ikaslea.getIzena(), ikaslea.getAbizena2())
+                .filter(zatia -> zatia != null && !zatia.isBlank())
+                .map(String::trim)
+                .collect(Collectors.joining(" "));
     }
 
     @PostMapping("/kudeatzaile/ikaslea/{id}/taldea")

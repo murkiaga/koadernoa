@@ -45,4 +45,7 @@ public class IrakasleOrdutegiLerroa {
     private String turno;
     private String marco;
     private String tarea;
+
+    /** Lerroa ordezkapen batetik kopiatu bada, titularraren identifikatzailea. */
+    private Long ordezkapenTitularraId;
 }

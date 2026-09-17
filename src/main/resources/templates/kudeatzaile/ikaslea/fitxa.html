@@ -51,6 +51,13 @@
           </div>
         </td>
       </tr>
+      <tr th:if="${jokabideDesegokiakFiltroa != null}">
+        <th>Jokabide desegokiak</th>
+        <td>
+          <a class="btn btn-secondary"
+             th:href="@{/kudeatzaile/jokabide-desegokiak(dataHasiera='',dataAmaiera='',ikaslea=${jokabideDesegokiakFiltroa},moduloaId='',taldeaId='',jasota='')}">Kontsultatu</a>
+        </td>
+      </tr>
       </tbody>
     </table>
   </div>

@@ -13,6 +13,7 @@ public interface JokabideDesegokiaRepository extends JpaRepository<JokabideDeseg
     List<JokabideDesegokia> findByKoadernoaIdAndData(Long koadernoaId, LocalDate data);
     List<JokabideDesegokia> findByIkasleaIdAndKoadernoaIdAndDataOrderByCreatedAtDesc(Long ikasleaId, Long koadernoaId, LocalDate data);
     Optional<JokabideDesegokia> findFirstByIkasleaIdAndKoadernoaIdAndDataOrderByCreatedAtDesc(Long ikasleaId, Long koadernoaId, LocalDate data);
+    boolean existsByIkasleaId(Long ikasleaId);
 
     @Query("""
         select j from JokabideDesegokia j
@@ -27,6 +28,8 @@ public interface JokabideDesegokiaRepository extends JpaRepository<JokabideDeseg
           and (:dataAmaiera is null or j.data <= :dataAmaiera)
           and (:ikaslea is null or :ikaslea = '' or
                lower(concat(coalesce(i.abizena1, ''), ' ', coalesce(i.abizena2, ''), ' ', coalesce(i.izena, '')))
+               like lower(concat('%', :ikaslea, '%')) or
+               lower(concat(coalesce(i.abizena1, ''), ' ', coalesce(i.izena, ''), ' ', coalesce(i.abizena2, '')))
                like lower(concat('%', :ikaslea, '%')))
           and (:moduloaId is null or m.id = :moduloaId)
           and (:taldeaId is null or t.id = :taldeaId)
