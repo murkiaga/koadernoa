@@ -167,6 +167,14 @@ public class IkasleaService {
     }
 
     @Transactional
+    public Ikaslea aldatuIkaslearenNana(Long ikasleaId, String nan) {
+        Ikaslea ikaslea = ikasleaRepo.findById(ikasleaId)
+                .orElseThrow(() -> new IllegalArgumentException("Ikaslea ez da aurkitu: " + ikasleaId));
+        ikaslea.setNan(garbitu(nan));
+        return ikasleaRepo.save(ikaslea);
+    }
+
+    @Transactional
     public TaldeAldaketaEmaitza aldatuIkaslearenTaldea(Long ikasleaId, Long taldeaBerriaId) {
         Ikaslea ikaslea = ikasleaRepo.findById(ikasleaId)
                 .orElseThrow(() -> new IllegalArgumentException("Ikaslea ez da aurkitu: " + ikasleaId));

@@ -40,6 +40,19 @@ class IkasleaMatrikulaSyncTest {
     private final IkasturteaRepository ikasturteaRepo = mock(IkasturteaRepository.class);
 
     @Test
+    void aldatuIkaslearenNanaGarbituEtaGordetzenDu() {
+        IkasleaService service = new IkasleaService(koadernoaRepo, ikasleaRepo, matrikulaRepo, taldeaRepo, ikasturteaRepo);
+        Ikaslea ikaslea = ikaslea(7L, "A1");
+        when(ikasleaRepo.findById(7L)).thenReturn(Optional.of(ikaslea));
+        when(ikasleaRepo.save(ikaslea)).thenReturn(ikaslea);
+
+        service.aldatuIkaslearenNana(7L, "  12345678Z  ");
+
+        assertThat(ikaslea.getNan()).isEqualTo("12345678Z");
+        verify(ikasleaRepo).save(ikaslea);
+    }
+
+    @Test
     void syncKoadernoakTalderakoAfterExcelStillSyncsAllActiveYearNotebooks() {
         IkasleaService service = new IkasleaService(koadernoaRepo, ikasleaRepo, matrikulaRepo, taldeaRepo, ikasturteaRepo);
         Koadernoa koadernoa = koadernoa(10L, taldea(1L, "2SMA"), true, true);

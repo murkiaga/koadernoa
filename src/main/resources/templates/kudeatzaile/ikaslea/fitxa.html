@@ -21,6 +21,10 @@
     .mini-form{display:inline-flex;align-items:center;gap:.4rem;flex-wrap:nowrap;white-space:nowrap;}
     .mini-form select{width:auto;min-width:180px;}
     .mini-form .btn{width:auto;white-space:nowrap;}
+    .ikasle-datuak{table-layout:fixed;}
+    .ikasle-datuak th{width:190px;}
+    .nan-form{display:flex;align-items:center;gap:.75rem;flex-wrap:nowrap;margin:0;max-width:none;min-width:0;}
+    .nan-form input{width:min(240px,calc(100% - 90px));min-width:0;margin:0;}
   </style>
 </head>
 <body>
@@ -35,13 +39,25 @@
        th:text="${errorMessage}">Errorea</div>
 
   <div class="table-wrap" style="margin-bottom:1rem;">
-    <table>
+    <table class="ikasle-datuak">
       <tbody>
       <tr><th>Izena</th><td th:text="${ikaslea.izena != null ? ikaslea.izena : '-'}">-</td></tr>
       <tr><th>Abizena 1</th><td th:text="${ikaslea.abizena1 != null ? ikaslea.abizena1 : '-'}">-</td></tr>
       <tr><th>Abizena 2</th><td th:text="${ikaslea.abizena2 != null ? ikaslea.abizena2 : '-'}">-</td></tr>
       <tr><th>HNA (DIE)</th><td th:text="${ikaslea.hna != null ? ikaslea.hna : '-'}">-</td></tr>
-      <tr><th>NAN (DNI)</th><td th:text="${ikaslea.nan != null ? ikaslea.nan : '-'}">-</td></tr>
+      <tr>
+        <th>NAN (DNI)</th>
+        <td>
+          <form class="nan-form" id="nanEditForm" method="post"
+                th:action="@{/kudeatzaile/ikaslea/{id}/nan(id=${ikaslea.id})}">
+            <input type="hidden" name="ikasturteaId" th:value="${hautatutakoIkasturteaId}">
+            <span id="nanValue" th:text="${ikaslea.nan != null ? ikaslea.nan : '-'}">-</span>
+            <input id="nanInput" name="nan" type="text" th:value="${ikaslea.nan}" hidden disabled
+                   aria-label="NAN (DNI)">
+            <button type="submit" class="btn btn-secondary" id="nanEditButton">Editatu</button>
+          </form>
+        </td>
+      </tr>
       <tr>
         <th>Taldea</th>
         <td>
@@ -188,6 +204,32 @@
 <div th:replace="~{kudeatzaile/ikaslea/matrikula-gehitu-modal :: matrikulaGehituModal}"></div>
 
 <script th:src="@{/js/kudeatzaile-nav.js}"></script>
+<script>
+(() => {
+  const form = document.getElementById('nanEditForm');
+  const value = document.getElementById('nanValue');
+  const input = document.getElementById('nanInput');
+  const button = document.getElementById('nanEditButton');
+  let editatzen = false;
+
+  button?.addEventListener('click', (event) => {
+    if (editatzen) return;
+
+    event.preventDefault();
+    editatzen = true;
+    value.hidden = true;
+    input.hidden = false;
+    input.disabled = false;
+    button.textContent = 'Gorde';
+    input.focus();
+    input.select();
+  });
+
+  form?.addEventListener('submit', (event) => {
+    if (!editatzen) event.preventDefault();
+  });
+})();
+</script>
 <script>
 (() => {
   const backdrop = document.getElementById('taldeModalBackdrop');
