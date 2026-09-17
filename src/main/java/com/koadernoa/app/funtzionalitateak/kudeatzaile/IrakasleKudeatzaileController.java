@@ -33,6 +33,7 @@ import com.koadernoa.app.objektuak.ordutegiak.entitateak.IrakasleOrdutegiLerroa;
 import com.koadernoa.app.objektuak.ordutegiak.entitateak.IrakasleOrdutegia;
 import com.koadernoa.app.objektuak.ordutegiak.repository.IrakasleOrdutegiLerroaRepository;
 import com.koadernoa.app.objektuak.ordutegiak.repository.IrakasleOrdutegiaRepository;
+import com.koadernoa.app.objektuak.ordutegiak.service.OrdezkoOrdutegiService;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Familia;
 import com.koadernoa.app.objektuak.zikloak.repository.FamiliaRepository;
 
@@ -50,6 +51,7 @@ public class IrakasleKudeatzaileController {
     private final IrakasleOrdutegiLerroaRepository irakasleOrdutegiLerroaRepository;
     private final KoadernoaRepository koadernoaRepository;
     private final IrakasleaEzabatzeService irakasleaEzabatzeService;
+    private final OrdezkoOrdutegiService ordezkoOrdutegiService;
 
     private static final List<Astegunak> ASTE_ORDENA = List.of(
             Astegunak.ASTELEHENA, Astegunak.ASTEARTEA, Astegunak.ASTEAZKENA,
@@ -288,6 +290,7 @@ public class IrakasleKudeatzaileController {
         if (ordezkoaId == null) {
             if (ordezkoZaharraId != null) {
                 kenduOrdezkoaKoadernoetatik(irakaslea, ordezkoZaharraId);
+                ordezkoOrdutegiService.kendu(id, ordezkoZaharraId);
             }
             irakaslea.setOrdezkoa(null);
             irakasleaRepository.save(irakaslea);
@@ -305,12 +308,14 @@ public class IrakasleKudeatzaileController {
 
         if (ordezkoZaharraId != null) {
             kenduOrdezkoaKoadernoetatik(irakaslea, ordezkoZaharraId);
+            ordezkoOrdutegiService.kendu(id, ordezkoZaharraId);
         }
         Irakaslea ordezkoa = irakasleaRepository.findById(ordezkoaId).orElseThrow();
         irakaslea.setOrdezkoa(ordezkoa);
         irakasleaRepository.save(irakaslea);
         gehituOrdezkoaKoadernoetan(irakaslea, ordezkoa);
-        ra.addFlashAttribute("success", "Ordezkoa eguneratu da, eta koadernoetarako sarbidea sinkronizatu da.");
+        ordezkoOrdutegiService.heredatu(irakaslea, ordezkoa);
+        ra.addFlashAttribute("success", "Ordezkoa eguneratu da, eta koadernoak zein ordutegia sinkronizatu dira.");
         return redirectIrakasleFitxara(id, ikasturteaId);
     }
 

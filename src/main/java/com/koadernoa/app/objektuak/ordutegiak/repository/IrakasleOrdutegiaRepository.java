@@ -1,6 +1,7 @@
 package com.koadernoa.app.objektuak.ordutegiak.repository;
 
 import java.util.Optional;
+import java.util.List;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,6 +12,9 @@ import com.koadernoa.app.objektuak.ordutegiak.entitateak.IrakasleOrdutegia;
 public interface IrakasleOrdutegiaRepository extends JpaRepository<IrakasleOrdutegia, Long> {
     void deleteByIrakasleaId(Long irakasleaId);
     void deleteByIkasturteaId(Long ikasturteaId);
+
+    @EntityGraph(attributePaths = {"lerroak", "lerroak.taldea", "ikasturtea"})
+    List<IrakasleOrdutegia> findAllByIrakasleaId(Long irakasleaId);
 
     @EntityGraph(attributePaths = {"lerroak", "lerroak.taldea"})
     Optional<IrakasleOrdutegia> findByIrakasleaIdAndIkasturteaId(Long irakasleaId, Long ikasturteaId);

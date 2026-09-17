@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.CookieValue;
 
 import com.koadernoa.app.objektuak.egutegia.repository.IkasturteaRepository;
 import com.koadernoa.app.objektuak.egutegia.repository.MailaRepository;
@@ -47,6 +48,8 @@ import com.koadernoa.app.objektuak.zikloak.service.ZikloaService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Controller
 @RequestMapping("/kudeatzaile/moduloa")
@@ -76,9 +79,19 @@ public class ModuloKudeatzaileController {
                                  @RequestParam(name = "hautazkoa", required = false) Boolean hautazkoa,
                                  @RequestParam(name = "aktibo", required = false) Boolean aktibo,
                                  @RequestParam(name = "page", defaultValue = "0") int page,
-                                 @RequestParam(name = "size", defaultValue = "20") int size,
+                                 @RequestParam(name = "size", required = false) Integer size,
+                                 @CookieValue(name = "moduloakPageSize", required = false) Integer gordetakoTamaina,
+                                 HttpServletResponse response,
                                  Model model) {
-        int tamaina = Math.min(100, Math.max(20, size));
+        int tamaina = baliozkoTamaina(size != null ? size : gordetakoTamaina);
+        if (size != null) {
+            Cookie cookie = new Cookie("moduloakPageSize", Integer.toString(tamaina));
+            cookie.setPath("/");
+            cookie.setMaxAge(365 * 24 * 60 * 60);
+            cookie.setHttpOnly(true);
+            cookie.setAttribute("SameSite", "Lax");
+            response.addCookie(cookie);
+        }
         int orria = Math.max(0, page);
         PageRequest pageable = PageRequest.of(orria, tamaina, Sort.by("izena").ascending());
 
@@ -102,6 +115,10 @@ public class ModuloKudeatzaileController {
         model.addAttribute("pageSizes", List.of(20, 40, 60, 80, 100));
 
         return "kudeatzaile/moduloak/index";
+    }
+
+    private int baliozkoTamaina(Integer size) {
+        return size != null && List.of(20, 40, 60, 80, 100).contains(size) ? size : 20;
     }
 
     @PostMapping("/gorde")
