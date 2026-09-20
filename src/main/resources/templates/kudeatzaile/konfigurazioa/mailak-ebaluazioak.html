@@ -94,6 +94,11 @@
         Ordena
         <input type="number" name="mailaOrdena" th:form="'ebal-form'" th:value="${maila.ordena}"/>
       </label>
+      <label style="display:grid;gap:.25rem;">
+        Ebaluazio jarraitua galtzeko falten muga (%)
+        <input type="number" name="faltenMugaPortzentaia" form="ebal-form"
+               th:value="${maila.faltenMugaPortzentaia}" min="0" max="100" step="1" required/>
+      </label>
     </div>
   </div>
 

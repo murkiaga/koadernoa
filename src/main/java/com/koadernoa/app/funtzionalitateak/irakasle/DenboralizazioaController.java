@@ -290,6 +290,8 @@ public class DenboralizazioaController {
 	        FaltakBistaDTO faltak = denboralizazioFaltaService
 	                .kalkulatuFaltenBista(kargatutakoKoadernoa, unekoHilabetea, unekoUrtea);
 
+	        model.addAttribute("faltenMugaPortzentaia",
+                    kargatutakoKoadernoa.getModuloa().getMaila().getFaltenMugaPortzentaia());
 	        model.addAttribute("programaOrduak", faltak.getProgramaOrduak());
 	        model.addAttribute("faltaEgunak", faltak.getEgunak());
 	        model.addAttribute("faltaEgunOrduak", faltak.getEgunekoOrduak());
@@ -363,8 +365,10 @@ public class DenboralizazioaController {
 	    }
 
 	    var row = rowOpt.get();
-	    if (row.getFaltaPortzentaia() <= 20d) {
-	        return ResponseEntity.badRequest().body(Map.of("error", "PDFa sortzeko faltak %20 baino handiagoa izan behar du."));
+	    int faltenMugaPortzentaia = kargatutakoKoadernoa.getModuloa().getMaila().getFaltenMugaPortzentaia();
+	    if (row.getFaltaPortzentaia() <= faltenMugaPortzentaia) {
+	        return ResponseEntity.badRequest().body(Map.of("error",
+                    "PDFa sortzeko faltak %" + faltenMugaPortzentaia + " baino handiagoa izan behar du."));
 	    }
 
 	    Irakaslea deskargatzailea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
