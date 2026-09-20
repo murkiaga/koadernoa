@@ -78,10 +78,10 @@
 
               <td th:text="${row.faltaOrduak}">0</td>
 
-              <td th:classappend="${row.faltaPortzentaia} > 20 ? ' falta-pct-altua' :
+              <td th:classappend="${row.faltaPortzentaia} > ${faltenMugaPortzentaia} ? ' falta-pct-altua' :
 			                    (${row.faltaPortzentaia} >= 10 ? ' falta-pct-ertaina' : '')">
                   <span th:text="${#numbers.formatDecimal(row.faltaPortzentaia, 1, 2)} + '%'">0%</span>
-                  <a th:if="${row.faltaPortzentaia > 20}"
+                  <a th:if="${row.faltaPortzentaia > faltenMugaPortzentaia}"
                      th:href="@{/irakasle/denboralizazioa/falten-jakinarazpena/pdf(
                           matrikulaId=${row.matrikula.id},
                           hilabetea=${hilabetea},

@@ -147,6 +147,12 @@
 	        <div class="muted">Ordena</div>
 	        <input type="number" th:field="*{ordena}" min="0" placeholder="1" required>
 	      </label>
+	      <label>
+	        <div class="muted">Ebaluazio jarraitua galtzeko falten muga (%)</div>
+	        <input type="number" th:field="*{faltenMugaPortzentaia}" min="0" max="100" step="1" required>
+	        <div th:if="${#fields.hasErrors('faltenMugaPortzentaia')}"
+	             th:errors="*{faltenMugaPortzentaia}"></div>
+	      </label>
 	      <div style="align-self:end;">
 	        <button type="submit">Sortu</button>
 	      </div>

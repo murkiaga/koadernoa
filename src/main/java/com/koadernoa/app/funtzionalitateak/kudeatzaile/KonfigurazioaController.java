@@ -167,9 +167,15 @@ public class KonfigurazioaController {
         if (form.getKodea() == null || form.getKodea().isBlank()) {
             br.rejectValue("kodea", "kodea.blank", "Kodea beharrezkoa da");
         }
+        Integer muga = form.getFaltenMugaPortzentaia();
+        if (muga == null || muga < 0 || muga > 100) {
+            br.rejectValue("faltenMugaPortzentaia", "faltenMugaPortzentaia.invalid",
+                    "Falten muga 0 eta 100 arteko zenbaki osoa izan behar da.");
+        }
         if (br.hasErrors()) {
             gehituKonfigurazioDatuak(model);
             model.addAttribute("sortuForm", form);
+            model.addAttribute(BindingResult.MODEL_KEY_PREFIX + "sortuForm", br);
             return "kudeatzaile/konfigurazioa/index";
         }
 
@@ -181,6 +187,7 @@ public class KonfigurazioaController {
         m.setIzena(form.getIzena() == null ? form.getKodea().trim() : form.getIzena().trim());
         m.setOrdena(form.getOrdena() != null ? form.getOrdena() : 999);
         m.setAktibo(true);
+        m.setFaltenMugaPortzentaia(form.getFaltenMugaPortzentaia());
         mailaRepository.save(m);
 
         return "redirect:/kudeatzaile/konfigurazioa#mailak";
@@ -474,6 +481,19 @@ public class KonfigurazioaController {
             return "redirect:/kudeatzaile/konfigurazioa#mailak";
         }
 
+        Integer faltenMugaPortzentaia;
+        try {
+            String mugaParam = request.getParameter("faltenMugaPortzentaia");
+            faltenMugaPortzentaia = Integer.valueOf(mugaParam == null ? "" : mugaParam.trim());
+            if (faltenMugaPortzentaia < 0 || faltenMugaPortzentaia > 100) {
+                throw new NumberFormatException();
+            }
+        } catch (NumberFormatException ex) {
+            redirectAttributes.addFlashAttribute("error",
+                    "Falten muga 0 eta 100 arteko zenbaki osoa izan behar da.");
+            return "redirect:/kudeatzaile/konfigurazioa/mailak/" + mailaId + "/ebaluazioak";
+        }
+
         String mailaKodea = request.getParameter("mailaKodea");
         if (mailaKodea != null) {
             String kodeaTrim = mailaKodea.trim();
@@ -498,6 +518,7 @@ public class KonfigurazioaController {
                 maila.setOrdena(Integer.valueOf(mailaOrdena.trim()));
             } catch (NumberFormatException ignored) {}
         }
+        maila.setFaltenMugaPortzentaia(faltenMugaPortzentaia);
         mailaRepository.save(maila);
 
         // ======== EXISTENTEAK EGUNERATU / EZABATU =========
@@ -942,6 +963,7 @@ public class KonfigurazioaController {
 
     @Data
     public static class SortuMailaForm {
+        private Integer faltenMugaPortzentaia = 20;
         @NotBlank private String kodea;
         private String izena;
         @NotNull private Integer ordena;
