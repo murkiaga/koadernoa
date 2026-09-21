@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 import java.util.Locale;
+import java.util.Optional;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -27,6 +28,7 @@ import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Rola;
 import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
 import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaEzabatzeService;
+import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaEzabatzeEgiaztapenService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.ordutegiak.entitateak.IrakasleOrdutegiLerroa;
@@ -51,6 +53,7 @@ public class IrakasleKudeatzaileController {
     private final IrakasleOrdutegiLerroaRepository irakasleOrdutegiLerroaRepository;
     private final KoadernoaRepository koadernoaRepository;
     private final IrakasleaEzabatzeService irakasleaEzabatzeService;
+    private final IrakasleaEzabatzeEgiaztapenService irakasleaEzabatzeEgiaztapenService;
     private final OrdezkoOrdutegiService ordezkoOrdutegiService;
 
     private static final List<Astegunak> ASTE_ORDENA = List.of(
@@ -94,12 +97,9 @@ public class IrakasleKudeatzaileController {
             ra.addFlashAttribute("error", "Irakaslea ez da aurkitu.");
             return "redirect:/kudeatzaile/irakasleak";
         }
-        List<Koadernoa> koadernoak = koadernoaRepository.findIrakaslearenKoadernoak(id, irakaslea);
-        if (!koadernoak.isEmpty()) {
-            String ikasturtea = koadernoak.get(0).getEgutegia() != null
-                    && koadernoak.get(0).getEgutegia().getIkasturtea() != null
-                    ? koadernoak.get(0).getEgutegia().getIkasturtea().getIzena() : "ikasturte ezezaguneko";
-            ra.addFlashAttribute("error", "Ezin izan da irakaslea ezabatu: " + ikasturtea + "eko koaderno batekin lotuta dago.");
+        Optional<String> ezabatzeErrorea = irakasleaEzabatzeEgiaztapenService.ezabatzeErrorea(irakaslea);
+        if (ezabatzeErrorea.isPresent()) {
+            ra.addFlashAttribute("error", ezabatzeErrorea.get());
             return "redirect:/kudeatzaile/irakasleak";
         }
         try {

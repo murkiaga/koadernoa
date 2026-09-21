@@ -9,6 +9,8 @@ import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Familia;
 
 public interface IrakasleaRepository extends JpaRepository<Irakaslea, Long> {
+    boolean existsByOrdezkoa_Id(Long irakasleId);
+
 	
 	Optional<Irakaslea> findByIzena(String izena);
 	

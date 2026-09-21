@@ -9,6 +9,8 @@ import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Taldea;
 import com.koadernoa.app.objektuak.jokabidea.entitateak.JokabideDesegokia;
 public interface JokabideDesegokiaRepository extends JpaRepository<JokabideDesegokia, Long> {
+    boolean existsByIrakaslea_IdOrJasotaNork_Id(Long irakasleId, Long jasotaNorkId);
+
     List<JokabideDesegokia> findByKoadernoaIdAndDataBetween(Long koadernoaId, LocalDate hasiera, LocalDate amaiera);
     List<JokabideDesegokia> findByKoadernoaIdAndData(Long koadernoaId, LocalDate data);
     List<JokabideDesegokia> findByIkasleaIdAndKoadernoaIdAndDataOrderByCreatedAtDesc(Long ikasleaId, Long koadernoaId, LocalDate data);

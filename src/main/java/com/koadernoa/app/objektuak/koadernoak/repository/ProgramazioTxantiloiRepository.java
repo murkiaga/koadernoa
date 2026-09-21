@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.ProgramazioTxantiloi;
 
 public interface ProgramazioTxantiloiRepository extends JpaRepository<ProgramazioTxantiloi, Long> {
+    boolean existsByIrakaslea_Id(Long irakasleId);
+
     List<ProgramazioTxantiloi> findByIrakasleaIdAndModuloaIdOrderBySortzeDataDesc(Long irakasleaId, Long moduloaId);
 
     Optional<ProgramazioTxantiloi> findByIdAndIrakasleaId(Long id, Long irakasleaId);
