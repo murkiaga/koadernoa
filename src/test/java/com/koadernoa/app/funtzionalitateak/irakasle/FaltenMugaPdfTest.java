@@ -28,7 +28,7 @@ class FaltenMugaPdfTest {
     @InjectMocks DenboralizazioaController controller;
 
     @ParameterizedTest
-    @CsvSource({"20,20,false", "20,20.01,true", "25,21,false", "25,25,false", "25,25.01,true", "15,16,true"})
+    @CsvSource({"20,20,false", "20,20.01,true", "25,21,false", "25,25,false", "25,25.01,true", "15,16,true", "4,5,true"})
     void pdfDeskargakModuluarenMailakoMugaErrespetatzenDu(int muga, double pct, boolean onartu) {
         Maila maila = new Maila();
         maila.setFaltenMugaPortzentaia(muga);
@@ -51,7 +51,7 @@ class FaltenMugaPdfTest {
         var response = controller.deskargatuFaltenJakinarazpenaPdf(koadernoa, 1L, 9, 2026, null);
 
         assertThat(response.getStatusCode().value()).isEqualTo(onartu ? 200 : 400);
-        if (onartu) verify(pdfService).sortuPdf(any());
+        if (onartu) verify(pdfService).sortuPdf(argThat(data -> data.faltenMugaPortzentaia() == muga));
         else {
             verifyNoInteractions(pdfService);
             assertThat(response.getBody().toString()).contains("%" + muga);

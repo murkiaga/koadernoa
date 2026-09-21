@@ -385,6 +385,7 @@ public class DenboralizazioaController {
 	        row.getFaltaOrduak(),
 	        modulua,
 	        row.getFaltaPortzentaia(),
+	        faltenMugaPortzentaia,
 	        urtea,
 	        gaur,
 	        deskargatzaileIzena

@@ -173,6 +173,7 @@ public class FaltenJakinarazpenPdfService {
         int faltaOrduak,
         String modulua,
         int faltaPortzentaia,
+        int faltenMugaPortzentaia,
         int urteaAzkenBi,
         String hilabeteaEu,
         int eguna,
@@ -185,6 +186,7 @@ public class FaltenJakinarazpenPdfService {
             int faltaOrduak,
             String modulua,
             double faltaPortzentaia,
+            int faltenMugaPortzentaia,
             int urtea,
             LocalDate data,
             String deskargatzailea
@@ -195,6 +197,7 @@ public class FaltenJakinarazpenPdfService {
                 faltaOrduak,
                 balioa(modulua),
                 (int) Math.round(faltaPortzentaia),
+                faltenMugaPortzentaia,
                 urtea % 100,
                 data.getMonth().getDisplayName(TextStyle.FULL, EUSKARA),
                 data.getDayOfMonth(),
@@ -205,6 +208,7 @@ public class FaltenJakinarazpenPdfService {
 
         public Map<String, String> toMap() {
             return Map.ofEntries(
+                Map.entry("bertaratzeMugaPortzentaia", String.valueOf(100 - faltenMugaPortzentaia)),
                 Map.entry("1", taldea),
                 Map.entry("2", ikasleaIzenAbizenak),
                 Map.entry("3", String.valueOf(faltaOrduak)),
