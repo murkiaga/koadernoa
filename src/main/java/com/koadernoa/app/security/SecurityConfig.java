@@ -50,6 +50,7 @@ public class SecurityConfig {
     	        )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/admin/**").hasRole("ADMIN")
+                .requestMatchers("/ethazi", "/ethazi/**").hasAnyRole("ADMIN", "KUDEATZAILEA")
                 .requestMatchers("/kudeatzaile/**").hasAnyRole("ADMIN", "KUDEATZAILEA")
                 .requestMatchers("/irakasle", "/irakasle/**").hasAnyRole("ADMIN", "KUDEATZAILEA", "IRAKASLEA")
                 .requestMatchers("/login", "/login/oauth2/**", "/oauth2/**", "/css/**", "/js/**", "/uploads/**", "/favicon.ico").permitAll()

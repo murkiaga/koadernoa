@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head th:replace="~{Ethazi/fragments/common :: head('Mailakatzeak')}"></head>
+<body class="ethazi-body">
+<div th:replace="~{kudeatzaile/fragments/navbar :: kudeatzaile-navbar}"></div>
+<nav th:replace="~{Ethazi/fragments/navbar :: navbar('mailakatzeak')}"></nav>
+<main class="page ethazi-page">
+<div th:replace="~{Ethazi/fragments/common :: messages}"></div>
+<header class="page-header"><div><h1>Mailakatzeak</h1><p class="muted">Ziklo eta gaitasun mota bakoitzaren errubrika-mailak.</p></div><a class="btn btn-primary" th:href="@{/ethazi/mailakatzeak/berria}">+ Mailakatze eredua</a></header>
+<p class="empty-state" th:if="${#lists.isEmpty(ereduak)}">Oraindik ez dago mailakatze eredurik. Sortu lehenengoa gaitasunak definitzeko.</p>
+<div class="ethazi-grid"><article class="ethazi-card" th:each="e : ${ereduak}">
+<p class="muted"><span th:text="${e.zikloa.izena}"></span> · <span th:text="${e.mota}"></span></p><h2 th:text="${e.izena}"></h2>
+<ol class="level-list"><li th:each="m : ${e.mailak}"><strong th:text="${m.ordena}"></strong><span th:text="${m.izena}"></span></li></ol>
+<p th:if="${#lists.isEmpty(e.mailak)}" class="muted">Gehitu mailak eredua erabiltzeko.</p>
+<div class="form-actions"><a class="btn btn-secondary" th:href="@{/ethazi/mailakatzeak/{id}/editatu(id=${e.id})}">Editatu</a>
+<form th:action="@{/ethazi/mailakatzeak/{id}/ezabatu(id=${e.id})}" method="post" data-confirm="Mailakatze eredua ezabatu?"><button class="btn btn-danger">Ezabatu</button></form></div>
+</article></div>
+</main>
+<script th:src="@{/js/ethazi.js}" defer></script>
+</body></html>

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head th:replace="~{Ethazi/fragments/common :: head('Gaitasunen errubrika')}"></head>
+<body class="ethazi-body">
+<div th:replace="~{kudeatzaile/fragments/navbar :: kudeatzaile-navbar}"></div>
+<nav th:replace="~{Ethazi/fragments/navbar :: navbar('gaitasunak')}"></nav>
+<main class="page ethazi-page">
+<div th:replace="~{Ethazi/fragments/common :: messages}"></div>
+<header class="page-header"><div><h1>Gaitasunen errubrika</h1><p class="muted">Mailaz mailako deskribapenak, lorpen-adierazleak eta curriculumeko loturak.</p></div></header>
+<form class="ethazi-filters ethazi-card" method="get" th:action="@{/ethazi/gaitasunak}"><div class="field"><label for="zikloaId">Zikloa</label><select id="zikloaId" name="zikloaId"><option value="">— Aukeratu zikloa —</option><option th:each="z : ${zikloak}" th:value="${z.id}" th:text="${z.izena}" th:selected="${z.id == zikloaId}"></option></select></div>
+<div class="field"><label for="mota">Gaitasun mota</label><select id="mota" name="mota"><option th:each="m : ${motak}" th:value="${m}" th:text="${m.name() == 'TEKNIKOA' ? 'Teknikoa' : 'Zeharkakoa'}" th:selected="${m == mota}"></option></select></div><button class="btn btn-primary">Erakutsi</button></form>
+<div class="empty-state" th:if="${errubrika.eredua == null}"><p th:text="${zikloaId == null ? 'Aukeratu zikloa eta gaitasun mota errubrika ikusteko.' : 'Ziklo eta mota honentzat ez dago mailakatze eredurik.'}"></p><a th:if="${zikloaId != null}" class="btn" th:href="@{/ethazi/mailakatzeak/berria}">Mailakatze eredua sortu</a></div>
+<section th:if="${errubrika.eredua != null}"><header class="page-header"><h2 th:text="${errubrika.eredua.izena}"></h2><a th:if="${!#lists.isEmpty(errubrika.eredua.mailak)}" class="btn btn-primary" th:href="@{/ethazi/gaitasunak/berria(zikloaId=${zikloaId},mota=${mota})}">+ Gaitasuna</a></header>
+<p th:if="${#lists.isEmpty(errubrika.eredua.mailak)}" class="empty-state">Ereduak ez du mailarik. Gehitu mailak Mailakatzeak atalean.</p>
+<div class="rubric-scroll" role="region" aria-label="Gaitasunen errubrika, horizontalki korritzeko taula" tabindex="0" th:if="${!#lists.isEmpty(errubrika.eredua.mailak)}"><table class="rubric"><caption class="sr-only">Gaitasunak eta maila bakoitzeko lorpen-adierazleak</caption>
+<thead><tr><th scope="col" class="rubric-code">Kodea</th><th scope="col" class="rubric-description">Gaitasuna</th><th scope="col" th:each="m : ${errubrika.eredua.mailak}"><span class="level-number" th:text="${m.ordena} + '. maila'"></span><span th:text="${m.izena}"></span></th></tr></thead>
+<tbody><tr th:each="row : ${errubrika.lerroak}"><th scope="row" class="rubric-code"><span th:text="${row.gaitasuna.kodea}"></span><a class="btn" th:href="@{/ethazi/gaitasunak/{id}/editatu(id=${row.gaitasuna.id})}" th:attr="aria-label=${row.gaitasuna.kodea + ' editatu'}">Editatu</a></th>
+<td class="rubric-description"><strong th:text="${row.gaitasuna.izena}"></strong><p class="preserve" th:text="${row.gaitasuna.deskribapena}"></p></td>
+<td th:each="gm : ${row.gelaxkak}"><th:block th:if="${gm != null}"><p class="preserve" th:text="${gm.deskribapena}"></p><ul class="indicator-list"><li th:each="a : ${gm.lorpenAdierazleak}"><span class="indicator-order" th:text="${gm.maila.ordena} + '.' + ${a.ordena}"></span> <span class="preserve" th:text="${a.deskribapena}"></span><div class="badges"><span class="ie-badge" th:each="ie : ${a.ikaskuntzaEmaitzak}" th:text="${ie.moduloa.kodea} + ' · ' + ${ie.kodea}" th:title="${ie.moduloa.izena} + ': ' + ${ie.deskribapena}"></span></div></li></ul></th:block><span th:if="${gm == null}" class="muted">Zehaztu gabe</span></td>
+</tr></tbody></table></div><p class="empty-state" th:if="${#lists.isEmpty(errubrika.lerroak)}">Oraindik ez dago gaitasunik aukeratutako ziklo eta motarako.</p></section>
+</main>
+<script th:src="@{/js/ethazi.js}" defer></script>
+</body></html>

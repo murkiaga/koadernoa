@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head th:replace="~{Ethazi/fragments/common :: head('Ikaskuntza-emaitza')}"></head>
+<body class="ethazi-body">
+<div th:replace="~{kudeatzaile/fragments/navbar :: kudeatzaile-navbar}"></div>
+<nav th:replace="~{Ethazi/fragments/navbar :: navbar('ikaskuntza-emaitzak')}"></nav>
+<main class="page ethazi-page">
+<div th:replace="~{Ethazi/fragments/common :: messages}"></div>
+<header class="page-header"><h1 th:text="${id == null ? 'Ikaskuntza-emaitza berria' : 'Ikaskuntza-emaitza editatu'}"></h1><a class="btn" th:href="@{/ethazi/ikaskuntza-emaitzak(zikloaId=${form.zikloaId},moduloaId=${form.moduloaId})}">Zerrendara</a></header>
+<p class="empty-state" th:if="${form.zikloaId == null}">Aukeratu zikloa eta modulua zerrendako filtroetan.</p>
+<form th:if="${form.zikloaId != null}" class="form ethazi-card" th:object="${form}" method="post" th:action="${id == null} ? @{/ethazi/ikaskuntza-emaitzak/berria} : @{/ethazi/ikaskuntza-emaitzak/{id}/editatu(id=${id})}">
+<input type="hidden" th:field="*{zikloaId}"><div class="field"><label for="moduloaId">Modulua</label><select id="moduloaId" th:field="*{moduloaId}" required><option value="">— Aukeratu modulua —</option><option th:each="m : ${moduluak}" th:value="${m.id}" th:text="${m.kodea} + ' · ' + ${m.izena}"></option></select></div>
+<div class="field"><label for="kodea">Kodea</label><input id="kodea" th:field="*{kodea}" placeholder="RA1" maxlength="20" required></div>
+<div class="field"><label for="ordena">Ordena</label><input id="ordena" type="number" min="1" max="2147483647" th:field="*{ordena}" required></div>
+<div class="field"><label for="deskribapena">Deskribapena</label><textarea id="deskribapena" th:field="*{deskribapena}" rows="6" maxlength="60000" required></textarea></div><button class="btn btn-primary">Gorde</button></form>
+</main>
+<script th:src="@{/js/ethazi.js}" defer></script>
+</body></html>

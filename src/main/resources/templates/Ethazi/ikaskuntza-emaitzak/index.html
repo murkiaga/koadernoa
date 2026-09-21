@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head th:replace="~{Ethazi/fragments/common :: head('Ikaskuntza Emaitzak')}"></head>
+<body class="ethazi-body">
+<div th:replace="~{kudeatzaile/fragments/navbar :: kudeatzaile-navbar}"></div>
+<nav th:replace="~{Ethazi/fragments/navbar :: navbar('ikaskuntza-emaitzak')}"></nav>
+<main class="page ethazi-page">
+<div th:replace="~{Ethazi/fragments/common :: messages}"></div>
+<header class="page-header"><div><h1>Ikaskuntza Emaitzak</h1><p class="muted">Aukeratu zikloa, ondoren modulua, haren curriculumeko emaitzak kudeatzeko.</p></div></header>
+<form class="ethazi-card ethazi-filters" th:action="@{/ethazi/ikaskuntza-emaitzak}" method="get">
+<div class="field"><label for="zikloaId">Zikloa</label><select id="zikloaId" name="zikloaId" data-cycle-filter><option value="">— Aukeratu zikloa —</option><option th:each="z : ${zikloak}" th:value="${z.id}" th:text="${z.izena}" th:selected="${z.id == zikloaId}"></option></select></div>
+<div class="field"><label for="moduloaId">Modulua</label><select id="moduloaId" name="moduloaId"><option value="">— Aukeratu modulua —</option><option th:each="m : ${moduluak}" th:value="${m.id}" th:text="${m.kodea} + ' · ' + ${m.izena}" th:selected="${m.id == moduloaId}"></option></select></div><button class="btn btn-primary">Erakutsi</button></form>
+<div th:if="${moduloaId != null}"><div class="page-header"><h2>Moduluaren emaitzak</h2><a class="btn btn-primary" th:href="@{/ethazi/ikaskuntza-emaitzak/berria(zikloaId=${zikloaId},moduloaId=${moduloaId})}">+ Ikaskuntza-emaitza</a></div>
+<div class="table-wrap"><table><thead><tr><th>Kodea</th><th>Ordena</th><th>Deskribapena</th><th>Modulua</th><th>Aukerak</th></tr></thead><tbody><tr th:each="ie : ${emaitzak}"><td th:text="${ie.kodea}"></td><td th:text="${ie.ordena}"></td><td class="preserve" th:text="${ie.deskribapena}"></td><td th:text="${ie.moduloa.kodea} + ' · ' + ${ie.moduloa.izena}"></td><td><div class="form-actions"><a class="btn" th:href="@{/ethazi/ikaskuntza-emaitzak/{id}/editatu(id=${ie.id})}">Editatu</a><form method="post" th:action="@{/ethazi/ikaskuntza-emaitzak/{id}/ezabatu(id=${ie.id})}" data-confirm="Ikaskuntza-emaitza ezabatu?"><button class="btn btn-danger">Ezabatu</button></form></div></td></tr></tbody></table></div><p class="empty-state" th:if="${#lists.isEmpty(emaitzak)}">Modulu honek ez du ikaskuntza-emaitzarik.</p></div>
+<p th:if="${moduloaId == null}" class="empty-state">Aukeratu zikloa eta modulua.</p>
+</main>
+<script th:src="@{/js/ethazi.js}" defer></script>
+</body></html>

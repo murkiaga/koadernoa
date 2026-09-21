@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head th:replace="~{Ethazi/fragments/common :: head('Mailakatze eredua')}"></head>
+<body class="ethazi-body">
+<div th:replace="~{kudeatzaile/fragments/navbar :: kudeatzaile-navbar}"></div>
+<nav th:replace="~{Ethazi/fragments/navbar :: navbar('mailakatzeak')}"></nav>
+<main class="page ethazi-page">
+<div th:replace="~{Ethazi/fragments/common :: messages}"></div>
+<header class="page-header"><h1 th:text="${id == null ? 'Mailakatze eredu berria' : 'Mailakatze eredua editatu'}"></h1><a class="btn" th:href="@{/ethazi/mailakatzeak}">Zerrendara</a></header>
+<form class="form ethazi-card" th:object="${form}" th:action="${id == null} ? @{/ethazi/mailakatzeak/berria} : @{/ethazi/mailakatzeak/{id}/editatu(id=${id})}" method="post"><div class="field"><label for="zikloaId">Zikloa</label><select id="zikloaId" th:field="*{zikloaId}" required><option value="">— Aukeratu zikloa —</option><option th:each="z : ${zikloak}" th:value="${z.id}" th:text="${z.izena}"></option></select></div>
+<div class="field"><label for="mota">Gaitasun mota</label><select id="mota" th:field="*{mota}"><option th:each="m : ${motak}" th:value="${m}" th:text="${m.name() == 'TEKNIKOA' ? 'Teknikoa' : 'Zeharkakoa'}"></option></select></div>
+<div class="field"><label for="izena">Izena</label><input id="izena" th:field="*{izena}" maxlength="150" required></div><button class="btn btn-primary">Eredua gorde</button></form>
+<section th:if="${eredua != null}" class="section"><h2>Mailak</h2><p class="muted">Gehitu behar dituzun mailak. Geziekin aldatu ordena; gaitasunetan erabiltzen diren mailak ezin dira ezabatu.</p>
+<div class="ethazi-card level-editor" th:each="m, s : ${eredua.mailak}">
+<strong th:text="${m.ordena} + '. maila'"></strong>
+<form class="inline-form" th:action="@{/ethazi/mailakatzeak/{id}/mailak/{mid}/editatu(id=${id},mid=${m.id})}" method="post"><label th:for="'maila-' + ${m.id}" class="sr-only">Mailaren izena</label><input th:id="'maila-' + ${m.id}" name="izena" th:value="${failedMaila != null and failedMailaId == m.id ? failedMaila.izena : m.izena}" maxlength="100" required><button class="btn">Gorde</button></form>
+<form th:action="@{/ethazi/mailakatzeak/{id}/mailak/{mid}/mugitu(id=${id},mid=${m.id})}" method="post"><input type="hidden" name="norabidea" value="-1"><button class="btn" th:disabled="${s.first}" aria-label="Maila gora mugitu">↑</button></form>
+<form th:action="@{/ethazi/mailakatzeak/{id}/mailak/{mid}/mugitu(id=${id},mid=${m.id})}" method="post"><input type="hidden" name="norabidea" value="1"><button class="btn" th:disabled="${s.last}" aria-label="Maila behera mugitu">↓</button></form>
+<form th:action="@{/ethazi/mailakatzeak/{id}/mailak/{mid}/ezabatu(id=${id},mid=${m.id})}" method="post" data-confirm="Maila hau ezabatu?"><button class="btn btn-danger">Ezabatu</button></form>
+</div>
+<form class="ethazi-card inline-form" th:action="@{/ethazi/mailakatzeak/{id}/mailak/berria(id=${id})}" method="post"><label for="maila-berria">Maila berria</label><input id="maila-berria" name="izena" th:value="${failedMaila != null and failedMailaId == null ? failedMaila.izena : ''}" maxlength="100" required placeholder="Adib.: Ezagutu"><button class="btn btn-primary">+ Maila gehitu</button></form>
+</section>
+</main>
+<script th:src="@{/js/ethazi.js}" defer></script>
+</body></html>
