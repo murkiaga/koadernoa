@@ -1,9 +1,8 @@
 <!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" lang="eu"><body>
 <div th:fragment="editor(gm, a)" th:with="failed=${failedForm != null and failedMailaId == gm.id and (a == null ? failedAdierazleaId == null : failedAdierazleaId == a.id)}, key=${'a-' + gm.id + '-' + (a == null ? 'new' : a.id)}">
 <form data-dirty-warning class="indicator-form" method="post" th:action="${a == null} ? @{/ethazi/gaitasunak/{id}/mailak/{mid}/adierazleak/berria(id=${id},mid=${gm.id})} : @{/ethazi/gaitasunak/{id}/mailak/{mid}/adierazleak/{aid}/editatu(id=${id},mid=${gm.id},aid=${a.id})}">
-<div class="field"><label th:for="${key + '-ordena'}">Ordena</label><input type="number" min="1" max="2147483647" name="ordena" th:id="${key + '-ordena'}" th:value="${failed ? failedForm.ordena : (a == null ? null : a.ordena)}" required></div>
 <div class="field"><label th:for="${key + '-description'}">Lorpen-adierazlearen deskribapena</label><textarea name="deskribapena" th:id="${key + '-description'}" rows="3" maxlength="60000" th:text="${failed ? failedForm.deskribapena : (a == null ? '' : a.deskribapena)}" required></textarea></div>
-<details class="ie-picker"><summary>Ikaskuntza Emaitzen loturak</summary><p class="muted">Gaitasunaren zikloko moduluak. Nahi adina ikaskuntza-emaitza aukeratu.</p>
+<details th:fragment="picker(a, failed)" class="ie-picker"><summary>Ikaskuntza Emaitzen loturak</summary><p class="muted">Gaitasunaren zikloko moduluak. Nahi adina ikaskuntza-emaitza aukeratu.</p>
 <p th:if="${#lists.isEmpty(curriculum)}" class="muted">Ziklo honek ez du modulurik.</p>
 <fieldset th:each="group : ${curriculum}"><legend th:text="${group.moduloa.kodea} + ' · ' + ${group.moduloa.izena}"></legend><p class="muted" th:if="${#lists.isEmpty(group.emaitzak)}">Modulu honek ez du ikaskuntza-emaitzarik.</p>
 <label class="ie-choice" th:each="ie : ${group.emaitzak}"><input type="checkbox" name="emaitzaIds" th:value="${ie.id}" th:checked="${failed ? #sets.contains(failedForm.emaitzaIds, ie.id) : (a != null and #lists.contains(a.ikaskuntzaEmaitzak.![id], ie.id))}"><span><strong th:text="${ie.kodea}"></strong> · <span th:text="${ie.deskribapena}"></span></span></label>

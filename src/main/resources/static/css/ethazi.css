@@ -18,3 +18,64 @@
 .ethazi-page .ethazi-filters .field{margin-bottom:0}
 
 .ethazi-page .form > .btn{white-space:normal;max-width:100%}
+
+/* The rubric uses the entire viewport; only the surrounding controls retain a gutter. */
+.ethazi-rubric-page { max-width: none; width: 100%; padding: 0; }
+.rubric-toolbar { margin-left: 16px; margin-right: 16px; }
+.ethazi-rubric-page .rubric-scroll { width: 100%; border-radius: 0; max-height: 100vh; max-height: 100dvh; }
+.rubric .rubric-add-column { min-width: 48px; width: 48px; padding: 5px; background: #eff6ff; }
+.rubric thead .rubric-add-column { position: sticky; right: 0; z-index: 5; }
+.rubric-add-level { display: block; width: 100%; min-height: 120px; border: 1px dashed #60a5fa; border-radius: 8px; background: #dbeafe; color: #1d4ed8; font: inherit; font-size: 1.8rem; cursor: pointer; }
+.rubric-add-level:hover { background: #bfdbfe; }
+.level-name-editor summary { cursor: pointer; }
+.level-edit-hint { font-size: .8rem; color: #64748b; }
+.level-name-editor form { padding-top: 12px; font-size: .85rem; }
+.level-name-editor input { width: 100%; margin-bottom: 8px; }
+.rubric-cell .indicator-list { padding: 0; list-style: none; border: 0; }
+.rubric-indicator { padding: 10px; border: 1px solid #dbe2ea; border-radius: 8px; background: #f8fafc; }
+.indicator-controls { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+.indicator-controls .indicator-order { margin-right: auto; }
+.drag-handle { cursor: grab; touch-action: none; border: 0; background: transparent; color: #475569; font-size: 1.5rem; padding: 2px 7px; }
+.drag-handle:active { cursor: grabbing; }
+.rubric-indicator.dragging { opacity: .6; outline: 2px solid #60a5fa; }
+.indicator-sortable[aria-busy=true] { opacity: .65; pointer-events: none; }
+.inline-indicator-editor { margin: 10px 0; }
+.inline-indicator-editor > summary { color: #1d4ed8; cursor: pointer; font-size: .85rem; }
+.new-indicator > summary { list-style: none; display: block; border: 1px dashed #93c5fd; background: #eff6ff; border-radius: 7px; padding: 10px; text-align: center; font-weight: 600; }
+.new-indicator > summary::-webkit-details-marker { display: none; }
+.rubric-cell .indicator-form { padding: 10px 0; }
+.rubric-cell .ie-picker { padding: 6px; }
+.rubric-cell .ie-picker fieldset { min-width: 0; padding: 6px; }
+.rubric-cell .ie-picker legend { white-space: normal; overflow-wrap: anywhere; }
+.rubric-cell .sort-status { font-size: .8rem; color: #166534; margin: 8px 0; }
+.rubric-cell .sort-status.sort-error { color: #b91c1c; }
+.rubric-cell .sort-status:empty { display: none; }
+.indicator-order-form { display: none; }
+
+.rubric-scroll { scroll-padding: 140px 50px 12px 400px; }
+@media(max-width:720px) { .rubric-scroll { scroll-padding-left: 90px; } }
+
+/* Consultation is the default; editing controls are revealed explicitly. */
+.rubric-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.rubric-section > .page-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.rubric-section > .page-header h2 { margin: 0; }
+.rubric-delete-level { margin-top: 12px; }
+.rubric-section[data-editable=false] .rubric-edit-only,
+.rubric-section[data-editable=true] .rubric-read-only { display: none; }
+.rubric-lock-toggle[aria-pressed=true] { background: #dbeafe; color: #1d4ed8; border-color: #93c5fd; }
+.rubric-collapse-cell { cursor: pointer; }
+.rubric-collapse-toggle { border: 0; background: transparent; color: #1e3a5f; padding: 0; font: inherit; font-weight: 700; text-align: left; cursor: pointer; }
+.rubric-collapse-label { display: block; margin-top: 6px; font-size: .72rem; font-weight: 500; color: #64748b; }
+.rubric .rubric-row.is-collapsed .rubric-cell { background: #e2e8f0; border-bottom-color: #cbd5e1; }
+.rubric-row.is-collapsed .rubric-collapse-label { color: #334155; font-weight: 700; }
+.rubric-row.is-collapsed .rubric-cell > *,
+.rubric-row.is-collapsed .rubric-code > .rubric-edit-only { display: none; }
+.rubric-row.is-collapsed > th, .rubric-row.is-collapsed > td { padding-top: 12px; padding-bottom: 12px; }
+.rubric-competency-description {
+  position: sticky;
+  top: calc(var(--rubric-head-height, 0px) + 16px);
+  max-height: calc(100vh - var(--rubric-head-height, 0px) - 32px);
+  max-height: calc(100dvh - var(--rubric-head-height, 0px) - 32px);
+  overflow: auto;
+}
+.rubric-row.is-collapsed .rubric-competency-description { position: static; max-height: none; overflow: visible; }

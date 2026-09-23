@@ -93,7 +93,7 @@ public class EthaziService {
         Gaitasuna g = id == null ? null : gaitasuna(id);
         f.setZikloaId(g == null ? zikloaId : g.getZikloa().getId());
         f.setMota(g == null ? mota : g.getMota());
-        if (g != null) { f.setKodea(g.getKodea()); f.setIzena(g.getIzena()); f.setDeskribapena(g.getDeskribapena()); }
+        if (g != null) { f.setKodea(g.getKodea()); f.setDeskribapena(g.getDeskribapena()); }
         var e = eredua(f.getZikloaId(), f.getMota());
         if (e != null) for (var m : e.getMailak()) {
             var mf = new GaitasunMailaForm();
@@ -143,8 +143,24 @@ public class EthaziService {
     @Transactional
     public void ezabatuMaila(Long ereduaId, Long id) {
         var e = eredua(ereduaId); var m = maila(e, id);
-        require(!gaitasunMailak.existsByMailaId(id), "Maila gaitasun batean erabiltzen ari da; ezin da ezabatu.");
+        var cells = gaitasunMailak.findByMailaId(id);
+        var blockers = cells.stream()
+                .filter(cell -> (cell.getDeskribapena() != null && !cell.getDeskribapena().isBlank())
+                        || !cell.getLorpenAdierazleak().isEmpty())
+                .map(cell -> cell.getGaitasuna().getKodea() + " — " + cell.getGaitasuna().getDeskribapena())
+                .distinct().sorted().collect(Collectors.joining("; "));
+        require(blockers.isEmpty(), "Maila erabiltzen ari da. Lehenik ezabatu maila honetako deskribapenak eta lorpen-adierazleak gaitasun hauetan: " + blockers);
+        for (var cell : cells) cell.getGaitasuna().getMailak().remove(cell);
+        gaitasunMailak.deleteAll(cells);
+        gaitasunMailak.flush();
         e.getMailak().remove(m); ereduak.flush();
+    }
+
+    @Transactional
+    public void ezabatuErrubrikaMaila(Long zikloaId, GaitasunMota mota, Long mailaId) {
+        var e = eredua(zikloaId, mota);
+        require(e != null, "Mailakatze eredua ez da aurkitu.");
+        ezabatuMaila(e.getId(), mailaId);
     }
     @Transactional
     public void mugituMaila(Long ereduaId, Long id, int norabidea) {
@@ -170,7 +186,7 @@ public class EthaziService {
         var z = zikloa(f.getZikloaId());
         var e = eredua(f.getZikloaId(), f.getMota());
         require(e != null && !e.getMailak().isEmpty(), "Lehenengo sortu ziklo eta mota honen mailakatze eredua eta mailak.");
-        String kodea = testua(f.getKodea(), 30, "Kodea"), izena = testua(f.getIzena(), 200, "Izena");
+        String kodea = testua(f.getKodea(), 30, "Kodea");
         String deskribapena = testua(f.getDeskribapena(), 60000, "Deskribapena");
         var expected = e.getMailak().stream().map(MailakatzeMaila::getId).collect(Collectors.toSet());
         var submitted = f.getMailak().stream().map(GaitasunMailaForm::getMailaId).collect(Collectors.toSet());
@@ -179,7 +195,8 @@ public class EthaziService {
         var g = id == null ? new Gaitasuna() : gaitasuna(id);
         if (id != null) require(g.getZikloa().getId().equals(f.getZikloaId()) && g.getMota() == f.getMota(),
                 "Gaitasunaren zikloa eta mota ezin dira aldatu mailen loturak mantentzeko.");
-        g.setZikloa(z); g.setMota(f.getMota()); g.setKodea(kodea); g.setIzena(izena); g.setDeskribapena(deskribapena);
+        g.setZikloa(z); g.setMota(f.getMota()); g.setKodea(kodea); g.setDeskribapena(deskribapena);
+        g.setLegacyIzena(deskribapena.substring(0, Math.min(200, deskribapena.length())));
         for (var mf : f.getMailak()) {
             var gm = g.getMailak().stream().filter(m -> m.getMaila().getId().equals(mf.getMailaId())).findFirst().orElse(null);
             if (gm == null) { gm = new GaitasunMaila(); gm.setGaitasuna(g); gm.setMaila(maila(e, mf.getMailaId())); g.getMailak().add(gm); }
@@ -191,13 +208,80 @@ public class EthaziService {
     @Transactional
     public void ezabatuGaitasuna(Long id) { gaitasunak.delete(gaitasuna(id)); gaitasunak.flush(); }
 
+    /** A rubric column is a level of the unique cycle/type model, not another model. */
+    @Transactional
+    public Long gehituErrubrikaMaila(Long zikloaId, GaitasunMota mota) {
+        var z = zikloa(zikloaId);
+        require(mota != null, "Aukeratu gaitasun mota.");
+        var e = eredua(zikloaId, mota);
+        if (e == null) {
+            e = new MailakatzeEredua(); e.setZikloa(z); e.setMota(mota);
+            String izena = z.getIzena() + " · " + mota;
+            e.setIzena(izena.substring(0, Math.min(150, izena.length())));
+            e = ereduak.saveAndFlush(e);
+        } else {
+            e = ereduak.findLockedById(e.getId()).orElseThrow(() -> errorea("Eredua ez da aurkitu."));
+        }
+        int ordena = e.getMailak().stream().mapToInt(MailakatzeMaila::getOrdena).max().orElse(0) + 1;
+        var m = new MailakatzeMaila(); m.setEredua(e); m.setOrdena(ordena); m.setIzena(ordena + ". maila");
+        e.getMailak().add(m);
+        return mailak.save(m).getId();
+    }
+
+    @Transactional
+    public void izendatuErrubrikaMaila(Long zikloaId, GaitasunMota mota, Long mailaId, MailaForm f) {
+        var e = eredua(zikloaId, mota);
+        require(e != null, "Mailakatze eredua ez da aurkitu.");
+        maila(e, mailaId).setIzena(testua(f.getIzena(), 100, "Mailaren izena"));
+    }
+
+    private Gaitasuna gaitasunaAldatzeko(Long id) {
+        return prestatu(gaitasunak.findLockedById(id).orElseThrow(() -> errorea("Gaitasuna ez da aurkitu.")));
+    }
+
+    /** Resolve a rubric cell using the model level ID; materialize empty cells only on write. */
+    private GaitasunMaila errubrikaGelaxka(Gaitasuna g, Long mailaId, boolean sortu) {
+        var e = eredua(g.getZikloa().getId(), g.getMota());
+        require(e != null, "Mailakatze eredua ez da aurkitu.");
+        var level = maila(e, mailaId);
+        var cell = g.getMailak().stream().filter(m -> m.getMaila().getId().equals(mailaId)).findFirst().orElse(null);
+        if (cell == null) {
+            require(sortu, "Gelaxka hau hutsik dago. Kargatu berriro errubrika.");
+            cell = new GaitasunMaila(); cell.setGaitasuna(g); cell.setMaila(level);
+            g.getMailak().add(cell); gaitasunMailak.save(cell);
+        }
+        return cell;
+    }
+
+    @Transactional
+    public void gordeErrubrikaAdierazlea(Long gaitasunaId, Long mailaId, Long id, AdierazleaForm f) {
+        var g = gaitasunaAldatzeko(gaitasunaId);
+        gordeAdierazlea(g, errubrikaGelaxka(g, mailaId, id == null), id, f);
+    }
+
+    @Transactional
+    public void ezabatuErrubrikaAdierazlea(Long gaitasunaId, Long mailaId, Long id) {
+        var g = gaitasunaAldatzeko(gaitasunaId);
+        kenduAdierazlea(errubrikaGelaxka(g, mailaId, false), id);
+    }
+
+    @Transactional
+    public void berrordenatuAdierazleak(Long gaitasunaId, Long mailaId, List<Long> ids) {
+        var g = gaitasunaAldatzeko(gaitasunaId);
+        var gm = errubrikaGelaxka(g, mailaId, false);
+        var current = gm.getLorpenAdierazleak().stream().collect(Collectors.toMap(LorpenAdierazlea::getId, Function.identity()));
+        require(ids != null && ids.size() == current.size() && new HashSet<>(ids).equals(current.keySet()),
+                "Ordena ez da baliozkoa edo gelaxka aldatu da. Kargatu berriro errubrika.");
+        for (int i = 0; i < ids.size(); i++) current.get(ids.get(i)).setOrdena(i + 1);
+        adierazleak.flush();
+    }
+
     @Transactional
     public void gordeAdierazlea(Long gaitasunaId, Long mailaId, Long id, AdierazleaForm f) {
-        var g = gaitasuna(gaitasunaId);
-        var gm = gaitasunMaila(g, mailaId);
-        require(f.getOrdena() != null && f.getOrdena() > 0, "Ordenak zero baino handiagoa izan behar du.");
-        require(gm.getLorpenAdierazleak().stream().noneMatch(a -> !Objects.equals(a.getId(), id) && a.getOrdena().equals(f.getOrdena())),
-                "Beste lorpen-adierazle batek ordena bera du maila honetan.");
+        var g = gaitasunaAldatzeko(gaitasunaId);
+        gordeAdierazlea(g, gaitasunMaila(g, mailaId), id, f);
+    }
+    private void gordeAdierazlea(Gaitasuna g, GaitasunMaila gm, Long id, AdierazleaForm f) {
         String deskribapena = testua(f.getDeskribapena(), 60000, "Deskribapena");
         Set<IkaskuntzaEmaitza> selected = new LinkedHashSet<>();
         for (Long ieId : f.getEmaitzaIds()) {
@@ -207,15 +291,21 @@ public class EthaziService {
             selected.add(ie);
         }
         var a = id == null ? new LorpenAdierazlea() : adierazlea(gm, id);
-        a.setGaitasunMaila(gm); a.setOrdena(f.getOrdena()); a.setDeskribapena(deskribapena);
+        a.setGaitasunMaila(gm);
+        if (id == null) a.setOrdena(gm.getLorpenAdierazleak().stream().mapToInt(LorpenAdierazlea::getOrdena).max().orElse(0) + 1);
+        a.setDeskribapena(deskribapena);
         a.getIkaskuntzaEmaitzak().clear(); a.getIkaskuntzaEmaitzak().addAll(selected);
         if (id == null) gm.getLorpenAdierazleak().add(a);
         adierazleak.save(a);
     }
     @Transactional
     public void ezabatuAdierazlea(Long gaitasunaId, Long mailaId, Long id) {
-        var gm = gaitasunMaila(gaitasuna(gaitasunaId), mailaId);
+        kenduAdierazlea(gaitasunMaila(gaitasunaAldatzeko(gaitasunaId), mailaId), id);
+    }
+    private void kenduAdierazlea(GaitasunMaila gm, Long id) {
         gm.getLorpenAdierazleak().remove(adierazlea(gm, id));
+        gm.getLorpenAdierazleak().sort(Comparator.comparing(LorpenAdierazlea::getOrdena));
+        for (int i = 0; i < gm.getLorpenAdierazleak().size(); i++) gm.getLorpenAdierazleak().get(i).setOrdena(i + 1);
         gaitasunak.flush();
     }
     private GaitasunMaila gaitasunMaila(Gaitasuna g, Long id) {

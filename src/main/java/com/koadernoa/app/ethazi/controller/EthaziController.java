@@ -1,6 +1,9 @@
 package com.koadernoa.app.ethazi.controller;
 
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.ResponseEntity;
+import java.util.List;
+import java.util.Map;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -31,8 +34,87 @@ public class EthaziController {
             @RequestParam(defaultValue = "TEKNIKOA") GaitasunMota mota, Model model) {
         model.addAttribute("zikloaId", zikloaId); model.addAttribute("mota", mota);
         model.addAttribute("errubrika", service.errubrika(zikloaId, mota));
+        model.addAttribute("curriculum", service.curriculum(zikloaId));
         return "Ethazi/gaitasunak/index";
     }
+    private String errubrikaHelbidea(Long zikloaId, GaitasunMota mota) {
+        return "/gaitasunak?zikloaId=" + zikloaId + "&mota=" + mota;
+    }
+
+    @PostMapping("/errubrika/mailak/berria")
+    public String errubrikaMailaGehitu(@RequestParam Long zikloaId, @RequestParam GaitasunMota mota,
+            RedirectAttributes flash) {
+        try {
+            Long mailaId = service.gehituErrubrikaMaila(zikloaId, mota);
+            flash.addFlashAttribute("success", "Maila berria gehitu da. Izena goiburuan alda dezakezu.");
+            flash.addFlashAttribute("addedMailaId", mailaId);
+            return "redirect:/ethazi" + errubrikaHelbidea(zikloaId, mota) + "#maila-" + mailaId;
+        } catch (IllegalArgumentException | DataIntegrityViolationException ex) {
+            flash.addFlashAttribute("error", mezua(ex));
+            return "redirect:/ethazi" + errubrikaHelbidea(zikloaId, mota);
+        }
+    }
+
+    @PostMapping("/errubrika/mailak/{mailaId}/ezabatu")
+    public String errubrikaMailaEzabatu(@PathVariable Long mailaId, @RequestParam Long zikloaId,
+            @RequestParam GaitasunMota mota, RedirectAttributes flash) {
+        return egin(() -> service.ezabatuErrubrikaMaila(zikloaId, mota, mailaId), "Maila ezabatu da.",
+                errubrikaHelbidea(zikloaId, mota), flash);
+    }
+
+    @PostMapping("/errubrika/mailak/{mailaId}/editatu")
+    public String errubrikaMailaIzendatu(@PathVariable Long mailaId, @RequestParam Long zikloaId,
+            @RequestParam GaitasunMota mota, @ModelAttribute MailaForm form, BindingResult binding,
+            Model model, RedirectAttributes flash) {
+        try {
+            balidatu(binding); service.izendatuErrubrikaMaila(zikloaId, mota, mailaId, form);
+            flash.addFlashAttribute("success", "Mailaren izena gorde da.");
+            return "redirect:/ethazi" + errubrikaHelbidea(zikloaId, mota) + "#maila-" + mailaId;
+        } catch (IllegalArgumentException | DataIntegrityViolationException ex) {
+            model.addAttribute("error", mezua(ex)); model.addAttribute("failedMaila", form);
+            model.addAttribute("failedMailaId", mailaId);
+            return gaitasunak(zikloaId, mota, model);
+        }
+    }
+
+    @PostMapping({"/errubrika/gaitasunak/{id}/mailak/{mailaId}/adierazleak/berria",
+            "/errubrika/gaitasunak/{id}/mailak/{mailaId}/adierazleak/{adierazleaId}/editatu"})
+    public String errubrikaAdierazleGorde(@PathVariable Long id, @PathVariable Long mailaId,
+            @PathVariable(required = false) Long adierazleaId, @ModelAttribute AdierazleaForm form,
+            BindingResult binding, Model model, RedirectAttributes flash) {
+        var g = service.gaitasuna(id);
+        try {
+            balidatu(binding); service.gordeErrubrikaAdierazlea(id, mailaId, adierazleaId, form);
+            flash.addFlashAttribute("success", "Lorpen-adierazlea gorde da.");
+            return "redirect:/ethazi" + errubrikaHelbidea(g.getZikloa().getId(), g.getMota()) + "#gelaxka-" + id + "-" + mailaId;
+        } catch (IllegalArgumentException | DataIntegrityViolationException ex) {
+            model.addAttribute("error", mezua(ex)); model.addAttribute("failedForm", form);
+            model.addAttribute("failedGaitasunaId", id); model.addAttribute("failedMailaId", mailaId);
+            model.addAttribute("failedAdierazleaId", adierazleaId);
+            return gaitasunak(g.getZikloa().getId(), g.getMota(), model);
+        }
+    }
+
+    @PostMapping("/errubrika/gaitasunak/{id}/mailak/{mailaId}/adierazleak/{adierazleaId}/ezabatu")
+    public String errubrikaAdierazleEzabatu(@PathVariable Long id, @PathVariable Long mailaId,
+            @PathVariable Long adierazleaId, RedirectAttributes flash) {
+        var g = service.gaitasuna(id);
+        return egin(() -> service.ezabatuErrubrikaAdierazlea(id, mailaId, adierazleaId), "Lorpen-adierazlea ezabatu da.",
+                errubrikaHelbidea(g.getZikloa().getId(), g.getMota()) + "#gelaxka-" + id + "-" + mailaId, flash);
+    }
+
+    @PostMapping("/errubrika/gaitasunak/{id}/mailak/{mailaId}/adierazleak/berrordenatu")
+    @ResponseBody
+    public ResponseEntity<Map<String, String>> adierazleBerrordenatu(@PathVariable Long id, @PathVariable Long mailaId,
+            @RequestParam List<Long> adierazleaIds) {
+        try {
+            service.berrordenatuAdierazleak(id, mailaId, adierazleaIds);
+            return ResponseEntity.ok(Map.of("message", "Lorpen-adierazleen ordena gorde da."));
+        } catch (IllegalArgumentException | DataIntegrityViolationException ex) {
+            return ResponseEntity.badRequest().body(Map.of("message", mezua(ex)));
+        }
+    }
+
     @GetMapping("/gaitasunak/berria")
     public String gaitasunBerria(@RequestParam(required = false) Long zikloaId,
             @RequestParam(defaultValue = "TEKNIKOA") GaitasunMota mota, Model model) {

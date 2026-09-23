@@ -51,8 +51,13 @@ public class Gaitasuna {
     @Column(length = 30)
     private String kodea;
 
-    @Column(nullable = false, length = 200)
-    private String izena;
+    /**
+     * Existing installations have a non-null {@code izena} column. Keep it as
+     * storage compatibility while the competency is represented by code and
+     * description everywhere in the application.
+     */
+    @Column(name = "izena", nullable = false, length = 200)
+    private String legacyIzena;
 
     @Column(columnDefinition = "TEXT")
     private String deskribapena;

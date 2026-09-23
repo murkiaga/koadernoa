@@ -29,7 +29,6 @@ public final class EthaziForms {
         private Long zikloaId;
         private GaitasunMota mota = GaitasunMota.TEKNIKOA;
         private String kodea;
-        private String izena;
         private String deskribapena;
         private List<GaitasunMailaForm> mailak = new ArrayList<>();
     }
@@ -42,7 +41,6 @@ public final class EthaziForms {
 
     @Getter @Setter
     public static class AdierazleaForm {
-        private Integer ordena;
         private String deskribapena;
         private Set<Long> emaitzaIds = new LinkedHashSet<>();
     }

@@ -3,6 +3,7 @@ package com.koadernoa.app.ethazi;
 import static org.assertj.core.api.Assertions.*;
 
 import java.util.Set;
+import java.util.List;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -53,7 +54,7 @@ class EthaziServiceTest {
     void addLevel(String name) { var f = new MailaForm(); f.setIzena(name); service.gordeMaila(modelId, null, f); }
     Long createCompetency() {
         var f = service.gaitasunaForm(null, cycle.getId(), GaitasunMota.TEKNIKOA);
-        f.setKodea("G1"); f.setIzena("Sistemak"); f.setDeskribapena("Sistema informatikoak kudeatzea");
+        f.setKodea("G1"); f.setDeskribapena("Sistema informatikoak kudeatzea");
         f.getMailak().forEach(m -> m.setDeskribapena("Mailaren deskribapena"));
         return service.gordeGaitasuna(null, f);
     }
@@ -68,7 +69,7 @@ class EthaziServiceTest {
         return service.emaitzak(f.getZikloaId(), m.getId()).get(0);
     }
     AdierazleaForm indicator(Long... ids) {
-        var f = new AdierazleaForm(); f.setOrdena(1); f.setDeskribapena("Osagaiak identifikatzen ditu"); f.setEmaitzaIds(Set.of(ids)); return f;
+        var f = new AdierazleaForm(); f.setDeskribapena("Osagaiak identifikatzen ditu"); f.setEmaitzaIds(Set.of(ids)); return f;
     }
     @Test void arbitraryLevelCountAndSwapsSurviveDatabaseConstraints() {
         addLevel("Ulertu"); addLevel("Proposatu"); addLevel("Sortu");
@@ -104,6 +105,52 @@ class EthaziServiceTest {
         createCompetency();
         assertThatThrownBy(() -> service.ezabatuMaila(modelId, service.eredua(modelId).getMailak().get(0).getId())).hasMessageContaining("erabiltzen");
     }
+    @Test void rubricCanDeleteEmptyLevelEvenWithMaterializedCells() throws Exception {
+        Long competencyId = createCompetency();
+        Long levelId = service.gehituErrubrikaMaila(cycle.getId(), GaitasunMota.TEKNIKOA);
+        var form = service.gaitasunaForm(competencyId, null, null);
+        form.getMailak().stream().filter(m -> m.getMailaId().equals(levelId)).forEach(m -> m.setDeskribapena("  \n "));
+        service.gordeGaitasuna(competencyId, form);
+        em.flush(); em.clear();
+        mvc().perform(post("/ethazi/errubrika/mailak/" + levelId + "/ezabatu")
+                .param("zikloaId", cycle.getId().toString()).param("mota", "TEKNIKOA"))
+                .andExpect(status().is3xxRedirection()).andExpect(flash().attributeExists("success"))
+                .andExpect(redirectedUrl("/ethazi/gaitasunak?zikloaId=" + cycle.getId() + "&mota=TEKNIKOA"));
+        em.flush(); em.clear();
+        assertThat(em.find(MailakatzeMaila.class, levelId)).isNull();
+        assertThat(service.gaitasuna(competencyId).getMailak()).hasSize(2);
+    }
+
+    @Test void levelDeletionListsAllCompetenciesWithDescriptionsAndPreservesContent() throws Exception {
+        createCompetency();
+        var second = service.gaitasunaForm(null, cycle.getId(), GaitasunMota.TEKNIKOA);
+        second.setKodea("G2"); second.setDeskribapena("Sareak konfiguratu");
+        second.getMailak().forEach(m -> m.setDeskribapena("Sareko maila"));
+        service.gordeGaitasuna(null, second);
+        Long levelId = service.eredua(modelId).getMailak().get(0).getId();
+        mvc().perform(post("/ethazi/errubrika/mailak/" + levelId + "/ezabatu")
+                .param("zikloaId", cycle.getId().toString()).param("mota", "TEKNIKOA"))
+                .andExpect(flash().attribute("error", org.hamcrest.Matchers.allOf(
+                        org.hamcrest.Matchers.containsString("G1 — Sistema informatikoak kudeatzea"),
+                        org.hamcrest.Matchers.containsString("G2 — Sareak konfiguratu"))));
+        assertThat(service.eredua(modelId).getMailak()).hasSize(2);
+    }
+
+    @Test void levelWithIndicatorsCannotBeDeletedEvenWithoutDescription() {
+        Long competencyId = createCompetency();
+        Long levelId = service.gehituErrubrikaMaila(cycle.getId(), GaitasunMota.TEKNIKOA);
+        service.gordeErrubrikaAdierazlea(competencyId, levelId, null, indicator());
+        assertThatThrownBy(() -> service.ezabatuErrubrikaMaila(cycle.getId(), GaitasunMota.TEKNIKOA, levelId))
+                .hasMessageContaining("G1").hasMessageContaining("lorpen-adierazleak");
+        assertThat(service.gaitasuna(competencyId).getMailak().get(2).getLorpenAdierazleak()).hasSize(1);
+    }
+
+    @Test void levelDeletionRejectsAnotherRubric() {
+        Long foreignId = service.gehituErrubrikaMaila(cycle.getId(), GaitasunMota.ZEHARKAKOA);
+        assertThatThrownBy(() -> service.ezabatuErrubrikaMaila(cycle.getId(), GaitasunMota.TEKNIKOA, foreignId))
+                .hasMessageContaining("Maila ez da eredu honetakoa");
+        assertThat(service.eredua(cycle.getId(), GaitasunMota.ZEHARKAKOA).getMailak()).hasSize(1);
+    }
     @Test void linkedOutcomeCannotBeDeleted() {
         Long id = createCompetency(); var ie = outcome(module(cycle, "TRMM"));
         service.gordeAdierazlea(id, service.gaitasuna(id).getMailak().get(0).getId(), null, indicator(ie.getId()));
@@ -136,6 +183,75 @@ class EthaziServiceTest {
         assertThat(service.errubrika(cycle.getId(), GaitasunMota.ZEHARKAKOA).eredua().getMailak()).isEmpty();
     }
 
+    @Test void rubricPlusBootstrapsModelAndAppendsUnlimitedColumns() {
+        Long first = service.gehituErrubrikaMaila(cycle.getId(), GaitasunMota.ZEHARKAKOA);
+        Long second = service.gehituErrubrikaMaila(cycle.getId(), GaitasunMota.ZEHARKAKOA);
+        em.flush(); em.clear();
+        var model = service.eredua(cycle.getId(), GaitasunMota.ZEHARKAKOA);
+        assertThat(model.getMailak()).extracting(MailakatzeMaila::getId).containsExactly(first, second);
+        assertThat(model.getMailak()).extracting(MailakatzeMaila::getOrdena).containsExactly(1, 2);
+        var name = new MailaForm(); name.setIzena("Elkarlanean aritu");
+        service.izendatuErrubrikaMaila(cycle.getId(), GaitasunMota.ZEHARKAKOA, second, name);
+        em.flush(); em.clear();
+        assertThat(service.eredua(model.getId()).getMailak().get(1).getIzena()).isEqualTo("Elkarlanean aritu");
+    }
+
+    @Test void inlineCreationMaterializesNewCellAndAlwaysAppends() {
+        Long id = createCompetency();
+        Long level = service.gehituErrubrikaMaila(cycle.getId(), GaitasunMota.TEKNIKOA);
+        service.gordeErrubrikaAdierazlea(id, level, null, indicator());
+        service.gordeErrubrikaAdierazlea(id, level, null, indicator());
+        em.flush(); em.clear();
+        var cell = service.gaitasuna(id).getMailak().get(2);
+        assertThat(cell.getLorpenAdierazleak()).extracting(LorpenAdierazlea::getOrdena).containsExactly(1, 2);
+        Long first = cell.getLorpenAdierazleak().get(0).getId();
+        service.gordeErrubrikaAdierazlea(id, level, first, indicator());
+        service.ezabatuErrubrikaAdierazlea(id, level, first);
+        em.flush(); em.clear();
+        assertThat(service.gaitasuna(id).getMailak().get(2).getLorpenAdierazleak())
+                .extracting(LorpenAdierazlea::getOrdena).containsExactly(1);
+    }
+
+    @Test void dragOrderPersistsConsecutivePositionsWithoutChangingCellOrLinks() {
+        Long id = createCompetency(); Long level = service.eredua(modelId).getMailak().get(0).getId();
+        var ie = outcome(module(cycle, "TRMM"));
+        for (int i = 0; i < 3; i++) service.gordeErrubrikaAdierazlea(id, level, null, indicator(ie.getId()));
+        var before = service.gaitasuna(id).getMailak().get(0).getLorpenAdierazleak();
+        var order = List.of(before.get(2).getId(), before.get(0).getId(), before.get(1).getId());
+        Long cellId = before.get(0).getGaitasunMaila().getId();
+        service.berrordenatuAdierazleak(id, level, order); em.flush(); em.clear();
+        var after = service.gaitasuna(id).getMailak().get(0).getLorpenAdierazleak();
+        assertThat(after).extracting(LorpenAdierazlea::getId).containsExactlyElementsOf(order);
+        assertThat(after).extracting(LorpenAdierazlea::getOrdena).containsExactly(1, 2, 3);
+        assertThat(after).allSatisfy(a -> {
+            assertThat(a.getGaitasunMaila().getId()).isEqualTo(cellId);
+            assertThat(a.getIkaskuntzaEmaitzak()).extracting(IkaskuntzaEmaitza::getId).containsExactly(ie.getId());
+        });
+    }
+
+    @Test void dragRejectsAnIndicatorFromAnotherCell() {
+        Long id = createCompetency(); var levels = service.eredua(modelId).getMailak();
+        for (var level : levels) service.gordeErrubrikaAdierazlea(id, level.getId(), null, indicator());
+        Long foreign = service.gaitasuna(id).getMailak().get(1).getLorpenAdierazleak().get(0).getId();
+        assertThatThrownBy(() -> service.berrordenatuAdierazleak(id, levels.get(0).getId(), List.of(foreign)))
+                .hasMessageContaining("Ordena ez da baliozkoa");
+    }
+
+    @Test void dragRejectsMissingOrDuplicateIds() {
+        Long id = createCompetency(); Long level = service.eredua(modelId).getMailak().get(0).getId();
+        service.gordeErrubrikaAdierazlea(id, level, null, indicator());
+        service.gordeErrubrikaAdierazlea(id, level, null, indicator());
+        Long a = service.gaitasuna(id).getMailak().get(0).getLorpenAdierazleak().get(0).getId();
+        assertThatThrownBy(() -> service.berrordenatuAdierazleak(id, level, List.of(a, a))).hasMessageContaining("Ordena ez da baliozkoa");
+        assertThatThrownBy(() -> service.berrordenatuAdierazleak(id, level, List.of(a))).hasMessageContaining("Ordena ez da baliozkoa");
+    }
+
+    @Test void inlineCreationRejectsALevelFromAnotherModel() {
+        Long id = createCompetency(); Long foreign = service.gehituErrubrikaMaila(cycle.getId(), GaitasunMota.ZEHARKAKOA);
+        assertThatThrownBy(() -> service.gordeErrubrikaAdierazlea(id, foreign, null, indicator()))
+                .hasMessageContaining("Maila ez da eredu honetakoa");
+    }
+
     @ControllerAdvice
     static class TemplateModel {
         @ModelAttribute("currentPath") String path(HttpServletRequest request) { return request.getRequestURI(); }
@@ -154,7 +270,7 @@ class EthaziServiceTest {
         var mvc = mvc();
         var request = post("/ethazi/gaitasunak/berria")
                 .param("zikloaId", cycle.getId().toString()).param("mota", "TEKNIKOA")
-                .param("kodea", "G2").param("izena", "Sareak").param("deskribapena", "Sareak konfiguratu");
+                .param("kodea", "G2").param("deskribapena", "Sareak konfiguratu");
         var levels = service.eredua(modelId).getMailak();
         for (int n = 0; n < levels.size(); n++) {
             request.param("mailak[" + n + "].mailaId", levels.get(n).getId().toString());
@@ -183,9 +299,15 @@ class EthaziServiceTest {
             Long id = createCompetency(); var m = module(cycle, "TRMM"); var ie = outcome(m);
             Long gmId = service.gaitasuna(id).getMailak().get(0).getId();
             service.gordeAdierazlea(id, gmId, null, indicator(ie.getId()));
+            var second = indicator(); second.setDeskribapena("Hardware eta softwarea bereizten ditu");
+            service.gordeAdierazlea(id, gmId, null, second);
+            var third = indicator(); third.setDeskribapena("Sistemaren funtzionamendua azaltzen du");
+            service.gordeAdierazlea(id, gmId, null, third);
+            service.gordeAdierazlea(id, service.gaitasuna(id).getMailak().get(1).getId(), null, indicator());
             var mvc = mvc();
             for (String path : new String[] {
                 "/ethazi/gaitasunak", "/ethazi/gaitasunak?zikloaId=" + cycle.getId(),
+                "/ethazi/gaitasunak?zikloaId=" + cycle.getId() + "&mota=ZEHARKAKOA",
                 "/ethazi/gaitasunak/berria?zikloaId=" + cycle.getId(), "/ethazi/gaitasunak/" + id + "/editatu",
                 "/ethazi/mailakatzeak", "/ethazi/mailakatzeak/berria", "/ethazi/mailakatzeak/" + modelId + "/editatu",
                 "/ethazi/ikaskuntza-emaitzak", "/ethazi/ikaskuntza-emaitzak?zikloaId=" + cycle.getId() + "&moduloaId=" + m.getId(),
@@ -197,7 +319,10 @@ class EthaziServiceTest {
             }
             String rubric = mvc.perform(get("/ethazi/gaitasunak").param("zikloaId", cycle.getId().toString()).principal(auth))
                     .andReturn().getResponse().getContentAsString();
-            assertThat(rubric).contains("TRMM · RA1", "Mailaren deskribapena", "Osagaiak identifikatzen ditu");
+            assertThat(rubric).contains("TRMM · RA1", "Mailaren deskribapena", "Osagaiak identifikatzen ditu",
+                    "Sistema informatikoak kudeatzea", "rubric-competency-description",
+                    "ethazi-rubric-page", "rubric-add-level", "class=\"drag-handle rubric-edit-only\"")
+                    .doesNotContain("name=\"ordena\"", ">Mailakatzeak</a>");
             String edit = mvc.perform(get("/ethazi/gaitasunak/" + id + "/editatu").principal(auth)).andReturn().getResponse().getContentAsString();
             if (System.getProperty("ethazi.previewDir") != null) {
                 var preview = java.nio.file.Path.of(System.getProperty("ethazi.previewDir"));
@@ -205,11 +330,27 @@ class EthaziServiceTest {
                 java.nio.file.Files.writeString(preview.resolve("rubric.html"), rubric);
                 java.nio.file.Files.writeString(preview.resolve("edit.html"), edit);
             }
-            assertThat(edit).contains("checked=\"checked\"");
+            assertThat(edit).contains("checked=\"checked\"").doesNotContain("id=\"izena\"", ">Izena</label>");
+            assertThat(service.gaitasuna(id).getLegacyIzena()).isEqualTo("Sistema informatikoak kudeatzea");
             mvc.perform(post("/ethazi/gaitasunak/" + id + "/mailak/" + gmId + "/adierazleak/berria")
-                .principal(auth).param("ordena", "0").param("deskribapena", "Mantendu testu hau"))
+                .principal(auth).param("emaitzaIds", "-1").param("deskribapena", "Mantendu testu hau"))
                 .andExpect(status().isOk()).andExpect(model().attributeExists("error", "failedForm"))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Mantendu testu hau")));
+            Long levelId = service.eredua(modelId).getMailak().get(0).getId();
+            String cellUrl = "/ethazi/errubrika/gaitasunak/" + id + "/mailak/" + levelId + "/adierazleak";
+            mvc.perform(post(cellUrl + "/berria").principal(auth).param("emaitzaIds", "-1").param("deskribapena", "Mantendu gelaxkan"))
+                .andExpect(status().isOk()).andExpect(view().name("Ethazi/gaitasunak/index"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Mantendu gelaxkan")));
+            mvc.perform(post(cellUrl + "/berria").principal(auth).param("ordena", "999").param("deskribapena", "Automatikoki azkena"))
+                .andExpect(status().is3xxRedirection()).andExpect(flash().attributeExists("success"))
+                .andExpect(redirectedUrl("/ethazi/gaitasunak?zikloaId=" + cycle.getId() + "&mota=TEKNIKOA#gelaxka-" + id + "-" + levelId));
+            var indicators = service.gaitasuna(id).getMailak().get(0).getLorpenAdierazleak();
+            assertThat(indicators.get(indicators.size() - 1).getOrdena()).isEqualTo(4);
+            var orderRequest = post(cellUrl + "/berrordenatu").principal(auth);
+            for (int i = indicators.size() - 1; i >= 0; i--) orderRequest.param("adierazleaIds", indicators.get(i).getId().toString());
+            mvc.perform(orderRequest).andExpect(status().isOk()).andExpect(jsonPath("$.message").value("Lorpen-adierazleen ordena gorde da."));
+            mvc.perform(post(cellUrl + "/berrordenatu").principal(auth).param("adierazleaIds", "-1"))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.message").exists());
         } finally { SecurityContextHolder.clearContext(); }
     }
 }

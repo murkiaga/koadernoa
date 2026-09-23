@@ -4,20 +4,128 @@
 <body class="ethazi-body">
 <div th:replace="~{kudeatzaile/fragments/navbar :: kudeatzaile-navbar}"></div>
 <nav th:replace="~{Ethazi/fragments/navbar :: navbar('gaitasunak')}"></nav>
-<main class="page ethazi-page">
-<div th:replace="~{Ethazi/fragments/common :: messages}"></div>
-<header class="page-header"><div><h1>Gaitasunen errubrika</h1><p class="muted">Mailaz mailako deskribapenak, lorpen-adierazleak eta curriculumeko loturak.</p></div></header>
-<form class="ethazi-filters ethazi-card" method="get" th:action="@{/ethazi/gaitasunak}"><div class="field"><label for="zikloaId">Zikloa</label><select id="zikloaId" name="zikloaId"><option value="">— Aukeratu zikloa —</option><option th:each="z : ${zikloak}" th:value="${z.id}" th:text="${z.izena}" th:selected="${z.id == zikloaId}"></option></select></div>
-<div class="field"><label for="mota">Gaitasun mota</label><select id="mota" name="mota"><option th:each="m : ${motak}" th:value="${m}" th:text="${m.name() == 'TEKNIKOA' ? 'Teknikoa' : 'Zeharkakoa'}" th:selected="${m == mota}"></option></select></div><button class="btn btn-primary">Erakutsi</button></form>
-<div class="empty-state" th:if="${errubrika.eredua == null}"><p th:text="${zikloaId == null ? 'Aukeratu zikloa eta gaitasun mota errubrika ikusteko.' : 'Ziklo eta mota honentzat ez dago mailakatze eredurik.'}"></p><a th:if="${zikloaId != null}" class="btn" th:href="@{/ethazi/mailakatzeak/berria}">Mailakatze eredua sortu</a></div>
-<section th:if="${errubrika.eredua != null}"><header class="page-header"><h2 th:text="${errubrika.eredua.izena}"></h2><a th:if="${!#lists.isEmpty(errubrika.eredua.mailak)}" class="btn btn-primary" th:href="@{/ethazi/gaitasunak/berria(zikloaId=${zikloaId},mota=${mota})}">+ Gaitasuna</a></header>
-<p th:if="${#lists.isEmpty(errubrika.eredua.mailak)}" class="empty-state">Ereduak ez du mailarik. Gehitu mailak Mailakatzeak atalean.</p>
-<div class="rubric-scroll" role="region" aria-label="Gaitasunen errubrika, horizontalki korritzeko taula" tabindex="0" th:if="${!#lists.isEmpty(errubrika.eredua.mailak)}"><table class="rubric"><caption class="sr-only">Gaitasunak eta maila bakoitzeko lorpen-adierazleak</caption>
-<thead><tr><th scope="col" class="rubric-code">Kodea</th><th scope="col" class="rubric-description">Gaitasuna</th><th scope="col" th:each="m : ${errubrika.eredua.mailak}"><span class="level-number" th:text="${m.ordena} + '. maila'"></span><span th:text="${m.izena}"></span></th></tr></thead>
-<tbody><tr th:each="row : ${errubrika.lerroak}"><th scope="row" class="rubric-code"><span th:text="${row.gaitasuna.kodea}"></span><a class="btn" th:href="@{/ethazi/gaitasunak/{id}/editatu(id=${row.gaitasuna.id})}" th:attr="aria-label=${row.gaitasuna.kodea + ' editatu'}">Editatu</a></th>
-<td class="rubric-description"><strong th:text="${row.gaitasuna.izena}"></strong><p class="preserve" th:text="${row.gaitasuna.deskribapena}"></p></td>
-<td th:each="gm : ${row.gelaxkak}"><th:block th:if="${gm != null}"><p class="preserve" th:text="${gm.deskribapena}"></p><ul class="indicator-list"><li th:each="a : ${gm.lorpenAdierazleak}"><span class="indicator-order" th:text="${gm.maila.ordena} + '.' + ${a.ordena}"></span> <span class="preserve" th:text="${a.deskribapena}"></span><div class="badges"><span class="ie-badge" th:each="ie : ${a.ikaskuntzaEmaitzak}" th:text="${ie.moduloa.kodea} + ' · ' + ${ie.kodea}" th:title="${ie.moduloa.izena} + ': ' + ${ie.deskribapena}"></span></div></li></ul></th:block><span th:if="${gm == null}" class="muted">Zehaztu gabe</span></td>
-</tr></tbody></table></div><p class="empty-state" th:if="${#lists.isEmpty(errubrika.lerroak)}">Oraindik ez dago gaitasunik aukeratutako ziklo eta motarako.</p></section>
+<main class="page ethazi-page ethazi-rubric-page">
+    <div class="rubric-toolbar">
+        <div th:replace="~{Ethazi/fragments/common :: messages}"></div>
+        <header class="page-header">
+            <div><h1>Gaitasunen errubrika</h1><p class="muted">Klikatu gaitasunaren kodean xehetasunak tolestu edo zabaltzeko.</p></div>
+        </header>
+        <form class="ethazi-filters ethazi-card" method="get" th:action="@{/ethazi/gaitasunak}">
+            <div class="field"><label for="zikloaId">Zikloa</label>
+                <select id="zikloaId" name="zikloaId"><option value="">— Aukeratu zikloa —</option>
+                    <option th:each="z : ${zikloak}" th:value="${z.id}" th:text="${z.izena}" th:selected="${z.id == zikloaId}"></option>
+                </select>
+            </div>
+            <div class="field"><label for="mota">Gaitasun mota</label>
+                <select id="mota" name="mota"><option th:each="m : ${motak}" th:value="${m}"
+                    th:text="${m.name() == 'TEKNIKOA' ? 'Teknikoa' : 'Zeharkakoa'}" th:selected="${m == mota}"></option></select>
+            </div>
+            <button class="btn btn-primary">Erakutsi</button>
+        </form>
+        <p class="empty-state" th:if="${zikloaId == null}">Aukeratu zikloa eta gaitasun mota errubrika ikusteko.</p>
+    </div>
+    <section class="rubric-section" data-editable="false" th:attr="data-edit-required=${failedForm != null or failedMaila != null or addedMailaId != null},data-rubric-key=${zikloaId + '-' + mota}" th:if="${zikloaId != null}" th:with="mailak=${errubrika.eredua != null ? errubrika.eredua.mailak : {}}">
+        <header class="page-header rubric-toolbar">
+            <div><h2 th:text="${errubrika.eredua != null ? errubrika.eredua.izena : 'Errubrika berria'}"></h2></div>
+            <div class="rubric-actions">
+                <button type="button" class="btn rubric-lock-toggle" aria-pressed="false" aria-label="Errubrikaren edizioa desblokeatu">🔒 Blokeatuta · Desblokeatu</button>
+                <a th:if="${!#lists.isEmpty(mailak)}" class="btn btn-primary rubric-edit-only"
+                   th:href="@{/ethazi/gaitasunak/berria(zikloaId=${zikloaId},mota=${mota})}">+ Gaitasuna</a>
+            </div>
+        </header>
+        <div class="rubric-scroll" role="region" aria-label="Gaitasunen errubrika, horizontalki korritzeko taula" tabindex="0">
+            <table class="rubric">
+                <caption class="sr-only">Gaitasunak eta maila bakoitzeko lorpen-adierazleak</caption>
+                <thead><tr>
+                    <th scope="col" class="rubric-code">Kodea</th>
+                    <th scope="col" class="rubric-description">Gaitasuna</th>
+                    <th scope="col" th:each="m : ${mailak}" th:id="'maila-' + ${m.id}">
+                        <span class="level-number" th:text="${m.ordena} + '. maila'"></span>
+                        <span class="rubric-read-only" th:text="${m.izena}"></span>
+                        <details class="level-name-editor rubric-edit-only" th:open="${addedMailaId == m.id or (failedMaila != null and failedMailaId == m.id)}">
+                            <summary><span th:text="${m.izena}"></span> <span class="level-edit-hint">✎</span></summary>
+                            <form method="post" th:action="@{/ethazi/errubrika/mailak/{id}/editatu(id=${m.id})}">
+                                <input type="hidden" name="zikloaId" th:value="${zikloaId}"><input type="hidden" name="mota" th:value="${mota}">
+                                <label th:for="'maila-izena-' + ${m.id}">Mailaren izena</label>
+                                <input name="izena" th:id="'maila-izena-' + ${m.id}" maxlength="100" required
+                                       th:value="${failedMaila != null and failedMailaId == m.id ? failedMaila.izena : m.izena}">
+                                <button class="btn">Gorde</button>
+                            </form>
+                            <form class="rubric-delete-level" method="post"
+                                  th:action="@{/ethazi/errubrika/mailak/{id}/ezabatu(id=${m.id})}"
+                                  data-confirm="Maila ezabatu? Edukia badu, ez da ezabatuko eta gaitasunen zerrenda erakutsiko da.">
+                                <input type="hidden" name="zikloaId" th:value="${zikloaId}"><input type="hidden" name="mota" th:value="${mota}">
+                                <button class="btn btn-danger">Maila ezabatu</button>
+                            </form>
+                        </details>
+                    </th>
+                    <th scope="col" class="rubric-add-column rubric-edit-only">
+                        <form method="post" th:action="@{/ethazi/errubrika/mailak/berria}">
+                            <input type="hidden" name="zikloaId" th:value="${zikloaId}"><input type="hidden" name="mota" th:value="${mota}">
+                            <button class="rubric-add-level" aria-label="Maila berria gehitu eskuinean" title="Maila berria gehitu">+</button>
+                        </form>
+                    </th>
+                </tr></thead>
+                <tbody>
+                    <tr class="rubric-row" th:each="row : ${errubrika.lerroak}">
+                        <th scope="row" class="rubric-code rubric-collapse-cell">
+                            <button type="button" class="rubric-collapse-toggle" aria-expanded="true"
+                                    th:attr="aria-label=${row.gaitasuna.kodea + ': xehetasunak tolestu edo zabaldu'}">
+                                <span class="rubric-collapse-icon" aria-hidden="true">▾</span> <span th:text="${row.gaitasuna.kodea}"></span>
+                                <span class="rubric-collapse-label">Zabalik</span>
+                            </button>
+                            <a class="btn rubric-edit-only" th:href="@{/ethazi/gaitasunak/{id}/editatu(id=${row.gaitasuna.id})}"
+                               th:attr="aria-label=${row.gaitasuna.kodea + ' editatu'}">Editatu</a>
+                        </th>
+                        <td class="rubric-description">
+                            <p class="preserve rubric-competency-description" th:text="${row.gaitasuna.deskribapena}"></p>
+                        </td>
+                        <td th:each="m, s : ${mailak}" th:with="gm=${row.gelaxkak[s.index]}, g=${row.gaitasuna}"
+                            th:id="'gelaxka-' + ${g.id} + '-' + ${m.id}" class="rubric-cell">
+                            <p th:if="${gm != null}" class="preserve" th:text="${gm.deskribapena}"></p>
+                            <div class="indicator-sortable" th:attr="data-level-number=${m.ordena}">
+                                <form class="indicator-order-form" method="post"
+                                      th:action="@{/ethazi/errubrika/gaitasunak/{id}/mailak/{mid}/adierazleak/berrordenatu(id=${g.id},mid=${m.id})}">
+                                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                </form>
+                                <ul class="indicator-list" th:attr="aria-label=${g.kodea + ' · ' + m.izena + ' lorpen-adierazleak'}">
+                                    <li class="rubric-indicator" th:each="a : ${gm != null ? gm.lorpenAdierazleak : {}}" th:attr="data-indicator-id=${a.id}">
+                                        <div class="indicator-controls">
+                                            <button type="button" class="drag-handle rubric-edit-only" draggable="false" aria-label="Lorpen-adierazlea arrastatu" title="Arrastatu gelaxka barruan">⠿</button>
+                                            <span class="indicator-order" th:text="${m.ordena} + '.' + ${a.ordena}"></span>
+                                            <button type="button" class="btn indicator-move rubric-edit-only" data-move="-1" aria-label="Lorpen-adierazlea gora mugitu">↑</button>
+                                            <button type="button" class="btn indicator-move rubric-edit-only" data-move="1" aria-label="Lorpen-adierazlea behera mugitu">↓</button>
+                                        </div>
+                                        <p class="preserve" th:text="${a.deskribapena}"></p>
+                                        <div class="badges"><span class="ie-badge" th:each="ie : ${a.ikaskuntzaEmaitzak}"
+                                            th:text="${ie.moduloa.kodea} + ' · ' + ${ie.kodea}" th:title="${ie.moduloa.izena} + ': ' + ${ie.deskribapena}"></span></div>
+                                        <details class="inline-indicator-editor rubric-edit-only"
+                                                 th:open="${failedForm != null and failedGaitasunaId == g.id and failedMailaId == m.id and failedAdierazleaId == a.id}">
+                                            <summary>Editatu</summary>
+                                            <div th:replace="~{Ethazi/fragments/errubrika-adierazlea :: editor(${g}, ${m}, ${a})}"></div>
+                                            <form method="post" th:action="@{/ethazi/errubrika/gaitasunak/{id}/mailak/{mid}/adierazleak/{aid}/ezabatu(id=${g.id},mid=${m.id},aid=${a.id})}"
+                                                  data-confirm="Lorpen-adierazlea ezabatu? Ikaskuntza-emaitzak mantenduko dira.">
+                                                <button class="btn btn-danger">Ezabatu</button>
+                                            </form>
+                                        </details>
+                                    </li>
+                                </ul>
+                                <p class="sort-status" role="status" aria-live="polite"></p>
+                            </div>
+                            <details class="inline-indicator-editor new-indicator rubric-edit-only"
+                                     th:open="${failedForm != null and failedGaitasunaId == g.id and failedMailaId == m.id and failedAdierazleaId == null}">
+                                <summary aria-label="Lorpen-adierazlea gehitu">+ <span>Lorpen-adierazlea</span></summary>
+                                <div th:replace="~{Ethazi/fragments/errubrika-adierazlea :: editor(${g}, ${m}, ${null})}"></div>
+                            </details>
+                        </td>
+                        <td class="rubric-add-column rubric-edit-only"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="empty-state rubric-toolbar" th:if="${#lists.isEmpty(mailak)}">Desblokeatu edizioa eta sakatu goiburuko + botoia lehen maila gehitzeko.</p>
+        <p class="empty-state rubric-toolbar" th:if="${!#lists.isEmpty(mailak) and #lists.isEmpty(errubrika.lerroak)}">Oraindik ez dago gaitasunik aukeratutako ziklo eta motarako.</p>
+    </section>
 </main>
 <script th:src="@{/js/ethazi.js}" defer></script>
 </body></html>

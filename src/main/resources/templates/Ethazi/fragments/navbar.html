@@ -2,6 +2,5 @@
 <nav th:fragment="navbar(active)" class="ethazi-nav" aria-label="ETHAZI nabigazioa">
 <strong>ETHAZI</strong>
 <a th:href="@{/ethazi/gaitasunak}" th:classappend="${active == 'gaitasunak'} ? 'active'" th:attr="aria-current=${active == 'gaitasunak' ? 'page' : null}">Gaitasunak</a>
-<a th:href="@{/ethazi/mailakatzeak}" th:classappend="${active == 'mailakatzeak'} ? 'active'" th:attr="aria-current=${active == 'mailakatzeak' ? 'page' : null}">Mailakatzeak</a>
 <a th:href="@{/ethazi/ikaskuntza-emaitzak}" th:classappend="${active == 'ikaskuntza-emaitzak'} ? 'active'" th:attr="aria-current=${active == 'ikaskuntza-emaitzak' ? 'page' : null}">Ikaskuntza Emaitzak</a>
 </nav></body></html>

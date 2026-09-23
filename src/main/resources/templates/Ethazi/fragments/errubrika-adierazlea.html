@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu"><body>
+<div th:fragment="editor(g, m, a)"
+     th:with="failed=${failedForm != null and failedGaitasunaId == g.id and failedMailaId == m.id and (a == null ? failedAdierazleaId == null : failedAdierazleaId == a.id)}, key=${'inline-' + g.id + '-' + m.id + '-' + (a == null ? 'new' : a.id)}">
+    <form data-dirty-warning class="indicator-form" method="post"
+          th:action="${a == null} ? @{/ethazi/errubrika/gaitasunak/{id}/mailak/{mid}/adierazleak/berria(id=${g.id},mid=${m.id})} : @{/ethazi/errubrika/gaitasunak/{id}/mailak/{mid}/adierazleak/{aid}/editatu(id=${g.id},mid=${m.id},aid=${a.id})}">
+        <div class="field">
+            <label th:for="${key + '-description'}">Lorpen-adierazlearen deskribapena</label>
+            <textarea name="deskribapena" th:id="${key + '-description'}" rows="4" maxlength="60000"
+                      th:text="${failed ? failedForm.deskribapena : (a == null ? '' : a.deskribapena)}" required></textarea>
+        </div>
+        <details th:replace="~{Ethazi/fragments/adierazlea :: picker(${a}, ${failed})}"></details>
+        <button class="btn btn-primary" th:text="${a == null ? 'Gehitu' : 'Gorde'}"></button>
+    </form>
+</div>
+</body></html>

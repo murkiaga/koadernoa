@@ -15,7 +15,6 @@
 <form class="form ethazi-card" data-dirty-warning th:object="${form}" method="post" th:action="${id == null} ? @{/ethazi/gaitasunak/berria} : @{/ethazi/gaitasunak/{id}/editatu(id=${id})}">
 <input type="hidden" th:field="*{zikloaId}"><input type="hidden" th:field="*{mota}">
 <div class="field"><label for="kodea">Kodea</label><input id="kodea" th:field="*{kodea}" required maxlength="30" placeholder="G1"></div>
-<div class="field"><label for="izena">Izena</label><input id="izena" th:field="*{izena}" required maxlength="200"></div>
 <div class="field"><label for="deskribapena">Gaitasunaren deskribapena</label><textarea id="deskribapena" th:field="*{deskribapena}" rows="4" required maxlength="60000"></textarea></div>
 <fieldset th:each="mf, s : *{mailak}" class="level-description"><legend th:text="${mailaIzenak[mf.mailaId] ?: 'Maila aldatu da: kargatu berriro pantaila'}"></legend><input type="hidden" th:field="*{mailak[__${s.index}__].mailaId}"><label th:for="'level-description-' + ${s.index}">Mailako deskribapena</label><textarea th:id="'level-description-' + ${s.index}" th:field="*{mailak[__${s.index}__].deskribapena}" rows="4" maxlength="60000"></textarea></fieldset>
 <button class="btn btn-primary">Gaitasuna eta mailen deskribapenak gorde</button>
