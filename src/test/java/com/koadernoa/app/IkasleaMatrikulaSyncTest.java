@@ -21,6 +21,7 @@ import com.koadernoa.app.objektuak.egutegia.repository.IkasturteaRepository;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.modulua.entitateak.Ikaslea;
+import com.koadernoa.app.objektuak.mezuak.service.MezuaService;
 import com.koadernoa.app.objektuak.modulua.entitateak.Matrikula;
 import com.koadernoa.app.objektuak.modulua.entitateak.MatrikulaEgoera;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
@@ -39,9 +40,11 @@ class IkasleaMatrikulaSyncTest {
     private final TaldeaRepository taldeaRepo = mock(TaldeaRepository.class);
     private final IkasturteaRepository ikasturteaRepo = mock(IkasturteaRepository.class);
 
+    private final MezuaService mezuaService = mock(MezuaService.class);
+
     @Test
     void aldatuIkaslearenNanaGarbituEtaGordetzenDu() {
-        IkasleaService service = new IkasleaService(koadernoaRepo, ikasleaRepo, matrikulaRepo, taldeaRepo, ikasturteaRepo);
+        IkasleaService service = new IkasleaService(koadernoaRepo, ikasleaRepo, matrikulaRepo, taldeaRepo, ikasturteaRepo, mezuaService);
         Ikaslea ikaslea = ikaslea(7L, "A1");
         when(ikasleaRepo.findById(7L)).thenReturn(Optional.of(ikaslea));
         when(ikasleaRepo.save(ikaslea)).thenReturn(ikaslea);
@@ -54,7 +57,7 @@ class IkasleaMatrikulaSyncTest {
 
     @Test
     void syncKoadernoakTalderakoAfterExcelStillSyncsAllActiveYearNotebooks() {
-        IkasleaService service = new IkasleaService(koadernoaRepo, ikasleaRepo, matrikulaRepo, taldeaRepo, ikasturteaRepo);
+        IkasleaService service = new IkasleaService(koadernoaRepo, ikasleaRepo, matrikulaRepo, taldeaRepo, ikasturteaRepo, mezuaService);
         Koadernoa koadernoa = koadernoa(10L, taldea(1L, "2SMA"), true, true);
         when(koadernoaRepo.findActiveYearKoadernoIdsByTaldea(1L)).thenReturn(List.of(10L));
         when(koadernoaRepo.findById(10L)).thenReturn(Optional.of(koadernoa));
@@ -72,7 +75,7 @@ class IkasleaMatrikulaSyncTest {
 
     @Test
     void syncKoadernoBakarraHutsikBadagoSyncsNotebookWithoutEnrollments() {
-        IkasleaService service = new IkasleaService(koadernoaRepo, ikasleaRepo, matrikulaRepo, taldeaRepo, ikasturteaRepo);
+        IkasleaService service = new IkasleaService(koadernoaRepo, ikasleaRepo, matrikulaRepo, taldeaRepo, ikasturteaRepo, mezuaService);
         Koadernoa koadernoa = koadernoa(10L, taldea(1L, "2SMA"), true, true);
         when(matrikulaRepo.existsByKoadernoa_Id(10L)).thenReturn(false);
         when(koadernoaRepo.findById(10L)).thenReturn(Optional.of(koadernoa));
@@ -87,7 +90,7 @@ class IkasleaMatrikulaSyncTest {
 
     @Test
     void syncKoadernoBakarraHutsikBadagoKeepsPreparedEnrollmentList() {
-        IkasleaService service = new IkasleaService(koadernoaRepo, ikasleaRepo, matrikulaRepo, taldeaRepo, ikasturteaRepo);
+        IkasleaService service = new IkasleaService(koadernoaRepo, ikasleaRepo, matrikulaRepo, taldeaRepo, ikasturteaRepo, mezuaService);
         when(matrikulaRepo.existsByKoadernoa_Id(10L)).thenReturn(true);
 
         service.syncKoadernoBakarraHutsikBadago(10L);
@@ -99,7 +102,7 @@ class IkasleaMatrikulaSyncTest {
 
     @Test
     void syncKoadernoBakarraRemovesOnlyRepositorySelectedMatrikulatuakAndDoesNotUpdateExistingStates() {
-        IkasleaService service = new IkasleaService(koadernoaRepo, ikasleaRepo, matrikulaRepo, taldeaRepo, ikasturteaRepo);
+        IkasleaService service = new IkasleaService(koadernoaRepo, ikasleaRepo, matrikulaRepo, taldeaRepo, ikasturteaRepo, mezuaService);
         Taldea taldea = taldea(1L, "2SMA");
         Koadernoa koadernoa = koadernoa(10L, taldea, true, true);
         Matrikula removableMatrikulatua = matrikula(50L, ikaslea(5L, "OLD"), koadernoa, MatrikulaEgoera.MATRIKULATUA);
@@ -120,7 +123,7 @@ class IkasleaMatrikulaSyncTest {
 
     @Test
     void taldeAldaketakDeletesOnlyOtherActiveYearMatrikulatuakAndKeepsPendingOrHistoricalByQuery() {
-        IkasleaService service = new IkasleaService(koadernoaRepo, ikasleaRepo, matrikulaRepo, taldeaRepo, ikasturteaRepo);
+        IkasleaService service = new IkasleaService(koadernoaRepo, ikasleaRepo, matrikulaRepo, taldeaRepo, ikasturteaRepo, mezuaService);
         Taldea berria = taldea(2L, "2SMA");
         Ikaslea ikaslea = ikaslea(7L, "A1");
         ikaslea.setTaldea(taldea(1L, "1SMA"));
@@ -134,7 +137,7 @@ class IkasleaMatrikulaSyncTest {
         when(matrikulaRepo.findActiveYearMatrikulatuakByIkasleaAndNotTaldea(7L, 2L)).thenReturn(List.of(oldActiveMatrikulatua));
         when(matrikulaRepo.existsByIkasleaIdAndKoadernoaId(7L, 20L)).thenReturn(false);
 
-        var emaitza = service.aldatuIkaslearenTaldea(7L, 2L);
+        var emaitza = service.aldatuIkaslearenTaldea(7L, 2L, null);
 
         assertThat(emaitza.kendutakoMatrikulak()).isEqualTo(1);
         verify(matrikulaRepo).deleteAll(List.of(oldActiveMatrikulatua));
@@ -159,6 +162,7 @@ class IkasleaMatrikulaSyncTest {
         when(matrikulaRepo.findActiveYearMatrikulatuakByIkasleaAndNotTaldea(7L, 2L)).thenReturn(List.of(besteTaldeAktiboMatrikulatua));
         InportazioZerbitzua service = new InportazioZerbitzua(taldeaRepo, koadernoaRepo, ikasleaRepo, matrikulaRepo);
         ReflectionTestUtils.setField(service, "uploadsDir", "/tmp");
+        ReflectionTestUtils.setField(service, "ikasleakSubdir", "ikasleak");
 
         service.inportatuTaldekoXlsx(2L, xlsx("A1"));
 

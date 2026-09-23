@@ -3,12 +3,14 @@ package com.koadernoa.app.objektuak.mezuak.service;
 import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
+import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.EstatistikaEbaluazioan;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.mezuak.entitateak.Mezua;
@@ -21,6 +23,35 @@ import lombok.RequiredArgsConstructor;
 public class MezuaService {
 
     private final MezuaRepository mezuaRepository;
+    private final IrakasleaRepository irakasleaRepository;
+
+    @Transactional
+    public int bidaliTaldeAldaketa(List<Koadernoa> koadernoak, String erabiltzailea, String edukia) {
+        Set<Long> bidalitakoak = new LinkedHashSet<>();
+        Irakaslea bidaltzailea = null;
+        for (Koadernoa koadernoa : koadernoak) {
+            if (koadernoa.getIrakasleak() == null) continue;
+            for (Irakaslea hartzailea : koadernoa.getIrakasleak()) {
+                if (hartzailea == null || hartzailea.getId() == null || !bidalitakoak.add(hartzailea.getId())) continue;
+                if (bidaltzailea == null) {
+                    bidaltzailea = irakasleaRepository.findByIzenaIgnoreCase("sistema")
+                            .or(() -> irakasleaRepository.findByEmailaIgnoreCase("sistema@koadernoa.local"))
+                            .or(() -> erabiltzailea == null ? Optional.empty()
+                                    : irakasleaRepository.findByEmailaIgnoreCase(erabiltzailea)
+                                            .or(() -> irakasleaRepository.findByIzenaIgnoreCase(erabiltzailea)))
+                            .orElse(hartzailea);
+                }
+                Mezua mezua = new Mezua();
+                mezua.setBidaltzailea(bidaltzailea);
+                mezua.setHartzailea(hartzailea);
+                mezua.setEdukia(edukia);
+                mezua.setBidalketaData(LocalDateTime.now());
+                mezuaRepository.save(mezua);
+            }
+        }
+        return bidalitakoak.size();
+    }
+
 
     @Transactional
     public int bidaliKoadernokoIrakasleei(Irakaslea bidaltzailea, Koadernoa koadernoa, String edukia) {

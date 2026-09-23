@@ -184,12 +184,13 @@
 
     <form th:action="@{/kudeatzaile/ikaslea/{id}/taldea(id=${ikaslea.id})}" method="post" id="taldeaAldatuForm">
       <input type="hidden" name="ikasturteaId" th:value="${hautatutakoIkasturteaId}">
-      <input type="hidden" name="taldeaId" id="selectedTaldeaId" required>
+      <input type="hidden" name="taldeaId" id="selectedTaldeaId">
 
       <label for="taldeBilaketaInput" style="display:block;font-weight:600;">Bilatu taldea kodez, zikloz edo mailaz...</label>
       <input id="taldeBilaketaInput" type="text" autocomplete="off" placeholder="Bilatu taldea kodez, zikloz edo mailaz..." style="width:100%;margin-top:.4rem;">
       <p id="bilaketaInfo" style="margin:.4rem 0;color:#64748b;font-size:.9rem;">Idatzi gutxienez 2 karaktere.</p>
 
+      <button type="button" class="btn btn-secondary" id="taldeaKenduBtn">Talderik gabe utzi</button>
       <div id="autocompleteList" class="autocomplete-list" hidden></div>
 
       <div style="margin-top:.9rem;display:flex;justify-content:flex-end;gap:.5rem;">
@@ -331,8 +332,18 @@
     }, 250);
   });
 
+  document.getElementById('taldeaKenduBtn').addEventListener('click', () => {
+    clearTimeout(debounceTimer);
+    hiddenId.value = '';
+    input.value = '';
+    selectedLabel = 'Talderik gabe';
+    list.hidden = true;
+    confirmBtn.disabled = false;
+    info.textContent = 'Talderik gabe geratuko da. Sakatu "Berretsi aldaketa".';
+  });
+
   form.addEventListener('submit', (e) => {
-    if (!hiddenId.value || !selectedLabel) {
+    if (!selectedLabel) {
       e.preventDefault();
       info.textContent = 'Lehenik talde bat hautatu behar duzu.';
       return;

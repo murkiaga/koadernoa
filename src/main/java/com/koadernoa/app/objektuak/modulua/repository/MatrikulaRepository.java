@@ -80,7 +80,7 @@ public interface MatrikulaRepository extends JpaRepository<Matrikula, Long> {
         where m.ikaslea.id = :ikasleaId
           and m.egoera = com.koadernoa.app.objektuak.modulua.entitateak.MatrikulaEgoera.MATRIKULATUA
           and m.koadernoa.egutegia.ikasturtea.aktiboa = true
-          and m.koadernoa.moduloa.taldea.id <> :taldeaId
+          and (:taldeaId is null or m.koadernoa.moduloa.taldea.id <> :taldeaId)
     """)
     List<Matrikula> findActiveYearMatrikulatuakByIkasleaAndNotTaldea(@Param("ikasleaId") Long ikasleaId,
                                                                       @Param("taldeaId") Long taldeaId);

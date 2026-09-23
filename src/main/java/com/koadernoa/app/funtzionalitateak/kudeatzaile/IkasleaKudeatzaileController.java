@@ -223,14 +223,15 @@ public class IkasleaKudeatzaileController {
 
     @PostMapping("/kudeatzaile/ikaslea/{id}/taldea")
     public String aldatuIkasleTaldea(@PathVariable Long id,
-                                     @RequestParam("taldeaId") Long taldeaId,
+                                     @RequestParam(name = "taldeaId", required = false) Long taldeaId,
                                      @RequestParam(name = "ikasturteaId", required = false) Long ikasturteaId,
+                                     Authentication auth,
                                      RedirectAttributes redirectAttributes) {
         try {
-            var emaitza = ikasleaService.aldatuIkaslearenTaldea(id, taldeaId);
+            var emaitza = ikasleaService.aldatuIkaslearenTaldea(id, taldeaId, auth != null ? auth.getName() : null);
             if (emaitza.aldaketaEginDa()) {
                 redirectAttributes.addFlashAttribute("successMessage",
-                        "Ikaslea " + emaitza.aurrekoTaldea() + " taldetik " + emaitza.taldeBerria() + " taldera pasatu da.");
+                        taldeaId == null ? "Ikaslea talderik gabe geratu da." : "Ikaslea " + emaitza.aurrekoTaldea() + " taldetik " + emaitza.taldeBerria() + " taldera pasatu da.");
             } else {
                 redirectAttributes.addFlashAttribute("successMessage", "Ikaslea dagoeneko hautatutako taldean dago.");
             }

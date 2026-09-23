@@ -1,10 +1,12 @@
 package com.koadernoa.app.objektuak.modulua.service;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.stereotype.Service;
 
 import com.koadernoa.app.objektuak.egutegia.repository.IkasturteaRepository;
+import com.koadernoa.app.objektuak.mezuak.service.MezuaService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.modulua.entitateak.Ikaslea;
@@ -27,6 +29,7 @@ public class IkasleaService {
     private final MatrikulaRepository matrikulaRepo;
     private final TaldeaRepository taldeaRepository;
     private final IkasturteaRepository ikasturteaRepository;
+    private final MezuaService mezuaService;
 
     public static record ImportResult(int sortuak, int baztertuak, String ohartarazpena) {}
     public static record TaldeAldaketaEmaitza(boolean aldaketaEginDa, String aurrekoTaldea, String taldeBerria, int kendutakoMatrikulak, int sortutakoMatrikulak) {}
@@ -175,22 +178,26 @@ public class IkasleaService {
     }
 
     @Transactional
-    public TaldeAldaketaEmaitza aldatuIkaslearenTaldea(Long ikasleaId, Long taldeaBerriaId) {
+    public TaldeAldaketaEmaitza aldatuIkaslearenTaldea(Long ikasleaId, Long taldeaBerriaId, String erabiltzailea) {
         Ikaslea ikaslea = ikasleaRepo.findById(ikasleaId)
                 .orElseThrow(() -> new IllegalArgumentException("Ikaslea ez da aurkitu: " + ikasleaId));
-        Taldea taldeaBerria = taldeaRepository.findById(taldeaBerriaId)
+        Taldea taldeaBerria = taldeaBerriaId == null ? null : taldeaRepository.findById(taldeaBerriaId)
                 .orElseThrow(() -> new IllegalArgumentException("Talde berria ez da aurkitu: " + taldeaBerriaId));
 
         Long unekoTaldeaId = ikaslea.getTaldea() != null ? ikaslea.getTaldea().getId() : null;
         String aurrekoTaldeIzena = ikaslea.getTaldea() != null ? ikaslea.getTaldea().getIzena() : "-";
-        if (unekoTaldeaId != null && unekoTaldeaId.equals(taldeaBerriaId)) {
-            return new TaldeAldaketaEmaitza(false, aurrekoTaldeIzena, taldeaBerria.getIzena(), 0, 0);
+        String taldeBerriIzena = taldeaBerria != null ? taldeaBerria.getIzena() : "-";
+        if (Objects.equals(unekoTaldeaId, taldeaBerriaId)) {
+            return new TaldeAldaketaEmaitza(false, aurrekoTaldeIzena, taldeBerriIzena, 0, 0);
         }
 
         ikasturteaRepository.findFirstByAktiboaTrueOrderByIdDesc()
                 .orElseThrow(() -> new IllegalStateException("Ez dago ikasturte aktiborik."));
 
-        List<Long> berrikoKoadernoak = koadernoaRepo.findActiveYearKoadernoIdsByTaldea(taldeaBerriaId);
+        List<Koadernoa> aurrekoKoadernoak = unekoTaldeaId == null ? List.of()
+                : koadernoaRepo.findAllById(koadernoaRepo.findActiveYearKoadernoIdsByTaldea(unekoTaldeaId));
+        List<Koadernoa> berrikoKoadernoak = taldeaBerriaId == null ? List.of()
+                : koadernoaRepo.findAllById(koadernoaRepo.findActiveYearKoadernoIdsByTaldea(taldeaBerriaId));
 
         List<Matrikula> kenduBeharrak = matrikulaRepo
                 .findActiveYearMatrikulatuakByIkasleaAndNotTaldea(ikasleaId, taldeaBerriaId);
@@ -200,7 +207,7 @@ public class IkasleaService {
         }
 
         int sortuak = 0;
-        for (Koadernoa koadernoa : koadernoaRepo.findAllById(berrikoKoadernoak)) {
+        for (Koadernoa koadernoa : berrikoKoadernoak) {
             if (!matrikulaRepo.existsByIkasleaIdAndKoadernoaId(ikasleaId, koadernoa.getId())) {
                 Matrikula matrikula = new Matrikula();
                 matrikula.setIkaslea(ikaslea);
@@ -214,6 +221,15 @@ public class IkasleaService {
         ikaslea.setTaldea(taldeaBerria);
         ikasleaRepo.save(ikaslea);
 
-        return new TaldeAldaketaEmaitza(true, aurrekoTaldeIzena, taldeaBerria.getIzena(), kenduak, sortuak);
+        if (unekoTaldeaId != null) {
+            mezuaService.bidaliTaldeAldaketa(aurrekoKoadernoak, erabiltzailea,
+                    "[SISTEMA] " + ikaslea.getIzenOsoa() + " ikaslea jada ez da " + aurrekoTaldeIzena + " taldekoa.");
+        }
+        if (taldeaBerria != null) {
+            mezuaService.bidaliTaldeAldaketa(berrikoKoadernoak, erabiltzailea,
+                    "[SISTEMA] Ikasle berri bat dago " + taldeBerriIzena + " taldean: " + ikaslea.getIzenOsoa() + ".");
+        }
+
+        return new TaldeAldaketaEmaitza(true, aurrekoTaldeIzena, taldeBerriIzena, kenduak, sortuak);
     }
 }
