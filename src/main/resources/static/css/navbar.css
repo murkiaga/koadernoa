@@ -3,12 +3,14 @@
 .k-nav * { box-sizing: border-box; }
 
 .k-nav .k-navbar{
-  display:flex; align-items:center;
+  display:flex; align-items:center; flex-wrap:wrap;
   gap:.75rem; width:100%; max-width:none; margin:0; padding:.5rem 1rem; justify-content:flex-start;
 }
 .k-nav .k-brand{ color:#fff; text-decoration:none; font-weight:700; font-size:1.05rem; white-space:nowrap; }
 .k-nav .k-desktop{ flex:1 1 auto; min-width:0; overflow:visible; }
-.k-nav .k-desktop ul{ display:flex; gap:.45rem; list-style:none; margin:0; padding:0; flex-wrap:nowrap; min-width:max-content; }
+/* Lekurik ez dagoenean, aukerak hurrengo lerrora pasa. */
+.k-nav .k-desktop ul{ display:flex; align-items:center; gap:.45rem; list-style:none; margin:0; padding:0; flex-wrap:wrap; }
+.k-nav .k-desktop > ul > li{ flex:0 0 auto; }
 .k-nav .k-desktop a{ color:#fff; text-decoration:none; padding:.45rem .6rem; border-radius:.5rem; white-space:nowrap; display:inline-block; }
 .k-nav .k-desktop a.active,
 .k-nav .k-desktop a:hover{ background:#2b455a; }
