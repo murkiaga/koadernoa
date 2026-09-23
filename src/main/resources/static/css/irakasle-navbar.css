@@ -30,6 +30,7 @@ body {
 
 .t-nav .t-navbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: .5rem;
@@ -43,11 +44,14 @@ body {
   align-items: center;
   gap: 1rem;
   flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .koaderno-izena {
   color: #fff;
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .koaderno-hautapena label {
@@ -56,6 +60,9 @@ body {
 }
 
 .koaderno-hautapena select {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
   padding: .25rem;
   border-radius: 6px;
   border: none;
@@ -63,13 +70,23 @@ body {
 
 /* ===== DESKTOP NABIGAZIOA ===== */
 
+.t-desktop {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .t-desktop ul {
   list-style: none;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 1rem;
   margin: 0;
   padding: 0;
+}
+
+.t-desktop li {
+  flex: 0 0 auto;
 }
 
 .t-desktop form {
@@ -78,6 +95,8 @@ body {
 }
 
 .t-desktop a {
+  display: inline-block;
+  white-space: nowrap;
   color: #fff;
   text-decoration: none;
   padding: .45rem .8rem;
@@ -209,6 +228,9 @@ body {
 /* ===== MOODLE ESTEKA NAVBARREAN ===== */
 .koaderno-hautapena {
   display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
   align-items: center;
   gap: .5rem;
 }
