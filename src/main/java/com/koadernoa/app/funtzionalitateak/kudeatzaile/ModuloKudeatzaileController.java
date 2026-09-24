@@ -135,6 +135,7 @@ public class ModuloKudeatzaileController {
         Moduloa m = moduloaService.getById(id).orElseThrow();
         ModuloaFormDto form = new ModuloaFormDto();
         form.setId(m.getId());
+        form.setHizkuntza(m.getHizkuntza());
         form.setIzena(m.getIzena());
         form.setKodea(m.getKodea());
         form.setEeiKodea(m.getEeiKodea());

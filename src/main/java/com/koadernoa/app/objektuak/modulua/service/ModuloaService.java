@@ -74,6 +74,7 @@ public class ModuloaService {
             : new Moduloa();
 
         // Set eremuak
+        target.setHizkuntza(dto.getHizkuntza());
         target.setIzena(dto.getIzena().trim());
         target.setKodea(dto.getKodea().trim());
         target.setEeiKodea(dto.getEeiKodea().trim());

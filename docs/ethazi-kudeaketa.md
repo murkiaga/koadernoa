@@ -107,3 +107,21 @@ Azken egiaztapenaren emaitzak:
 - Proba zabalagoan (`mvn -q '-Dtest=*Test,!ApplicationTests' test`), orduko 61 probetatik 60 gainditu ziren. `IkasleaMatrikulaSyncTest`-eko inportazio-probak `NullPointerException` du `InportazioZerbitzua.kalkulatuArgazkiPath` metodoan. Errore bera berretsi da aldatu gabeko `HEAD`-en kopia isolatuan; ETHAZItik kanpoko aurretiazko akatsa da.
 - `ApplicationTests` ez da exekutatu: aplikazio osoaren kanpoko zerbitzuen konfigurazioa behar du.
 - Errubrikaren mahaigaineko eta 390 px-ko mugikorreko bistak nabigatzailean egiaztatu dira, baita lorpen-adierazlearen IE aukeratzailea ere. Egiaztapen bisualak probek sortutako HTML eta datu sintetikoak erabili ditu.
+
+## Erronkak eta Kinielak
+
+- Moduluaren fitxan hizkuntza aukeratu daiteke: hutsik, `Euskara`, `Gaztelera` edo `Ingelera`. Lehendik dauden moduluek hizkuntza zehaztu gabe hartzen dute, Hibernate-ren eskema-eguneratzean gehitutako zutabearen balio lehenetsiaren bidez.
+- Erronkak ziklo, konfigurazioko maila aktibo, hizkuntza, izen, deskribapen eta data tarte batekin sortzen dira. Gutxienez modulu bat aukeratu behar da. Zikloa eta maila bat etorri behar dira; hizkuntza zehaztuta badago, hizkuntza bereko edo hizkuntza hutsik duten moduluak bakarrik onartzen dira. Hizkuntza-talde bakoitzak bere erronka du, izen bera erabiltzeko aukerarekin.
+- Kiniela zikloaren curriculumari dagokio. Gaitasunetako lehendik dauden IE–lorpen-adierazle loturak erabiltzen ditu. IE batean klikatuta, errubrika osoa irekitzen da, gaitasun tekniko eta zeharkakoekin. `Onartu` botoiak hautatutako loturak gordetzen ditu; `Ezeztatu` edo Escape erabiliz gero ez da aldaketarik gordetzen.
+- Adierazle bakoitzak IE bakoitzerako pisu independentea dauka (0–100, bi hamartar gehienez). Fokua kentzean edo Enter sakatzean pisua automatikoki gordetzen da; baturak berehala eguneratzen dira eta gordetzeko dagoen aldaketa adierazten da. IE eta moduluaren baturak ezin dira eskuz editatu. %100era iritsi ez diren zirriborroak gorde daitezke; batura kolorez adierazten da.
+- Moduluak tolestu/zabaldu daitezke eta nabigatzaileak hautaketa gogoratzen du. Lotura kentzean haren pisua ere ezabatzen da, bai Kinielatik bai Gaitasunak pantailatik.
+
+Datu berriak `ethazi_erronka`, `ethazi_erronka_moduloa` eta `ethazi_kiniela_pisua` tauletan gordetzen dira; `moduloa.hizkuntza` zutabea gehitzen da. Proiektuaren `ddl-auto=update` konfigurazioak eskema eguneratzen du aplikazioa abiatzean.
+
+### Helbideak eta tokiko txantiloiak
+
+`KinielaController` kontroladorearen oinarria `/ethazi/kiniela` da, eta `ErronkaController` kontroladorearena `/ethazi/erronkak`. Navbarra eta formularioak helbide horietara doaz. `/ethazi/kinielak` helbide zaharrak berrira birbideratzen du, hautatutako zikloa mantenduz.
+
+STSn kanpotik sortutako fitxategiak gehitzean, proiektua freskatu (`Refresh` / F5) eta aplikazioa berrabiarazi. `Error resolving template` agertuz gero, egiaztatu txantiloiak `target/classes/templates/Ethazi/` karpetan daudela; `./mvnw resources:resources` komandoak `src/main/resources` baliabideak exekuzioaren classpath-era kopiatzen ditu. Kontroladoreek `@RequestMapping` oinarri bera edukitzeak ez du berez txantiloi-errore hori eragiten.
+
+Hizkuntzaren Java konstantea `GAZTELERA` da. `HizkuntzaConverter` bihurgailuak lehendik gordetako `ERDERA` balioak ere irakurtzen ditu moduluetan eta erronketan; idazketa berriek `GAZTELERA` erabiltzen dute.

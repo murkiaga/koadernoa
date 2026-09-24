@@ -27,6 +27,10 @@ public class Moduloa {
     private Long id;
 
     private String izena;
+    
+    @Column(nullable = false, columnDefinition = "varchar(20) default 'ZEHAZTU_GABE'")
+    private Hizkuntza hizkuntza = Hizkuntza.ZEHAZTU_GABE;
+    
     private String kodea; //"RELO"
     @Column(name = "eei_kodea")
     private String eeiKodea; //"0225" kode honek RELO eta SALO lotu

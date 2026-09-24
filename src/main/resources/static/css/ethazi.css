@@ -79,3 +79,53 @@
   overflow: auto;
 }
 .rubric-row.is-collapsed .rubric-competency-description { position: static; max-height: none; overflow: visible; }
+
+/* Challenge selection and weighted curriculum. */
+.ethazi-page .erronka-module { display:flex; align-items:center; gap:.6rem; padding:.5rem; }
+.erronka-module[hidden] { display:none; }
+.erronka-module input, .rubric-choice input { width:auto; flex:none; }
+.kiniela-module { margin:1rem 0; padding:0; overflow:hidden; }
+.kiniela-module summary { cursor:pointer; padding:1rem; background:#e7edf6; }
+.kiniela-module:nth-of-type(even) summary, .kiniela-module:nth-of-type(even) .kiniela-ie { background:#f4dddd; }
+.kiniela-table { width:100%; border-collapse:collapse; }
+.kiniela-table td, .kiniela-table th { border:1px solid #ccd3df; padding:.55rem; }
+.kiniela-ie { background:#dce8f8; }
+.ie-select { border:0; background:transparent; color:#17497a; text-align:left; cursor:pointer; font:inherit; font-weight:600; width:100%; }
+.ie-select:hover { text-decoration:underline; }
+.ie-total, .module-total { font-weight:bold; white-space:nowrap; }
+.weight-controls { display:flex; align-items:center; gap:.4rem; }
+.weight-controls input { width:6rem; }
+.save-status { display:block; font-size:.8rem; }
+.module-status.complete { color:#146b39; }
+.module-status.incomplete { color:#8b4a12; }
+#rubric-dialog { width:96vw; max-width:96vw; height:94vh; max-height:94vh; padding:0; border:0; border-radius:12px; }
+#rubric-dialog::backdrop { background:rgb(15 23 42 / 60%); }
+#rubric-form { display:flex; flex-direction:column; height:100%; }
+#rubric-form header, #rubric-form footer { padding:1rem 1.5rem; flex:none; background:#f3f6fb; }
+#rubric-form header h2, #rubric-form header p { margin:.3rem 0; }
+#rubric-form footer { justify-content:flex-end; border-top:1px solid #ccd3df; }
+#rubric-dialog .rubric-scroll { flex:1; min-height:0; max-height:none; overflow:auto; padding:1rem; }
+.selection-rubric { width:100%; border-collapse:collapse; }
+.selection-rubric td, .selection-rubric th { min-width:240px; vertical-align:top; border:1px solid #ccd3df; padding:.7rem; }
+.selection-rubric thead { background:#e7edf6; }
+.ethazi-page .rubric-choice { display:flex; gap:.5rem; align-items:flex-start; cursor:pointer; padding:.8rem; border:2px solid #dde3eb; border-radius:6px; margin:.5rem 0; white-space:pre-wrap; }
+.rubric-choice:has(input:checked) { border-color:#2463b5; background:#e5efff; }
+.rubric-choice:focus-within { outline:2px solid #2463b5; outline-offset:2px; }
+
+/* Full-width curriculum and compact, horizontally scrollable rubric picker. */
+.page.kiniela-page { width:100%; max-width:none; box-sizing:border-box; }
+.kiniela-page .kiniela-module { width:100%; box-sizing:border-box; }
+.kiniela-table .module-total { vertical-align:middle; text-align:center; background:#e7edf6; width:7rem; }
+.kiniela-table .weight-form { margin:0; }
+#rubric-dialog .selection-scroll { overflow-x:auto; width:100%; }
+#rubric-dialog .selection-rubric { table-layout:fixed; width:100%; font-size:.8rem; }
+#rubric-dialog .selection-rubric th, #rubric-dialog .selection-rubric td { width:auto; min-width:0; padding:.45rem; white-space:normal; overflow-wrap:anywhere; line-height:1.35; }
+#rubric-dialog .selection-rubric th:first-child { width:160px; min-width:160px; }
+#rubric-dialog .selection-name { position:sticky; left:0; background:#f3f6fb; z-index:1; }
+#rubric-dialog .competency-description { font-weight:400; margin:.4rem 0; }
+#rubric-dialog .competency-toggle { border:0; background:transparent; color:#17497a; font:inherit; font-weight:600; cursor:pointer; text-align:left; padding:.2rem; width:100%; }
+#rubric-dialog .collapse-label, #rubric-dialog .selection-count { display:block; font-size:.72rem; }
+#rubric-dialog .rubric-choice { font-size:.8rem; font-weight:400; padding:.4rem; margin:.35rem 0; gap:.35rem; }
+#rubric-dialog .selection-competency.is-collapsed td > div,
+#rubric-dialog .selection-competency.is-collapsed .competency-description { display:none; }
+#rubric-dialog .selection-competency.is-collapsed td { background:#f3f6fb; }

@@ -1,0 +1,16 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head th:replace="~{Ethazi/fragments/common :: head('Erronka')}"></head><body class="ethazi-body">
+<div th:replace="~{kudeatzaile/fragments/navbar :: kudeatzaile-navbar}"></div>
+<nav th:replace="~{Ethazi/fragments/navbar :: navbar('erronkak')}"></nav>
+<main class="page ethazi-page"><div th:replace="~{Ethazi/fragments/common :: messages}"></div>
+<h1 th:text="${id == null ? 'Erronka berria' : 'Editatu erronka'}"></h1>
+<form class="ethazi-card form" id="erronka-form" th:object="${form}" method="post" th:action="${id == null} ? @{/ethazi/erronkak/berria} : @{/ethazi/erronkak/{id}/editatu(id=${id})}">
+<div class="field"><label for="izena">Izena</label><input th:field="*{izena}" required maxlength="200"></div>
+<div class="field"><label for="deskribapena">Deskribapena</label><textarea th:field="*{deskribapena}" required maxlength="60000" rows="5"></textarea></div>
+<div class="ethazi-filters"><div class="field"><label for="zikloaId">Zikloa</label><select th:field="*{zikloaId}" required><option value="">— Aukeratu zikloa —</option><option th:each="z : ${zikloak}" th:value="${z.id}" th:text="${z.izena}"></option></select></div>
+<div class="field"><label for="mailaId">Maila</label><select th:field="*{mailaId}" required><option value="">— Aukeratu maila —</option><option th:each="m : ${mailak}" th:value="${m.id}" th:text="${m.izena}"></option></select></div>
+<div class="field"><label for="hizkuntza">Hizkuntza</label><select th:field="*{hizkuntza}" required><option th:each="h : ${hizkuntzak}" th:value="${h}" th:text="${h.etiketa}"></option></select></div></div>
+<div class="ethazi-filters"><div class="field"><label for="hasieraData">Hasiera data</label><input type="date" th:field="*{hasieraData}" required></div><div class="field"><label for="bukaeraData">Bukaera data</label><input type="date" th:field="*{bukaeraData}" required></div></div>
+<fieldset><legend>Parte hartuko duten moduluak</legend><p class="muted">Ziklo eta maila bereko moduluak; hautatutako hizkuntza edo hizkuntza hutsik dutenak.</p>
+<label class="erronka-module" th:each="m : ${moduluak}" th:attr="data-cycle=${m.taldea.zikloa.id},data-level=${m.maila.id},data-language=${m.hizkuntza}"><input type="checkbox" th:field="*{moduloIds}" th:value="${m.id}"><span th:text="${m.kodea + ' · ' + m.izena + ' (' + m.taldea.izena + ', ' + m.hizkuntza.etiketa + ')'}"></span></label><p id="no-modules" class="muted">Ez dago iragazki horiek betetzen dituen modulurik.</p></fieldset>
+<div class="form-actions"><a class="btn" th:href="@{/ethazi/erronkak(zikloaId=${form.zikloaId})}">Ezeztatu</a><button class="btn btn-primary">Gorde</button></div></form></main><script th:src="@{/js/ethazi.js}" defer></script><script th:src="@{/js/kiniela.js}" defer></script></body></html>

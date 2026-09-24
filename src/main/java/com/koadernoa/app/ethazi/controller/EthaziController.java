@@ -32,11 +32,17 @@ public class EthaziController {
     @GetMapping("/gaitasunak")
     public String gaitasunak(@RequestParam(required = false) Long zikloaId,
             @RequestParam(defaultValue = "TEKNIKOA") GaitasunMota mota, Model model) {
-        model.addAttribute("zikloaId", zikloaId); model.addAttribute("mota", mota);
+        model.addAttribute("zikloaId", zikloaId);
+        model.addAttribute("mota", mota);
         model.addAttribute("errubrika", service.errubrika(zikloaId, mota));
         model.addAttribute("curriculum", service.curriculum(zikloaId));
         return "Ethazi/gaitasunak/index";
     }
+    @GetMapping({"/kinielak", "/kinielak/"})
+    public String kinielakHelbideZaharra(@RequestParam(required = false) Long zikloaId) {
+        return "redirect:/ethazi/kiniela" + (zikloaId == null ? "" : "?zikloaId=" + zikloaId);
+    }
+
     private String errubrikaHelbidea(Long zikloaId, GaitasunMota mota) {
         return "/gaitasunak?zikloaId=" + zikloaId + "&mota=" + mota;
     }
@@ -71,7 +77,8 @@ public class EthaziController {
             flash.addFlashAttribute("success", "Mailaren izena gorde da.");
             return "redirect:/ethazi" + errubrikaHelbidea(zikloaId, mota) + "#maila-" + mailaId;
         } catch (IllegalArgumentException | DataIntegrityViolationException ex) {
-            model.addAttribute("error", mezua(ex)); model.addAttribute("failedMaila", form);
+            model.addAttribute("error", mezua(ex));
+            model.addAttribute("failedMaila", form);
             model.addAttribute("failedMailaId", mailaId);
             return gaitasunak(zikloaId, mota, model);
         }
@@ -88,8 +95,10 @@ public class EthaziController {
             flash.addFlashAttribute("success", "Lorpen-adierazlea gorde da.");
             return "redirect:/ethazi" + errubrikaHelbidea(g.getZikloa().getId(), g.getMota()) + "#gelaxka-" + id + "-" + mailaId;
         } catch (IllegalArgumentException | DataIntegrityViolationException ex) {
-            model.addAttribute("error", mezua(ex)); model.addAttribute("failedForm", form);
-            model.addAttribute("failedGaitasunaId", id); model.addAttribute("failedMailaId", mailaId);
+            model.addAttribute("error", mezua(ex));
+            model.addAttribute("failedForm", form);
+            model.addAttribute("failedGaitasunaId", id);
+            model.addAttribute("failedMailaId", mailaId);
             model.addAttribute("failedAdierazleaId", adierazleaId);
             return gaitasunak(g.getZikloa().getId(), g.getMota(), model);
         }
@@ -125,7 +134,8 @@ public class EthaziController {
         return gaitasunForm(id, service.gaitasunaForm(id, null, null), model);
     }
     private String gaitasunForm(Long id, GaitasunaForm form, Model model) {
-        model.addAttribute("id", id); model.addAttribute("form", form);
+        model.addAttribute("id", id);
+        model.addAttribute("form", form);
         model.addAttribute("eredua", service.eredua(form.getZikloaId(), form.getMota()));
         model.addAttribute("gaitasuna", id == null ? null : service.gaitasuna(id));
         model.addAttribute("curriculum", service.curriculum(form.getZikloaId()));
@@ -141,7 +151,8 @@ public class EthaziController {
             flash.addFlashAttribute("success", "Gaitasuna gorde da.");
             return "redirect:/ethazi/gaitasunak/" + saved + "/editatu";
         } catch (IllegalArgumentException | DataIntegrityViolationException ex) {
-            model.addAttribute("error", mezua(ex)); return gaitasunForm(id, form, model);
+            model.addAttribute("error", mezua(ex));
+            return gaitasunForm(id, form, model);
         }
     }
     @PostMapping("/gaitasunak/{id}/ezabatu")
@@ -158,8 +169,10 @@ public class EthaziController {
             flash.addFlashAttribute("success", "Lorpen-adierazlea gorde da.");
             return "redirect:/ethazi/gaitasunak/" + id + "/editatu#adierazleak";
         } catch (IllegalArgumentException | DataIntegrityViolationException ex) {
-            model.addAttribute("error", mezua(ex)); model.addAttribute("failedForm", form);
-            model.addAttribute("failedMailaId", mailaId); model.addAttribute("failedAdierazleaId", adierazleaId);
+            model.addAttribute("error", mezua(ex));
+            model.addAttribute("failedForm", form);
+            model.addAttribute("failedMailaId", mailaId);
+            model.addAttribute("failedAdierazleaId", adierazleaId);
             return gaitasunForm(id, service.gaitasunaForm(id, null, null), model);
         }
     }
@@ -171,7 +184,10 @@ public class EthaziController {
     }
 
     @GetMapping("/mailakatzeak")
-    public String mailakatzeak(Model model) { model.addAttribute("ereduak", service.ereduak()); return "Ethazi/mailakatzeak/index"; }
+    public String mailakatzeak(Model model) {
+        model.addAttribute("ereduak", service.ereduak());
+        return "Ethazi/mailakatzeak/index";
+    }
     @GetMapping("/mailakatzeak/berria")
     public String ereduBerria(Model model) { return ereduForm(null, new EreduaForm(), model); }
     @GetMapping("/mailakatzeak/{id}/editatu")
@@ -181,7 +197,8 @@ public class EthaziController {
         return ereduForm(id, form, model);
     }
     private String ereduForm(Long id, EreduaForm form, Model model) {
-        model.addAttribute("id", id); model.addAttribute("form", form);
+        model.addAttribute("id", id);
+        model.addAttribute("form", form);
         model.addAttribute("eredua", id == null ? null : service.eredua(id));
         return "Ethazi/mailakatzeak/form";
     }
@@ -193,7 +210,8 @@ public class EthaziController {
             flash.addFlashAttribute("success", "Mailakatze eredua gorde da.");
             return "redirect:/ethazi/mailakatzeak/" + saved + "/editatu";
         } catch (IllegalArgumentException | DataIntegrityViolationException ex) {
-            model.addAttribute("error", mezua(ex)); return ereduForm(id, form, model);
+            model.addAttribute("error", mezua(ex));
+            return ereduForm(id, form, model);
         }
     }
     @PostMapping("/mailakatzeak/{id}/ezabatu")
@@ -208,8 +226,10 @@ public class EthaziController {
             flash.addFlashAttribute("success", "Maila gorde da.");
             return "redirect:/ethazi/mailakatzeak/" + id + "/editatu";
         } catch (IllegalArgumentException | DataIntegrityViolationException ex) {
-            model.addAttribute("error", mezua(ex)); model.addAttribute("failedMaila", form);
-            model.addAttribute("failedMailaId", mailaId); return ereduEditatu(id, model);
+            model.addAttribute("error", mezua(ex));
+            model.addAttribute("failedMaila", form);
+            model.addAttribute("failedMailaId", mailaId);
+            return ereduEditatu(id, model);
         }
     }
     @PostMapping("/mailakatzeak/{id}/mailak/{mailaId}/ezabatu")
@@ -224,7 +244,8 @@ public class EthaziController {
 
     @GetMapping("/ikaskuntza-emaitzak")
     public String emaitzak(@RequestParam(required = false) Long zikloaId, @RequestParam(required = false) Long moduloaId, Model model) {
-        model.addAttribute("zikloaId", zikloaId); model.addAttribute("moduloaId", moduloaId);
+        model.addAttribute("zikloaId", zikloaId);
+        model.addAttribute("moduloaId", moduloaId);
         model.addAttribute("moduluak", service.moduluak(zikloaId));
         model.addAttribute("emaitzak", service.emaitzak(zikloaId, moduloaId));
         return "Ethazi/ikaskuntza-emaitzak/index";
@@ -238,7 +259,8 @@ public class EthaziController {
     @GetMapping("/ikaskuntza-emaitzak/{id}/editatu")
     public String emaitzaEditatu(@PathVariable Long id, Model model) { return emaitzaForm(id, service.emaitzaForm(id), model); }
     private String emaitzaForm(Long id, EmaitzaForm form, Model model) {
-        model.addAttribute("id", id); model.addAttribute("form", form);
+        model.addAttribute("id", id);
+        model.addAttribute("form", form);
         model.addAttribute("moduluak", service.moduluak(form.getZikloaId()));
         return "Ethazi/ikaskuntza-emaitzak/form";
     }
@@ -250,7 +272,8 @@ public class EthaziController {
             flash.addFlashAttribute("success", "Ikaskuntza-emaitza gorde da.");
             return "redirect:/ethazi/ikaskuntza-emaitzak?zikloaId=" + form.getZikloaId() + "&moduloaId=" + form.getModuloaId();
         } catch (IllegalArgumentException | DataIntegrityViolationException ex) {
-            model.addAttribute("error", mezua(ex)); return emaitzaForm(id, form, model);
+            model.addAttribute("error", mezua(ex));
+            return emaitzaForm(id, form, model);
         }
     }
     @PostMapping("/ikaskuntza-emaitzak/{id}/ezabatu")

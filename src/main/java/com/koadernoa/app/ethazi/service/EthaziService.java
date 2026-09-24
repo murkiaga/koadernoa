@@ -294,6 +294,7 @@ public class EthaziService {
         a.setGaitasunMaila(gm);
         if (id == null) a.setOrdena(gm.getLorpenAdierazleak().stream().mapToInt(LorpenAdierazlea::getOrdena).max().orElse(0) + 1);
         a.setDeskribapena(deskribapena);
+        a.getPisuak().keySet().removeIf(ie -> !f.getEmaitzaIds().contains(ie.getId()));
         a.getIkaskuntzaEmaitzak().clear(); a.getIkaskuntzaEmaitzak().addAll(selected);
         if (id == null) gm.getLorpenAdierazleak().add(a);
         adierazleak.save(a);

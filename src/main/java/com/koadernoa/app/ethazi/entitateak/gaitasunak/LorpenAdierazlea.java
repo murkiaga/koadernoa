@@ -70,4 +70,10 @@ public class LorpenAdierazlea {
         )
     )
     private Set<IkaskuntzaEmaitza> ikaskuntzaEmaitzak = new LinkedHashSet<>();
+
+    @ElementCollection
+    @CollectionTable(name="ethazi_kiniela_pisua", joinColumns=@JoinColumn(name="adierazlea_id"))
+    @MapKeyJoinColumn(name="emaitza_id")
+    @Column(name="pisua", nullable=false, precision=5, scale=2)
+    private java.util.Map<IkaskuntzaEmaitza, java.math.BigDecimal> pisuak = new java.util.HashMap<>();
 }
