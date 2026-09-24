@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
 import com.koadernoa.app.objektuak.egutegia.repository.MailaRepository;
+import com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 import com.koadernoa.app.objektuak.modulua.entitateak.ModuloaFormDto;
 import com.koadernoa.app.objektuak.modulua.repository.ModuloaRepository;
@@ -55,8 +56,9 @@ public class ModuloaService {
         return moduloaRepository.findByTaldeaId(taldeaId, pageable);
     }
 
-    public Page<Moduloa> bilatuFiltroekin(Long taldeaId, Long zikloaId, Boolean hautazkoa, Boolean aktibo, Pageable pageable) {
-        return moduloaRepository.bilatuFiltroekin(taldeaId, zikloaId, hautazkoa, aktibo, pageable);
+    public Page<Moduloa> bilatuFiltroekin(Long taldeaId, Long zikloaId, Boolean hautazkoa, Boolean aktibo,
+                                          Hizkuntza hizkuntza, Pageable pageable) {
+        return moduloaRepository.bilatuFiltroekin(taldeaId, zikloaId, hautazkoa, aktibo, hizkuntza, pageable);
     }
     
     @Transactional

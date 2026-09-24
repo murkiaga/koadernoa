@@ -36,6 +36,7 @@ import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.modulua.entitateak.Ikaslea;
 import com.koadernoa.app.objektuak.modulua.entitateak.Matrikula;
 import com.koadernoa.app.objektuak.modulua.entitateak.MatrikulaEgoera;
+import com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 import com.koadernoa.app.objektuak.modulua.entitateak.ModuloaFormDto;
 import com.koadernoa.app.objektuak.modulua.repository.IkasleaRepository;
@@ -75,6 +76,7 @@ public class ModuloKudeatzaileController {
                                  @RequestParam(name = "zikloaId", required = false) Long zikloaId,
                                  @RequestParam(name = "hautazkoa", required = false) Boolean hautazkoa,
                                  @RequestParam(name = "aktibo", required = false) Boolean aktibo,
+                                 @RequestParam(name = "hizkuntza", required = false) Hizkuntza hizkuntza,
                                  @RequestParam(name = "page", defaultValue = "0") int page,
                                  @RequestParam(name = "size", defaultValue = "20") int size,
                                  Model model) {
@@ -82,7 +84,8 @@ public class ModuloKudeatzaileController {
         int orria = Math.max(0, page);
         PageRequest pageable = PageRequest.of(orria, tamaina, Sort.by("izena").ascending());
 
-        Page<Moduloa> moduluak = moduloaService.bilatuFiltroekin(taldeaId, zikloaId, hautazkoa, aktibo, pageable);
+        Page<Moduloa> moduluak = moduloaService.bilatuFiltroekin(
+                taldeaId, zikloaId, hautazkoa, aktibo, hizkuntza, pageable);
         if (taldeaId != null) {
             model.addAttribute("ikasleak",
                 ikasleaRepository.findByTaldea_IdOrderByAbizena1AscAbizena2AscIzenaAsc(taldeaId));
@@ -92,6 +95,8 @@ public class ModuloKudeatzaileController {
         model.addAttribute("zikloaId", zikloaId);
         model.addAttribute("hautazkoa", hautazkoa);
         model.addAttribute("aktibo", aktibo);
+        model.addAttribute("hizkuntza", hizkuntza);
+        model.addAttribute("hizkuntzak", Hizkuntza.values());
         model.addAttribute("moduluak", moduluak.getContent());
         model.addAttribute("zikloak", zikloaService.getAll());
         model.addAttribute("moduloKlikagarriak", koadernoaRepository.findModuloIdsInAktiboIkasturtea());
@@ -338,6 +343,7 @@ public class ModuloKudeatzaileController {
                                  @RequestParam(name = "zikloaId", required = false) Long zikloaId,
                                  @RequestParam(name = "hautazkoa", required = false) Boolean hautazkoa,
                                  @RequestParam(name = "aktibo", required = false) Boolean aktibo,
+                                 @RequestParam(name = "hizkuntza", required = false) Hizkuntza hizkuntza,
                                  @RequestParam(name = "page", required = false) Integer page,
                                  @RequestParam(name = "size", required = false) Integer size,
                                  RedirectAttributes redirectAttributes) {
@@ -364,6 +370,9 @@ public class ModuloKudeatzaileController {
         }
         if (aktibo != null) {
             redirect.queryParam("aktibo", aktibo);
+        }
+        if (hizkuntza != null) {
+            redirect.queryParam("hizkuntza", hizkuntza);
         }
         if (page != null) {
             redirect.queryParam("page", page);
