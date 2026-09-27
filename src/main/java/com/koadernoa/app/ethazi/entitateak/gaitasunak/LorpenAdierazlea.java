@@ -76,4 +76,19 @@ public class LorpenAdierazlea {
     @MapKeyJoinColumn(name="emaitza_id")
     @Column(name="pisua", nullable=false, precision=5, scale=2)
     private java.util.Map<IkaskuntzaEmaitza, java.math.BigDecimal> pisuak = new java.util.HashMap<>();
+
+    @OneToMany(mappedBy="adierazlea", cascade=CascadeType.ALL, orphanRemoval=true)
+    private Set<KinielaLotura> kinielaLoturak = new LinkedHashSet<>();
+
+    // Legacy global data retained for manual recovery: its original IE cannot be inferred.
+    // Active Kiniela reads and writes only kinielaLoturak.
+    @ManyToMany
+    @JoinTable(name="ethazi_kiniela_erronka",
+        joinColumns=@JoinColumn(name="adierazlea_id"),
+        inverseJoinColumns=@JoinColumn(name="erronka_id"),
+        uniqueConstraints=@UniqueConstraint(columnNames={"adierazlea_id", "erronka_id"}))
+    private Set<com.koadernoa.app.ethazi.entitateak.Erronka> erronkak = new LinkedHashSet<>();
+
+    @Column(columnDefinition="TEXT")
+    private String oharra;
 }

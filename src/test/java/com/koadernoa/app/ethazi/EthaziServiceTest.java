@@ -298,6 +298,98 @@ class EthaziServiceTest {
         for (String invalid : List.of("-1", "100.01", "0.001"))
             assertThatThrownBy(() -> kiniela.gordePisua(cycle.getId(), ie.getId(), a, new java.math.BigDecimal(invalid))).isInstanceOf(IllegalArgumentException.class);
     }
+    @Test void challengeSelectionsAndNotesPersistAndRejectOtherCycles() throws Exception {
+        var m = module(cycle, "NOTES"); var ie = outcome(m); Long g = createCompetency();
+        Long level = service.eredua(modelId).getMailak().get(0).getId();
+        service.gordeErrubrikaAdierazlea(g, level, null, indicator(ie.getId()));
+        Long a = service.gaitasuna(g).getMailak().get(0).getLorpenAdierazleak().get(0).getId();
+        kiniela.gordeErronka(null, challenge(m));
+        Long e = kiniela.erronkak(cycle.getId()).get(0).getId();
+        mvc().perform(post("/ethazi/kiniela/adierazleak/" + a + "/erronka")
+            .param("zikloaId", cycle.getId().toString()).param("ieId", ie.getId().toString()).param("erronkaId", e.toString()).param("landuta", "true"))
+            .andExpect(status().isOk());
+        kiniela.gordeErronkaLotura(cycle.getId(), a, ie.getId(), e, true);
+        kiniela.gordeOharra(cycle.getId(), a, ie.getId(), "  Ohar bat <script>  ");
+        em.flush(); em.clear();
+        var link = kiniela.kiniela(cycle.getId()).get(0).emaitzak().get(0).loturak().get(0);
+        assertThat(link.erronkaIds()).containsExactly(e);
+        assertThat(link.oharra()).isEqualTo("Ohar bat <script>");
+        assertThatThrownBy(() -> kiniela.gordeErronkaLotura(-1L, a, ie.getId(), e, true)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> kiniela.gordeOharra(-1L, a, ie.getId(), "X")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> kiniela.gordeOharra(cycle.getId(), a, ie.getId(), "X".repeat(10001))).isInstanceOf(IllegalArgumentException.class);
+        var other = new Zikloa(); other.setFamilia(cycle.getFamilia()); other.setIzena("Other"); em.persist(other);
+        var foreign = new com.koadernoa.app.ethazi.entitateak.Erronka();
+        foreign.setZikloa(other); foreign.setMaila(m.getMaila()); foreign.setIzena("Foreign");
+        foreign.setDeskribapena("Foreign"); foreign.setHizkuntza(Hizkuntza.EUSKARA);
+        foreign.setHasieraData(java.time.LocalDate.now()); foreign.setBukaeraData(java.time.LocalDate.now()); em.persist(foreign);
+        assertThatThrownBy(() -> kiniela.gordeErronkaLotura(cycle.getId(), a, ie.getId(), foreign.getId(), true)).isInstanceOf(IllegalArgumentException.class);
+        kiniela.gordeErronkaLotura(cycle.getId(), a, ie.getId(), e, false);
+        kiniela.gordeOharra(cycle.getId(), a, ie.getId(), "");
+        em.flush(); em.clear();
+        assertThat(kiniela.kiniela(cycle.getId()).get(0).emaitzak().get(0).loturak().get(0).erronkaIds()).isEmpty();
+        assertThat(kiniela.kiniela(cycle.getId()).get(0).emaitzak().get(0).loturak().get(0).oharra()).isEmpty();
+        kiniela.gordeErronkaLotura(cycle.getId(), a, ie.getId(), e, true);
+        kiniela.ezabatuErronka(e); em.flush(); em.clear();
+        assertThat(kiniela.kiniela(cycle.getId()).get(0).emaitzak().get(0).loturak().get(0).erronkaIds()).isEmpty();
+    }
+
+    @Test void sameIndicatorHasIndependentChallengesNotesAndWeightsForEachOutcome() {
+        var m = module(cycle, "ISOLATION"); var ie = outcome(m);
+        var second = new IkaskuntzaEmaitza(); second.setModuloa(m); second.setKodea("IE4");
+        second.setOrdena(2); second.setDeskribapena("Posta zerbitzuak"); em.persist(second);
+        Long g = createCompetency(); Long level = service.eredua(modelId).getMailak().get(0).getId();
+        service.gordeErrubrikaAdierazlea(g, level, null, indicator(ie.getId(), second.getId()));
+        Long a = service.gaitasuna(g).getMailak().get(0).getLorpenAdierazleak().get(0).getId();
+        kiniela.gordeErronka(null, challenge(m)); Long e1 = kiniela.erronkak(cycle.getId()).get(0).getId();
+        kiniela.gordeErronka(null, challenge(m)); Long e2 = kiniela.erronkak(cycle.getId()).get(0).getId();
+        // Old global values have no reliable IE ownership and must not leak into either row.
+        em.find(LorpenAdierazlea.class, a).setOharra("Legacy note");
+        em.find(LorpenAdierazlea.class, a).getErronkak().add(kiniela.erronka(e2));
+        kiniela.gordeErronkaLotura(cycle.getId(), a, ie.getId(), e1, true);
+        kiniela.gordeOharra(cycle.getId(), a, ie.getId(), "FTP ebidentzia");
+        kiniela.gordePisua(cycle.getId(), ie.getId(), a, new java.math.BigDecimal("25"));
+        em.flush(); em.clear();
+        var rows = kiniela.kiniela(cycle.getId()).get(0).emaitzak();
+        assertThat(rows.get(1).loturak().get(0).erronkaIds()).isEmpty();
+        assertThat(rows.get(1).loturak().get(0).oharra()).isEmpty();
+        kiniela.gordeErronkaLotura(cycle.getId(), a, second.getId(), e2, true);
+        kiniela.gordeOharra(cycle.getId(), a, second.getId(), "SMTP ebidentzia");
+        kiniela.gordePisua(cycle.getId(), second.getId(), a, new java.math.BigDecimal("75"));
+        em.flush(); em.clear();
+        rows = kiniela.kiniela(cycle.getId()).get(0).emaitzak();
+        assertThat(rows.get(0).loturak().get(0).erronkaIds()).containsExactly(e1);
+        assertThat(rows.get(0).loturak().get(0).oharra()).isEqualTo("FTP ebidentzia");
+        assertThat(rows.get(0).loturak().get(0).pisua()).isEqualByComparingTo("25");
+        assertThat(rows.get(1).loturak().get(0).erronkaIds()).containsExactly(e2);
+        assertThat(rows.get(1).loturak().get(0).oharra()).isEqualTo("SMTP ebidentzia");
+        assertThat(rows.get(1).loturak().get(0).pisua()).isEqualByComparingTo("75");
+        kiniela.gordeLoturak(cycle.getId(), ie.getId(), Set.of()); em.flush(); em.clear();
+        assertThat(em.find(LorpenAdierazlea.class, a).getKinielaLoturak()).hasSize(1);
+        assertThatThrownBy(() -> kiniela.gordeOharra(cycle.getId(), a, ie.getId(), "invalid")).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> kiniela.gordeErronkaLotura(cycle.getId(), a, ie.getId(), e1, true)).isInstanceOf(IllegalArgumentException.class);
+        kiniela.gordeLoturak(cycle.getId(), ie.getId(), Set.of(a)); em.flush(); em.clear();
+        assertThat(kiniela.kiniela(cycle.getId()).get(0).emaitzak().get(0).loturak().get(0).erronkaIds()).isEmpty();
+        assertThat(kiniela.kiniela(cycle.getId()).get(0).emaitzak().get(0).loturak().get(0).oharra()).isEmpty();
+        service.gordeErrubrikaAdierazlea(g, level, a, indicator(ie.getId())); em.flush(); em.clear();
+        assertThat(em.find(LorpenAdierazlea.class, a).getKinielaLoturak()).isEmpty();
+        kiniela.gordeErronkaLotura(cycle.getId(), a, ie.getId(), e1, true);
+        kiniela.gordeOharra(cycle.getId(), a, ie.getId(), "New note");
+        em.flush(); em.clear();
+        service.ezabatuGaitasuna(g); em.flush(); em.clear();
+        assertThat(em.getEntityManager().createQuery("select count(l) from KinielaLotura l", Long.class).getSingleResult()).isZero();
+        assertThat(kiniela.erronka(e1)).isNotNull();
+    }
+
+    @Test void challengeColumnsAreOrderedBySchoolLevelBeforeDate() {
+        var first = module(cycle, "FIRST"); first.getMaila().setOrdena(1);
+        var second = module(cycle, "SECOND"); second.getMaila().setOrdena(2);
+        var f = challenge(second); f.setIzena("Second"); kiniela.gordeErronka(null, f);
+        f = challenge(first); f.setIzena("First");
+        f.setHasieraData(java.time.LocalDate.of(2026, 9, 15)); kiniela.gordeErronka(null, f);
+        assertThat(kiniela.erronkaZutabeak(cycle.getId())).extracting(com.koadernoa.app.ethazi.service.KinielaService.ErronkaZutabea::izena)
+            .containsExactly("First", "Second");
+    }
+
     ErronkaForm challenge(Moduloa m) {
         var f = new ErronkaForm(); f.setZikloaId(cycle.getId()); f.setMailaId(m.getMaila().getId());
         f.setIzena("Sarearen erronka"); f.setDeskribapena("Sarea diseinatu"); f.setHizkuntza(Hizkuntza.EUSKARA);
@@ -362,7 +454,11 @@ class EthaziServiceTest {
             kiniela.gordePisua(cycle.getId(), ie.getId(), indicatorId, new java.math.BigDecimal("40"));
             kiniela.gordePisua(cycle.getId(), second.getId(), indicatorId, new java.math.BigDecimal("60"));
             kiniela.gordeErronka(null, challenge(m)); Long e = kiniela.erronkak(cycle.getId()).get(0).getId();
+            kiniela.gordeErronkaLotura(cycle.getId(), indicatorId, ie.getId(), e, true);
             var mvc = mvc();
+            mvc.perform(post("/ethazi/kiniela/adierazleak/" + indicatorId + "/oharra")
+                .param("zikloaId", cycle.getId().toString()).param("ieId", ie.getId().toString()).param("oharra", "<b>Oharra</b>"))
+                .andExpect(status().isOk());
             for (String path : List.of("/ethazi/kiniela", "/ethazi/kiniela?zikloaId=" + cycle.getId(),
                 "/ethazi/erronkak", "/ethazi/erronkak?zikloaId=" + cycle.getId(), "/ethazi/erronkak/berria",
                 "/ethazi/erronkak/" + e + "/editatu")) {
@@ -371,7 +467,7 @@ class EthaziServiceTest {
                 if (path.startsWith("/ethazi/kiniela?")) {
                     assertThat(html.split("class=\"module-total\"", -1)).hasSize(2);
                     assertThat(html).contains("rowspan=\"0\"", "IE2. Sarea konfiguratzen du", "100%");
-                    assertThat(html).doesNotContain(">Gorde</button>");
+                    assertThat(html).contains("challenge-form", "indicator-note-dialog", "Sarearen erronka", "is-covered", "&lt;b&gt;Oharra&lt;/b&gt;");
                 }
                 if (System.getProperty("ethazi.previewDir") != null && path.contains("zikloaId=")) {
                     var preview = java.nio.file.Path.of(System.getProperty("ethazi.previewDir"));

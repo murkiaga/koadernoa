@@ -63,9 +63,66 @@ public class KinielaService {
         e.setHasieraData(f.getHasieraData()); e.setBukaeraData(f.getBukaeraData()); e.getModuluak().clear(); e.getModuluak().addAll(selected);
         erronkak.save(e);
     }
-    @Transactional public void ezabatuErronka(Long id) { erronkak.delete(erronka(id)); }
+    @Transactional public void ezabatuErronka(Long id) {
+        var e = erronka(id);
+        adierazleak.findByErronkakId(id).forEach(a -> a.getErronkak().remove(e));
+        adierazleak.findDistinctByKinielaLoturakErronkakId(id).forEach(a ->
+            a.getKinielaLoturak().forEach(l -> l.getErronkak().removeIf(item -> item.getId().equals(id))));
+        adierazleak.flush();
+        erronkak.delete(e);
+    }
 
-    public record Lotura(Long id, String kodea, String deskribapena, BigDecimal pisua) {}
+    public record ErronkaZutabea(Long id, String izena, String maila) {}
+    public List<ErronkaZutabea> erronkaZutabeak(Long zikloaId) {
+        return erronkak(zikloaId).stream()
+            .sorted(Comparator.comparing((Erronka e) -> e.getMaila().getOrdena(), Comparator.nullsLast(Comparator.naturalOrder()))
+                .thenComparing(e -> e.getMaila().getId())
+                .thenComparing(Erronka::getHasieraData).thenComparing(Erronka::getId))
+            .map(e -> new ErronkaZutabea(e.getId(), e.getIzena(), e.getMaila().getIzena())).toList();
+    }
+
+    private LorpenAdierazlea ziklokoAdierazlea(Long zikloaId, Long id) {
+        var a = adierazleak.findById(id).orElseThrow(() -> new IllegalArgumentException("Adierazlea ez da aurkitu."));
+        require(Objects.equals(a.getGaitasunMaila().getGaitasuna().getZikloa().getId(), zikloaId),
+            "Adierazlea ez da ziklo honetakoa.");
+        return a;
+    }
+    @Transactional public void gordeErronkaLotura(Long zikloaId, Long adierazleaId, Long ieId, Long erronkaId, boolean landuta) {
+        var a = ziklokoAdierazlea(zikloaId, adierazleaId);
+        var e = erronka(erronkaId);
+        require(Objects.equals(e.getZikloa().getId(), zikloaId), "Erronka ez da ziklo honetakoa.");
+        var lotura = kinielaLotura(a, zikloaId, ieId);
+        if (landuta) lotura.getErronkak().add(e);
+        else lotura.getErronkak().removeIf(item -> item.getId().equals(erronkaId));
+    }
+    @Transactional public void gordeOharra(Long zikloaId, Long adierazleaId, Long ieId, String oharra) {
+        var a = ziklokoAdierazlea(zikloaId, adierazleaId);
+        require(oharra != null && oharra.length() <= 10000, "Oharrak gehienez 10000 karaktere izan ditzake.");
+        kinielaLotura(a, zikloaId, ieId).setOharra(oharra.strip());
+    }
+
+    private KinielaLotura kinielaLotura(LorpenAdierazlea a, Long zikloaId, Long ieId) {
+        var ie = ethazi.emaitza(ieId);
+        require(ie.getModuloa().getTaldea() != null
+            && Objects.equals(ie.getModuloa().getTaldea().getZikloa().getId(), zikloaId)
+            && lotuta(a, ieId), "IEaren eta adierazlearen arteko lotura ez da baliozkoa.");
+        return a.getKinielaLoturak().stream().filter(l -> l.getEmaitza().getId().equals(ieId))
+            .findFirst().orElseGet(() -> {
+                var l = new KinielaLotura(); l.setAdierazlea(a); l.setEmaitza(ie);
+                a.getKinielaLoturak().add(l); return l;
+            });
+    }
+    private Set<Long> erronkaIds(LorpenAdierazlea a, Long ieId, Long zikloaId) {
+        return a.getKinielaLoturak().stream().filter(l -> l.getEmaitza().getId().equals(ieId))
+            .flatMap(l -> l.getErronkak().stream()).filter(e -> e.getZikloa().getId().equals(zikloaId))
+            .map(Erronka::getId).collect(java.util.stream.Collectors.toSet());
+    }
+    private String oharra(LorpenAdierazlea a, Long ieId) {
+        return a.getKinielaLoturak().stream().filter(l -> l.getEmaitza().getId().equals(ieId))
+            .map(KinielaLotura::getOharra).filter(Objects::nonNull).findFirst().orElse("");
+    }
+
+    public record Lotura(Long id, String kodea, String deskribapena, BigDecimal pisua, Set<Long> erronkaIds, String oharra) {}
     public record Emaitza(Long id, String kodea, String deskribapena, List<Lotura> loturak, BigDecimal guztira) {}
     public record Modulua(Long id, String izena, String taldea, String hizkuntza, List<Emaitza> emaitzak, BigDecimal guztira) {}
     public List<LorpenAdierazlea> adierazleak(Long zikloaId) {
@@ -78,7 +135,8 @@ public class KinielaService {
             var results = c.emaitzak().stream().map(ie -> {
                 var links = indicators.stream().filter(a -> lotuta(a, ie.getId())).map(a -> new Lotura(a.getId(),
                     a.getGaitasunMaila().getGaitasuna().getKodea() + "." + a.getGaitasunMaila().getMaila().getOrdena() + "." + a.getOrdena(),
-                    a.getDeskribapena(), pisua(a, ie.getId()))).toList();
+                    a.getDeskribapena(), pisua(a, ie.getId()),
+                    erronkaIds(a, ie.getId(), zikloaId), oharra(a, ie.getId()))).toList();
                 return new Emaitza(ie.getId(), ie.getKodea(), ie.getDeskribapena(), links, links.stream().map(Lotura::pisua).reduce(BigDecimal.ZERO, BigDecimal::add));
             }).toList();
             var m = c.moduloa();
@@ -97,7 +155,8 @@ public class KinielaService {
         require(ids != null && available.stream().map(LorpenAdierazlea::getId).toList().containsAll(ids), "Adierazleak ez dira ziklo honetakoak.");
         for (var a : available) {
             if (ids.contains(a.getId())) { if (!lotuta(a, ieId)) a.getIkaskuntzaEmaitzak().add(ie); }
-            else { a.getIkaskuntzaEmaitzak().removeIf(e -> e.getId().equals(ieId)); a.getPisuak().keySet().removeIf(e -> e.getId().equals(ieId)); }
+            else { a.getIkaskuntzaEmaitzak().removeIf(e -> e.getId().equals(ieId)); a.getPisuak().keySet().removeIf(e -> e.getId().equals(ieId));
+                a.getKinielaLoturak().removeIf(l -> l.getEmaitza().getId().equals(ieId)); }
         }
     }
     @Transactional public void gordePisua(Long zikloaId, Long ieId, Long adierazleaId, BigDecimal pisua) {

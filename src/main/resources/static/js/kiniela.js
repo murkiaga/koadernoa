@@ -43,7 +43,7 @@
   form.addEventListener('submit', async event => {
     if (submitting || !unsaved.size) return;
     event.preventDefault();
-    const results = await Promise.all([...unsaved].map(weightForm => saveWeights.get(weightForm)()));
+    const results = await Promise.all([...unsaved].filter(weightForm => saveWeights.has(weightForm)).map(weightForm => saveWeights.get(weightForm)()));
     if (results.every(Boolean)) { submitting = true; form.requestSubmit(); }
     else document.querySelector('#rubric-save-status').textContent = 'Pisu batzuk ez dira gorde. Itxi leihoa eta berrikusi pisuak.';
   });
@@ -125,6 +125,87 @@
       });
       weightForm.addEventListener('submit', event => { event.preventDefault(); save(); });
     });
+  });
+  const indicatorRows = (id, outcome) => [...document.querySelectorAll('.kiniela-link')].filter(row => row.dataset.indicator === id && row.dataset.outcome === outcome);
+  const post = async (action, payload) => {
+    const response = await fetch(action, { method: 'POST', body: payload, headers: { Accept: 'application/json' } });
+    if (!response.ok || !response.headers.get('content-type')?.includes('application/json')) throw new Error();
+    return response.json();
+  };
+  document.querySelectorAll('.challenge-form').forEach(challengeForm => {
+    const input = challengeForm.querySelector('[name=landuta]');
+    input.addEventListener('change', async () => {
+      const row = challengeForm.closest('.kiniela-link');
+      const forms = indicatorRows(row.dataset.indicator, row.dataset.outcome).flatMap(item => [...item.querySelectorAll('.challenge-form')]);
+      const related = forms.filter(item => item.elements.erronkaId.value === challengeForm.elements.erronkaId.value);
+      const checked = input.checked;
+      forms.forEach(item => { item.elements.landuta.disabled = true; });
+      const payload = new URLSearchParams(new FormData(challengeForm));
+      payload.set('landuta', String(checked));
+      const status = challengeForm.querySelector('.save-status');
+      status.textContent = 'Gordetzen…';
+      unsaved.add(challengeForm);
+      try {
+        await post(challengeForm.action, payload);
+        related.forEach(item => { item.elements.landuta.checked = checked; });
+        indicatorRows(row.dataset.indicator, row.dataset.outcome).forEach(item => {
+          item.classList.toggle('is-covered', !!item.querySelector('[name=landuta]:checked'));
+        });
+        status.textContent = 'Gordeta';
+      } catch (_) {
+        input.checked = !checked;
+        status.textContent = 'Ez da gorde. Saiatu berriro.';
+      } finally {
+        forms.forEach(item => { item.elements.landuta.disabled = false; });
+        unsaved.delete(challengeForm);
+      }
+    });
+    challengeForm.addEventListener('submit', event => event.preventDefault());
+  });
+  const noteDialog = document.querySelector('#indicator-note-dialog');
+  const noteForm = document.querySelector('#indicator-note-form');
+  const noteText = document.querySelector('#indicator-note-text');
+  const noteStatus = document.querySelector('#indicator-note-status');
+  let noteIndicator = null;
+  let savingNote = false;
+  const openNote = row => {
+    noteIndicator = row.dataset.indicator;
+    noteForm.elements.ieId.value = row.dataset.outcome;
+    noteText.value = row.dataset.note || '';
+    noteStatus.textContent = '';
+    document.querySelector('#indicator-note-label').textContent = document.getElementById('ie-' + row.dataset.outcome).querySelector('.ie-select').textContent + ' · ' + row.querySelector('.indicator-text').textContent;
+    noteForm.action = noteForm.dataset.actionTemplate.replace('INDICATOR_ID', noteIndicator);
+    noteDialog.showModal();
+    noteText.focus();
+  };
+  document.querySelectorAll('.kiniela-link').forEach(row => {
+    row.querySelector('.indicator-cell').addEventListener('contextmenu', event => { event.preventDefault(); openNote(row); });
+    row.querySelector('.indicator-note').addEventListener('click', () => openNote(row));
+  });
+  noteText.addEventListener('input', () => unsaved.add(noteForm));
+  noteDialog.addEventListener('cancel', event => { if (savingNote) event.preventDefault(); });
+  noteDialog.addEventListener('close', () => unsaved.delete(noteForm));
+  document.querySelector('#cancel-indicator-note').addEventListener('click', () => noteDialog.close());
+  noteForm.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (savingNote || !noteForm.reportValidity()) return;
+    const payload = new URLSearchParams(new FormData(noteForm));
+    savingNote = true;
+    noteForm.querySelectorAll('button, textarea').forEach(input => { input.disabled = true; });
+    noteStatus.textContent = 'Gordetzen…';
+    try {
+      await post(noteForm.action, payload);
+      indicatorRows(noteIndicator, noteForm.elements.ieId.value).forEach(row => {
+        row.dataset.note = noteText.value.trim();
+        row.querySelector('.indicator-note').textContent = row.dataset.note ? '📝 Oharra' : 'Oharra';
+      });
+      noteDialog.close();
+    } catch (_) {
+      noteStatus.textContent = 'Ez da oharra gorde. Saiatu berriro.';
+    } finally {
+      savingNote = false;
+      noteForm.querySelectorAll('button, textarea').forEach(input => { input.disabled = false; });
+    }
   });
   if (location.hash.startsWith('#ie-')) document.querySelector(location.hash)?.closest('details')?.setAttribute('open', '');
 })();

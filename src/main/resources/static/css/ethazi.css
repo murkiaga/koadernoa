@@ -129,3 +129,13 @@
 #rubric-dialog .selection-competency.is-collapsed td > div,
 #rubric-dialog .selection-competency.is-collapsed .competency-description { display:none; }
 #rubric-dialog .selection-competency.is-collapsed td { background:#f3f6fb; }
+
+.kiniela-table .challenge-heading { min-width:10rem; max-width:16rem; text-align:center; background:#d9edf0; }
+.kiniela-table .challenge-cell { text-align:center; }
+.challenge-form { margin:0; }
+.challenge-form input[type=checkbox] { width:1.15rem; height:1.15rem; cursor:pointer; }
+.kiniela-link.is-covered .indicator-text { font-weight:700; }
+.indicator-note { cursor:pointer; font-size:.75rem; border:1px solid #ccd3df; border-radius:4px; background:#f3f6fb; padding:.2rem .4rem; }
+#indicator-note-dialog { width: min(36rem, 90vw); border:0; border-radius:12px; padding:1.5rem; }
+#indicator-note-dialog::backdrop { background:rgb(15 23 42 / 60%); }
+#indicator-note-text { display:block; box-sizing:border-box; width:100%; margin-top:.5rem; }
