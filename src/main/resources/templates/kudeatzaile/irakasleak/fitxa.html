@@ -51,6 +51,12 @@
     </form>
 
     <section>
+        <p th:if="${ordezkatzenDituenak != null and !#lists.isEmpty(ordezkatzenDituenak)}">
+            <strong>Ordezkatzen du:</strong>
+            <th:block th:each="titularra, iter : ${ordezkatzenDituenak}">
+                <a th:href="@{|/kudeatzaile/irakasleak/${titularra.id}|}" th:text="${titularra.izena}">Irakaslea</a><span th:if="${!iter.last}">, </span>
+            </th:block>
+        </p>
         <h2>Ordezkoa</h2>
         <form class="filters" method="post" th:action="@{|/kudeatzaile/irakasleak/${irakaslea.id}/ordezkoa|}">
             <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>

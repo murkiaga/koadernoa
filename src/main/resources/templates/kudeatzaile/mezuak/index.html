@@ -8,6 +8,8 @@
   <style>
     .table-wrap{margin-top:14px;overflow:auto}
     .message-body{white-space:pre-wrap;max-width:580px}
+    .bulk-actions{display:flex;justify-content:flex-end;margin-top:12px}
+    .checkbox-cell{width:42px;text-align:center}
   </style>
 </head>
 <body>
@@ -15,31 +17,78 @@
 <main style="max-width:1200px;margin:24px auto;padding:0 16px;">
   <h1>Mezuak</h1>
 
-  <div class="table-wrap">
-    <table>
-      <thead>
-      <tr>
-        <th>Noiz</th>
-        <th>Bidaltzailea</th>
-        <th>Hartzailea</th>
-        <th>Egoera</th>
-        <th>Edukia</th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr th:if="${mezuak == null or #lists.isEmpty(mezuak)}">
-        <td colspan="5">Ez dago mezurik oraindik.</td>
-      </tr>
-      <tr th:each="m : ${mezuak}">
-        <td th:text="${#temporals.format(m.bidalketaData, 'yyyy-MM-dd HH:mm')}"></td>
-        <td th:text="${m.bidaltzailea != null ? m.bidaltzailea.izena : '-'}"></td>
-        <td th:text="${m.hartzailea != null ? m.hartzailea.izena : '-'}"></td>
-        <td th:text="${m.irakurrita ? '📨 Irakurrita' : '✉️ Ez irakurrita'}"></td>
-        <td class="message-body" th:text="${m.edukia}"></td>
-      </tr>
-      </tbody>
-    </table>
-  </div>
+  <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+  <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+
+  <form class="filters" method="get" th:action="@{/kudeatzaile/mezuak}">
+    <div class="filters-row">
+      <label>
+        <span>Hasierako data</span>
+        <input type="date" name="dataHasiera" th:value="${dataHasiera != null ? #temporals.format(dataHasiera, 'yyyy-MM-dd') : ''}">
+      </label>
+      <label>
+        <span>Amaierako data</span>
+        <input type="date" name="dataAmaiera" th:value="${dataAmaiera != null ? #temporals.format(dataAmaiera, 'yyyy-MM-dd') : ''}">
+      </label>
+      <button class="btn btn-primary" type="submit">Filtratu</button>
+      <a class="btn btn-secondary" th:href="@{/kudeatzaile/mezuak}">Garbitu</a>
+    </div>
+  </form>
+
+  <form method="post" th:action="@{/kudeatzaile/mezuak/aukeratuak-ezabatu}"
+        onsubmit="return confirm('Ziur zaude aukeratutako mezuak ezabatu nahi dituzula?');">
+    <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+    <input type="hidden" name="dataHasiera" th:value="${dataHasiera != null ? #temporals.format(dataHasiera, 'yyyy-MM-dd') : ''}">
+    <input type="hidden" name="dataAmaiera" th:value="${dataAmaiera != null ? #temporals.format(dataAmaiera, 'yyyy-MM-dd') : ''}">
+    <div class="table-wrap">
+      <table>
+        <thead>
+        <tr>
+          <th class="checkbox-cell"><input id="hautatuGuztiak" type="checkbox" aria-label="Hautatu mezu guztiak"></th>
+          <th>Noiz</th>
+          <th>Bidaltzailea</th>
+          <th>Hartzailea</th>
+          <th>Egoera</th>
+          <th>Edukia</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:if="${mezuak == null or #lists.isEmpty(mezuak)}">
+          <td colspan="6">Ez dago mezurik hautatutako daten artean.</td>
+        </tr>
+        <tr th:each="m : ${mezuak}">
+          <td class="checkbox-cell"><input class="mezu-checkbox" type="checkbox" name="mezuIds" th:value="${m.id}" th:aria-label="|Hautatu ${m.id} mezua|"></td>
+          <td th:text="${#temporals.format(m.bidalketaData, 'yyyy-MM-dd HH:mm')}"></td>
+          <td th:text="${m.bidaltzailea != null ? m.bidaltzailea.izena : '-'}"></td>
+          <td th:text="${m.hartzailea != null ? m.hartzailea.izena : '-'}"></td>
+          <td th:text="${m.irakurrita ? '📨 Irakurrita' : '✉️ Ez irakurrita'}"></td>
+          <td class="message-body" th:text="${m.edukia}"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="bulk-actions">
+      <button id="ezabatuHautatuak" class="btn btn-danger" type="submit" disabled>Aukeratuak ezabatu</button>
+    </div>
+  </form>
 </main>
+<script>
+  (() => {
+    const guztiak = document.getElementById('hautatuGuztiak');
+    const mezuak = Array.from(document.querySelectorAll('.mezu-checkbox'));
+    const ezabatu = document.getElementById('ezabatuHautatuak');
+    const eguneratu = () => {
+      const hautatuak = mezuak.filter(c => c.checked).length;
+      ezabatu.disabled = hautatuak === 0;
+      guztiak.checked = mezuak.length > 0 && hautatuak === mezuak.length;
+      guztiak.indeterminate = hautatuak > 0 && hautatuak < mezuak.length;
+    };
+    guztiak.addEventListener('change', () => {
+      mezuak.forEach(c => c.checked = guztiak.checked);
+      eguneratu();
+    });
+    mezuak.forEach(c => c.addEventListener('change', eguneratu));
+  })();
+</script>
 </body>
 </html>

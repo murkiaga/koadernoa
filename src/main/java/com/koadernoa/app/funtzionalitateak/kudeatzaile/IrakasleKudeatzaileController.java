@@ -6,6 +6,8 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.Locale;
 import java.util.Optional;
@@ -65,10 +67,19 @@ public class IrakasleKudeatzaileController {
 	public String zerrenda(@RequestParam(name = "mintegiaId", required = false) Long mintegiaId,
                          @RequestParam(name = "rola", required = false) Rola rola,
                          @RequestParam(name = "izena", required = false) String izena,
+                         @RequestParam(name = "ordezkoa", defaultValue = "false") boolean ordezkoa,
                          @RequestParam(name = "ordenatu", defaultValue = "izena") String ordenatu,
                          @RequestParam(name = "norabidea", defaultValue = "asc") String norabidea,
                          Model model) {
 	    String bilaketa = izena == null ? "" : izena.trim().toLowerCase(Locale.ROOT);
+	    Set<Long> ordezkoIds = ordezkoa
+	            ? irakasleaRepository.findAllByOrdezkoaIsNotNull().stream()
+	                    .map(Irakaslea::getOrdezkoa)
+	                    .filter(java.util.Objects::nonNull)
+	                    .map(Irakaslea::getId)
+	                    .filter(java.util.Objects::nonNull)
+	                    .collect(Collectors.toSet())
+	            : Set.of();
 	    Comparator<Irakaslea> konparatzailea = Comparator.comparing(
                 ordenatu.equals("emaila") ? Irakaslea::getEmaila : Irakaslea::getIzena,
                 Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
@@ -77,6 +88,7 @@ public class IrakasleKudeatzaileController {
                 .filter(i -> mintegiaId == null || (i.getMintegia() != null && mintegiaId.equals(i.getMintegia().getId())))
                 .filter(i -> rola == null || rola == i.getRola())
                 .filter(i -> bilaketa.isEmpty() || (i.getIzena() != null && i.getIzena().toLowerCase(Locale.ROOT).contains(bilaketa)))
+                .filter(i -> !ordezkoa || ordezkoIds.contains(i.getId()))
                 .sorted(konparatzailea.thenComparing(Irakaslea::getId))
                 .toList();
 	    model.addAttribute("irakasleak", irakasleak);
@@ -85,6 +97,7 @@ public class IrakasleKudeatzaileController {
 	    model.addAttribute("mintegiaId", mintegiaId);
 	    model.addAttribute("rola", rola);
 	    model.addAttribute("izena", izena);
+	    model.addAttribute("ordezkoa", ordezkoa);
 	    model.addAttribute("ordenatu", ordenatu);
 	    model.addAttribute("norabidea", norabidea);
 	    return "kudeatzaile/irakasleak/index";
@@ -149,6 +162,7 @@ public class IrakasleKudeatzaileController {
         List<Koadernoa> koadernoak = koadernoaRepository.findByIrakasleaAndIkasturteaWithRelations(id, selectedIkasturteaId);
 
         model.addAttribute("irakaslea", irakaslea);
+        model.addAttribute("ordezkatzenDituenak", irakasleaRepository.findAllByOrdezkoa_IdOrderByIzenaAsc(id));
         model.addAttribute("irakasleGuztiak", irakasleaRepository.findAll());
         model.addAttribute("ikasturteak", ikasturteak);
         model.addAttribute("ikasturteaId", selectedIkasturteaId);

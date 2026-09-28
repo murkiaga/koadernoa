@@ -1,6 +1,8 @@
 package com.koadernoa.app.objektuak.mezuak.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
@@ -108,6 +110,19 @@ public class MezuaService {
     @Transactional(readOnly = true)
     public List<Mezua> bidaliEtaJasotakoak(Long irakasleId) {
         return mezuaRepository.findByBidaltzaileaIdOrHartzaileaIdOrderByBidalketaDataDesc(irakasleId, irakasleId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Mezua> bidaliEtaJasotakoak(Long irakasleId, LocalDate dataHasiera, LocalDate dataAmaiera) {
+        LocalDateTime hasiera = dataHasiera == null ? null : dataHasiera.atStartOfDay();
+        LocalDateTime amaiera = dataAmaiera == null ? null : dataAmaiera.plusDays(1).atStartOfDay();
+        return mezuaRepository.findBidaliEtaJasotakoakDatenArtean(irakasleId, hasiera, amaiera);
+    }
+
+    @Transactional
+    public int ezabatuHautatuak(Long irakasleId, Collection<Long> mezuIds) {
+        if (mezuIds == null || mezuIds.isEmpty()) return 0;
+        return mezuaRepository.deleteHautatuak(irakasleId, mezuIds.stream().distinct().toList());
     }
 
     @Transactional(readOnly = true)
