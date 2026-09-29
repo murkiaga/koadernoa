@@ -2,19 +2,16 @@ package com.koadernoa.app.objektuak.modulua.entitateak;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "ikaskuntza_emaitza")
+@Table(name = "ikaskuntza_emaitza", uniqueConstraints = @jakarta.persistence.UniqueConstraint(name="uk_ie_eei_ordena", columnNames={"eei_kodea", "ordena"}))
 @Getter
 @Setter
 @NoArgsConstructor
@@ -24,9 +21,8 @@ public class IkaskuntzaEmaitza {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "moduloa_id", nullable = false)
-    private Moduloa moduloa;
+    @Column(name="eei_kodea", nullable=false)
+    private String eeiKodea;
 
     @Column(nullable = false)
     private Integer ordena;
@@ -36,4 +32,13 @@ public class IkaskuntzaEmaitza {
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String deskribapena;
+
+    @Column(columnDefinition = "TEXT")
+    private String deskribapenaEs;
+    @Column(columnDefinition = "TEXT")
+    private String deskribapenaEn;
+
+    public String deskribapena(com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza hizkuntza) {
+        return com.koadernoa.app.ethazi.service.HizkuntzaTestua.erakutsi(hizkuntza, deskribapena, deskribapenaEs, deskribapenaEn);
+    }
 }

@@ -20,13 +20,14 @@
                 <select id="mota" name="mota"><option th:each="m : ${motak}" th:value="${m}"
                     th:text="${m.name() == 'TEKNIKOA' ? 'Teknikoa' : 'Zeharkakoa'}" th:selected="${m == mota}"></option></select>
             </div>
+            <div class="field"><label for="hizkuntza">Hizkuntza</label><select name="hizkuntza" id="hizkuntza"><option th:each="h : ${itzulpenHizkuntzak}" th:value="${h}" th:text="${h.etiketa}" th:selected="${h == hizkuntza}"></option></select></div>
             <button class="btn btn-primary">Erakutsi</button>
         </form>
         <p class="empty-state" th:if="${zikloaId == null}">Aukeratu zikloa eta gaitasun mota errubrika ikusteko.</p>
     </div>
     <section class="rubric-section" data-editable="false" th:attr="data-edit-required=${failedForm != null or failedMaila != null or addedMailaId != null},data-rubric-key=${zikloaId + '-' + mota}" th:if="${zikloaId != null}" th:with="mailak=${errubrika.eredua != null ? errubrika.eredua.mailak : {}}">
         <header class="page-header rubric-toolbar">
-            <div><h2 th:text="${errubrika.eredua != null ? errubrika.eredua.izena : 'Errubrika berria'}"></h2></div>
+            <div><h2 th:text="${errubrika.eredua != null ? errubrika.eredua.izena(hizkuntza) : 'Errubrika berria'}"></h2></div>
             <div class="rubric-actions">
                 <button type="button" class="btn rubric-lock-toggle" aria-pressed="false" aria-label="Errubrikaren edizioa desblokeatu">🔒 Blokeatuta · Desblokeatu</button>
                 <a th:if="${!#lists.isEmpty(mailak)}" class="btn btn-primary rubric-edit-only"
@@ -41,26 +42,28 @@
                     <th scope="col" class="rubric-description">Gaitasuna</th>
                     <th scope="col" th:each="m : ${mailak}" th:id="'maila-' + ${m.id}">
                         <span class="level-number" th:text="${m.ordena} + '. maila'"></span>
-                        <span class="rubric-read-only" th:text="${m.izena}"></span>
+                        <span class="rubric-read-only" th:text="${m.izena(hizkuntza)}"></span>
                         <details class="level-name-editor rubric-edit-only" th:open="${addedMailaId == m.id or (failedMaila != null and failedMailaId == m.id)}">
-                            <summary><span th:text="${m.izena}"></span> <span class="level-edit-hint">✎</span></summary>
-                            <form method="post" th:action="@{/ethazi/errubrika/mailak/{id}/editatu(id=${m.id})}">
+                            <summary><span th:text="${m.izena(hizkuntza)}"></span> <span class="level-edit-hint">✎</span></summary>
+                            <form method="post" th:action="@{/ethazi/errubrika/mailak/{id}/editatu(id=${m.id})}"><input type="hidden" name="hizkuntza" th:value="${hizkuntza}">
                                 <input type="hidden" name="zikloaId" th:value="${zikloaId}"><input type="hidden" name="mota" th:value="${mota}">
                                 <label th:for="'maila-izena-' + ${m.id}">Mailaren izena</label>
-                                <input name="izena" th:id="'maila-izena-' + ${m.id}" maxlength="100" required
-                                       th:value="${failedMaila != null and failedMailaId == m.id ? failedMaila.izena : m.izena}">
+                                <div class="translation-editor"><label>Testuaren hizkuntza <select data-translation-select><option value="Eu">Euskara</option><option value="Es">Gaztelera</option><option value="En">Ingelera</option></select></label><div data-translation-panel="Eu"><span class="muted">Euskara</span><input aria-label="Euskara" name="izena" th:id="'maila-izena-' + ${m.id}" maxlength="100"
+                                       th:value="${failedMaila != null and failedMailaId == m.id ? failedMaila.izena : m.izena}"></div><div data-translation-panel="Es"><span class="muted">Gaztelera</span><input aria-label="Gaztelera" name="izenaEs" maxlength="100"
+                                       th:value="${failedMaila != null and failedMailaId == m.id ? failedMaila.izenaEs : m.izenaEs}"></div><div data-translation-panel="En"><span class="muted">Ingelera</span><input aria-label="Ingelera" name="izenaEn" maxlength="100"
+                                       th:value="${failedMaila != null and failedMailaId == m.id ? failedMaila.izenaEn : m.izenaEn}"></div></div>
                                 <button class="btn">Gorde</button>
                             </form>
                             <form class="rubric-delete-level" method="post"
                                   th:action="@{/ethazi/errubrika/mailak/{id}/ezabatu(id=${m.id})}"
-                                  data-confirm="Maila ezabatu? Edukia badu, ez da ezabatuko eta gaitasunen zerrenda erakutsiko da.">
+                                  data-confirm="Maila ezabatu? Edukia badu, ez da ezabatuko eta gaitasunen zerrenda erakutsiko da."><input type="hidden" name="hizkuntza" th:value="${hizkuntza}">
                                 <input type="hidden" name="zikloaId" th:value="${zikloaId}"><input type="hidden" name="mota" th:value="${mota}">
                                 <button class="btn btn-danger">Maila ezabatu</button>
                             </form>
                         </details>
                     </th>
                     <th scope="col" class="rubric-add-column rubric-edit-only">
-                        <form method="post" th:action="@{/ethazi/errubrika/mailak/berria}">
+                        <form method="post" th:action="@{/ethazi/errubrika/mailak/berria}"><input type="hidden" name="hizkuntza" th:value="${hizkuntza}">
                             <input type="hidden" name="zikloaId" th:value="${zikloaId}"><input type="hidden" name="mota" th:value="${mota}">
                             <button class="rubric-add-level" aria-label="Maila berria gehitu eskuinean" title="Maila berria gehitu">+</button>
                         </form>
@@ -78,14 +81,14 @@
                                th:attr="aria-label=${row.gaitasuna.kodea + ' editatu'}">Editatu</a>
                         </th>
                         <td class="rubric-description">
-                            <p class="preserve rubric-competency-description" th:text="${row.gaitasuna.deskribapena}"></p>
+                            <p class="preserve rubric-competency-description" th:text="${row.gaitasuna.deskribapena(hizkuntza)}"></p>
                         </td>
                         <td th:each="m, s : ${mailak}" th:with="gm=${row.gelaxkak[s.index]}, g=${row.gaitasuna}"
                             th:id="'gelaxka-' + ${g.id} + '-' + ${m.id}" class="rubric-cell">
-                            <p th:if="${gm != null}" class="preserve" th:text="${gm.deskribapena}"></p>
+                            <p th:if="${gm != null}" class="preserve" th:text="${gm.deskribapena(hizkuntza)}"></p>
                             <div class="indicator-sortable" th:attr="data-level-number=${m.ordena}">
                                 <form class="indicator-order-form" method="post"
-                                      th:action="@{/ethazi/errubrika/gaitasunak/{id}/mailak/{mid}/adierazleak/berrordenatu(id=${g.id},mid=${m.id})}">
+                                      th:action="@{/ethazi/errubrika/gaitasunak/{id}/mailak/{mid}/adierazleak/berrordenatu(id=${g.id},mid=${m.id})}"><input type="hidden" name="hizkuntza" th:value="${hizkuntza}">
                                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                                 </form>
                                 <ul class="indicator-list" th:attr="aria-label=${g.kodea + ' · ' + m.izena + ' lorpen-adierazleak'}">
@@ -96,15 +99,15 @@
                                             <button type="button" class="btn indicator-move rubric-edit-only" data-move="-1" aria-label="Lorpen-adierazlea gora mugitu">↑</button>
                                             <button type="button" class="btn indicator-move rubric-edit-only" data-move="1" aria-label="Lorpen-adierazlea behera mugitu">↓</button>
                                         </div>
-                                        <p class="preserve" th:text="${a.deskribapena}"></p>
+                                        <p class="preserve" th:text="${a.deskribapena(hizkuntza)}"></p>
                                         <div class="badges"><span class="ie-badge" th:each="ie : ${a.ikaskuntzaEmaitzak}"
-                                            th:text="${ie.moduloa.kodea} + ' · ' + ${ie.kodea}" th:title="${ie.moduloa.izena} + ': ' + ${ie.deskribapena}"></span></div>
+                                            th:text="${ie.eeiKodea} + ' · ' + ${ie.kodea}" th:title="${ie.deskribapena(hizkuntza)}"></span></div>
                                         <details class="inline-indicator-editor rubric-edit-only"
                                                  th:open="${failedForm != null and failedGaitasunaId == g.id and failedMailaId == m.id and failedAdierazleaId == a.id}">
                                             <summary>Editatu</summary>
                                             <div th:replace="~{Ethazi/fragments/errubrika-adierazlea :: editor(${g}, ${m}, ${a})}"></div>
                                             <form method="post" th:action="@{/ethazi/errubrika/gaitasunak/{id}/mailak/{mid}/adierazleak/{aid}/ezabatu(id=${g.id},mid=${m.id},aid=${a.id})}"
-                                                  data-confirm="Lorpen-adierazlea ezabatu? Ikaskuntza-emaitzak mantenduko dira.">
+                                                  data-confirm="Lorpen-adierazlea ezabatu? Ikaskuntza-emaitzak mantenduko dira."><input type="hidden" name="hizkuntza" th:value="${hizkuntza}">
                                                 <button class="btn btn-danger">Ezabatu</button>
                                             </form>
                                         </details>

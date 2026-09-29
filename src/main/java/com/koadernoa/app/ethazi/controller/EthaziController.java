@@ -13,6 +13,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.koadernoa.app.ethazi.dto.EthaziForms.*;
 import com.koadernoa.app.ethazi.entitateak.gaitasunak.GaitasunMota;
 import com.koadernoa.app.ethazi.service.EthaziService;
+import com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza;
 import lombok.RequiredArgsConstructor;
 
 @Controller
@@ -21,10 +22,19 @@ import lombok.RequiredArgsConstructor;
 public class EthaziController {
     private final EthaziService service;
 
+    @ModelAttribute("hizkuntza")
+    Hizkuntza hizkuntza(
+            @RequestParam(defaultValue="EUSKARA") Hizkuntza hizkuntza) {
+        return hizkuntza;
+    }
     @ModelAttribute
     void aukerak(Model model) {
         model.addAttribute("zikloak", service.zikloak());
         model.addAttribute("motak", GaitasunMota.values());
+        model.addAttribute("itzulpenHizkuntzak", java.util.List.of(
+            com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza.EUSKARA,
+            com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza.GAZTELERA,
+            com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza.INGELERA));
     }
     @GetMapping({"", "/"})
     public String index() { return "redirect:/ethazi/gaitasunak"; }
@@ -43,39 +53,39 @@ public class EthaziController {
         return "redirect:/ethazi/kiniela" + (zikloaId == null ? "" : "?zikloaId=" + zikloaId);
     }
 
-    private String errubrikaHelbidea(Long zikloaId, GaitasunMota mota) {
-        return "/gaitasunak?zikloaId=" + zikloaId + "&mota=" + mota;
+    private String errubrikaHelbidea(Long zikloaId, GaitasunMota mota, Hizkuntza h) {
+        return "/gaitasunak?zikloaId=" + zikloaId + "&mota=" + mota + (h == Hizkuntza.EUSKARA ? "" : "&hizkuntza=" + h);
     }
 
     @PostMapping("/errubrika/mailak/berria")
     public String errubrikaMailaGehitu(@RequestParam Long zikloaId, @RequestParam GaitasunMota mota,
-            RedirectAttributes flash) {
+            RedirectAttributes flash, @RequestParam(defaultValue="EUSKARA") Hizkuntza hizkuntza) {
         try {
             Long mailaId = service.gehituErrubrikaMaila(zikloaId, mota);
             flash.addFlashAttribute("success", "Maila berria gehitu da. Izena goiburuan alda dezakezu.");
             flash.addFlashAttribute("addedMailaId", mailaId);
-            return "redirect:/ethazi" + errubrikaHelbidea(zikloaId, mota) + "#maila-" + mailaId;
+            return "redirect:/ethazi" + errubrikaHelbidea(zikloaId, mota, hizkuntza) + "#maila-" + mailaId;
         } catch (IllegalArgumentException | DataIntegrityViolationException ex) {
             flash.addFlashAttribute("error", mezua(ex));
-            return "redirect:/ethazi" + errubrikaHelbidea(zikloaId, mota);
+            return "redirect:/ethazi" + errubrikaHelbidea(zikloaId, mota, hizkuntza);
         }
     }
 
     @PostMapping("/errubrika/mailak/{mailaId}/ezabatu")
     public String errubrikaMailaEzabatu(@PathVariable Long mailaId, @RequestParam Long zikloaId,
-            @RequestParam GaitasunMota mota, RedirectAttributes flash) {
+            @RequestParam GaitasunMota mota, RedirectAttributes flash, @RequestParam(defaultValue="EUSKARA") Hizkuntza hizkuntza) {
         return egin(() -> service.ezabatuErrubrikaMaila(zikloaId, mota, mailaId), "Maila ezabatu da.",
-                errubrikaHelbidea(zikloaId, mota), flash);
+                errubrikaHelbidea(zikloaId, mota, hizkuntza), flash);
     }
 
     @PostMapping("/errubrika/mailak/{mailaId}/editatu")
     public String errubrikaMailaIzendatu(@PathVariable Long mailaId, @RequestParam Long zikloaId,
             @RequestParam GaitasunMota mota, @ModelAttribute MailaForm form, BindingResult binding,
-            Model model, RedirectAttributes flash) {
+            Model model, RedirectAttributes flash, @RequestParam(defaultValue="EUSKARA") Hizkuntza hizkuntza) {
         try {
             balidatu(binding); service.izendatuErrubrikaMaila(zikloaId, mota, mailaId, form);
             flash.addFlashAttribute("success", "Mailaren izena gorde da.");
-            return "redirect:/ethazi" + errubrikaHelbidea(zikloaId, mota) + "#maila-" + mailaId;
+            return "redirect:/ethazi" + errubrikaHelbidea(zikloaId, mota, hizkuntza) + "#maila-" + mailaId;
         } catch (IllegalArgumentException | DataIntegrityViolationException ex) {
             model.addAttribute("error", mezua(ex));
             model.addAttribute("failedMaila", form);
@@ -88,12 +98,12 @@ public class EthaziController {
             "/errubrika/gaitasunak/{id}/mailak/{mailaId}/adierazleak/{adierazleaId}/editatu"})
     public String errubrikaAdierazleGorde(@PathVariable Long id, @PathVariable Long mailaId,
             @PathVariable(required = false) Long adierazleaId, @ModelAttribute AdierazleaForm form,
-            BindingResult binding, Model model, RedirectAttributes flash) {
+            BindingResult binding, Model model, RedirectAttributes flash, @RequestParam(defaultValue="EUSKARA") Hizkuntza hizkuntza) {
         var g = service.gaitasuna(id);
         try {
             balidatu(binding); service.gordeErrubrikaAdierazlea(id, mailaId, adierazleaId, form);
             flash.addFlashAttribute("success", "Lorpen-adierazlea gorde da.");
-            return "redirect:/ethazi" + errubrikaHelbidea(g.getZikloa().getId(), g.getMota()) + "#gelaxka-" + id + "-" + mailaId;
+            return "redirect:/ethazi" + errubrikaHelbidea(g.getZikloa().getId(), g.getMota(), hizkuntza) + "#gelaxka-" + id + "-" + mailaId;
         } catch (IllegalArgumentException | DataIntegrityViolationException ex) {
             model.addAttribute("error", mezua(ex));
             model.addAttribute("failedForm", form);
@@ -106,10 +116,10 @@ public class EthaziController {
 
     @PostMapping("/errubrika/gaitasunak/{id}/mailak/{mailaId}/adierazleak/{adierazleaId}/ezabatu")
     public String errubrikaAdierazleEzabatu(@PathVariable Long id, @PathVariable Long mailaId,
-            @PathVariable Long adierazleaId, RedirectAttributes flash) {
+            @PathVariable Long adierazleaId, RedirectAttributes flash, @RequestParam(defaultValue="EUSKARA") Hizkuntza hizkuntza) {
         var g = service.gaitasuna(id);
         return egin(() -> service.ezabatuErrubrikaAdierazlea(id, mailaId, adierazleaId), "Lorpen-adierazlea ezabatu da.",
-                errubrikaHelbidea(g.getZikloa().getId(), g.getMota()) + "#gelaxka-" + id + "-" + mailaId, flash);
+                errubrikaHelbidea(g.getZikloa().getId(), g.getMota(), hizkuntza) + "#gelaxka-" + id + "-" + mailaId, flash);
     }
 
     @PostMapping("/errubrika/gaitasunak/{id}/mailak/{mailaId}/adierazleak/berrordenatu")
@@ -193,7 +203,7 @@ public class EthaziController {
     @GetMapping("/mailakatzeak/{id}/editatu")
     public String ereduEditatu(@PathVariable Long id, Model model) {
         var e = service.eredua(id); var form = new EreduaForm();
-        form.setZikloaId(e.getZikloa().getId()); form.setMota(e.getMota()); form.setIzena(e.getIzena());
+        form.setZikloaId(e.getZikloa().getId()); form.setMota(e.getMota()); form.setIzena(e.getIzena()); form.setIzenaEs(e.getIzenaEs()); form.setIzenaEn(e.getIzenaEn());
         return ereduForm(id, form, model);
     }
     private String ereduForm(Long id, EreduaForm form, Model model) {
@@ -246,6 +256,7 @@ public class EthaziController {
     public String emaitzak(@RequestParam(required = false) Long zikloaId, @RequestParam(required = false) Long moduloaId, Model model) {
         model.addAttribute("zikloaId", zikloaId);
         model.addAttribute("moduloaId", moduloaId);
+        model.addAttribute("modulua", moduloaId == null || zikloaId == null ? null : service.moduloa(zikloaId, moduloaId));
         model.addAttribute("moduluak", service.moduluak(zikloaId));
         model.addAttribute("emaitzak", service.emaitzak(zikloaId, moduloaId));
         return "Ethazi/ikaskuntza-emaitzak/index";
@@ -257,7 +268,16 @@ public class EthaziController {
         return emaitzaForm(null, f, model);
     }
     @GetMapping("/ikaskuntza-emaitzak/{id}/editatu")
-    public String emaitzaEditatu(@PathVariable Long id, Model model) { return emaitzaForm(id, service.emaitzaForm(id), model); }
+    public String emaitzaEditatu(@PathVariable Long id, @RequestParam(required=false) Long moduloaId,
+            @RequestParam(required=false) Long zikloaId, Model model) {
+        var form = service.emaitzaForm(id);
+        if (moduloaId != null && zikloaId != null) {
+            if (!service.dagokio(service.emaitza(id), service.moduloa(zikloaId, moduloaId)))
+                throw new IllegalArgumentException("IE ez da modulu horretakoa.");
+            form.setModuloaId(moduloaId); form.setZikloaId(zikloaId);
+        }
+        return emaitzaForm(id, form, model);
+    }
     private String emaitzaForm(Long id, EmaitzaForm form, Model model) {
         model.addAttribute("id", id);
         model.addAttribute("form", form);

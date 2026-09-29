@@ -53,9 +53,13 @@
   document.querySelectorAll('.ie-select').forEach(button => button.addEventListener('click', () => {
     const selected = new Set([...button.closest('.kiniela-module').querySelectorAll(`.kiniela-link[data-outcome="${button.dataset.ieId}"]`)].map(row => row.dataset.indicator));
     form.querySelectorAll('[name=adierazleaIds]').forEach(input => { input.checked = selected.has(input.value); });
+    form.elements.moduloaId.value = button.closest('.kiniela-module').dataset.module;
     form.action = form.dataset.actionTemplate.replace('IE_ID', button.dataset.ieId);
     document.querySelector('#selected-outcome').textContent = button.textContent;
     updateSelectionCounts();
+    const language = button.closest('.kiniela-module').dataset.language;
+    const key = language === 'GAZTELERA' ? 'es' : language === 'INGELERA' ? 'en' : 'eu';
+    dialog.querySelectorAll('[data-localized]').forEach(node => { node.textContent = node.dataset[key]; });
     dialog.showModal();
   }));
   document.querySelector('#cancel-rubric').addEventListener('click', () => dialog.close());
@@ -126,7 +130,7 @@
       weightForm.addEventListener('submit', event => { event.preventDefault(); save(); });
     });
   });
-  const indicatorRows = (id, outcome) => [...document.querySelectorAll('.kiniela-link')].filter(row => row.dataset.indicator === id && row.dataset.outcome === outcome);
+  const indicatorRows = (id, outcome, module) => [...document.querySelectorAll('.kiniela-link')].filter(row => row.dataset.indicator === id && row.dataset.outcome === outcome && row.dataset.module === module);
   const post = async (action, payload) => {
     const response = await fetch(action, { method: 'POST', body: payload, headers: { Accept: 'application/json' } });
     if (!response.ok || !response.headers.get('content-type')?.includes('application/json')) throw new Error();
@@ -136,7 +140,7 @@
     const input = challengeForm.querySelector('[name=landuta]');
     input.addEventListener('change', async () => {
       const row = challengeForm.closest('.kiniela-link');
-      const forms = indicatorRows(row.dataset.indicator, row.dataset.outcome).flatMap(item => [...item.querySelectorAll('.challenge-form')]);
+      const forms = indicatorRows(row.dataset.indicator, row.dataset.outcome, row.dataset.module).flatMap(item => [...item.querySelectorAll('.challenge-form')]);
       const related = forms.filter(item => item.elements.erronkaId.value === challengeForm.elements.erronkaId.value);
       const checked = input.checked;
       forms.forEach(item => { item.elements.landuta.disabled = true; });
@@ -148,7 +152,7 @@
       try {
         await post(challengeForm.action, payload);
         related.forEach(item => { item.elements.landuta.checked = checked; });
-        indicatorRows(row.dataset.indicator, row.dataset.outcome).forEach(item => {
+        indicatorRows(row.dataset.indicator, row.dataset.outcome, row.dataset.module).forEach(item => {
           item.classList.toggle('is-covered', !!item.querySelector('[name=landuta]:checked'));
         });
         status.textContent = 'Gordeta';
@@ -171,9 +175,10 @@
   const openNote = row => {
     noteIndicator = row.dataset.indicator;
     noteForm.elements.ieId.value = row.dataset.outcome;
+    noteForm.elements.moduloaId.value = row.dataset.module;
     noteText.value = row.dataset.note || '';
     noteStatus.textContent = '';
-    document.querySelector('#indicator-note-label').textContent = document.getElementById('ie-' + row.dataset.outcome).querySelector('.ie-select').textContent + ' · ' + row.querySelector('.indicator-text').textContent;
+    document.querySelector('#indicator-note-label').textContent = document.getElementById('ie-' + row.dataset.module + '-' + row.dataset.outcome).querySelector('.ie-select').textContent + ' · ' + row.querySelector('.indicator-text').textContent;
     noteForm.action = noteForm.dataset.actionTemplate.replace('INDICATOR_ID', noteIndicator);
     noteDialog.showModal();
     noteText.focus();
@@ -195,7 +200,7 @@
     noteStatus.textContent = 'Gordetzen…';
     try {
       await post(noteForm.action, payload);
-      indicatorRows(noteIndicator, noteForm.elements.ieId.value).forEach(row => {
+      indicatorRows(noteIndicator, noteForm.elements.ieId.value, noteForm.elements.moduloaId.value).forEach(row => {
         row.dataset.note = noteText.value.trim();
         row.querySelector('.indicator-note').textContent = row.dataset.note ? '📝 Oharra' : 'Oharra';
       });

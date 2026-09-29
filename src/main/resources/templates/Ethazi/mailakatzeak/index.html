@@ -8,9 +8,10 @@
 <div th:replace="~{Ethazi/fragments/common :: messages}"></div>
 <header class="page-header"><div><h1>Mailakatzeak</h1><p class="muted">Ziklo eta gaitasun mota bakoitzaren errubrika-mailak.</p></div><a class="btn btn-primary" th:href="@{/ethazi/mailakatzeak/berria}">+ Mailakatze eredua</a></header>
 <p class="empty-state" th:if="${#lists.isEmpty(ereduak)}">Oraindik ez dago mailakatze eredurik. Sortu lehenengoa gaitasunak definitzeko.</p>
+<form method="get" class="ethazi-filters"><label for="hizkuntza">Hizkuntza</label><select id="hizkuntza" name="hizkuntza"><option th:each="h : ${itzulpenHizkuntzak}" th:value="${h}" th:text="${h.etiketa}" th:selected="${h == hizkuntza}"></option></select><button class="btn">Erakutsi</button></form>
 <div class="ethazi-grid"><article class="ethazi-card" th:each="e : ${ereduak}">
-<p class="muted"><span th:text="${e.zikloa.izena}"></span> · <span th:text="${e.mota}"></span></p><h2 th:text="${e.izena}"></h2>
-<ol class="level-list"><li th:each="m : ${e.mailak}"><strong th:text="${m.ordena}"></strong><span th:text="${m.izena}"></span></li></ol>
+<p class="muted"><span th:text="${e.zikloa.izena}"></span> · <span th:text="${e.mota}"></span></p><h2 th:text="${e.izena(hizkuntza)}"></h2>
+<ol class="level-list"><li th:each="m : ${e.mailak}"><strong th:text="${m.ordena}"></strong><span th:text="${m.izena(hizkuntza)}"></span></li></ol>
 <p th:if="${#lists.isEmpty(e.mailak)}" class="muted">Gehitu mailak eredua erabiltzeko.</p>
 <div class="form-actions"><a class="btn btn-secondary" th:href="@{/ethazi/mailakatzeak/{id}/editatu(id=${e.id})}">Editatu</a>
 <form th:action="@{/ethazi/mailakatzeak/{id}/ezabatu(id=${e.id})}" method="post" data-confirm="Mailakatze eredua ezabatu?"><button class="btn btn-danger">Ezabatu</button></form></div>

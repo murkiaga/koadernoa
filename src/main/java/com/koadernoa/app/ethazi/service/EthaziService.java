@@ -39,7 +39,7 @@ public class EthaziService {
     }
     public List<ModuluEmaitzak> curriculum(Long zikloaId) {
         return moduluak(zikloaId).stream()
-                .map(m -> new ModuluEmaitzak(m, emaitzak.findByModuloaIdOrderByOrdenaAsc(m.getId()))).toList();
+                .map(m -> new ModuluEmaitzak(m, moduluEmaitzak(m))).toList();
     }
     public List<MailakatzeEredua> ereduak() {
         var result = ereduak.findAll();
@@ -75,7 +75,7 @@ public class EthaziService {
         g.getMailak().forEach(m -> {
             m.getMaila().getIzena();
             m.getLorpenAdierazleak().sort(Comparator.comparing(LorpenAdierazlea::getOrdena));
-            m.getLorpenAdierazleak().forEach(a -> a.getIkaskuntzaEmaitzak().forEach(ie -> ie.getModuloa().getIzena()));
+            m.getLorpenAdierazleak().forEach(a -> a.getIkaskuntzaEmaitzak().forEach(ie -> ie.getEeiKodea()));
         });
         g.getMailak().sort(Comparator.comparing(m -> m.getMaila().getOrdena()));
         return g;
@@ -93,13 +93,13 @@ public class EthaziService {
         Gaitasuna g = id == null ? null : gaitasuna(id);
         f.setZikloaId(g == null ? zikloaId : g.getZikloa().getId());
         f.setMota(g == null ? mota : g.getMota());
-        if (g != null) { f.setKodea(g.getKodea()); f.setDeskribapena(g.getDeskribapena()); }
+        if (g != null) { f.setKodea(g.getKodea()); f.setDeskribapena(g.getDeskribapena()); f.setDeskribapenaEs(g.getDeskribapenaEs()); f.setDeskribapenaEn(g.getDeskribapenaEn()); }
         var e = eredua(f.getZikloaId(), f.getMota());
         if (e != null) for (var m : e.getMailak()) {
             var mf = new GaitasunMailaForm();
             mf.setMailaId(m.getId());
             if (g != null) g.getMailak().stream().filter(gm -> gm.getMaila().getId().equals(m.getId()))
-                    .findFirst().ifPresent(gm -> mf.setDeskribapena(gm.getDeskribapena()));
+                    .findFirst().ifPresent(gm -> { mf.setDeskribapena(gm.getDeskribapena()); mf.setDeskribapenaEs(gm.getDeskribapenaEs()); mf.setDeskribapenaEn(gm.getDeskribapenaEn()); });
             f.getMailak().add(mf);
         }
         return f;
@@ -109,7 +109,7 @@ public class EthaziService {
     public Long gordeEredua(Long id, EreduaForm f) {
         var zikloa = zikloa(f.getZikloaId());
         require(f.getMota() != null, "Aukeratu gaitasun mota.");
-        String izena = testua(f.getIzena(), 150, "Izena");
+        String izena = HizkuntzaTestua.balidatu(f.getIzena(), f.getIzenaEs(), f.getIzenaEn(), 150, true);
         var e = id == null ? new MailakatzeEredua() : eredua(id);
         var duplicate = eredua(f.getZikloaId(), f.getMota());
         require(duplicate == null || Objects.equals(duplicate.getId(), id), "Ziklo eta mota horrek badu mailakatze eredua.");
@@ -117,7 +117,7 @@ public class EthaziService {
             require(!gaitasunak.existsByZikloaIdAndMota(e.getZikloa().getId(), e.getMota()),
                     "Erabiltzen ari den ereduaren zikloa eta mota ezin dira aldatu.");
         }
-        e.setZikloa(zikloa); e.setMota(f.getMota()); e.setIzena(izena);
+        e.setZikloa(zikloa); e.setMota(f.getMota()); e.setIzena(izena); e.setIzenaEs(f.getIzenaEs()); e.setIzenaEn(f.getIzenaEn());
         return ereduak.save(e).getId();
     }
     @Transactional
@@ -132,7 +132,8 @@ public class EthaziService {
     public void gordeMaila(Long ereduaId, Long id, MailaForm f) {
         var e = eredua(ereduaId);
         var m = id == null ? new MailakatzeMaila() : maila(e, id);
-        m.setIzena(testua(f.getIzena(), 100, "Mailaren izena"));
+        m.setIzenaEs(f.getIzenaEs()); m.setIzenaEn(f.getIzenaEn());
+        m.setIzena(HizkuntzaTestua.balidatu(f.getIzena(), f.getIzenaEs(), f.getIzenaEn(), 100, true));
         if (id == null) {
             m.setEredua(e);
             m.setOrdena(e.getMailak().stream().mapToInt(MailakatzeMaila::getOrdena).max().orElse(0) + 1);
@@ -146,7 +147,7 @@ public class EthaziService {
         var cells = gaitasunMailak.findByMailaId(id);
         var blockers = cells.stream()
                 .filter(cell -> (cell.getDeskribapena() != null && !cell.getDeskribapena().isBlank())
-                        || !cell.getLorpenAdierazleak().isEmpty())
+                        || !HizkuntzaTestua.hutsik(cell.getDeskribapenaEs()) || !HizkuntzaTestua.hutsik(cell.getDeskribapenaEn()) || !cell.getLorpenAdierazleak().isEmpty())
                 .map(cell -> cell.getGaitasuna().getKodea() + " — " + cell.getGaitasuna().getDeskribapena())
                 .distinct().sorted().collect(Collectors.joining("; "));
         require(blockers.isEmpty(), "Maila erabiltzen ari da. Lehenik ezabatu maila honetako deskribapenak eta lorpen-adierazleak gaitasun hauetan: " + blockers);
@@ -187,7 +188,7 @@ public class EthaziService {
         var e = eredua(f.getZikloaId(), f.getMota());
         require(e != null && !e.getMailak().isEmpty(), "Lehenengo sortu ziklo eta mota honen mailakatze eredua eta mailak.");
         String kodea = testua(f.getKodea(), 30, "Kodea");
-        String deskribapena = testua(f.getDeskribapena(), 60000, "Deskribapena");
+        String deskribapena = HizkuntzaTestua.balidatu(f.getDeskribapena(), f.getDeskribapenaEs(), f.getDeskribapenaEn(), 60000, true);
         var expected = e.getMailak().stream().map(MailakatzeMaila::getId).collect(Collectors.toSet());
         var submitted = f.getMailak().stream().map(GaitasunMailaForm::getMailaId).collect(Collectors.toSet());
         require(expected.equals(submitted) && f.getMailak().size() == expected.size(),
@@ -195,13 +196,13 @@ public class EthaziService {
         var g = id == null ? new Gaitasuna() : gaitasuna(id);
         if (id != null) require(g.getZikloa().getId().equals(f.getZikloaId()) && g.getMota() == f.getMota(),
                 "Gaitasunaren zikloa eta mota ezin dira aldatu mailen loturak mantentzeko.");
-        g.setZikloa(z); g.setMota(f.getMota()); g.setKodea(kodea); g.setDeskribapena(deskribapena);
+        g.setZikloa(z); g.setMota(f.getMota()); g.setKodea(kodea); g.setDeskribapena(deskribapena); g.setDeskribapenaEs(f.getDeskribapenaEs()); g.setDeskribapenaEn(f.getDeskribapenaEn());
         g.setLegacyIzena(deskribapena.substring(0, Math.min(200, deskribapena.length())));
         for (var mf : f.getMailak()) {
             var gm = g.getMailak().stream().filter(m -> m.getMaila().getId().equals(mf.getMailaId())).findFirst().orElse(null);
             if (gm == null) { gm = new GaitasunMaila(); gm.setGaitasuna(g); gm.setMaila(maila(e, mf.getMailaId())); g.getMailak().add(gm); }
             require(mf.getDeskribapena() == null || mf.getDeskribapena().length() <= 60000, "Mailaren deskribapena luzeegia da.");
-            gm.setDeskribapena(mf.getDeskribapena());
+            gm.setDeskribapena(HizkuntzaTestua.balidatu(mf.getDeskribapena(), mf.getDeskribapenaEs(), mf.getDeskribapenaEn(), 60000, false)); gm.setDeskribapenaEs(mf.getDeskribapenaEs()); gm.setDeskribapenaEn(mf.getDeskribapenaEn());
         }
         return gaitasunak.save(g).getId();
     }
@@ -232,7 +233,8 @@ public class EthaziService {
     public void izendatuErrubrikaMaila(Long zikloaId, GaitasunMota mota, Long mailaId, MailaForm f) {
         var e = eredua(zikloaId, mota);
         require(e != null, "Mailakatze eredua ez da aurkitu.");
-        maila(e, mailaId).setIzena(testua(f.getIzena(), 100, "Mailaren izena"));
+        var m = maila(e, mailaId); m.setIzenaEs(f.getIzenaEs()); m.setIzenaEn(f.getIzenaEn());
+        m.setIzena(HizkuntzaTestua.balidatu(f.getIzena(), f.getIzenaEs(), f.getIzenaEn(), 100, true));
     }
 
     private Gaitasuna gaitasunaAldatzeko(Long id) {
@@ -282,18 +284,18 @@ public class EthaziService {
         gordeAdierazlea(g, gaitasunMaila(g, mailaId), id, f);
     }
     private void gordeAdierazlea(Gaitasuna g, GaitasunMaila gm, Long id, AdierazleaForm f) {
-        String deskribapena = testua(f.getDeskribapena(), 60000, "Deskribapena");
+        String deskribapena = HizkuntzaTestua.balidatu(f.getDeskribapena(), f.getDeskribapenaEs(), f.getDeskribapenaEn(), 60000, true);
         Set<IkaskuntzaEmaitza> selected = new LinkedHashSet<>();
         for (Long ieId : f.getEmaitzaIds()) {
             var ie = emaitza(ieId);
-            require(ie.getModuloa().getTaldea() != null && ie.getModuloa().getTaldea().getZikloa().getId().equals(g.getZikloa().getId()),
+            require(ziklokoa(ie, g.getZikloa().getId()),
                     "Ikaskuntza-emaitzak gaitasunaren ziklokoak izan behar dira.");
             selected.add(ie);
         }
         var a = id == null ? new LorpenAdierazlea() : adierazlea(gm, id);
         a.setGaitasunMaila(gm);
         if (id == null) a.setOrdena(gm.getLorpenAdierazleak().stream().mapToInt(LorpenAdierazlea::getOrdena).max().orElse(0) + 1);
-        a.setDeskribapena(deskribapena);
+        a.setDeskribapena(deskribapena); a.setDeskribapenaEs(f.getDeskribapenaEs()); a.setDeskribapenaEn(f.getDeskribapenaEn());
         a.getKinielaLoturak().removeIf(l -> !f.getEmaitzaIds().contains(l.getEmaitza().getId()));
         a.getPisuak().keySet().removeIf(ie -> !f.getEmaitzaIds().contains(ie.getId()));
         a.getIkaskuntzaEmaitzak().clear(); a.getIkaskuntzaEmaitzak().addAll(selected);
@@ -320,32 +322,34 @@ public class EthaziService {
     }
     public List<IkaskuntzaEmaitza> emaitzak(Long zikloaId, Long moduloaId) {
         if (zikloaId == null || moduloaId == null) return List.of();
-        moduloa(zikloaId, moduloaId);
-        var result = emaitzak.findByModuloaIdOrderByOrdenaAsc(moduloaId);
-        result.forEach(ie -> ie.getModuloa().getIzena());
+        var result = moduluEmaitzak(moduloa(zikloaId, moduloaId));
+        result.forEach(ie -> ie.getEeiKodea());
         return result;
     }
     public IkaskuntzaEmaitza emaitza(Long id) {
         var ie = emaitzak.findById(id).orElseThrow(() -> errorea("Ikaskuntza-emaitza ez da aurkitu."));
-        ie.getModuloa().getIzena();
         return ie;
     }
     public EmaitzaForm emaitzaForm(Long id) {
         var ie = emaitza(id); var f = new EmaitzaForm();
-        require(ie.getModuloa().getTaldea() != null, "Moduluak ez du ziklorik.");
-        f.setZikloaId(ie.getModuloa().getTaldea().getZikloa().getId()); f.setModuloaId(ie.getModuloa().getId());
-        f.setKodea(ie.getKodea()); f.setOrdena(ie.getOrdena()); f.setDeskribapena(ie.getDeskribapena());
+        var m = moduluak.findAll().stream().filter(item -> dagokio(ie, item) && item.getTaldea() != null).findFirst()
+            .orElseThrow(() -> errorea("EEI kode honek ez du modulurik."));
+        f.setZikloaId(m.getTaldea().getZikloa().getId()); f.setModuloaId(m.getId());
+        f.setKodea(ie.getKodea()); f.setOrdena(ie.getOrdena()); f.setDeskribapena(ie.getDeskribapena()); f.setDeskribapenaEs(ie.getDeskribapenaEs()); f.setDeskribapenaEn(ie.getDeskribapenaEn());
         return f;
     }
     @Transactional
     public void gordeEmaitza(Long id, EmaitzaForm f) {
         var m = moduloa(f.getZikloaId(), f.getModuloaId());
         var ie = id == null ? new IkaskuntzaEmaitza() : emaitza(id);
-        if (id != null && !ie.getModuloa().getId().equals(m.getId()))
+        if (id != null && !dagokio(ie, m))
             require(!adierazleak.existsByIkaskuntzaEmaitzakId(id), "Lotutako ikaskuntza-emaitzaren modulua ezin da aldatu.");
         require(f.getOrdena() != null && f.getOrdena() > 0, "Ordenak zero baino handiagoa izan behar du.");
-        ie.setKodea(testua(f.getKodea(), 20, "Kodea")); ie.setDeskribapena(testua(f.getDeskribapena(), 60000, "Deskribapena"));
-        ie.setOrdena(f.getOrdena()); ie.setModuloa(m); emaitzak.save(ie);
+        ie.setKodea(testua(f.getKodea(), 20, "Kodea")); ie.setDeskribapena(HizkuntzaTestua.balidatu(f.getDeskribapena(), f.getDeskribapenaEs(), f.getDeskribapenaEn(), 60000, true));
+        require(m.getEeiKodea() != null && !m.getEeiKodea().isBlank(), "Moduluak EEI kodea behar du. Bete moduluaren fitxan.");
+        require(moduluEmaitzak(m).stream().noneMatch(other -> !Objects.equals(other.getId(), id) && Objects.equals(other.getOrdena(), f.getOrdena())), "EEI kode horrek badu ordena bereko IE bat. Editatu lehendik dagoena.");
+        ie.setDeskribapenaEs(f.getDeskribapenaEs()); ie.setDeskribapenaEn(f.getDeskribapenaEn());
+        ie.setOrdena(f.getOrdena()); ie.setEeiKodea(m.getEeiKodea()); emaitzak.save(ie);
     }
     @Transactional
     public void ezabatuEmaitza(Long id) {
@@ -353,7 +357,16 @@ public class EthaziService {
         require(!adierazleak.existsByIkaskuntzaEmaitzakId(id), "Ikaskuntza-emaitza lorpen-adierazleetan erabiltzen ari da. Kendu loturak ezabatu aurretik.");
         emaitzak.delete(ie); emaitzak.flush();
     }
-    private Moduloa moduloa(Long zikloaId, Long id) {
+    public boolean dagokio(IkaskuntzaEmaitza ie, Moduloa m) {
+        return ie.getEeiKodea() != null && !ie.getEeiKodea().isBlank() && ie.getEeiKodea().equals(m.getEeiKodea());
+    }
+    public boolean ziklokoa(IkaskuntzaEmaitza ie, Long zikloaId) {
+        return moduluak(zikloaId).stream().anyMatch(m -> dagokio(ie, m));
+    }
+    private List<IkaskuntzaEmaitza> moduluEmaitzak(Moduloa m) {
+        return m.getEeiKodea() == null || m.getEeiKodea().isBlank() ? List.of() : emaitzak.findByEeiKodeaOrderByOrdenaAsc(m.getEeiKodea());
+    }
+    public Moduloa moduloa(Long zikloaId, Long id) {
         require(zikloaId != null && id != null, "Aukeratu zikloa eta modulua.");
         var m = moduluak.findById(id).orElseThrow(() -> errorea("Modulua ez da aurkitu."));
         require(m.getTaldea() != null && m.getTaldea().getZikloa().getId().equals(zikloaId), "Modulua ez da aukeratutako ziklokoa.");

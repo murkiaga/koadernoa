@@ -125,3 +125,39 @@ Datu berriak `ethazi_erronka`, `ethazi_erronka_moduloa` eta `ethazi_kiniela_pisu
 STSn kanpotik sortutako fitxategiak gehitzean, proiektua freskatu (`Refresh` / F5) eta aplikazioa berrabiarazi. `Error resolving template` agertuz gero, egiaztatu txantiloiak `target/classes/templates/Ethazi/` karpetan daudela; `./mvnw resources:resources` komandoak `src/main/resources` baliabideak exekuzioaren classpath-era kopiatzen ditu. Kontroladoreek `@RequestMapping` oinarri bera edukitzeak ez du berez txantiloi-errore hori eragiten.
 
 Hizkuntzaren Java konstantea `GAZTELERA` da. `HizkuntzaConverter` bihurgailuak lehendik gordetako `ERDERA` balioak ere irakurtzen ditu moduluetan eta erronketan; idazketa berriek `GAZTELERA` erabiltzen dute.
+
+## Hiru hizkuntza eta partekatutako IEak (2026-09-29)
+
+- IEaren identitatea `eeiKodea + ordena` da. Modulu beraren euskarazko, gaztelerazko eta ingelesezko eskaintzek IE-ID bera erabiltzen dute. IEaren formularioan hautatutako moduluak EEI kodea zehazten du; moduluak EEI kodea hutsik badu, lehenengo bete haren fitxan. Beste ziklo batean ere EEI kode hori erabiltzen bada, IE bera ikusiko da.
+- `deskribapena` zutabea euskararako mantentzen da; `deskribapenaEs` eta `deskribapenaEn` itzulpenak dira. IEek, lorpen-adierazleek, gaitasunek eta gaitasun-mailen deskribapenek hiru testuak dituzte. Mailakatze-ereduek eta mailek `izena`, `izenaEs`, `izenaEn` dituzte.
+- Formularioetako hizkuntza-hautatzaile bakoitzak testu bat erakusten du aldi bakoitzean. Hautatzailea aldatzean idatzitako zirriborroak mantentzen dira, eta formularioa gordetzean hirurak gordetzen dira. Gutxienez hizkuntza bat bete behar da; gaitasun-mailako azalpenak aukerakoak dira. Ez da itzulpen automatikorik egiten.
+- Gaitasunen mapan eta mailakatzeen zerrendan `hizkuntza=EUSKARA|GAZTELERA|INGELERA` iragazkia dago. Kinielako eta IE-zerrendako testuak moduluaren hizkuntzan erakusten dira. Itzulpenik ez badago, `[Itzulpena falta da]` agertzen da; hizkuntza zehaztu gabeko moduluetan euskara erabiltzen da.
+- Lorpen-adierazle/IE loturak eta pisuak partekatuak dira. Oharrak eta erronka-hautaketak, ordea, `(adierazlea, IE, modulua)` testuinguruan gordetzen dira. Etorkizuneko ebidentziak `KinielaLotura.id` horri lotu ahal izango zaizkio, hizkuntzetako irakasleen datuak nahastu gabe. Ez da ebidentzia-kudeatzaile berririk sortu.
+- Erronkaren edizioan beste hizkuntzetako bertsioak sortzeko botoiak daude. Bertsio berriaren izena/deskribapena jatorrizkotik kopiatzen dira, ondoren eskuz itzultzeko. Bertsioa lehendik badago, haren ediziora joaten da, bikoiztu gabe.
+- Erronken bertsioek `bertsioTaldea` partekatzen dute. Edozein bertsiotan datak, zikloa, maila edo moduluen parte-hartzea gordetzean, beste bertsioetan ere eguneratzen dira transakzio berean. Izenak/deskribapenak hizkuntza bakoitzekoak dira. Lotutako bertsioaren hizkuntza ezin da aldatu.
+- Pareko modulua EEI kodearen, zikloaren, mailaren eta helburuko hizkuntzaren arabera aurkitzen da. Lehenik hizkuntza zehatza bilatzen da; halakorik ez badago, hizkuntza zehaztu gabeko modulua erabil daiteke. Bat bera ere ez badago edo bat baino gehiago badaude, aldaketa osoa baztertzen da, mezua erakutsiz. Ez da hautaketa isilik galtzen. Parte-hartzea kentzean dagokion erronka-hautaketa garbitzen da; oharrak mantentzen dira.
+- Bertsio bat ezabatzeak ez ditu besteak ezabatzen, eta gainerakoek lotuta jarraitzen dute.
+
+### Lehendik dagoen datu-basea eguneratzea
+
+**Aplikazio berria lehen aldiz abiatu aurretik**, erabili `docs/migrations/20260929-ethazi-hizkuntzak.sql`. `ddl-auto=update` ez da nahikoa: ez ditu datuak bateratzen, ezta kinielaren bi zutabeko murrizketa zaharra kentzen ere.
+
+1. Gelditu aplikazioa eta egin egiaztatutako datu-basearen babeskopia osoa. Probatu migrazioa kopia batean lehenengo.
+2. Exekutatu scriptaren hasierako SELECTa bereizita eta berrikusi baliokidetasunak. Scriptak **EEI kode bera eta ordena bera** duten IEak baliokidetzat hartzen ditu, kodeak `IE1`, `RA1` edo `LO1` izan arren. Esanahia ez badator bat, zuzendu ordenak/EEI kodeak migrazioaren aurretik. IEak dituzten moduluek hizkuntza esplizitua behar dute.
+3. Exekutatu script osoa behin, MySQL 8 bezeroarekin, `--force` gabe. Aurretiko egiaztapenek itzulpen gatazkatsuak, pisu desberdinak edo testuinguru bikoiztuak aurkitzen badituzte, scriptak aldaketak hasi aurretik huts egiten du. Zuzendu mezuko datuak; aurretiko prozedura geratu bada, kendu `ethazi_translation_preflight` berriz saiatu aurretik.
+4. Talde bakoitzeko ID txikiena mantentzen da; IE–adierazle loturak eta pisuak ID horretara birbideratzen dira. Kinielako oharren eta erronka-hautaketen lotura-IDak mantentzen dira, jatorrizko modulua gehituta. Jatorrizko IE testuak eta IDen mapa `ethazi_ie_migration_*` tauletan uzten dira auditatzeko.
+5. Abiarazi aplikazio berria; erronken bertsioetarako gehikuntza hutsak Hibernatek sortzen ditu. Egiaztatu modulu bakoitzeko IEak, oharrak eta erronkak. DDLak MySQLen commit inplizitua egiten duenez, migrazioaren erdiko akatsa edo atzera egitea babeskopia osoaren bidez berreskuratu behar da; ez exekutatu script osoa itsu-itsuan bigarren aldiz.
+
+Lehendik zeuden gaitasun eta lorpen-adierazleek ez zuten jatorrizko hizkuntza-eremurik. Haien testua lehengo `deskribapena` eremuan mantentzen da; dagokion itzulpen-eremura zuzendu behar da gazteleraz/ingelesez idatzita zegoen kasuetan. Lorpen-adierazle desberdinak ez dira automatikoki fusionatzen, ez baitago haien baliokidetasuna frogatzen duen gakorik.
+
+### Egiaztapen berriak
+
+`EthaziServiceTest` probek hiru hizkuntzen iraunkortasuna, euskararik gabeko sarrera, hizkuntza-iragazkiaren HTMLa, partekatutako IEak, modulu bakoitzeko oharren isolamendua eta erronken bertsioen bi noranzkoetako eguneraketak egiaztatzen dituzte. Thymeleaf bidez sortutako formularioak eta kiniela ere errendatzen dira.
+
+MySQL 8ko migrazio-proba errepikatzeko, erabili zerbitzari isolatua eta datu sintetiko hauek, ordenan:
+
+1. `src/test/resources/ethazi/hizkuntzak-before.sql` (probetako `ethazi_migration_test` datu-basea sortzen du).
+2. `docs/migrations/20260929-ethazi-hizkuntzak.sql`, datu-base horretan.
+3. `src/test/resources/ethazi/hizkuntzak-assert.sql`, datu-base horretan.
+
+Proba horrek hiru IE zaharrak ID bakarrean bateratzen direla eta hiru moduluetako oharrak eta erronka-hautaketak bereizita mantentzen direla egiaztatzen du. Ez erabili fixture-a benetako aplikazioaren datu-basean.

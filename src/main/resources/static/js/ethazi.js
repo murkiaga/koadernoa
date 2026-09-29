@@ -14,7 +14,9 @@ document.querySelectorAll('[data-cycle-filter]').forEach(select => {
 });
 const dirtyForms = new Set();
 document.querySelectorAll('form[data-dirty-warning]').forEach(form => {
-  form.addEventListener('input', () => dirtyForms.add(form));
+  form.addEventListener('input', event => {
+    if (!event.target.matches('[data-translation-select]')) dirtyForms.add(form);
+  });
   form.addEventListener('submit', () => dirtyForms.delete(form));
 });
 window.addEventListener('beforeunload', event => {
@@ -275,3 +277,23 @@ if (/^#(maila|gelaxka)-[\d-]+$/.test(window.location.hash)) {
   }
   target?.querySelector('.level-name-editor[open] input[name="izena"]')?.focus({ preventScroll: true });
 }
+
+// Each translation editor shows one language at a time; all drafts remain in the form.
+document.querySelectorAll('.translation-editor').forEach(editor => {
+  const select = editor.querySelector('[data-translation-select]');
+  const refresh = () => editor.querySelectorAll('[data-translation-panel]').forEach(panel => {
+    panel.hidden = panel.dataset.translationPanel !== select.value;
+  });
+  const currentLanguage = document.querySelector('#hizkuntza')?.value;
+  if (currentLanguage === 'GAZTELERA') select.value = 'Es';
+  if (currentLanguage === 'INGELERA') select.value = 'En';
+  select.addEventListener('change', refresh);
+  refresh();
+});
+// The same shared IE may be listed under several modules. Keep its checkboxes in sync.
+document.querySelectorAll('.ie-picker').forEach(picker => picker.addEventListener('change', event => {
+  if (event.target.name !== 'emaitzaIds') return;
+  picker.querySelectorAll('input[name="emaitzaIds"]').forEach(input => {
+    if (input.value === event.target.value) input.checked = event.target.checked;
+  });
+}));

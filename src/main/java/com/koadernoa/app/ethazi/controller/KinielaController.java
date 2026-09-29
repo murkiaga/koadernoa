@@ -27,6 +27,9 @@ public class KinielaController {
     @ModelAttribute
     void aukerak(Model model) {
         model.addAttribute("zikloak", ethazi.zikloak());
+        model.addAttribute("eu", com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza.EUSKARA);
+        model.addAttribute("es", com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza.GAZTELERA);
+        model.addAttribute("en", com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza.INGELERA);
     }
 
     @GetMapping({"", "/"})
@@ -40,7 +43,7 @@ public class KinielaController {
     }
 
     @PostMapping("/{ieId}/loturak")
-    String loturak(@PathVariable Long ieId, @RequestParam Long zikloaId,
+    String loturak(@PathVariable Long ieId, @RequestParam Long zikloaId, @RequestParam(required=false) Long moduloaId,
             @RequestParam(required = false) Set<Long> adierazleaIds, RedirectAttributes flash) {
         try {
             service.gordeLoturak(zikloaId, ieId, adierazleaIds == null ? Set.of() : adierazleaIds);
@@ -48,7 +51,7 @@ public class KinielaController {
         } catch (IllegalArgumentException ex) {
             flash.addFlashAttribute("error", ex.getMessage());
         }
-        return "redirect:/ethazi/kiniela?zikloaId=" + zikloaId + "#ie-" + ieId;
+        return "redirect:/ethazi/kiniela?zikloaId=" + zikloaId + (moduloaId == null ? "" : "#ie-" + moduloaId + "-" + ieId);
     }
 
     @PostMapping("/{ieId}/pisua")
@@ -67,9 +70,9 @@ public class KinielaController {
     @PostMapping("/adierazleak/{id}/erronka")
     @ResponseBody
     ResponseEntity<Map<String, String>> erronka(@PathVariable Long id, @RequestParam Long zikloaId,
-            @RequestParam Long ieId, @RequestParam Long erronkaId, @RequestParam boolean landuta) {
+            @RequestParam Long ieId, @RequestParam Long moduloaId, @RequestParam Long erronkaId, @RequestParam boolean landuta) {
         try {
-            service.gordeErronkaLotura(zikloaId, id, ieId, erronkaId, landuta);
+            service.gordeErronkaLotura(zikloaId, id, ieId, moduloaId, erronkaId, landuta);
             return ResponseEntity.ok(Map.of("message", "Hautaketa gorde da."));
         } catch (IllegalArgumentException | DataIntegrityViolationException ex) {
             return ResponseEntity.badRequest().body(Map.of("message", "Ezin izan da erronkaren hautaketa gorde."));
@@ -79,9 +82,9 @@ public class KinielaController {
     @PostMapping("/adierazleak/{id}/oharra")
     @ResponseBody
     ResponseEntity<Map<String, String>> oharra(@PathVariable Long id, @RequestParam Long zikloaId,
-            @RequestParam Long ieId, @RequestParam String oharra) {
+            @RequestParam Long ieId, @RequestParam Long moduloaId, @RequestParam String oharra) {
         try {
-            service.gordeOharra(zikloaId, id, ieId, oharra);
+            service.gordeOharra(zikloaId, id, ieId, moduloaId, oharra);
             return ResponseEntity.ok(Map.of("message", "Oharra gorde da."));
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));

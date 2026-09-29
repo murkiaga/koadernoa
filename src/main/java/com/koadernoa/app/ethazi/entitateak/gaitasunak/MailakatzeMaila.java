@@ -49,4 +49,13 @@ public class MailakatzeMaila {
 
     @Column(nullable = false, length = 100)
     private String izena;
+
+    @Column(columnDefinition = "TEXT")
+    private String izenaEs;
+    @Column(columnDefinition = "TEXT")
+    private String izenaEn;
+
+    public String izena(com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza hizkuntza) {
+        return com.koadernoa.app.ethazi.service.HizkuntzaTestua.erakutsi(hizkuntza, izena, izenaEs, izenaEn);
+    }
 }

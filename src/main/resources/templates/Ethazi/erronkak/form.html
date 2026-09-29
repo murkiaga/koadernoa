@@ -13,4 +13,10 @@
 <div class="ethazi-filters"><div class="field"><label for="hasieraData">Hasiera data</label><input type="date" th:field="*{hasieraData}" required></div><div class="field"><label for="bukaeraData">Bukaera data</label><input type="date" th:field="*{bukaeraData}" required></div></div>
 <fieldset><legend>Parte hartuko duten moduluak</legend><p class="muted">Ziklo eta maila bereko moduluak; hautatutako hizkuntza edo hizkuntza hutsik dutenak.</p>
 <label class="erronka-module" th:each="m : ${moduluak}" th:attr="data-cycle=${m.taldea.zikloa.id},data-level=${m.maila.id},data-language=${m.hizkuntza}"><input type="checkbox" th:field="*{moduloIds}" th:value="${m.id}"><span th:text="${m.kodea + ' · ' + m.izena + ' (' + m.taldea.izena + ', ' + m.hizkuntza.etiketa + ')'}"></span></label><p id="no-modules" class="muted">Ez dago iragazki horiek betetzen dituen modulurik.</p></fieldset>
-<div class="form-actions"><a class="btn" th:href="@{/ethazi/erronkak(zikloaId=${form.zikloaId})}">Ezeztatu</a><button class="btn btn-primary">Gorde</button></div></form></main><script th:src="@{/js/ethazi.js}" defer></script><script th:src="@{/js/kiniela.js}" defer></script></body></html>
+<div class="form-actions"><a class="btn" th:href="@{/ethazi/erronkak(zikloaId=${form.zikloaId})}">Ezeztatu</a><button class="btn btn-primary">Gorde</button></div></form>
+<section th:if="${id != null}" class="ethazi-card"><h2>Hizkuntza bertsioak</h2>
+<p>Izena eta deskribapena bertsio bakoitzean itzuli. Datak, zikloa, maila eta moduluen parte-hartzea lotutako bertsio guztietan eguneratzen dira.</p>
+<div class="form-actions"><a class="btn" th:each="v : ${bertsioak}" th:href="@{/ethazi/erronkak/{id}/editatu(id=${v.id})}" th:text="${v.hizkuntza.etiketa}"></a></div>
+<form method="post" th:each="h : ${hizkuntzak}" th:if="${h.name() != 'ZEHAZTU_GABE' and h != form.hizkuntza}" th:action="@{/ethazi/erronkak/{id}/bertsioa(id=${id})}">
+<input type="hidden" name="hizkuntza" th:value="${h}"><button class="btn" th:text="${h.name() == 'GAZTELERA' ? 'Gaztelerako bertsioa sortu' : (h.name() == 'INGELERA' ? 'Ingelerako bertsioa sortu' : 'Euskarako bertsioa sortu')}"></button></form></section>
+</main><script th:src="@{/js/ethazi.js}" defer></script><script th:src="@{/js/kiniela.js}" defer></script></body></html>

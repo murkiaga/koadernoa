@@ -5,5 +5,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.koadernoa.app.objektuak.modulua.entitateak.IkaskuntzaEmaitza;
 
 public interface IkaskuntzaEmaitzaRepository extends JpaRepository<IkaskuntzaEmaitza, Long> {
-    List<IkaskuntzaEmaitza> findByModuloaIdOrderByOrdenaAsc(Long moduloaId);
+    List<IkaskuntzaEmaitza> findByEeiKodeaOrderByOrdenaAsc(String eeiKodea);
 }

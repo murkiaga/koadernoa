@@ -8,9 +8,10 @@ import lombok.Setter;
 import com.koadernoa.app.objektuak.modulua.entitateak.*;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Zikloa;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
-@Entity @Table(name="ethazi_erronka") @Getter @Setter
+@Entity @Table(name="ethazi_erronka", uniqueConstraints=@UniqueConstraint(name="uk_erronka_bertsioa", columnNames={"bertsio_taldea", "hizkuntza"})) @Getter @Setter
 public class Erronka {
     @Id @GeneratedValue(strategy=GenerationType.IDENTITY) private Long id;
+    @Column(name="bertsio_taldea") private Long bertsioTaldea;
     @Column(nullable=false, length=200) private String izena;
     @Column(nullable=false, columnDefinition="TEXT") private String deskribapena;
     @ManyToOne(optional=false) private Zikloa zikloa;

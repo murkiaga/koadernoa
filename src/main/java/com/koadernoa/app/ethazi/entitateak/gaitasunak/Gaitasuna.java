@@ -68,4 +68,13 @@ public class Gaitasuna {
         orphanRemoval = true
     )
     private List<GaitasunMaila> mailak = new ArrayList<>();
+
+    @Column(columnDefinition = "TEXT")
+    private String deskribapenaEs;
+    @Column(columnDefinition = "TEXT")
+    private String deskribapenaEn;
+
+    public String deskribapena(com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza hizkuntza) {
+        return com.koadernoa.app.ethazi.service.HizkuntzaTestua.erakutsi(hizkuntza, deskribapena, deskribapenaEs, deskribapenaEn);
+    }
 }

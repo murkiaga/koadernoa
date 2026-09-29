@@ -45,6 +45,7 @@ public class ErronkaController {
     }
 
     private String form(Long id, ErronkaForm f, Model model) {
+        model.addAttribute("bertsioak", id == null ? java.util.List.of() : service.bertsioak(id));
         model.addAttribute("id", id);
         model.addAttribute("form", f);
         model.addAttribute("mailak", service.mailak());
@@ -63,6 +64,18 @@ public class ErronkaController {
         } catch (IllegalArgumentException ex) {
             model.addAttribute("error", ex.getMessage());
             return form(id, f, model);
+        }
+    }
+
+    @PostMapping("/{id}/bertsioa")
+    String bertsioa(@PathVariable Long id, @RequestParam Hizkuntza hizkuntza, RedirectAttributes flash) {
+        try {
+            Long target = service.sortuBertsioa(id, hizkuntza);
+            flash.addFlashAttribute("success", "Bertsioa prest dago. Itzuli izena eta deskribapena; datak eta moduluak bertsioen artean partekatzen dira.");
+            return "redirect:/ethazi/erronkak/" + target + "/editatu";
+        } catch (IllegalArgumentException ex) {
+            flash.addFlashAttribute("error", ex.getMessage());
+            return "redirect:/ethazi/erronkak/" + id + "/editatu";
         }
     }
 

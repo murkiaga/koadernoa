@@ -36,11 +36,15 @@ public final class EthaziForms {
         private Long zikloaId;
         private GaitasunMota mota = GaitasunMota.TEKNIKOA;
         private String izena;
+        private String izenaEs;
+        private String izenaEn;
     }
 
     @Getter @Setter
     public static class MailaForm {
         private String izena;
+        private String izenaEs;
+        private String izenaEn;
     }
 
     @Getter @Setter
@@ -49,6 +53,8 @@ public final class EthaziForms {
         private GaitasunMota mota = GaitasunMota.TEKNIKOA;
         private String kodea;
         private String deskribapena;
+        private String deskribapenaEs;
+        private String deskribapenaEn;
         private List<GaitasunMailaForm> mailak = new ArrayList<>();
     }
 
@@ -56,11 +62,15 @@ public final class EthaziForms {
     public static class GaitasunMailaForm {
         private Long mailaId;
         private String deskribapena;
+        private String deskribapenaEs;
+        private String deskribapenaEn;
     }
 
     @Getter @Setter
     public static class AdierazleaForm {
         private String deskribapena;
+        private String deskribapenaEs;
+        private String deskribapenaEn;
         private Set<Long> emaitzaIds = new LinkedHashSet<>();
     }
 
@@ -71,5 +81,7 @@ public final class EthaziForms {
         private String kodea;
         private Integer ordena;
         private String deskribapena;
+        private String deskribapenaEs;
+        private String deskribapenaEn;
     }
 }

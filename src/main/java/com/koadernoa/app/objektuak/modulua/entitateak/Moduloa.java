@@ -53,11 +53,4 @@ public class Moduloa {
     @OneToMany(mappedBy = "moduloa")
     private List<Koadernoa> koadernoak;
     
-    @OneToMany(
-	    mappedBy = "moduloa",
-	    cascade = CascadeType.ALL,
-	    orphanRemoval = true
-	)
-	@OrderBy("ordena ASC")
-	private List<IkaskuntzaEmaitza> ikaskuntzaEmaitzak = new ArrayList<>();
 }

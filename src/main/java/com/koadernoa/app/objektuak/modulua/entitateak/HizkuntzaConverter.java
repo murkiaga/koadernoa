@@ -14,6 +14,6 @@ public class HizkuntzaConverter implements AttributeConverter<Hizkuntza, String>
     @Override
     public Hizkuntza convertToEntityAttribute(String value) {
         if (value == null) return null;
-        return "GAZTELERA".equals(value) ? Hizkuntza.GAZTELERA : Hizkuntza.valueOf(value);
+        return "ERDERA".equals(value) ? Hizkuntza.GAZTELERA : Hizkuntza.valueOf(value);
     }
 }
