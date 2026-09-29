@@ -21,8 +21,61 @@
     .mini-form{display:inline-flex;align-items:center;gap:.4rem;flex-wrap:nowrap;white-space:nowrap;}
     .mini-form select{width:auto;min-width:180px;}
     .mini-form .btn{width:auto;white-space:nowrap;}
-    .ikasle-datuak{table-layout:fixed;}
-    .ikasle-datuak th{width:190px;}
+    .ikasle-goiburua{
+	  display:grid;
+	  grid-template-columns:minmax(0, 1fr) 260px;
+	  gap:2rem;
+	  align-items:start;
+	  margin-bottom:1rem;
+	}
+	
+	.ikasle-datuak-wrap{
+	  min-width:0;
+	  margin-bottom:0;
+	}
+	
+	.ikasle-datuak{
+	  table-layout:fixed;
+	  width:100%;
+	}
+	
+	.ikasle-datuak th{
+	  width:190px;
+	}
+	
+	.ikasle-argazkia-card{
+	  width:260px;
+	  aspect-ratio:4 / 5;
+	  padding:6px;
+	  background:#fff;
+	  border:1px solid #e2e8f0;
+	  border-radius:18px;
+	  box-shadow:0 8px 24px rgba(15,23,42,.10);
+	  overflow:hidden;
+	}
+	
+	.ikasle-argazkia{
+	  display:block;
+	  width:100%;
+	  height:100%;
+	  object-fit:cover;
+	  object-position:center;
+	  border-radius:12px;
+	  background:#f8fafc;
+	}
+	
+	/* Pantaila txikietan argazkia taularen azpira */
+	@media (max-width:900px){
+	  .ikasle-goiburua{
+	    grid-template-columns:1fr;
+	    gap:1rem;
+	  }
+	
+	  .ikasle-argazkia-card{
+	    width:min(240px, 70vw);
+	    justify-self:center;
+	  }
+	}
     .nan-form{display:flex;align-items:center;gap:.75rem;flex-wrap:nowrap;margin:0;max-width:none;min-width:0;}
     .nan-form input{width:min(240px,calc(100% - 90px));min-width:0;margin:0;}
   </style>
@@ -38,13 +91,16 @@
   <div th:if="${errorMessage}" class="alert-error" style="margin-bottom:1rem;padding:.65rem .8rem;border-radius:.5rem;background:#fef2f2;color:#991b1b;"
        th:text="${errorMessage}">Errorea</div>
 
-  <div class="table-wrap" style="margin-bottom:1rem;">
+  <div class="ikasle-goiburua">
+
+  <div class="table-wrap ikasle-datuak-wrap">
     <table class="ikasle-datuak">
       <tbody>
       <tr><th>Izena</th><td th:text="${ikaslea.izena != null ? ikaslea.izena : '-'}">-</td></tr>
       <tr><th>Abizena 1</th><td th:text="${ikaslea.abizena1 != null ? ikaslea.abizena1 : '-'}">-</td></tr>
       <tr><th>Abizena 2</th><td th:text="${ikaslea.abizena2 != null ? ikaslea.abizena2 : '-'}">-</td></tr>
       <tr><th>HNA (DIE)</th><td th:text="${ikaslea.hna != null ? ikaslea.hna : '-'}">-</td></tr>
+
       <tr>
         <th>NAN (DNI)</th>
         <td>
@@ -58,25 +114,49 @@
           </form>
         </td>
       </tr>
+
       <tr>
         <th>Taldea</th>
         <td>
           <div class="talde-row">
-            <span class="talde-badge" th:text="${ikaslea.taldea != null ? ikaslea.taldea.izena : '-'}">-</span>
-            <button type="button" class="btn btn-primary" id="openTaldeModal">Aldatu taldea</button>
+            <span class="talde-badge"
+                  th:text="${ikaslea.taldea != null ? ikaslea.taldea.izena : '-'}">-</span>
+            <button type="button" class="btn btn-primary" id="openTaldeModal">
+              Aldatu taldea
+            </button>
           </div>
         </td>
       </tr>
+
       <tr th:if="${jokabideDesegokiakFiltroa != null}">
         <th>Jokabide desegokiak</th>
         <td>
           <a class="btn btn-secondary"
-             th:href="@{/kudeatzaile/jokabide-desegokiak(dataHasiera='',dataAmaiera='',ikaslea=${jokabideDesegokiakFiltroa},moduloaId='',taldeaId='',jasota='')}">Kontsultatu</a>
+             th:href="@{/kudeatzaile/jokabide-desegokiak(dataHasiera='',dataAmaiera='',ikaslea=${jokabideDesegokiakFiltroa},moduloaId='',taldeaId='',jasota='')}">
+            Kontsultatu
+          </a>
         </td>
       </tr>
+
       </tbody>
     </table>
   </div>
+
+
+  <!-- IKASLEAREN ARGAZKIA -->
+  <div class="ikasle-argazkia-card">
+    <th:block th:with="tick=${#dates.createNow().time / 300000}">
+      <img class="ikasle-argazkia"
+           th:src="${#strings.isEmpty(ikaslea.argazkiPath)
+                    ? '/img/avatar-user.svg'
+                    : ikaslea.argazkiPath + '?v=' + tick}"
+           th:alt="${ikaslea.izena != null
+                    ? ikaslea.izena + ' - argazkia'
+                    : 'Ikaslearen argazkia'}">
+    </th:block>
+  </div>
+
+</div>
 
   <form class="form" method="get" th:action="@{/kudeatzaile/ikaslea/{id}(id=${ikaslea.id})}">
     <label for="ikasturteaId">Ikasturtea:</label>
