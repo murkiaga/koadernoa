@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.*;
 import java.util.Set;
 import java.util.List;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -27,6 +28,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
 import com.koadernoa.app.ethazi.service.EthaziService;
+import com.koadernoa.app.ethazi.service.IkaskuntzaEmaitzaCsvImportService;
 import com.koadernoa.app.ethazi.dto.EthaziForms.*;
 import com.koadernoa.app.ethazi.entitateak.gaitasunak.*;
 import com.koadernoa.app.objektuak.modulua.entitateak.*;
@@ -37,9 +39,11 @@ import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
     "spring.jpa.hibernate.ddl-auto=create-drop", "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
     "spring.config.import=", "spring.jpa.show-sql=false"
 }, showSql = false)
-@Import({EthaziService.class, com.koadernoa.app.ethazi.service.KinielaService.class})
+@Import({EthaziService.class, IkaskuntzaEmaitzaCsvImportService.class,
+    com.koadernoa.app.ethazi.service.KinielaService.class})
 class EthaziServiceTest {
     @Autowired EthaziService service;
+    @Autowired IkaskuntzaEmaitzaCsvImportService csvImportService;
     @Autowired com.koadernoa.app.ethazi.service.KinielaService kiniela;
     @Autowired TestEntityManager em;
     Zikloa cycle;
@@ -69,11 +73,52 @@ class EthaziServiceTest {
         f.setKodea("RA1"); f.setOrdena(1); f.setDeskribapena("Sistemak identifikatzen ditu"); service.gordeEmaitza(null, f);
         return service.emaitzak(f.getZikloaId(), m.getId()).get(0);
     }
-    @Test void newOutcomeKeepsLegacyModuleForPreMigrationSchemas() {
+    @Test void newOutcomeUsesEeiCodeWithoutLegacyModuleColumn() {
         var m = module(cycle, "LEGACY");
         var ie = outcome(m);
         em.flush(); em.clear();
-        assertThat(service.emaitza(ie.getId()).getLegacyModuloa().getId()).isEqualTo(m.getId());
+        assertThat(service.emaitza(ie.getId()).getEeiKodea()).isEqualTo(m.getEeiKodea());
+        var columns = em.getEntityManager().createNativeQuery(
+                "select column_name from information_schema.columns where table_name = 'IKASKUNTZA_EMAITZA'")
+                .getResultList();
+        assertThat(columns).noneMatch(name -> name.toString().equalsIgnoreCase("moduloa_id"));
+    }
+
+    @Test void csvImportCreatesAndUpdatesOutcomesWithoutDeletingEnglish() {
+        var m = module(cycle, "0221");
+        var existing = new IkaskuntzaEmaitza();
+        existing.setEeiKodea("0221"); existing.setOrdena(1); existing.setKodea("zaharra");
+        existing.setDeskribapena("Zaharra"); existing.setDeskribapenaEn("Keep this"); em.persist(existing);
+        String csv = "\uFEFF\"eeiKodea\",\"modulu_kodea\",\"ordena\",\"kodea\",\"deskribapenaEU\",\"deskribapenaES\"\r\n"
+                + "\"0221\",\"0221\",\"1\",\"0221.1\",\"EU berria, komarekin\",\"ES nueva\"\r\n"
+                + "\"0221\",\"0221\",\"2\",\"0221.2\",\"Bi lerroko\n"
+                + "deskribapena\",\"Descripción\"\r\n";
+        var file = new MockMultipartFile("fitxategia", "emaitzak.csv", "text/csv",
+                csv.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+
+        var result = csvImportService.inportatu(file);
+        em.flush(); em.clear();
+
+        assertThat(result.sortuak()).isEqualTo(1);
+        assertThat(result.eguneratuak()).isEqualTo(1);
+        assertThat(service.emaitzak(cycle.getId(), m.getId())).extracting(IkaskuntzaEmaitza::getKodea)
+                .containsExactly("0221.1", "0221.2");
+        assertThat(service.emaitza(existing.getId()).getDeskribapena()).isEqualTo("EU berria, komarekin");
+        assertThat(service.emaitza(existing.getId()).getDeskribapenaEs()).isEqualTo("ES nueva");
+        assertThat(service.emaitza(existing.getId()).getDeskribapenaEn()).isEqualTo("Keep this");
+        assertThat(service.emaitzak(cycle.getId(), m.getId()).get(1).getDeskribapena())
+                .isEqualTo("Bi lerroko\ndeskribapena");
+    }
+
+    @Test void invalidCsvRollsBackAllRows() {
+        String csv = "eeiKodea,ordena,kodea,deskribapenaEU,deskribapenaES\n"
+                + "0221,1,0221.1,Lehena,Primera\n"
+                + "0221,ez-da-zenbakia,0221.2,Biga,Segunda\n";
+        var file = new MockMultipartFile("fitxategia", "emaitzak.csv", "text/csv",
+                csv.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        assertThatThrownBy(() -> csvImportService.inportatu(file)).hasMessageContaining("ordena");
+        assertThat(em.getEntityManager().createQuery("select count(e) from IkaskuntzaEmaitza e", Long.class)
+                .getSingleResult()).isZero();
     }
     AdierazleaForm indicator(Long... ids) {
         var f = new AdierazleaForm(); f.setDeskribapena("Osagaiak identifikatzen ditu"); f.setEmaitzaIds(Set.of(ids)); return f;
@@ -547,7 +592,7 @@ class EthaziServiceTest {
         resolver.setPrefix("templates/"); resolver.setSuffix(".html"); resolver.setTemplateMode("HTML");
         var engine = new SpringTemplateEngine(); engine.setTemplateResolver(resolver); engine.addDialect(new SpringSecurityDialect());
         var views = new ThymeleafViewResolver(); views.setTemplateEngine(engine); views.setCharacterEncoding("UTF-8");
-        return MockMvcBuilders.standaloneSetup(new EthaziController(service), new com.koadernoa.app.ethazi.controller.KinielaController(kiniela, service),
+        return MockMvcBuilders.standaloneSetup(new EthaziController(service, csvImportService), new com.koadernoa.app.ethazi.controller.KinielaController(kiniela, service),
                 new com.koadernoa.app.ethazi.controller.ErronkaController(kiniela, service),
                 new org.springframework.security.web.access.expression.DefaultWebSecurityExpressionHandler()).setControllerAdvice(new TemplateModel())
                 .setViewResolvers(views).build();

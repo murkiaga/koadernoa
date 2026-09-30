@@ -350,7 +350,6 @@ public class EthaziService {
         require(moduluEmaitzak(m).stream().noneMatch(other -> !Objects.equals(other.getId(), id) && Objects.equals(other.getOrdena(), f.getOrdena())), "EEI kode horrek badu ordena bereko IE bat. Editatu lehendik dagoena.");
         ie.setDeskribapenaEs(f.getDeskribapenaEs()); ie.setDeskribapenaEn(f.getDeskribapenaEn());
         ie.setOrdena(f.getOrdena()); ie.setEeiKodea(m.getEeiKodea());
-        if (id == null) ie.setLegacyModuloa(m);
         emaitzak.save(ie);
     }
     @Transactional

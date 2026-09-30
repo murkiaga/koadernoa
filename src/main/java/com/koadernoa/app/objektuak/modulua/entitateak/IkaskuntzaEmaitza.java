@@ -5,8 +5,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,15 +20,6 @@ public class IkaskuntzaEmaitza {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    /**
-     * Kept for databases that still have the pre-multilingual, mandatory
-     * moduloa_id column. Curriculum ownership is resolved through eeiKodea;
-     * this value is only populated for newly created rows for compatibility.
-     */
-    @ManyToOne
-    @JoinColumn(name = "moduloa_id")
-    private Moduloa legacyModuloa;
 
     @Column(name="eei_kodea", nullable=false)
     private String eeiKodea;

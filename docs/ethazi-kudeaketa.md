@@ -55,6 +55,7 @@ Ondoko guztiak `/ethazi` aurrizkiaren azpian daude:
 | POST | `/mailakatzeak/{id}/mailak/{mailaId}/ezabatu` | Maila ezabatu |
 | POST | `/mailakatzeak/{id}/mailak/{mailaId}/mugitu` | Ordena aldatu (`norabidea`: -1 edo 1) |
 | GET | `/ikaskuntza-emaitzak` | IE zerrenda (`zikloaId`, `moduloaId`) |
+| POST | `/ikaskuntza-emaitzak/inportatu` | IEak CSV bidez sortu edo eguneratu (`eeiKodea` + `ordena`) |
 | GET, POST | `/ikaskuntza-emaitzak/berria` | IE sortu |
 | GET, POST | `/ikaskuntza-emaitzak/{id}/editatu` | IE editatu |
 | POST | `/ikaskuntza-emaitzak/{id}/ezabatu` | IE ezabatu |

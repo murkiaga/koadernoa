@@ -10,10 +10,12 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.koadernoa.app.ethazi.dto.EthaziForms.*;
 import com.koadernoa.app.ethazi.entitateak.gaitasunak.GaitasunMota;
 import com.koadernoa.app.ethazi.service.EthaziService;
+import com.koadernoa.app.ethazi.service.IkaskuntzaEmaitzaCsvImportService;
 import com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class EthaziController {
     private final EthaziService service;
+    private final IkaskuntzaEmaitzaCsvImportService emaitzaCsvImportService;
 
     @ModelAttribute("hizkuntza")
     Hizkuntza hizkuntza(
@@ -308,6 +311,22 @@ public class EthaziController {
         var f = service.emaitzaForm(id);
         return egin(() -> service.ezabatuEmaitza(id), "Ikaskuntza-emaitza ezabatu da.",
                 "/ikaskuntza-emaitzak?zikloaId=" + f.getZikloaId() + "&moduloaId=" + f.getModuloaId(), flash);
+    }
+    @PostMapping("/ikaskuntza-emaitzak/inportatu")
+    public String emaitzakInportatu(@RequestParam("fitxategia") MultipartFile fitxategia,
+            @RequestParam(required = false) Long zikloaId,
+            @RequestParam(required = false) Long moduloaId, RedirectAttributes flash) {
+        try {
+            var result = emaitzaCsvImportService.inportatu(fitxategia);
+            flash.addFlashAttribute("success", "CSV inportazioa osatu da: " + result.sortuak()
+                    + " sortu eta " + result.eguneratuak() + " eguneratu (" + result.guztira() + " guztira).");
+        } catch (IllegalArgumentException | DataIntegrityViolationException ex) {
+            flash.addFlashAttribute("error", mezua(ex));
+        }
+        String destination = "redirect:/ethazi/ikaskuntza-emaitzak";
+        if (zikloaId != null) destination += "?zikloaId=" + zikloaId;
+        if (zikloaId != null && moduloaId != null) destination += "&moduloaId=" + moduloaId;
+        return destination;
     }
     private void balidatu(BindingResult binding) {
         if (binding.hasErrors()) throw new IllegalArgumentException("Berrikusi formularioa: zenbaki edo aukera baliogabea.");
