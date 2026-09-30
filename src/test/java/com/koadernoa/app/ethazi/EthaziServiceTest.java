@@ -69,6 +69,12 @@ class EthaziServiceTest {
         f.setKodea("RA1"); f.setOrdena(1); f.setDeskribapena("Sistemak identifikatzen ditu"); service.gordeEmaitza(null, f);
         return service.emaitzak(f.getZikloaId(), m.getId()).get(0);
     }
+    @Test void newOutcomeKeepsLegacyModuleForPreMigrationSchemas() {
+        var m = module(cycle, "LEGACY");
+        var ie = outcome(m);
+        em.flush(); em.clear();
+        assertThat(service.emaitza(ie.getId()).getLegacyModuloa().getId()).isEqualTo(m.getId());
+    }
     AdierazleaForm indicator(Long... ids) {
         var f = new AdierazleaForm(); f.setDeskribapena("Osagaiak identifikatzen ditu"); f.setEmaitzaIds(Set.of(ids)); return f;
     }
@@ -388,6 +394,52 @@ class EthaziServiceTest {
         f.setHasieraData(java.time.LocalDate.of(2026, 9, 15)); kiniela.gordeErronka(null, f);
         assertThat(kiniela.erronkaZutabeak(cycle.getId())).extracting(com.koadernoa.app.ethazi.service.KinielaService.ErronkaZutabea::izena)
             .containsExactly("First", "Second");
+    }
+
+    @Test void challengesCanBeFilteredAndKinielaKeepsOnlyTheModuleLanguage() {
+        var eu = module(cycle, "EU-FILTER"); eu.setHizkuntza(Hizkuntza.EUSKARA);
+        var otherEu = module(cycle, "EU-OTHER"); otherEu.setHizkuntza(Hizkuntza.EUSKARA);
+        var es = module(cycle, "ES-FILTER"); es.setHizkuntza(Hizkuntza.GAZTELERA);
+        var euForm = challenge(eu); euForm.setIzena("Euskarazko erronka");
+        kiniela.gordeErronka(null, euForm);
+        var otherEuForm = challenge(otherEu); otherEuForm.setIzena("Beste moduluko erronka");
+        kiniela.gordeErronka(null, otherEuForm);
+        var esForm = challenge(es); esForm.setIzena("Reto en castellano"); esForm.setHizkuntza(Hizkuntza.GAZTELERA);
+        kiniela.gordeErronka(null, esForm);
+
+        assertThat(kiniela.erronkak(cycle.getId(), eu.getMaila().getId(), Hizkuntza.EUSKARA))
+            .extracting(com.koadernoa.app.ethazi.entitateak.Erronka::getIzena)
+            .containsExactly("Euskarazko erronka");
+        assertThat(kiniela.erronkak(cycle.getId(), null, Hizkuntza.GAZTELERA))
+            .extracting(com.koadernoa.app.ethazi.entitateak.Erronka::getIzena)
+            .containsExactly("Reto en castellano");
+
+        var modules = kiniela.kiniela(cycle.getId());
+        assertThat(modules.stream().filter(m -> m.id().equals(eu.getId())).findFirst().orElseThrow().erronkak())
+            .extracting(com.koadernoa.app.ethazi.service.KinielaService.ErronkaZutabea::izena)
+            .containsExactly("Euskarazko erronka");
+        assertThat(modules.stream().filter(m -> m.id().equals(otherEu.getId())).findFirst().orElseThrow().erronkak())
+            .extracting(com.koadernoa.app.ethazi.service.KinielaService.ErronkaZutabea::izena)
+            .containsExactly("Beste moduluko erronka");
+        assertThat(modules.stream().filter(m -> m.id().equals(es.getId())).findFirst().orElseThrow().erronkak())
+            .extracting(com.koadernoa.app.ethazi.service.KinielaService.ErronkaZutabea::izena)
+            .containsExactly("Reto en castellano");
+    }
+
+    @Test void challengeFiltersRenderAndOutcomeEditorDefaultsToModuleLanguage() throws Exception {
+        var es = module(cycle, "ES-EDITOR"); es.setHizkuntza(Hizkuntza.GAZTELERA);
+        var auth = new UsernamePasswordAuthenticationToken("manager", "", AuthorityUtils.createAuthorityList("ROLE_KUDEATZAILEA"));
+        SecurityContextHolder.getContext().setAuthentication(auth);
+        try {
+            mvc().perform(get("/ethazi/erronkak").principal(auth).param("zikloaId", cycle.getId().toString()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"mailaId\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"hizkuntza\"")));
+            mvc().perform(get("/ethazi/ikaskuntza-emaitzak/berria").principal(auth)
+                    .param("zikloaId", cycle.getId().toString()).param("moduloaId", es.getId().toString()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("data-default-language=\"GAZTELERA\"")));
+        } finally { SecurityContextHolder.clearContext(); }
     }
 
     ErronkaForm challenge(Moduloa m) {

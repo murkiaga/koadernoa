@@ -4,6 +4,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -14,6 +15,7 @@ import com.koadernoa.app.ethazi.dto.EthaziForms.*;
 import com.koadernoa.app.ethazi.entitateak.gaitasunak.GaitasunMota;
 import com.koadernoa.app.ethazi.service.EthaziService;
 import com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza;
+import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 import lombok.RequiredArgsConstructor;
 
 @Controller
@@ -279,9 +281,14 @@ public class EthaziController {
         return emaitzaForm(id, form, model);
     }
     private String emaitzaForm(Long id, EmaitzaForm form, Model model) {
+        var modules = service.moduluak(form.getZikloaId());
+        var language = modules.stream().filter(m -> Objects.equals(m.getId(), form.getModuloaId()))
+                .map(Moduloa::getHizkuntza).filter(h -> h != Hizkuntza.ZEHAZTU_GABE)
+                .findFirst().orElse(Hizkuntza.EUSKARA);
         model.addAttribute("id", id);
         model.addAttribute("form", form);
-        model.addAttribute("moduluak", service.moduluak(form.getZikloaId()));
+        model.addAttribute("moduluak", modules);
+        model.addAttribute("testuHizkuntza", language);
         return "Ethazi/ikaskuntza-emaitzak/form";
     }
     @PostMapping({"/ikaskuntza-emaitzak/berria", "/ikaskuntza-emaitzak/{id}/editatu"})

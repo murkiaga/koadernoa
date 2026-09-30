@@ -22,13 +22,18 @@ public class ErronkaController {
     @ModelAttribute
     void aukerak(Model model) {
         model.addAttribute("zikloak", ethazi.zikloak());
+        model.addAttribute("mailak", service.mailak());
         model.addAttribute("hizkuntzak", Hizkuntza.values());
     }
 
     @GetMapping({"", "/"})
-    String erronkak(@RequestParam(required = false) Long zikloaId, Model model) {
+    String erronkak(@RequestParam(required = false) Long zikloaId,
+            @RequestParam(required = false) Long mailaId,
+            @RequestParam(required = false) Hizkuntza hizkuntza, Model model) {
         model.addAttribute("zikloaId", zikloaId);
-        model.addAttribute("erronkak", service.erronkak(zikloaId));
+        model.addAttribute("mailaId", mailaId);
+        model.addAttribute("hizkuntza", hizkuntza);
+        model.addAttribute("erronkak", service.erronkak(zikloaId, mailaId, hizkuntza));
         return "Ethazi/erronkak/index";
     }
 

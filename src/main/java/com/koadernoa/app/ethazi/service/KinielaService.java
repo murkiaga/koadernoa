@@ -26,7 +26,13 @@ public class KinielaService {
 
     public List<Maila> mailak() { return mailak.findAllByAktiboTrueOrderByOrdenaAscIzenaAsc(); }
     public List<Erronka> erronkak(Long zikloaId) {
-        var result = zikloaId == null ? List.<Erronka>of() : erronkak.findByZikloaIdOrderByHasieraDataDescIdDesc(zikloaId);
+        return erronkak(zikloaId, null, null);
+    }
+    public List<Erronka> erronkak(Long zikloaId, Long mailaId, Hizkuntza hizkuntza) {
+        var result = zikloaId == null ? List.<Erronka>of() : erronkak.findByZikloaIdOrderByHasieraDataDescIdDesc(zikloaId).stream()
+            .filter(e -> mailaId == null || Objects.equals(e.getMaila().getId(), mailaId))
+            .filter(e -> hizkuntza == null || e.getHizkuntza() == hizkuntza)
+            .toList();
         result.forEach(e -> e.getModuluak().size()); return result;
     }
     public Erronka erronka(Long id) {
@@ -140,13 +146,13 @@ public class KinielaService {
         erronkak.delete(e);
     }
 
-    public record ErronkaZutabea(Long id, String izena, String maila, Set<Long> moduloIds) {}
+    public record ErronkaZutabea(Long id, String izena, String maila, Hizkuntza hizkuntza, Set<Long> moduloIds) {}
     public List<ErronkaZutabea> erronkaZutabeak(Long zikloaId) {
         return erronkak(zikloaId).stream()
             .sorted(Comparator.comparing((Erronka e) -> e.getMaila().getOrdena(), Comparator.nullsLast(Comparator.naturalOrder()))
                 .thenComparing(e -> e.getMaila().getId())
                 .thenComparing(Erronka::getHasieraData).thenComparing(Erronka::getId))
-            .map(e -> new ErronkaZutabea(e.getId(), e.getIzena(), e.getMaila().getIzena(), e.getModuluak().stream().map(Moduloa::getId).collect(java.util.stream.Collectors.toSet()))).toList();
+            .map(e -> new ErronkaZutabea(e.getId(), e.getIzena(), e.getMaila().getIzena(), e.getHizkuntza(), e.getModuluak().stream().map(Moduloa::getId).collect(java.util.stream.Collectors.toSet()))).toList();
     }
 
     private LorpenAdierazlea ziklokoAdierazlea(Long zikloaId, Long id) {
@@ -192,13 +198,15 @@ public class KinielaService {
 
     public record Lotura(Long id, String kodea, String deskribapena, BigDecimal pisua, Set<Long> erronkaIds, String oharra) {}
     public record Emaitza(Long id, String kodea, String deskribapena, List<Lotura> loturak, BigDecimal guztira) {}
-    public record Modulua(Long id, String izena, String taldea, String hizkuntza, Hizkuntza hizkuntzaKodea, List<Emaitza> emaitzak, BigDecimal guztira) {}
+    public record Modulua(Long id, String izena, String taldea, String hizkuntza, Hizkuntza hizkuntzaKodea,
+            List<Emaitza> emaitzak, BigDecimal guztira, List<ErronkaZutabea> erronkak) {}
     public List<LorpenAdierazlea> adierazleak(Long zikloaId) {
         return Arrays.stream(GaitasunMota.values()).flatMap(mota -> ethazi.errubrika(zikloaId, mota).lerroak().stream())
             .flatMap(r -> r.gelaxkak().stream()).filter(Objects::nonNull).flatMap(gm -> gm.getLorpenAdierazleak().stream()).toList();
     }
     public List<Modulua> kiniela(Long zikloaId) {
         var indicators = adierazleak(zikloaId);
+        var challenges = erronkaZutabeak(zikloaId);
         return ethazi.curriculum(zikloaId).stream().map(c -> {
             var results = c.emaitzak().stream().map(ie -> {
                 var links = indicators.stream().filter(a -> lotuta(a, ie.getId())).map(a -> new Lotura(a.getId(),
@@ -208,8 +216,10 @@ public class KinielaService {
                 return new Emaitza(ie.getId(), ie.getKodea(), ie.deskribapena(c.moduloa().getHizkuntza()), links, links.stream().map(Lotura::pisua).reduce(BigDecimal.ZERO, BigDecimal::add));
             }).toList();
             var m = c.moduloa();
+            var moduleLanguage = m.getHizkuntza() == Hizkuntza.ZEHAZTU_GABE ? Hizkuntza.EUSKARA : m.getHizkuntza();
             return new Modulua(m.getId(), m.getKodea() + " · " + m.getIzena(), m.getTaldea().getIzena(), m.getHizkuntza().getEtiketa(), m.getHizkuntza(), results,
-                results.stream().map(Emaitza::guztira).reduce(BigDecimal.ZERO, BigDecimal::add));
+                results.stream().map(Emaitza::guztira).reduce(BigDecimal.ZERO, BigDecimal::add),
+                challenges.stream().filter(e -> e.hizkuntza() == moduleLanguage && e.moduloIds().contains(m.getId())).toList());
         }).toList();
     }
     private boolean lotuta(LorpenAdierazlea a, Long ieId) { return a.getIkaskuntzaEmaitzak().stream().anyMatch(ie -> ie.getId().equals(ieId)); }

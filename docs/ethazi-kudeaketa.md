@@ -148,6 +148,8 @@ Hizkuntzaren Java konstantea `GAZTELERA` da. `HizkuntzaConverter` bihurgailuak l
 4. Talde bakoitzeko ID txikiena mantentzen da; IE–adierazle loturak eta pisuak ID horretara birbideratzen dira. Kinielako oharren eta erronka-hautaketen lotura-IDak mantentzen dira, jatorrizko modulua gehituta. Jatorrizko IE testuak eta IDen mapa `ethazi_ie_migration_*` tauletan uzten dira auditatzeko.
 5. Abiarazi aplikazio berria; erronken bertsioetarako gehikuntza hutsak Hibernatek sortzen ditu. Egiaztatu modulu bakoitzeko IEak, oharrak eta erronkak. DDLak MySQLen commit inplizitua egiten duenez, migrazioaren erdiko akatsa edo atzera egitea babeskopia osoaren bidez berreskuratu behar da; ez exekutatu script osoa itsu-itsuan bigarren aldiz.
 
+Migrazio osoa egin arren `ethazi_kiniela_lotura` taulan bi zutabeko unique zaharra geratu bada (adibidez, Hibernatek ausazko izena eman ziolako), aplikazioak abioan automatikoki ordezkatzen du hiru zutabeko `(adierazlea_id, emaitza_id, moduloa_id)` uniquearekin. Eskuz konpontzeko script idempotentea ere badago: `docs/migrations/20260930-kiniela-lotura-unique-konponketa.sql`.
+
 Lehendik zeuden gaitasun eta lorpen-adierazleek ez zuten jatorrizko hizkuntza-eremurik. Haien testua lehengo `deskribapena` eremuan mantentzen da; dagokion itzulpen-eremura zuzendu behar da gazteleraz/ingelesez idatzita zegoen kasuetan. Lorpen-adierazle desberdinak ez dira automatikoki fusionatzen, ez baitago haien baliokidetasuna frogatzen duen gakorik.
 
 ### Egiaztapen berriak

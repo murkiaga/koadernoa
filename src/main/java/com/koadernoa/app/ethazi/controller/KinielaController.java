@@ -35,7 +35,6 @@ public class KinielaController {
     @GetMapping({"", "/"})
     String kiniela(@RequestParam(required = false) Long zikloaId, Model model) {
         model.addAttribute("zikloaId", zikloaId);
-        model.addAttribute("erronkak", service.erronkaZutabeak(zikloaId));
         model.addAttribute("moduluak", service.kiniela(zikloaId));
         model.addAttribute("errubrikak", Arrays.stream(GaitasunMota.values())
                 .map(m -> ethazi.errubrika(zikloaId, m)).toList());

@@ -284,7 +284,7 @@ document.querySelectorAll('.translation-editor').forEach(editor => {
   const refresh = () => editor.querySelectorAll('[data-translation-panel]').forEach(panel => {
     panel.hidden = panel.dataset.translationPanel !== select.value;
   });
-  const currentLanguage = document.querySelector('#hizkuntza')?.value;
+  const currentLanguage = document.querySelector('#hizkuntza')?.value || select.dataset.defaultLanguage;
   if (currentLanguage === 'GAZTELERA') select.value = 'Es';
   if (currentLanguage === 'INGELERA') select.value = 'En';
   select.addEventListener('change', refresh);
