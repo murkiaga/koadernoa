@@ -35,7 +35,6 @@
     <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
     <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
 
-
     <form class="filters" method="get" th:action="@{|/kudeatzaile/irakasleak/${irakaslea.id}|}">
         <label>
             <span>Ikasturtea</span>
@@ -160,6 +159,20 @@
                 </tbody>
             </table>
         </div>
+    </section>
+
+    <section>
+        <h2>Baimenak</h2>
+        <form method="post" th:action="@{|/kudeatzaile/irakasleak/${irakaslea.id}/baimenak|}">
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <input type="hidden" name="ikasturteaId" th:value="${ikasturteaId}"/>
+            <label th:each="baimena : ${baimenGuztiak}" style="display:flex;align-items:center;gap:.5rem;margin:.5rem 0;">
+                <input type="checkbox" name="baimenak" th:value="${baimena}"
+                       th:checked="${irakaslea.baimenak != null and irakaslea.baimenak.contains(baimena)}"/>
+                <span th:text="${baimena.etiketa}">Ikasle guztien informazioa kontsultatu</span>
+            </label>
+            <button type="submit" class="btn btn-primary">Gorde baimenak</button>
+        </form>
     </section>
 </main>
 <div id="ordutegiLerroPopup" class="ordutegi-popup" aria-hidden="true">

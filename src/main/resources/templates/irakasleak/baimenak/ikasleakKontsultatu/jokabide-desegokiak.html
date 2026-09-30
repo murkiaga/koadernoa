@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jokabide desegokiak</title>
+  <link rel="stylesheet" th:href="@{/css/navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/irakasle-common.css}">
+</head>
+<body>
+<div th:replace="~{irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})}"></div>
+<main class="page">
+  <p><a th:href="@{/irakasle/ikasleak/{id}(id=${ikaslea.id})}">← Ikaslearen fitxara itzuli</a></p>
+  <h1>Jokabide desegokiak</h1>
+  <p><strong>Ikaslea:</strong> <span th:text="${ikaslea.izenOsoa}">Ikaslea</span></p>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Data</th><th>Modulua</th><th>Irakaslea</th><th>Arrazoia</th><th>Neurria</th><th>Deskribapena</th><th>Jasota</th></tr></thead>
+      <tbody>
+      <tr th:each="j : ${jokabideak}">
+        <td th:text="${j.data}">2026-01-01</td>
+        <td th:text="${j.moduloa != null ? j.moduloa.izena : '-'}">-</td>
+        <td th:text="${j.irakaslea != null ? j.irakaslea.izena : '-'}">-</td>
+        <td><strong th:text="${j.portaeraArrazoia.kodea}">-</strong><br><span th:text="${j.portaeraArrazoia.testua}">-</span></td>
+        <td><strong th:text="${j.neurriZuzentzailea.kodea}">-</strong><br><span th:text="${j.neurriZuzentzailea.testua}">-</span></td>
+        <td th:text="${j.deskribapenZehatza}">-</td>
+        <td th:text="${j.jasota ? 'Bai' : 'Ez'}">Ez</td>
+      </tr>
+      <tr th:if="${#lists.isEmpty(jokabideak)}"><td colspan="7">Ikasle honek ez du jokabide desegokirik.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+</body>
+</html>

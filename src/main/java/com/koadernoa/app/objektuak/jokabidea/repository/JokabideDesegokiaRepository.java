@@ -23,6 +23,19 @@ public interface JokabideDesegokiaRepository extends JpaRepository<JokabideDeseg
         join fetch j.moduloa m
         left join fetch m.taldea t
         join fetch j.irakaslea ir
+        join fetch j.portaeraArrazoia pa
+        join fetch j.neurriZuzentzailea nz
+        where i.id = :ikasleaId
+        order by j.createdAt desc, j.id desc
+    """)
+    List<JokabideDesegokia> findAllByIkasleaIdForKontsulta(@Param("ikasleaId") Long ikasleaId);
+
+    @Query("""
+        select j from JokabideDesegokia j
+        join fetch j.ikaslea i
+        join fetch j.moduloa m
+        left join fetch m.taldea t
+        join fetch j.irakaslea ir
         left join fetch j.jasotaNork jn
         join fetch j.portaeraArrazoia pa
         join fetch j.neurriZuzentzailea nz

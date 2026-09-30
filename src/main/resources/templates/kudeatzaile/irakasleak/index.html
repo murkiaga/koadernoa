@@ -28,6 +28,7 @@
 		        <th><a th:href="@{/kudeatzaile/irakasleak(mintegiaId=${mintegiaId},rola=${rola},izena=${izena},ordezkoa=${ordezkoa},ordenatu='izena',norabidea=${ordenatu == 'izena' and norabidea == 'asc' ? 'desc' : 'asc'})}">Izena <span th:if="${ordenatu == 'izena'}" th:text="${norabidea == 'asc' ? '▲' : '▼'}"></span></a></th>
 		        <th><a th:href="@{/kudeatzaile/irakasleak(mintegiaId=${mintegiaId},rola=${rola},izena=${izena},ordezkoa=${ordezkoa},ordenatu='emaila',norabidea=${ordenatu == 'emaila' and norabidea == 'asc' ? 'desc' : 'asc'})}">Emaila <span th:if="${ordenatu == 'emaila'}" th:text="${norabidea == 'asc' ? '▲' : '▼'}"></span></a></th>
 		        <th>Rola</th>
+		        <th>Baimenak</th>
 		        <th>Mintegia</th>
 		        <th>Ordezkoa</th>
 		        <th>Aldatu</th>
@@ -40,6 +41,13 @@
 		        <td><a th:href="@{|/kudeatzaile/irakasleak/${irakasle.id}|}" th:text="${irakasle.izena}">Izena</a></td>
 		        <td th:text="${irakasle.emaila}">Emaila</td>
 		        <td th:text="${irakasle.rola}">Rola</td>
+		        <td>
+		          <span th:if="${irakasle.baimenak == null or #sets.isEmpty(irakasle.baimenak)}">-</span>
+		          <th:block th:unless="${irakasle.baimenak == null or #sets.isEmpty(irakasle.baimenak)}"
+		                    th:each="baimena, stat : ${irakasle.baimenak}">
+		            <span th:text="${baimena.etiketa}">Ikasleak kontsultatu</span><span th:unless="${stat.last}">, </span>
+		          </th:block>
+		        </td>
 		        <td>
 		          <form th:action="@{|/kudeatzaile/irakasleak/${irakasle.id}/mintegia|}" method="post" th:id="|mintegia-${irakasle.id}|">
 		            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />

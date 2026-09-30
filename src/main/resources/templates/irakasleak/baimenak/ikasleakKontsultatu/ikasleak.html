@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ikasleak kontsultatu</title>
+  <link rel="stylesheet" th:href="@{/css/navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/irakasle-common.css}">
+  <style>
+    .kontsulta-toolbar{display:flex;justify-content:space-between;align-items:flex-end;gap:1.25rem;flex-wrap:wrap;margin:1.25rem 0;padding:1rem 1.1rem;background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 4px 14px rgba(15,23,42,.06)}
+    .kontsulta-filters{display:flex;align-items:flex-end;gap:.8rem;margin:0;flex-wrap:wrap;max-width:none}
+    .kontsulta-field{display:grid;gap:.35rem;min-width:170px}.kontsulta-field label,.kontsulta-search label{font-size:.82rem;font-weight:700;color:#475569;letter-spacing:.01em}
+    .kontsulta-field select,.kontsulta-search input{height:40px;width:100%;padding:.45rem .75rem;border:1px solid #cbd5e1;border-radius:9px;background:#fff;color:#0f172a;font:inherit;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+    .kontsulta-field select:focus,.kontsulta-search input:focus{outline:3px solid rgba(37,99,235,.14);border-color:#2563eb}
+    .kontsulta-field--wide{min-width:220px}.kontsulta-field--small{min-width:140px}
+    .kontsulta-search{position:relative;display:grid;gap:.35rem;min-width:min(340px,100%);flex:1 1 320px}.kontsulta-suggestions{display:none;position:absolute;z-index:10;top:100%;left:0;right:0;margin-top:.35rem;background:#fff;border:1px solid #d1d5db;border-radius:.6rem;box-shadow:0 10px 24px rgba(15,23,42,.12);max-height:280px;overflow:auto}
+    .ikasle-link{font-weight:650;text-decoration:none}.ikasle-link:hover{text-decoration:underline}
+    tbody tr[data-href]:hover{background:#eff6ff}
+    @media(max-width:720px){.kontsulta-toolbar{align-items:stretch}.kontsulta-filters,.kontsulta-field,.kontsulta-search{width:100%;min-width:0}}
+  </style>
+</head>
+<body>
+<div th:replace="~{irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})}"></div>
+<main class="page">
+  <h1>Ikasleak</h1>
+  <p>Ikasleen datuak kontsultatzeko ikuspegia.</p>
+
+  <div class="kontsulta-toolbar">
+    <form method="get" th:action="@{/irakasle/ikasleak}" class="kontsulta-filters">
+      <input type="hidden" name="page" value="0">
+      <div class="kontsulta-field kontsulta-field--wide">
+        <label for="zikloaId">Zikloa</label>
+        <select id="zikloaId" name="zikloaId" onchange="this.form.submit()">
+          <option value="">— Guztiak —</option>
+          <option th:each="z : ${zikloak}" th:value="${z.id}" th:text="${z.izena}" th:selected="${z.id == zikloaId}">Zikloa</option>
+        </select>
+      </div>
+      <div class="kontsulta-field">
+        <label for="taldeaId">Taldea</label>
+        <select id="taldeaId" name="taldeaId" onchange="this.form.submit()">
+          <option value="">— Guztiak —</option>
+          <option th:each="t : ${taldeak}" th:value="${t.id}" th:text="${t.izena}" th:selected="${t.id == taldeaId}">Taldea</option>
+        </select>
+      </div>
+      <div class="kontsulta-field kontsulta-field--small">
+        <label for="pageSize">Orri bakoitzean</label>
+        <select id="pageSize" name="size" onchange="this.form.submit()">
+          <option th:each="s : ${pageSizes}" th:value="${s}" th:text="${s}" th:selected="${s == pageSize}">20</option>
+        </select>
+      </div>
+      <noscript><button type="submit" class="btn btn-primary">Iragazi</button></noscript>
+    </form>
+
+    <div class="kontsulta-search">
+      <label for="ikasleBilaketa">Ikaslea bilatu</label>
+      <input id="ikasleBilaketa" type="text" placeholder="Gutxienez 3 karaktere (izena edo abizena)" autocomplete="off">
+      <div id="ikasleSuggest" class="kontsulta-suggestions"></div>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>HNA</th><th>Izen-abizenak</th><th>Taldea</th><th>Zikloa</th></tr></thead>
+      <tbody>
+      <tr th:each="ik : ${ikasleak}"
+          th:attr="data-href=@{/irakasle/ikasleak/{id}(id=${ik.id})}"
+          onclick="window.location=this.dataset.href" style="cursor:pointer;">
+        <td th:text="${ik.hna != null ? ik.hna : '-'}">HNA</td>
+        <td><a class="ikasle-link" th:href="@{/irakasle/ikasleak/{id}(id=${ik.id})}" th:text="${ik.izenOsoa}" onclick="event.stopPropagation()">Ikaslea</a></td>
+        <td>
+          <a th:if="${ik.taldea != null}"
+             th:href="@{/irakasle/ikasleak/taldeak/{id}/argazkiak(id=${ik.taldea.id})}"
+             th:text="${ik.taldea.izena}" onclick="event.stopPropagation()">Taldea</a>
+          <span th:if="${ik.taldea == null}">-</span>
+        </td>
+        <td th:text="${ik.taldea != null and ik.taldea.zikloa != null ? ik.taldea.zikloa.izena : '-'}">Zikloa</td>
+      </tr>
+      <tr th:if="${#lists.isEmpty(ikasleak)}"><td colspan="4">Ez da ikaslerik aurkitu.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div style="margin:1rem 0;display:flex;align-items:center;gap:.75rem;" th:if="${totalPages > 0}">
+    <a class="btn btn-secondary" th:if="${currentPage > 0}"
+       th:href="@{/irakasle/ikasleak(zikloaId=${zikloaId},taldeaId=${taldeaId},page=${currentPage - 1},size=${pageSize})}">Aurrekoa</a>
+    <span th:text="|Orria ${currentPage + 1} / ${totalPages} (${totalItems} ikasle)|">Orria</span>
+    <a class="btn btn-secondary" th:if="${currentPage + 1 < totalPages}"
+       th:href="@{/irakasle/ikasleak(zikloaId=${zikloaId},taldeaId=${taldeaId},page=${currentPage + 1},size=${pageSize})}">Hurrengoa</a>
+  </div>
+</main>
+<script>
+  const input = document.getElementById('ikasleBilaketa');
+  const box = document.getElementById('ikasleSuggest');
+  let azkenKontsulta = '';
+  let timer = null;
+
+  function ezkutatu() {
+    box.style.display = 'none';
+    box.replaceChildren();
+  }
+
+  function render(items) {
+    box.replaceChildren();
+    if (!items.length) {
+      ezkutatu();
+      return;
+    }
+    items.forEach(i => {
+      const link = document.createElement('a');
+      link.href = `/irakasle/ikasleak/${i.id}`;
+      link.style.cssText = 'display:block;padding:.55rem .7rem;border-bottom:1px solid #f1f5f9;text-decoration:none;color:#111827;';
+      const strong = document.createElement('strong');
+      strong.textContent = i.izena;
+      const meta = document.createElement('div');
+      meta.style.cssText = 'font-size:.88em;color:#6b7280;';
+      meta.textContent = `${i.hna || '-'}${i.taldea ? ' · ' + i.taldea : ''}`;
+      link.append(strong, meta);
+      box.append(link);
+    });
+    box.style.display = 'block';
+  }
+
+  async function bilatu(q) {
+    if (q.length < 3) {
+      ezkutatu();
+      return;
+    }
+    azkenKontsulta = q;
+    const erantzuna = await fetch(`/irakasle/ikasleak/bilatu?q=${encodeURIComponent(q)}`);
+    if (!erantzuna.ok) {
+      ezkutatu();
+      return;
+    }
+    const datuak = await erantzuna.json();
+    if (azkenKontsulta === q) render(datuak);
+  }
+
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    const q = input.value.trim();
+    timer = setTimeout(() => bilatu(q), 200);
+  });
+  document.addEventListener('click', e => {
+    if (!box.contains(e.target) && e.target !== input) ezkutatu();
+  });
+</script>
+</body>
+</html>

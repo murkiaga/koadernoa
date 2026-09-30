@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ikaslearen fitxa</title>
+  <link rel="stylesheet" th:href="@{/css/navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/irakasle-common.css}">
+  <style>
+    .ikasle-goiburua{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:2rem;align-items:start;margin-bottom:1rem}
+    .ikasle-datuak-wrap{min-width:0;margin-bottom:0}.ikasle-datuak{table-layout:fixed;width:100%}.ikasle-datuak th{width:190px}
+    .ikasle-argazkia-card{width:260px;aspect-ratio:4/5;padding:6px;background:#fff;border:1px solid #e2e8f0;border-radius:18px;box-shadow:0 8px 24px rgba(15,23,42,.10);overflow:hidden}
+    .ikasle-argazkia{display:block;width:100%;height:100%;object-fit:cover;object-position:center;border-radius:12px;background:#f8fafc}
+    @media(max-width:900px){.ikasle-goiburua{grid-template-columns:1fr;gap:1rem}.ikasle-argazkia-card{width:min(240px,70vw);justify-self:center}}
+  </style>
+</head>
+<body>
+<div th:replace="~{irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})}"></div>
+<main class="page">
+  <p><a th:href="@{/irakasle/ikasleak}">← Ikasleen zerrendara itzuli</a></p>
+  <h1 th:text="${ikaslea.izenOsoa}">Ikaslearen fitxa</h1>
+
+  <div class="ikasle-goiburua">
+    <div class="table-wrap ikasle-datuak-wrap">
+      <table class="ikasle-datuak"><tbody>
+        <tr><th>Izena</th><td th:text="${ikaslea.izena != null ? ikaslea.izena : '-'}">-</td></tr>
+        <tr><th>Abizena 1</th><td th:text="${ikaslea.abizena1 != null ? ikaslea.abizena1 : '-'}">-</td></tr>
+        <tr><th>Abizena 2</th><td th:text="${ikaslea.abizena2 != null ? ikaslea.abizena2 : '-'}">-</td></tr>
+        <tr><th>HNA (DIE)</th><td th:text="${ikaslea.hna != null ? ikaslea.hna : '-'}">-</td></tr>
+        <tr><th>NAN (DNI)</th><td th:text="${ikaslea.nan != null ? ikaslea.nan : '-'}">-</td></tr>
+        <tr><th>Taldea</th><td><a th:if="${ikaslea.taldea != null}" th:href="@{/irakasle/ikasleak/taldeak/{id}/argazkiak(id=${ikaslea.taldea.id})}" th:text="${ikaslea.taldea.izena}">Taldea</a><span th:if="${ikaslea.taldea == null}">-</span></td></tr>
+        <tr><th>Zikloa</th><td th:text="${ikaslea.taldea != null and ikaslea.taldea.zikloa != null ? ikaslea.taldea.zikloa.izena : '-'}">-</td></tr>
+      </tbody></table>
+    </div>
+    <div class="ikasle-argazkia-card">
+      <th:block th:with="tick=${#dates.createNow().time / 300000}">
+        <img class="ikasle-argazkia"
+             th:src="${#strings.isEmpty(ikaslea.argazkiPath) ? '/img/avatar-user.svg' : ikaslea.argazkiPath + '?v=' + tick}"
+             th:alt="${ikaslea.izena != null ? ikaslea.izena + ' - argazkia' : 'Ikaslearen argazkia'}">
+      </th:block>
+    </div>
+  </div>
+
+  <p style="margin:1rem 0;" th:if="${badituJokabideDesegokiak}">
+    <a class="btn btn-secondary" th:href="@{/irakasle/ikasleak/{id}/jokabide-desegokiak(id=${ikaslea.id})}">Jokabide desegokiak ikusi</a>
+  </p>
+
+  <form method="get" th:action="@{/irakasle/ikasleak/{id}(id=${ikaslea.id})}" th:if="${!#lists.isEmpty(ikasturteak)}">
+    <label>Ikasturtea:
+      <select name="ikasturteaId" onchange="this.form.submit()">
+        <option th:each="ik : ${ikasturteak}" th:value="${ik.id}" th:text="${ik.izena}"
+                th:selected="${ik.id == hautatutakoIkasturteaId}">Ikasturtea</option>
+      </select>
+    </label>
+  </form>
+
+  <h2>Matrikulak</h2>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Koadernoa</th><th>Modulua</th><th>Taldea</th><th>EEI kodea</th><th>Egoera</th></tr></thead>
+      <tbody>
+      <tr th:each="m : ${matrikulak}">
+        <td th:text="${m.koadernoa != null ? m.koadernoa.izena : '-'}">-</td>
+        <td th:text="${m.koadernoa != null and m.koadernoa.moduloa != null ? m.koadernoa.moduloa.izena : '-'}">-</td>
+        <td th:text="${m.koadernoa != null and m.koadernoa.moduloa != null and m.koadernoa.moduloa.taldea != null ? m.koadernoa.moduloa.taldea.izena : '-'}">-</td>
+        <td th:text="${m.koadernoa != null and m.koadernoa.moduloa != null ? m.koadernoa.moduloa.eeiKodea : '-'}">-</td>
+        <td th:text="${m.egoera != null ? m.egoera : '-'}">-</td>
+      </tr>
+      <tr th:if="${#lists.isEmpty(matrikulak)}"><td colspan="5">Ez dago matrikularik aukeratutako ikasturtean.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+</body>
+</html>

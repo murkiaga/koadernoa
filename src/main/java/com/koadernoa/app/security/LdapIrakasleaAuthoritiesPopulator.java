@@ -1,11 +1,9 @@
 package com.koadernoa.app.security;
 
 import java.util.Collection;
-import java.util.List;
 
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.ldap.userdetails.LdapAuthoritiesPopulator;
 import org.springframework.util.StringUtils;
 import org.springframework.ldap.core.DirContextOperations;
@@ -36,7 +34,7 @@ public class LdapIrakasleaAuthoritiesPopulator implements LdapAuthoritiesPopulat
             irakasleaRepository.save(irakaslea);
         }
 
-        return List.of(new SimpleGrantedAuthority("ROLE_" + irakaslea.getRola().name()));
+        return IrakasleAuthorities.from(irakaslea);
     }
 
     private Irakaslea sortuIrakaslea(DirContextOperations userData, String email) {

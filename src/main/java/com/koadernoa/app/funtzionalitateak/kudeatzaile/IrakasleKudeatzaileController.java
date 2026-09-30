@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,6 +28,7 @@ import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
 import com.koadernoa.app.objektuak.egutegia.service.IkasturteaService;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
+import com.koadernoa.app.objektuak.irakasleak.entitateak.Baimena;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Rola;
 import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
 import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaEzabatzeService;
@@ -162,6 +164,7 @@ public class IrakasleKudeatzaileController {
         List<Koadernoa> koadernoak = koadernoaRepository.findByIrakasleaAndIkasturteaWithRelations(id, selectedIkasturteaId);
 
         model.addAttribute("irakaslea", irakaslea);
+        model.addAttribute("baimenGuztiak", Baimena.values());
         model.addAttribute("ordezkatzenDituenak", irakasleaRepository.findAllByOrdezkoa_IdOrderByIzenaAsc(id));
         model.addAttribute("irakasleGuztiak", irakasleaRepository.findAll());
         model.addAttribute("ikasturteak", ikasturteak);
@@ -243,6 +246,19 @@ public class IrakasleKudeatzaileController {
         ra.addFlashAttribute("success", "Irakaslearen datuak eguneratu dira.");
         String redirect = "redirect:/kudeatzaile/irakasleak/" + id;
         return ikasturteaId != null ? redirect + "?ikasturteaId=" + ikasturteaId : redirect;
+    }
+
+    @PostMapping("/{id}/baimenak")
+    @Transactional
+    public String eguneratuBaimenak(@PathVariable("id") Long id,
+                                    @RequestParam(name = "baimenak", required = false) Set<Baimena> baimenak,
+                                    @RequestParam(name = "ikasturteaId", required = false) Long ikasturteaId,
+                                    RedirectAttributes ra) {
+        Irakaslea irakaslea = irakasleaRepository.findById(id).orElseThrow();
+        irakaslea.setBaimenak(baimenak == null ? new LinkedHashSet<>() : new LinkedHashSet<>(baimenak));
+        irakasleaRepository.save(irakaslea);
+        ra.addFlashAttribute("success", "Irakaslearen baimenak eguneratu dira.");
+        return redirectIrakasleFitxara(id, ikasturteaId);
     }
 
     private IrakasleOrdutegia sortuEskuzkoOrdutegia(Irakaslea irakaslea, Long ikasturteaId) {

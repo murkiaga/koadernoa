@@ -12,11 +12,7 @@ import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Rola;
 import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
 
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
-
-import java.util.List;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpSession;
@@ -68,11 +64,9 @@ public class CustomOAuth2UserService implements OAuth2UserService<OidcUserReques
         }
 
         //Autoritatea sortu (Spring Security-k "ROLE_" + rola izena espero du)
-        GrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + irakaslea.getRola().name());
-
         //Autoritateak eta atributuak erabiliz OidcUser berria sortu
         OidcUser user = new DefaultOidcUser(
-            List.of(authority),
+            IrakasleAuthorities.from(irakaslea),
             oidcUser.getIdToken(),
             oidcUser.getUserInfo()
         );
@@ -80,4 +74,3 @@ public class CustomOAuth2UserService implements OAuth2UserService<OidcUserReques
         return user;
     }
 }
-
