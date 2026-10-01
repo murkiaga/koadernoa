@@ -103,6 +103,16 @@ public interface IkasleaRepository extends JpaRepository<Ikaslea, Long> {
         where lower(coalesce(i.izena, '')) like lower(concat('%', :q, '%'))
            or lower(coalesce(i.abizena1, '')) like lower(concat('%', :q, '%'))
            or lower(coalesce(i.abizena2, '')) like lower(concat('%', :q, '%'))
+           or lower(concat(
+                coalesce(i.izena, ''), ' ',
+                coalesce(i.abizena1, ''), ' ',
+                coalesce(i.abizena2, '')
+              )) like lower(concat('%', :q, '%'))
+           or lower(concat(
+                coalesce(i.abizena1, ''), ' ',
+                coalesce(i.abizena2, ''), ' ',
+                coalesce(i.izena, '')
+              )) like lower(concat('%', :q, '%'))
         order by i.abizena1 asc, i.abizena2 asc, i.izena asc
     """)
     List<Ikaslea> bilatuAutocomplete(@Param("q") String q, Pageable pageable);
