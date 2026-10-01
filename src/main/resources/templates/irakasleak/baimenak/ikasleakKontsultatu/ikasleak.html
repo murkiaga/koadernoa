@@ -27,7 +27,7 @@
   <p>Ikasleen datuak kontsultatzeko ikuspegia.</p>
 
   <div class="kontsulta-toolbar">
-    <form method="get" th:action="@{/irakasle/ikasleak}" class="kontsulta-filters">
+    <form method="get" th:action="@{/irakasle/ikasleak-kontsultatu}" class="kontsulta-filters">
       <input type="hidden" name="page" value="0">
       <div class="kontsulta-field kontsulta-field--wide">
         <label for="zikloaId">Zikloa</label>
@@ -64,13 +64,13 @@
       <thead><tr><th>HNA</th><th>Izen-abizenak</th><th>Taldea</th><th>Zikloa</th></tr></thead>
       <tbody>
       <tr th:each="ik : ${ikasleak}"
-          th:attr="data-href=@{/irakasle/ikasleak/{id}(id=${ik.id})}"
+          th:attr="data-href=@{/irakasle/ikasleak-kontsultatu/{id}(id=${ik.id})}"
           onclick="window.location=this.dataset.href" style="cursor:pointer;">
         <td th:text="${ik.hna != null ? ik.hna : '-'}">HNA</td>
-        <td><a class="ikasle-link" th:href="@{/irakasle/ikasleak/{id}(id=${ik.id})}" th:text="${ik.izenOsoa}" onclick="event.stopPropagation()">Ikaslea</a></td>
+        <td><a class="ikasle-link" th:href="@{/irakasle/ikasleak-kontsultatu/{id}(id=${ik.id})}" th:text="${ik.izenOsoa}" onclick="event.stopPropagation()">Ikaslea</a></td>
         <td>
           <a th:if="${ik.taldea != null}"
-             th:href="@{/irakasle/ikasleak/taldeak/{id}/argazkiak(id=${ik.taldea.id})}"
+             th:href="@{/irakasle/ikasleak-kontsultatu/taldeak/{id}/argazkiak(id=${ik.taldea.id})}"
              th:text="${ik.taldea.izena}" onclick="event.stopPropagation()">Taldea</a>
           <span th:if="${ik.taldea == null}">-</span>
         </td>
@@ -83,10 +83,10 @@
 
   <div style="margin:1rem 0;display:flex;align-items:center;gap:.75rem;" th:if="${totalPages > 0}">
     <a class="btn btn-secondary" th:if="${currentPage > 0}"
-       th:href="@{/irakasle/ikasleak(zikloaId=${zikloaId},taldeaId=${taldeaId},page=${currentPage - 1},size=${pageSize})}">Aurrekoa</a>
+       th:href="@{/irakasle/ikasleak-kontsultatu(zikloaId=${zikloaId},taldeaId=${taldeaId},page=${currentPage - 1},size=${pageSize})}">Aurrekoa</a>
     <span th:text="|Orria ${currentPage + 1} / ${totalPages} (${totalItems} ikasle)|">Orria</span>
     <a class="btn btn-secondary" th:if="${currentPage + 1 < totalPages}"
-       th:href="@{/irakasle/ikasleak(zikloaId=${zikloaId},taldeaId=${taldeaId},page=${currentPage + 1},size=${pageSize})}">Hurrengoa</a>
+       th:href="@{/irakasle/ikasleak-kontsultatu(zikloaId=${zikloaId},taldeaId=${taldeaId},page=${currentPage + 1},size=${pageSize})}">Hurrengoa</a>
   </div>
 </main>
 <script>
@@ -108,7 +108,7 @@
     }
     items.forEach(i => {
       const link = document.createElement('a');
-      link.href = `/irakasle/ikasleak/${i.id}`;
+      link.href = `/irakasle/ikasleak-kontsultatu/${i.id}`;
       link.style.cssText = 'display:block;padding:.55rem .7rem;border-bottom:1px solid #f1f5f9;text-decoration:none;color:#111827;';
       const strong = document.createElement('strong');
       strong.textContent = i.izena;
@@ -127,7 +127,7 @@
       return;
     }
     azkenKontsulta = q;
-    const erantzuna = await fetch(`/irakasle/ikasleak/bilatu?q=${encodeURIComponent(q)}`);
+    const erantzuna = await fetch(`/irakasle/ikasleak-kontsultatu/bilatu?q=${encodeURIComponent(q)}`);
     if (!erantzuna.ok) {
       ezkutatu();
       return;

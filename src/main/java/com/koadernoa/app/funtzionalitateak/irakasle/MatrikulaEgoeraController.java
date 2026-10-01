@@ -32,7 +32,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Controller
-@RequestMapping("/irakasle/koadernoko-ikasleak")
+@RequestMapping("/irakasle/ikasleak")
 @RequiredArgsConstructor
 @SessionAttributes("koadernoAktiboa") //<-KOADERNOA SESIOAN GORDE
 public class MatrikulaEgoeraController {

@@ -71,8 +71,8 @@
           <th:block th:if="${koadernoAktiboa != null}"> 
 	          <li><a th:href="@{/irakasle/egutegia}"
 	                 th:classappend="${currentPath.startsWith('/irakasle/egutegia')} ? 'active'">Egutegia</a></li>
-	          <li><a th:href="@{/irakasle/koadernoko-ikasleak}"
-	                 th:classappend="${currentPath.startsWith('/irakasle/koadernoko-ikasleak')} ? 'active'">Ikasleak</a></li>
+	          <li><a th:href="@{/irakasle/ikasleak}"
+	                 th:classappend="${currentPath == '/irakasle/ikasleak' or currentPath.startsWith('/irakasle/ikasleak/')} ? 'active'">Ikasleak</a></li>
 	          <li><a th:href="@{/irakasle/programazioa}"
 	                 th:classappend="${currentPath.startsWith('/irakasle/programazioa')} ? 'active'">Programazioa</a></li>
 	          <li><a th:href="@{/irakasle/denboralizazioa}"
@@ -83,8 +83,8 @@
 	                 th:classappend="${currentPath.startsWith('/irakasle/estatistikak')} ? 'active'">Estatistikak</a></li>
 	      </th:block>
           <li th:if="${#authorization.expression('hasAuthority(''BAIMENA_IKASLEAK_KONTSULTATU'')')}">
-            <a th:href="@{/irakasle/ikasleak}"
-               th:classappend="${currentPath.startsWith('/irakasle/ikasleak')} ? 'active'">Ikasleak kontsultatu</a>
+            <a th:href="@{/irakasle/ikasleak-kontsultatu}"
+               th:classappend="${currentPath.startsWith('/irakasle/ikasleak-kontsultatu')} ? 'active'">Ikasleak kontsultatu</a>
           </li>
           <li th:if="${#authorization.expression('hasAnyRole(''KUDEATZAILEA'',''ADMIN'')')}">
             <a th:href="@{/kudeatzaile}">Kudeaketa</a>
@@ -116,8 +116,8 @@
                  th:classappend="${currentPath == '/irakasle'} ? 'active'">Hasiera</a></li>
           <li><a th:href="@{/irakasle/egutegia}"
                  th:classappend="${currentPath.startsWith('/irakasle/egutegia')} ? 'active'">Egutegia</a></li>
-          <li th:if="${koadernoAktiboa != null}"><a th:href="@{/irakasle/koadernoko-ikasleak}"
-	                 th:classappend="${currentPath.startsWith('/irakasle/koadernoko-ikasleak')} ? 'active'">Ikasleak</a></li>
+          <li th:if="${koadernoAktiboa != null}"><a th:href="@{/irakasle/ikasleak}"
+	                 th:classappend="${currentPath == '/irakasle/ikasleak' or currentPath.startsWith('/irakasle/ikasleak/')} ? 'active'">Ikasleak</a></li>
           <li><a th:href="@{/irakasle/programazioa}"
                  th:classappend="${currentPath.startsWith('/irakasle/programazioa')} ? 'active'">Programazioa</a></li>
           <li><a th:href="@{/irakasle/denboralizazioa}"
@@ -127,8 +127,8 @@
           <li><a th:href="@{/irakasle/estatistikak}"
 	                 th:classappend="${currentPath.startsWith('/irakasle/estatistikak')} ? 'active'">Estatistikak</a></li>
           <li th:if="${#authorization.expression('hasAuthority(''BAIMENA_IKASLEAK_KONTSULTATU'')')}">
-            <a th:href="@{/irakasle/ikasleak}"
-               th:classappend="${currentPath.startsWith('/irakasle/ikasleak')} ? 'active'">Ikasleak kontsultatu</a>
+            <a th:href="@{/irakasle/ikasleak-kontsultatu}"
+               th:classappend="${currentPath.startsWith('/irakasle/ikasleak-kontsultatu')} ? 'active'">Ikasleak kontsultatu</a>
           </li>
           <li th:if="${#authorization.expression('hasAnyRole(''KUDEATZAILEA'',''ADMIN'')')}">
             <a th:href="@{/kudeatzaile}">Kudeaketa</a>

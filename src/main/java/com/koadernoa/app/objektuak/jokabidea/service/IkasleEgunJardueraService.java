@@ -71,6 +71,33 @@ public class IkasleEgunJardueraService {
     }
 
     @Transactional(readOnly = true)
+    public Map<LocalDate, String> ikaslearenOharrak(
+            Long ikasleaId, Long koadernoId, LocalDate hasiera, LocalDate amaiera) {
+        return oharraRepository
+                .findByIkasleaIdAndKoadernoaIdAndDataBetween(ikasleaId, koadernoId, hasiera, amaiera)
+                .stream()
+                .collect(Collectors.toMap(
+                        IkasleEgunOharra::getData,
+                        IkasleEgunOharra::getTestua,
+                        (lehenengoa, bigarrena) -> bigarrena,
+                        LinkedHashMap::new));
+    }
+
+    @Transactional(readOnly = true)
+    public Map<LocalDate, List<JokabideLaburpena>> ikaslearenJokabideak(
+            Long ikasleaId, Long koadernoId, LocalDate hasiera, LocalDate amaiera) {
+        return jokabideRepository
+                .findByIkasleaIdAndKoadernoaIdAndDataBetween(ikasleaId, koadernoId, hasiera, amaiera)
+                .stream()
+                .collect(Collectors.groupingBy(
+                        JokabideDesegokia::getData,
+                        LinkedHashMap::new,
+                        Collectors.mapping(
+                                j -> new JokabideLaburpena(j.getId(), j.getPdfFilename()),
+                                Collectors.toList())));
+    }
+
+    @Transactional(readOnly = true)
     public Map<Long, List<JokabideLaburpena>> egunekoJokabideak(Long koadernoId, LocalDate data) {
         return jokabideRepository.findByKoadernoaIdAndData(koadernoId, data).stream().collect(Collectors.groupingBy(
             j -> j.getIkaslea().getId(), LinkedHashMap::new,

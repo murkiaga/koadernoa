@@ -51,7 +51,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/kudeatzaile/**").hasAnyRole("ADMIN", "KUDEATZAILEA")
-                .requestMatchers("/irakasle/ikasleak", "/irakasle/ikasleak/**")
+                .requestMatchers("/irakasle/ikasleak-kontsultatu", "/irakasle/ikasleak-kontsultatu/**")
                     .hasAnyAuthority("ROLE_ADMIN", "ROLE_KUDEATZAILEA", "BAIMENA_IKASLEAK_KONTSULTATU")
                 .requestMatchers("/irakasle", "/irakasle/**").hasAnyRole("ADMIN", "KUDEATZAILEA", "IRAKASLEA")
                 .requestMatchers("/login", "/login/oauth2/**", "/oauth2/**", "/css/**", "/js/**", "/uploads/**", "/favicon.ico").permitAll()

@@ -1,9 +1,17 @@
 package com.koadernoa.app.funtzionalitateak.irakasle.baimenak.ikasleakkontsultatu;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
+import com.koadernoa.app.objektuak.jokabidea.entitateak.JokabideDesegokia;
 import com.koadernoa.app.objektuak.modulua.entitateak.Ikaslea;
 import com.koadernoa.app.objektuak.zikloak.repository.TaldeaRepository;
 import com.koadernoa.app.objektuak.zikloak.repository.ZikloaRepository;
@@ -22,7 +31,7 @@ import jakarta.servlet.http.HttpSession;
 
 @Controller
 @RequiredArgsConstructor
-@RequestMapping("/irakasle/ikasleak")
+@RequestMapping("/irakasle/ikasleak-kontsultatu")
 public class IkasleakKontsultatuController {
 
     private static final String TEMPLATE_ROOT = "irakasleak/baimenak/ikasleakKontsultatu/";
@@ -90,7 +99,10 @@ public class IkasleakKontsultatuController {
         model.addAttribute("ikaslea", ikaslea);
         model.addAttribute("ikasturteak", ikasturteak);
         model.addAttribute("hautatutakoIkasturteaId", hautatutakoIkasturteaId);
-        model.addAttribute("matrikulak", service.getMatrikulak(id, hautatutakoIkasturteaId));
+        IkasleakKontsultatuService.IkaslearenEbaluazioDatuak ebaluazioDatuak =
+                service.getEbaluazioDatuak(id, hautatutakoIkasturteaId);
+        model.addAttribute("ebaluazioMomentuak", ebaluazioDatuak.momentuak());
+        model.addAttribute("matrikulak", ebaluazioDatuak.matrikulak());
         model.addAttribute("badituJokabideDesegokiak", service.badituJokabideDesegokiak(id));
         return TEMPLATE_ROOT + "ikaslea";
     }
@@ -100,6 +112,53 @@ public class IkasleakKontsultatuController {
         model.addAttribute("ikaslea", service.getIkaslea(id));
         model.addAttribute("jokabideak", service.getJokabideDesegokiak(id));
         return TEMPLATE_ROOT + "jokabide-desegokiak";
+    }
+
+    @GetMapping("/{id}/asistentzia-kontrola")
+    public String asistentziaKontrola(@PathVariable Long id,
+                                      @RequestParam(name = "urtea", required = false) Integer urtea,
+                                      @RequestParam(name = "hilabetea", required = false) Integer hilabetea,
+                                      Model model) {
+        LocalDate gaur = LocalDate.now();
+        int hautatutakoUrtea = urtea != null ? urtea : gaur.getYear();
+        int hautatutakoHilabetea = hilabetea != null && hilabetea >= 1 && hilabetea <= 12
+                ? hilabetea
+                : gaur.getMonthValue();
+        IkasleakKontsultatuService.IkaslearenAsistentziaDatuak datuak =
+                service.getAsistentziaDatuak(id, hautatutakoUrtea, hautatutakoHilabetea);
+        model.addAttribute("ikaslea", datuak.ikaslea());
+        model.addAttribute("ikasturtea", datuak.ikasturtea());
+        model.addAttribute("urtea", datuak.urtea());
+        model.addAttribute("hilabetea", datuak.hilabetea());
+        model.addAttribute("hilabeteUrtea", datuak.hilabeteUrtea());
+        model.addAttribute("egunak", datuak.egunak());
+        model.addAttribute("lerroak", datuak.lerroak());
+        return TEMPLATE_ROOT + "asistentzia-kontrola";
+    }
+
+    @GetMapping("/{id}/asistentzia-kontrola/jokabideak/{jokabideaId}/pdf")
+    public ResponseEntity<?> jokabidePdfa(@PathVariable Long id,
+                                          @PathVariable Long jokabideaId) throws IOException {
+        JokabideDesegokia jokabidea;
+        try {
+            jokabidea = service.getJokabideDesegokia(id, jokabideaId);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.notFound().build();
+        }
+        if (jokabidea.getPdfPath() == null || jokabidea.getPdfPath().isBlank()) {
+            return ResponseEntity.notFound().build();
+        }
+        Path pdfa = Paths.get(jokabidea.getPdfPath()).normalize();
+        if (!Files.isRegularFile(pdfa)) {
+            return ResponseEntity.notFound().build();
+        }
+        String fitxategiIzena = jokabidea.getPdfFilename() != null
+                ? jokabidea.getPdfFilename().replace("\"", "")
+                : "jokabide-desegokia.pdf";
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fitxategiIzena + "\"")
+                .body(Files.readAllBytes(pdfa));
     }
 
     private int aukeratuPageSize(Integer eskatutakoa, HttpSession session) {

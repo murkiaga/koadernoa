@@ -13,6 +13,8 @@ public interface JokabideDesegokiaRepository extends JpaRepository<JokabideDeseg
 
     List<JokabideDesegokia> findByKoadernoaIdAndDataBetween(Long koadernoaId, LocalDate hasiera, LocalDate amaiera);
     List<JokabideDesegokia> findByKoadernoaIdAndData(Long koadernoaId, LocalDate data);
+    List<JokabideDesegokia> findByIkasleaIdAndKoadernoaIdAndDataBetween(
+            Long ikasleaId, Long koadernoaId, LocalDate hasiera, LocalDate amaiera);
     List<JokabideDesegokia> findByIkasleaIdAndKoadernoaIdAndDataOrderByCreatedAtDesc(Long ikasleaId, Long koadernoaId, LocalDate data);
     Optional<JokabideDesegokia> findFirstByIkasleaIdAndKoadernoaIdAndDataOrderByCreatedAtDesc(Long ikasleaId, Long koadernoaId, LocalDate data);
     boolean existsByIkasleaId(Long ikasleaId);

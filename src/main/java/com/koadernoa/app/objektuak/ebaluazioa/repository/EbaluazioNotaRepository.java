@@ -45,4 +45,13 @@ public interface EbaluazioNotaRepository extends JpaRepository<EbaluazioNota, Lo
     """)
     List<EbaluazioNota> findByMatrikulaIdsAndMomentuKodeak(@Param("matrikulaIds") List<Long> matrikulaIds,
                                                            @Param("momentuKodeak") List<String> momentuKodeak);
+
+    @Query("""
+        select n
+        from EbaluazioNota n
+        join fetch n.ebaluazioMomentua em
+        left join fetch n.egoera eg
+        where n.matrikula.id in :matrikulaIds
+    """)
+    List<EbaluazioNota> findByMatrikulaIds(@Param("matrikulaIds") List<Long> matrikulaIds);
 }

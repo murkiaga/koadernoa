@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Asistentzia kontrola</title>
+  <link rel="stylesheet" th:href="@{/css/navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/irakasle-common.css}">
+  <style>
+    .calendar-topbar{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin:1rem 0}
+    .calendar-nav-link{display:inline-flex;align-items:center;gap:.4rem;text-decoration:none;color:#1d4ed8;font-weight:600}
+    .asistentzia-page{width:100%;max-width:none}
+    .faltak-wrapper{display:block;width:100%;max-width:100%;overflow-x:auto}
+    .faltak-taula{border-collapse:separate;border-spacing:0;min-width:max-content;width:100%;font-size:.9rem}
+    .faltak-taula th,.faltak-taula td{border:1px solid #e5e7eb;padding:4px 6px;text-align:center;vertical-align:middle;white-space:nowrap}
+    .faltak-taula thead th{background:#f3f4f6;font-weight:600}
+    .faltak-taula td.modulua{text-align:left;font-weight:600}
+    .faltak-taula tbody tr:nth-child(odd){background:#f9fafb}
+    .faltak-taula tbody tr:hover{background:#e5e7eb}
+    .faltak-taula th.sticky-col,.faltak-taula td.sticky-col{position:sticky;left:0;z-index:2}
+    .faltak-taula th.sticky-col{background:#f3f4f6}
+    .faltak-taula td.sticky-col{background:#fff;z-index:1}
+    .programa-orduak-label{display:block;color:#6b7280;font-size:.7rem;font-weight:400}
+    .falta-pct-altua{background:#fecaca}.falta-pct-ertaina{background:#fef9c3}
+    .ie-ikonoak{font-size:.82rem;white-space:nowrap}.ie-ikonoak a{text-decoration:none}
+    .azalpena{color:#6b7280;font-size:.85rem;margin:.75rem 0}
+    .empty-msg{padding:1rem;border:1px solid #e5e7eb;border-radius:10px;background:#fff}
+  </style>
+</head>
+<body>
+<div th:replace="~{irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})}"></div>
+<main class="page asistentzia-page">
+  <p><a th:href="@{/irakasle/ikasleak-kontsultatu/{id}(id=${ikaslea.id})}">← Ikaslearen fitxara itzuli</a></p>
+  <h1>Asistentzia kontrola</h1>
+  <p>
+    <strong th:text="${ikaslea.izenOsoa}">Ikaslea</strong>
+    <span th:if="${ikasturtea != null}" th:text="${' · ' + ikasturtea.izena}"> · Ikasturtea</span>
+  </p>
+
+  <div class="calendar-topbar">
+    <a class="calendar-nav-link"
+       th:href="@{/irakasle/ikasleak-kontsultatu/{id}/asistentzia-kontrola(
+          id=${ikaslea.id},
+          hilabetea=${hilabetea == 1 ? 12 : hilabetea - 1},
+          urtea=${hilabetea == 1 ? urtea - 1 : urtea})}">
+      <span>←</span><span>Aurrekoa</span>
+    </a>
+    <h2 th:text="${hilabeteUrtea}" style="margin:0;text-align:center;flex:1;">Hilabetea</h2>
+    <a class="calendar-nav-link"
+       th:href="@{/irakasle/ikasleak-kontsultatu/{id}/asistentzia-kontrola(
+          id=${ikaslea.id},
+          hilabetea=${hilabetea == 12 ? 1 : hilabetea + 1},
+          urtea=${hilabetea == 12 ? urtea + 1 : urtea})}">
+      <span>Hurrengoa</span><span>→</span>
+    </a>
+  </div>
+
+  <p class="empty-msg" th:if="${ikasturtea == null}">Ez dago ikasturte aktiborik.</p>
+  <p class="empty-msg" th:if="${ikasturtea != null and #lists.isEmpty(lerroak)}">
+    Ikaslea ez dago modulurik matrikulatuta ikasturte aktiboan.
+  </p>
+
+  <th:block th:if="${!#lists.isEmpty(lerroak)}">
+    <p class="azalpena">Zenbakiak hutsegite-orduak dira; <strong>b</strong> letrak berandutzea adierazten du. Gelaxka hutsa ikaslea klasera etorri dela esan nahi du, eta <strong>--</strong> markak moduluak egun horretan klaserik izan ez duela. 📝 ikonoak oharra dagoela adierazten du; ⚠️ ikonoan klik eginda jokabide-erregistroaren PDFa irekitzen da.</p>
+    <div class="faltak-wrapper">
+      <table class="faltak-taula">
+        <thead>
+        <tr>
+          <th class="sticky-col">Modulua</th>
+          <th>Guztira faltak (orduetan)</th>
+          <th>Falten %</th>
+          <th th:each="eguna : ${egunak}" th:text="${#temporals.format(eguna, 'yyyy-MM-dd')}">2026-10-01</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="row : ${lerroak}">
+          <td class="modulua sticky-col"
+              th:text="${row.matrikula.koadernoa.moduloa.izena}">Modulua</td>
+          <td>
+            <span th:text="${row.faltaOrduak}">0</span>
+            <span class="programa-orduak-label" th:text="${'/ programatutako orduak: ' + row.programaOrduak}">/ programatutako orduak: 0</span>
+          </td>
+          <td th:classappend="${row.faltaPortzentaia > row.matrikula.koadernoa.moduloa.maila.faltenMugaPortzentaia ? ' falta-pct-altua' : (row.faltaPortzentaia >= 10 ? ' falta-pct-ertaina' : '')}">
+            <span th:text="${#numbers.formatDecimal(row.faltaPortzentaia, 1, 2)} + '%'">0%</span>
+          </td>
+          <td th:each="eguna : ${egunak}">
+            <span th:text="${row.balioa(eguna)}"></span>
+            <span class="ie-ikonoak">
+              <span th:if="${row.baduOharra(eguna)}" th:title="${row.oharra(eguna)}">📝</span>
+              <a th:each="jokabidea : ${row.jokabideak(eguna)}"
+                 th:href="@{/irakasle/ikasleak-kontsultatu/{id}/asistentzia-kontrola/jokabideak/{jokabideaId}/pdf(id=${ikaslea.id},jokabideaId=${jokabidea.id})}"
+                 target="_blank" title="Jokabide desegokiaren PDFa ikusi" aria-label="Jokabide desegokiaren PDFa ikusi">⚠️</a>
+            </span>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </th:block>
+</main>
+</body>
+</html>

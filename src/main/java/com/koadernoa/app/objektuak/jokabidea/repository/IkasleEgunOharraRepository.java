@@ -8,6 +8,8 @@ public interface IkasleEgunOharraRepository extends JpaRepository<IkasleEgunOhar
     boolean existsByIrakaslea_Id(Long irakasleId);
 
     Optional<IkasleEgunOharra> findByIkasleaIdAndKoadernoaIdAndData(Long ikasleaId, Long koadernoaId, LocalDate data);
+    List<IkasleEgunOharra> findByIkasleaIdAndKoadernoaIdAndDataBetween(
+            Long ikasleaId, Long koadernoaId, LocalDate hasiera, LocalDate amaiera);
     List<IkasleEgunOharra> findByKoadernoaIdAndDataBetween(Long koadernoaId, LocalDate hasiera, LocalDate amaiera);
     List<IkasleEgunOharra> findByKoadernoaIdAndData(Long koadernoaId, LocalDate data);
 }

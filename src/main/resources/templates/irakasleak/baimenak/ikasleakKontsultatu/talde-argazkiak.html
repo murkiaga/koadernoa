@@ -27,12 +27,12 @@
       <select id="taldeSelector" onchange="gotoTeam(this.value)">
         <option th:each="t : ${taldeak}" th:value="${t.id}" th:text="${t.izena}" th:selected="${t.id == taldea.id}">Taldea</option>
       </select>
-      <a th:href="@{/irakasle/ikasleak}" style="text-decoration:none;">← Ikasleen zerrendara</a>
+      <a th:href="@{/irakasle/ikasleak-kontsultatu}" style="text-decoration:none;">← Ikasleen zerrendara</a>
     </div>
   </div>
 
   <div class="grid" th:if="${!#lists.isEmpty(ikasleak)}">
-    <a class="card-link" th:each="ik : ${ikasleak}" th:href="@{/irakasle/ikasleak/{id}(id=${ik.id})}">
+    <a class="card-link" th:each="ik : ${ikasleak}" th:href="@{/irakasle/ikasleak-kontsultatu/{id}(id=${ik.id})}">
       <article class="card">
         <th:block th:with="tick=${#dates.createNow().time / 300000}">
           <img class="ph"
@@ -54,7 +54,7 @@
 </main>
 <script>
   function gotoTeam(id) {
-    if (id) window.location.href = `/irakasle/ikasleak/taldeak/${id}/argazkiak`;
+    if (id) window.location.href = `/irakasle/ikasleak-kontsultatu/taldeak/${id}/argazkiak`;
   }
 </script>
 </body>

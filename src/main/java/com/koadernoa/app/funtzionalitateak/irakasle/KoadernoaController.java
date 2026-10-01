@@ -362,7 +362,7 @@ public class KoadernoaController {
 	    } else {
 	        ra.addFlashAttribute("msg", "Koadernoa sinkronizatuta: ez zegoen aldaketarik.");
 	    }
-	    return "redirect:/irakasle/koadernoko-ikasleak";
+	    return "redirect:/irakasle/ikasleak";
 	}
 	
 	@PostMapping("/{id}/partekatu")

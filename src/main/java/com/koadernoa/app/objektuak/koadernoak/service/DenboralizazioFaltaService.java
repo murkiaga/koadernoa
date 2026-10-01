@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
@@ -41,8 +42,75 @@ public class DenboralizazioFaltaService {
     private final AsistentziaRepository asistentziaRepository;
     private final KoadernoOrdutegiBlokeaRepository koadernoOrdutegiBlokeaRepository;
 
+    /**
+     * Matrikula bakoitzak bere koadernoan dituen hutsegiteen ehunekoa kalkulatzen du.
+     * Falten bistaren irizpide bera erabiltzen da: HUTS eta JUSTIFIKATUA egoeren
+     * orduak, koadernoan programatutako ikasturte osoko orduen gainean.
+     */
+    @Transactional(readOnly = true)
+    public Map<Long, Double> kalkulatuHutsegitePortzentaiak(List<Matrikula> matrikulak) {
+        if (matrikulak == null || matrikulak.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<Long, Double> emaitza = new LinkedHashMap<>();
+        for (Matrikula matrikula : matrikulak) {
+            if (matrikula == null || matrikula.getId() == null || matrikula.getKoadernoa() == null) {
+                continue;
+            }
+
+            Koadernoa koadernoa = matrikula.getKoadernoa();
+            int programaOrduak = kalkulatuProgramaOrduakUrteOsoan(koadernoa);
+            if (programaOrduak <= 0) {
+                emaitza.put(matrikula.getId(), 0.0);
+                continue;
+            }
+
+            LocalDate gaur = LocalDate.now();
+            LocalDate hasiera = koadernoa.getEgutegia() != null
+                    ? koadernoa.getEgutegia().getHasieraData()
+                    : null;
+            LocalDate bukaera = koadernoa.getEgutegia() != null
+                    ? koadernoa.getEgutegia().getBukaeraData()
+                    : null;
+            LocalDate noiztik = hasiera != null ? hasiera : LocalDate.MIN;
+            LocalDate noizArte = bukaera != null && bukaera.isBefore(gaur) ? bukaera : gaur;
+
+            List<Saioa> saioak = saioaRepository
+                    .findByKoadernoaIdAndDataBetweenOrderByDataAscHasieraSlotAsc(
+                            koadernoa.getId(), noiztik, noizArte);
+            int hutsegiteOrduak = saioak.isEmpty() ? 0 : asistentziaRepository
+                            .findBySaioaInAndMatrikulaIn(saioak, List.of(matrikula)).stream()
+                            .filter(a -> a.getSaioa().getEgoera() != SaioEgoera.EZEZTATUA)
+                            .filter(a -> a.getEgoera() == Asistentzia.AsistentziaEgoera.HUTS
+                                    || a.getEgoera() == Asistentzia.AsistentziaEgoera.JUSTIFIKATUA)
+                            .map(Asistentzia::getSaioa)
+                            .filter(Objects::nonNull)
+                            .mapToInt(Saioa::getIraupenaSlot)
+                            .sum();
+
+            emaitza.put(matrikula.getId(), hutsegiteOrduak * 100.0 / programaOrduak);
+        }
+        return emaitza;
+    }
+
     @Transactional(readOnly = true)
     public FaltakBistaDTO kalkulatuFaltenBista(Koadernoa koadernoa, int hilabetea, int urtea) {
+        return kalkulatuFaltenBista(koadernoa, hilabetea, urtea, null);
+    }
+
+    @Transactional(readOnly = true)
+    public FaltakBistaDTO kalkulatuMatrikularenFaltenBista(
+            Matrikula matrikula, int hilabetea, int urtea) {
+        if (matrikula == null || matrikula.getKoadernoa() == null) {
+            throw new IllegalArgumentException("Matrikulak koaderno bat izan behar du.");
+        }
+        return kalkulatuFaltenBista(
+                matrikula.getKoadernoa(), hilabetea, urtea, List.of(matrikula));
+    }
+
+    private FaltakBistaDTO kalkulatuFaltenBista(
+            Koadernoa koadernoa, int hilabetea, int urtea, List<Matrikula> mugatutakoMatrikulak) {
 
         Long koadernoId = koadernoa.getId();
         Egutegia egutegia = koadernoa.getEgutegia();
@@ -93,8 +161,9 @@ public class DenboralizazioFaltaService {
         int programaOrduak = kalkulatuProgramaOrduakUrteOsoan(egutegia, orduakByDate, bereziMap);
 
         // Koaderno honetako MATRIKULATUAK
-        List<Matrikula> matrikulak =
-                matrikulaRepository.findByKoadernoaIdAndEgoeraMatrikulatuta(koadernoId);
+        List<Matrikula> matrikulak = mugatutakoMatrikulak != null
+                ? mugatutakoMatrikulak
+                : matrikulaRepository.findByKoadernoaIdAndEgoeraMatrikulatuta(koadernoId);
 
         Map<Long, FaltaIkasleRow> rowMap = new LinkedHashMap<>();
         for (Matrikula m : matrikulak) {
@@ -228,6 +297,35 @@ public class DenboralizazioFaltaService {
             total += ordutegia.getOrDefault(ag, 0);
         }
         return total;
+    }
+
+    private int kalkulatuProgramaOrduakUrteOsoan(Koadernoa koadernoa) {
+        if (koadernoa == null || koadernoa.getId() == null || koadernoa.getEgutegia() == null) {
+            return 0;
+        }
+
+        Egutegia egutegia = koadernoa.getEgutegia();
+        LocalDate ikastHas = egutegia.getHasieraData();
+        java.util.NavigableMap<LocalDate, Map<Astegunak, Integer>> orduakByDate = new TreeMap<>();
+        for (KoadernoOrdutegiBlokea b : koadernoOrdutegiBlokeaRepository.findByKoadernoa_Id(koadernoa.getId())) {
+            LocalDate has = b.getHasieraData() != null ? b.getHasieraData() : ikastHas;
+            if (has == null) continue;
+            if (b.isTarteHutsa()) {
+                orduakByDate.putIfAbsent(has, new java.util.EnumMap<>(Astegunak.class));
+                continue;
+            }
+            if (b.getAsteguna() == null || b.getIraupenaSlot() <= 0 || b.isDualOrdutegia()) continue;
+            orduakByDate.computeIfAbsent(has, __ -> new java.util.EnumMap<>(Astegunak.class))
+                    .merge(b.getAsteguna(), b.getIraupenaSlot(), Integer::sum);
+        }
+
+        List<EgunBerezi> egunBereziak = egutegia.getEgunBereziak() != null
+                ? egutegia.getEgunBereziak()
+                : List.of();
+        Map<LocalDate, EgunBerezi> bereziMap = egunBereziak.stream()
+                .filter(eb -> eb.getData() != null)
+                .collect(Collectors.toMap(EgunBerezi::getData, eb -> eb, (a, b) -> a));
+        return kalkulatuProgramaOrduakUrteOsoan(egutegia, orduakByDate, bereziMap);
     }
 
     /**

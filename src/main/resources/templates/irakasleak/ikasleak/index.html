@@ -269,7 +269,7 @@
     body.append('oharra', oharraTx.value || '');
 
     try {
-      const res = await fetch(`/irakasle/koadernoko-ikasleak/matrikula/${currentId}/egoera`, {
+      const res = await fetch(`/irakasle/ikasleak/matrikula/${currentId}/egoera`, {
         method:'POST',
         headers:{
           'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8',
