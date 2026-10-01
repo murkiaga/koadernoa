@@ -259,10 +259,15 @@ public class EthaziController {
 
     @GetMapping("/ikaskuntza-emaitzak")
     public String emaitzak(@RequestParam(required = false) Long zikloaId, @RequestParam(required = false) Long moduloaId, Model model) {
+        var modules = new java.util.ArrayList<>(service.moduluak(zikloaId));
+        modules.sort(java.util.Comparator
+                .comparing(Moduloa::getKodea, java.util.Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))
+                .thenComparing(Moduloa::getIzena, java.util.Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)));
         model.addAttribute("zikloaId", zikloaId);
         model.addAttribute("moduloaId", moduloaId);
         model.addAttribute("modulua", moduloaId == null || zikloaId == null ? null : service.moduloa(zikloaId, moduloaId));
-        model.addAttribute("moduluak", service.moduluak(zikloaId));
+        model.addAttribute("moduluak", modules);
+        model.addAttribute("emaitzaKopuruak", service.emaitzaKopuruak(modules));
         model.addAttribute("emaitzak", service.emaitzak(zikloaId, moduloaId));
         return "Ethazi/ikaskuntza-emaitzak/index";
     }

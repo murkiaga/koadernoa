@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head th:replace="~{Ethazi/fragments/common :: head('PDF inportazioaren aurrebista')}"></head>
+<body class="ethazi-body">
+<div th:replace="~{kudeatzaile/fragments/navbar :: kudeatzaile-navbar}"></div>
+<nav th:replace="~{Ethazi/fragments/navbar :: navbar('ie-import')}"></nav>
+<main class="page ethazi-page import-preview-page">
+<header class="page-header"><div><h1>PDF inportazioaren aurrebista</h1><p class="muted"><strong th:text="${hizkuntza.etiketa}"></strong> · Berrikusi detektatutako balioak gorde aurretik.</p></div></header>
+<div class="alert alert-error" role="alert" th:each="abisua : ${abisuak}" th:text="${abisua}"></div>
+<section class="import-summary" aria-label="Inportazioaren laburpena">
+<span class="status-sortu"><strong th:text="${sortuak}">0</strong> sortu</span><span class="status-eguneratu"><strong th:text="${eguneratuak}">0</strong> eguneratu</span><span class="status-aldaketarik_ez"><strong th:text="${aldaketarikGabe}">0</strong> aldaketarik gabe</span><span class="status-arazoa"><strong th:text="${arazoak}">0</strong> arazo</span>
+</section>
+<div class="table-wrap"><table class="import-preview"><thead><tr><th class="import-select"><input type="checkbox" data-import-toggle checked aria-label="IE guztiak aukeratu edo desaukeratu"></th><th>eeiKodea</th><th>Ordena</th><th>Kodea</th><th>Detektatutako deskribapena</th><th>DBko oraingo balioa</th><th>Ekintza</th><th>Mezua</th></tr></thead>
+<tbody><tr th:each="row, stat : ${lerroak}"><td class="import-select"><input type="checkbox" name="aukeratuak" th:value="${stat.index}" form="pdf-import-confirm" data-import-choice checked th:attr="aria-label=${row.kodea + ' aukeratu'}"></td><td th:text="${row.eeiKodea ?: '—'}"></td><td th:text="${row.ordena ?: '—'}"></td><td th:text="${row.kodea}"></td><td><label class="sr-only" th:for="${'deskribapena-' + stat.index}" th:text="${row.kodea + ' deskribapena'}"></label><textarea class="import-description" name="deskribapenak" th:id="${'deskribapena-' + stat.index}" form="pdf-import-confirm" rows="4" maxlength="60000" th:text="${row.deskribapena}"></textarea></td><td class="preserve muted" th:text="${row.dbBalioa ?: '—'}"></td><td><span class="import-status" th:classappend="${'status-' + #strings.toLowerCase(row.egoera)}" th:text="${row.egoera}"></span></td><td th:text="${row.mezua ?: ''}"></td></tr></tbody></table></div>
+<p class="empty-state" th:if="${#lists.isEmpty(lerroak)}">Ez da inportatzeko lerrorik aurkitu.</p>
+<div class="form-actions import-actions">
+<a class="btn" th:href="@{/ethazi/ikaskuntza-emaitzak/importatu}">Atzera</a>
+<form id="pdf-import-confirm" method="post" th:action="@{/ethazi/ikaskuntza-emaitzak/importatu/baieztatu}" data-confirm="Aukeratutako ikaskuntza-emaitzak inportatu?"><input type="hidden" name="token" th:value="${token}"><button class="btn" type="submit" th:formaction="@{/ethazi/ikaskuntza-emaitzak/importatu/csv}" data-skip-confirm>CSV deskargatu</button><button class="btn btn-primary" type="submit" data-import-submit>Hautatutakoak inportatu</button></form>
+</div>
+</main>
+<script th:src="@{/js/ethazi.js}" defer></script>
+</body></html>

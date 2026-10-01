@@ -47,6 +47,16 @@ public class ModuloaService {
     public void delete(Long id) {
         moduloaRepository.deleteById(id);
     }
+
+    @Transactional
+    public Hizkuntza eguneratuHizkuntza(Long id, Hizkuntza hizkuntza) {
+        if (hizkuntza == null) throw new IllegalArgumentException("Hizkuntza aukeratu behar da.");
+        Moduloa moduloa = moduloaRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Moduloa ez da existitzen: " + id));
+        moduloa.setHizkuntza(hizkuntza);
+        moduloaRepository.save(moduloa);
+        return moduloa.getHizkuntza();
+    }
     
     public List<Moduloa> getByTaldeaId(Long taldeaId) {
         return moduloaRepository.findByTaldeaId(taldeaId);

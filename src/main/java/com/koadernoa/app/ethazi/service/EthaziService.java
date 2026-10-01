@@ -37,6 +37,16 @@ public class EthaziService {
     public List<Moduloa> moduluak(Long zikloaId) {
         return zikloaId == null ? List.of() : moduluak.findByTaldea_Zikloa_IdOrderByIzenaAsc(zikloaId);
     }
+    public Map<Long, Long> emaitzaKopuruak(List<Moduloa> modules) {
+        Set<String> eeiKodeak = modules.stream().map(Moduloa::getEeiKodea)
+                .filter(Objects::nonNull).filter(code -> !code.isBlank()).collect(Collectors.toSet());
+        Map<String, Long> kodearenArabera = eeiKodeak.isEmpty() ? Map.of()
+                : emaitzak.countByEeiKodeaIn(eeiKodeak).stream().collect(Collectors.toMap(
+                        row -> (String) row[0], row -> ((Number) row[1]).longValue()));
+        return modules.stream().collect(Collectors.toMap(Moduloa::getId,
+                module -> kodearenArabera.getOrDefault(module.getEeiKodea(), 0L), (first, ignored) -> first,
+                LinkedHashMap::new));
+    }
     public List<ModuluEmaitzak> curriculum(Long zikloaId) {
         return moduluak(zikloaId).stream()
                 .map(m -> new ModuluEmaitzak(m, moduluEmaitzak(m))).toList();

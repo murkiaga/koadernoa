@@ -2,6 +2,7 @@
 // Mutations remain ordinary CSRF-protected server forms; JS adds confirmation and filter convenience.
 document.querySelectorAll('form[data-confirm]').forEach(form => {
   form.addEventListener('submit', event => {
+    if (event.submitter?.hasAttribute('data-skip-confirm')) return;
     if (!window.confirm(form.dataset.confirm)) event.preventDefault();
   });
 });
@@ -12,6 +13,26 @@ document.querySelectorAll('[data-cycle-filter]').forEach(select => {
     select.form.requestSubmit();
   });
 });
+
+const importToggle = document.querySelector('[data-import-toggle]');
+const importChoices = Array.from(document.querySelectorAll('[data-import-choice]:not(:disabled)'));
+const importSubmit = document.querySelector('[data-import-submit]');
+function refreshImportSelection() {
+  if (!importToggle) return;
+  const selected = importChoices.filter(choice => choice.checked).length;
+  importToggle.checked = importChoices.length > 0 && selected === importChoices.length;
+  importToggle.indeterminate = selected > 0 && selected < importChoices.length;
+  importToggle.disabled = importChoices.length === 0;
+  if (importSubmit) importSubmit.disabled = selected === 0;
+}
+if (importToggle) {
+  importToggle.addEventListener('change', () => {
+    importChoices.forEach(choice => { choice.checked = importToggle.checked; });
+    refreshImportSelection();
+  });
+  importChoices.forEach(choice => choice.addEventListener('change', refreshImportSelection));
+  refreshImportSelection();
+}
 const dirtyForms = new Set();
 document.querySelectorAll('form[data-dirty-warning]').forEach(form => {
   form.addEventListener('input', event => {

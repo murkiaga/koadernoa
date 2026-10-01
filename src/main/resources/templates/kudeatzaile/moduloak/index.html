@@ -3,6 +3,8 @@
 <head>
     <title>Moduluen Zerrenda</title>
     <meta charset="UTF-8">
+    <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}">
+    <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}">
     <link rel="stylesheet" th:href="@{/css/navbar.css}">
     <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -118,7 +120,16 @@
                                   style="color:#6b7280;cursor:not-allowed;"
                                   title="Ez dago ikasturte aktiboko koadernoarik modulo honetan">Datuen Atzipena</span>
                         </td>
-                        <td th:text="${moduloa.hizkuntza != null and !moduloa.hizkuntza.etiketa.isEmpty() ? moduloa.hizkuntza.etiketa : 'Zehaztu gabe'}">Euskara</td>
+                        <td>
+                            <select class="module-language-select"
+                                    th:attr="data-url=@{/kudeatzaile/moduloa/{id}/hizkuntza(id=${moduloa.id})},aria-label=${moduloa.izena + ' moduluko hizkuntza'}">
+                                <option th:each="h : ${hizkuntzak}"
+                                        th:value="${h}"
+                                        th:text="${h.etiketa.isEmpty() ? 'Zehaztu gabe' : h.etiketa}"
+                                        th:selected="${h == moduloa.hizkuntza}"></option>
+                            </select>
+                            <small class="module-language-status" aria-live="polite"></small>
+                        </td>
                         <td th:text="${moduloa.orduak}">165</td>
                         <td th:text="${moduloa.dualOrduak != null ? moduloa.dualOrduak : 0}">0</td>
 			            <td th:text="${moduloa.hautazkoa ? 'Bai' : 'Ez'}">Ez</td>

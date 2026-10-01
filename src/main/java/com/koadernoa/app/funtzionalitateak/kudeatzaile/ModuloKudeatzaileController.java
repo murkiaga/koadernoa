@@ -122,6 +122,21 @@ public class ModuloKudeatzaileController {
         return "redirect:/kudeatzaile/moduloa";
     }
 
+    @PostMapping("/{id}/hizkuntza")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> eguneratuHizkuntza(@PathVariable Long id,
+            @RequestParam Hizkuntza hizkuntza) {
+        try {
+            Hizkuntza gordetakoa = moduloaService.eguneratuHizkuntza(id, hizkuntza);
+            return ResponseEntity.ok(Map.of(
+                    "ok", true,
+                    "hizkuntza", gordetakoa.name(),
+                    "etiketa", gordetakoa.getEtiketa().isBlank() ? "Zehaztu gabe" : gordetakoa.getEtiketa()));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("ok", false, "mezua", ex.getMessage()));
+        }
+    }
+
     @GetMapping("/sortu")
     public String sortuModuloaForm(@RequestParam(name = "taldeaId", required = false) Long taldeaId,
                                    Model model) {
