@@ -78,10 +78,11 @@ public class KoadernoKlaseEgunService {
             if (blokea == null) continue;
             LocalDate hasiera = blokea.getHasieraData() != null ? blokea.getHasieraData() : ikasturteHasiera;
             if (hasiera == null) continue;
-            if (blokea.isTarteHutsa() || blokea.isDualOrdutegia()) {
+            if (blokea.isTarteHutsa()) {
                 ordutegiak.putIfAbsent(hasiera, new EnumMap<>(Astegunak.class));
                 continue;
             }
+            if (blokea.isDualOrdutegia()) continue;
             if (blokea.getAsteguna() == null || blokea.getIraupenaSlot() <= 0) continue;
             ordutegiak.computeIfAbsent(hasiera, __ -> new EnumMap<>(Astegunak.class))
                     .merge(blokea.getAsteguna(), blokea.getIraupenaSlot(), Integer::sum);
@@ -112,8 +113,7 @@ public class KoadernoKlaseEgunService {
             case WEDNESDAY -> Astegunak.ASTEAZKENA;
             case THURSDAY -> Astegunak.OSTEGUNA;
             case FRIDAY -> Astegunak.OSTIRALA;
-            case SATURDAY -> Astegunak.LARUNBATA;
-            case SUNDAY -> Astegunak.IGANDEA;
+            case SATURDAY, SUNDAY -> null;
         };
     }
 }

@@ -38,14 +38,14 @@ class KoadernoKlaseEgunServiceTest {
     }
 
     @Test
-    void asteburuaKlaseEgunaDaOrdutegianBenetakoBlokeaBadu() {
+    void asteburuaEzDaKlaseEgunaOrdutegianBlokeaBadagoEre() {
         Egutegia egutegia = egutegia(LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 31));
 
         assertThat(service.hurrengoKlaseEgunak(
                 egutegia,
                 List.of(blokea(LocalDate.of(2026, 10, 1), Astegunak.LARUNBATA, 1)),
                 LocalDate.of(2026, 10, 2), 2))
-                .containsExactly(LocalDate.of(2026, 10, 3), LocalDate.of(2026, 10, 10));
+                .isEmpty();
     }
 
     @Test
@@ -105,15 +105,17 @@ class KoadernoKlaseEgunServiceTest {
     }
 
     @Test
-    void dualOrdutegiakAurrekoOrdutegiaGelditzenDuEtaKlaseEgunikEzDuSortzen() {
+    void dualOrdutegiaBaztertuEtaAurrekoOrdutegiakIndarreanJarraituDu() {
         Egutegia egutegia = egutegia(LocalDate.of(2026, 11, 1), LocalDate.of(2026, 12, 31));
         List<LocalDate> egunak = service.hurrengoKlaseEgunak(egutegia,
                 List.of(
                         blokea(LocalDate.of(2026, 11, 1), Astegunak.ASTELEHENA, 1),
                         tarteHutsa(LocalDate.of(2026, 12, 1), true)),
-                LocalDate.of(2026, 11, 1), 100);
+                LocalDate.of(2026, 11, 1), 10);
 
-        assertThat(egunak).isNotEmpty().allMatch(data -> data.isBefore(LocalDate.of(2026, 12, 1)));
+        assertThat(egunak)
+                .contains(LocalDate.of(2026, 11, 30), LocalDate.of(2026, 12, 7))
+                .allMatch(data -> data.getDayOfWeek() == DayOfWeek.MONDAY);
     }
 
     private Egutegia egutegia(LocalDate hasiera, LocalDate bukaera) {
