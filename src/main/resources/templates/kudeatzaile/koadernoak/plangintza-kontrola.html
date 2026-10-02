@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <title>Plangintza-kontrola – Kudeatzailea</title>
+  <link rel="stylesheet" th:href="@{/css/navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+
+<main class="page">
+  <div class="page-header">
+    <div>
+      <h1>Koadernoen plangintza-kontrola</h1>
+      <p class="muted">Ikasturte aktiboko koadernoen hurrengo 15 benetako klase-egunen plangintza.</p>
+    </div>
+    <a class="btn btn-secondary" th:href="@{/kudeatzaile/koadernoak}">Koadernoetara itzuli</a>
+  </div>
+
+  <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+  <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+
+  <section class="planning-summary" aria-label="Plangintza-kontrolaren laburpena">
+    <div class="planning-summary__item">
+      <span>Koaderno aktiboak</span>
+      <strong th:text="${koadernoAktiboKopurua}">84</strong>
+    </div>
+    <div class="planning-summary__item planning-summary__item--success">
+      <span>Ondo</span>
+      <strong th:text="${ondoKopurua}">71</strong>
+    </div>
+    <div class="planning-summary__item planning-summary__item--danger">
+      <span>Osatu gabe</span>
+      <strong th:text="${osatuGabeKopurua}">11</strong>
+    </div>
+    <div class="planning-summary__item">
+      <span>Klase-egunik ez</span>
+      <strong th:text="${klaseEgunikEzKopurua}">5</strong>
+    </div>
+  </section>
+
+  <div class="planning-toolbar">
+    <div class="planning-filter" role="group" aria-label="Koadernoen filtroa">
+      <a class="btn btn-secondary"
+         th:classappend="${filtroa == 'GUZTIAK'} ? ' planning-filter--active'"
+         th:href="@{/kudeatzaile/koadernoak/plangintza-kontrola(egoera=GUZTIAK)}">Guztiak</a>
+      <a class="btn btn-secondary"
+         th:classappend="${filtroa == 'OSATU_GABE'} ? ' planning-filter--active'"
+         th:href="@{/kudeatzaile/koadernoak/plangintza-kontrola(egoera=OSATU_GABE)}">Osatu gabe</a>
+      <a class="btn btn-secondary"
+         th:classappend="${filtroa == 'ONDO'} ? ' planning-filter--active'"
+         th:href="@{/kudeatzaile/koadernoak/plangintza-kontrola(egoera=ONDO)}">Ondo</a>
+      <a class="btn btn-secondary"
+         th:classappend="${filtroa == 'KLASE_EGUNIK_EZ'} ? ' planning-filter--active'"
+         th:href="@{/kudeatzaile/koadernoak/plangintza-kontrola(egoera=KLASE_EGUNIK_EZ)}">Klase-egunik ez</a>
+    </div>
+    <div class="planning-actions">
+      <button type="button" class="btn btn-secondary"
+              th:disabled="${abisuEmailKopurua == 0}"
+              onclick="PlangintzaEmailModal.open()">
+        Irakasleen email zerrenda
+      </button>
+      <button type="button" class="btn btn-danger"
+              th:disabled="${abisuHartzaileKopurua == 0}"
+              onclick="PlangintzaAbisuModal.open()">
+        Plangintza osatu gabe duten irakasleei abisua bidali
+      </button>
+    </div>
+  </div>
+
+  <div th:if="${koadernoAktiboKopurua == 0}" class="empty-msg">
+    Ez dago ikasturte aktiboko koadernorik kontrolatzeko.
+  </div>
+  <div th:if="${koadernoAktiboKopurua > 0 and #lists.isEmpty(kontrolak)}" class="alert alert-success">
+    Ez dago hautatutako egoerako koadernorik.
+  </div>
+
+  <div th:if="${!#lists.isEmpty(kontrolak)}" class="table-wrap">
+    <table class="koaderno-taula">
+      <thead>
+      <tr>
+        <th>Familia</th>
+        <th>Taldea</th>
+        <th>Modulua</th>
+        <th>Irakasleak</th>
+        <th>Planifikatutako egunak</th>
+        <th>Beharrezko egunak</th>
+        <th>Egoera</th>
+        <th>Xehetasunak</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr th:each="kontrola : ${kontrolak}">
+        <td th:text="${kontrola.koadernoa.moduloa != null
+          and kontrola.koadernoa.moduloa.taldea != null
+          and kontrola.koadernoa.moduloa.taldea.zikloa != null
+          and kontrola.koadernoa.moduloa.taldea.zikloa.familia != null
+          ? kontrola.koadernoa.moduloa.taldea.zikloa.familia.izena : '-'}">Informatika</td>
+        <td th:text="${kontrola.koadernoa.moduloa != null
+          and kontrola.koadernoa.moduloa.taldea != null
+          ? kontrola.koadernoa.moduloa.taldea.izena : '-'}">1SMA</td>
+        <td>
+          <a th:if="${kontrola.koadernoa.moduloa != null}"
+             th:href="@{|/irakasle/koadernoa/${kontrola.koadernoa.id}?next=/irakasle|}"
+             th:text="${kontrola.koadernoa.moduloa.izena}"
+             title="Koadernoa irakasle ikuspegian kontsultatu">Programazioa</a>
+          <span th:unless="${kontrola.koadernoa.moduloa != null}">-</span>
+        </td>
+        <td class="col-irakasleak" th:text="${kontrola.koadernoa.irakasleakLabur}">Ane, Mikel</td>
+        <td th:text="${kontrola.planifikatutakoEgunak}">12</td>
+        <td th:text="${kontrola.kontrolatuBeharrekoEgunak}">15</td>
+        <td>
+          <span th:if="${kontrola.egoera.name() == 'ONDO'}" class="badge badge-success">Ondo</span>
+          <span th:if="${kontrola.egoera.name() == 'OSATU_GABE'}" class="badge badge-error">Osatu gabe</span>
+          <span th:if="${kontrola.egoera.name() == 'KLASE_EGUNIK_EZ'}" class="badge">Klase-egunik ez</span>
+        </td>
+        <td>
+          <details th:if="${kontrola.egoera.name() == 'OSATU_GABE'}" class="planning-missing-days">
+            <summary th:text="|${#lists.size(kontrola.faltaDirenEgunak)} egun falta|">3 egun falta</summary>
+            <ul>
+              <li th:each="data : ${kontrola.faltaDirenEgunak}"
+                  th:text="${#temporals.format(data, 'yyyy-MM-dd')}">2026-10-15</li>
+            </ul>
+          </details>
+          <span th:unless="${kontrola.egoera.name() == 'OSATU_GABE'}">—</span>
+        </td>
+      </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div id="plangintzaAbisuModal" class="modal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="plangintzaAbisuModalTitle">
+      <h2 id="plangintzaAbisuModalTitle">Plangintza-abisuak bidali</h2>
+      <p>
+        <strong th:text="${abisuHartzaileKopurua}">11</strong> irakasleri bidaliko zaie mezua,
+        <strong th:text="${osatuGabeKopurua}">12</strong> koadernok dute plangintza osatu gabe.
+      </p>
+      <p class="muted">Irakasle bakoitzak mezu bakarra jasoko du, berrikusi beharreko bere koaderno guztiekin.</p>
+      <form th:action="@{/kudeatzaile/koadernoak/plangintza-kontrola/abisuak}" method="post">
+        <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="PlangintzaAbisuModal.close()">Utzi</button>
+          <button type="submit" class="btn btn-danger">Abisuak bidali</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="plangintzaEmailModal" class="modal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="plangintzaEmailModalTitle">
+      <h2 id="plangintzaEmailModalTitle">Irakasleen email zerrenda</h2>
+      <p>
+        Plangintza osatu gabe duten koadernoak dituzten
+        <strong th:text="${abisuEmailKopurua}">11</strong> irakasleren email bakarrak,
+        <code>;</code> bidez bereizita.
+      </p>
+      <label class="planning-email-label" for="plangintzaEmailak">Emailak</label>
+      <textarea id="plangintzaEmailak" class="planning-email-list" readonly
+                th:text="${abisuEmailak}">ane@example.com;mikel@example.com</textarea>
+      <p id="plangintzaEmailCopyStatus" class="planning-copy-status" aria-live="polite"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" onclick="PlangintzaEmailModal.close()">Itxi</button>
+        <button type="button" class="btn btn-primary" onclick="PlangintzaEmailModal.copy()">Kopiatu</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script th:src="@{/js/kudeatzaile-nav.js}"></script>
+<script>
+  window.PlangintzaAbisuModal = (function () {
+    function modal() { return document.getElementById('plangintzaAbisuModal'); }
+    function open() {
+      const el = modal();
+      if (!el) return;
+      el.classList.add('open');
+      el.setAttribute('aria-hidden', 'false');
+    }
+    function close() {
+      const el = modal();
+      if (!el) return;
+      el.classList.remove('open');
+      el.setAttribute('aria-hidden', 'true');
+    }
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') close();
+    });
+    return {open, close};
+  })();
+
+  window.PlangintzaEmailModal = (function () {
+    function modal() { return document.getElementById('plangintzaEmailModal'); }
+    function emailak() { return document.getElementById('plangintzaEmailak'); }
+    function status() { return document.getElementById('plangintzaEmailCopyStatus'); }
+    function open() {
+      const el = modal();
+      const input = emailak();
+      if (!el || !input) return;
+      el.classList.add('open');
+      el.setAttribute('aria-hidden', 'false');
+      if (status()) status().textContent = '';
+      setTimeout(function () { input.focus(); input.select(); }, 0);
+    }
+    function close() {
+      const el = modal();
+      if (!el) return;
+      el.classList.remove('open');
+      el.setAttribute('aria-hidden', 'true');
+    }
+    function copy() {
+      const input = emailak();
+      if (!input) return;
+      const copied = function () {
+        if (status()) status().textContent = 'Emailak arbelean kopiatu dira.';
+      };
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(input.value).then(copied, function () {
+          input.select();
+          document.execCommand('copy');
+          copied();
+        });
+      } else {
+        input.select();
+        document.execCommand('copy');
+        copied();
+      }
+    }
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') close();
+    });
+    return {open, close, copy};
+  })();
+</script>
+</body>
+</html>

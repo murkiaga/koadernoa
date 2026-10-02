@@ -187,5 +187,20 @@ public interface KoadernoaRepository extends JpaRepository<Koadernoa, Long>{
               left join fetch k.jabea j
     		  order by f.izena, t.izena, m.izena
     		  """)
-    		List<Koadernoa> findAllWithRelations();
+    List<Koadernoa> findAllWithRelations();
+
+    @Query("""
+          select distinct k from Koadernoa k
+            left join fetch k.moduloa m
+            left join fetch m.taldea t
+            left join fetch t.zikloa z
+            left join fetch z.familia f
+            left join fetch k.egutegia e
+            left join fetch e.ikasturtea i
+            left join fetch k.irakasleak ir
+          where i.id = :ikasturteaId
+          order by f.izena, t.izena, m.izena
+          """)
+    List<Koadernoa> findByIkasturteaIdWithPlangintzaKontrolRelations(
+            @Param("ikasturteaId") Long ikasturteaId);
 }

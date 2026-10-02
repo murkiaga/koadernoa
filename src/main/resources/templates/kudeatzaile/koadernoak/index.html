@@ -13,10 +13,17 @@
 <div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
 
 <main class="page">
-  <h1>Koadernoak</h1>
-  <p class="muted">
-    Familiaren eta taldearen arabera iragazi, eta koadernoa irakasle ikuspegian kontsultatu.
-  </p>
+  <div class="page-header">
+    <div>
+      <h1>Koadernoak</h1>
+      <p class="muted">
+        Familiaren eta taldearen arabera iragazi, eta koadernoa irakasle ikuspegian kontsultatu.
+      </p>
+    </div>
+    <a class="btn btn-primary" th:href="@{/kudeatzaile/koadernoak/plangintza-kontrola}">
+      Plangintza-kontrola
+    </a>
+  </div>
 
   <!-- Filtroak -->
   <form class="filters" method="get" th:action="@{/kudeatzaile/koadernoak}">

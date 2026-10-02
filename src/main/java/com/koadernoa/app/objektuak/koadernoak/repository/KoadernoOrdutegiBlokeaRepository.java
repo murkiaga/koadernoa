@@ -24,4 +24,11 @@ public interface KoadernoOrdutegiBlokeaRepository extends JpaRepository<Koaderno
 	
 	// Falten bistako kalkuluetarako:
     List<KoadernoOrdutegiBlokea> findByKoadernoa_Id(Long koadernoaId);
+
+    @Query("""
+            select b from KoadernoOrdutegiBlokea b
+            where b.koadernoa.egutegia.ikasturtea.id = :ikasturteaId
+            order by b.koadernoa.id, b.hasieraData, b.id
+            """)
+    List<KoadernoOrdutegiBlokea> findByIkasturteaId(@Param("ikasturteaId") Long ikasturteaId);
 }

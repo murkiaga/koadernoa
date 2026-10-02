@@ -113,6 +113,8 @@ public class KonfigurazioaController {
         KoadernoKonfigForm koadernoKonfigForm = new KoadernoKonfigForm();
         koadernoKonfigForm.setBikoiztuakBaimendu(aplikazioAukeraService.getBool(AplikazioAukeraService.KOADERNO_BIKOIZTUAK_BAIMENDU, true));
         koadernoKonfigForm.setBesteMintegiaBaimendu(aplikazioAukeraService.getBool(AplikazioAukeraService.KOADERNO_BESTE_MINTEGIA_BAIMENDU, false));
+        koadernoKonfigForm.setPlangintzaKontrolAutomatikoa(
+                aplikazioAukeraService.isPlangintzaKontrolAutomatikoaAktibo());
         model.addAttribute("koadernoKonfigForm", koadernoKonfigForm);
     }
 
@@ -979,6 +981,7 @@ public class KonfigurazioaController {
     public String gordeKoadernoAukerak(@ModelAttribute("koadernoKonfigForm") KoadernoKonfigForm form) {
         aplikazioAukeraService.setBool(AplikazioAukeraService.KOADERNO_BIKOIZTUAK_BAIMENDU, form.isBikoiztuakBaimendu());
         aplikazioAukeraService.setBool(AplikazioAukeraService.KOADERNO_BESTE_MINTEGIA_BAIMENDU, form.isBesteMintegiaBaimendu());
+        aplikazioAukeraService.setPlangintzaKontrolAutomatikoa(form.isPlangintzaKontrolAutomatikoa());
         return "redirect:/kudeatzaile/konfigurazioa#koadernoak";
     }
 
@@ -986,6 +989,7 @@ public class KonfigurazioaController {
     public static class KoadernoKonfigForm {
         private boolean bikoiztuakBaimendu;
         private boolean besteMintegiaBaimendu;
+        private boolean plangintzaKontrolAutomatikoa;
     }
 
     @Data

@@ -31,7 +31,7 @@ public class Mezua {
     @JoinColumn(name = "hartzailea_id")
     private Irakaslea hartzailea;
 
-    @Column(nullable = false, length = 2000)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String edukia;
 
     @Column(nullable = false)

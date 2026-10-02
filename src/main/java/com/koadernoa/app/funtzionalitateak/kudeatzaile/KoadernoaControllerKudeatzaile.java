@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,11 +26,16 @@ import com.koadernoa.app.objektuak.koadernoak.service.KoadernoJabeEsleipenServic
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoJabeInportazioEmaitza;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
+import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Familia;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Taldea;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Zikloa;
 import com.koadernoa.app.objektuak.zikloak.repository.FamiliaRepository;
 import com.koadernoa.app.objektuak.zikloak.repository.TaldeaRepository;
+import com.koadernoa.app.objektuak.koadernoak.service.KoadernoPlangintzaKontrolService;
+import com.koadernoa.app.objektuak.koadernoak.service.KoadernoPlangintzaKontrola;
+import com.koadernoa.app.objektuak.koadernoak.service.KoadernoPlangintzaKontrola.Egoera;
+import com.koadernoa.app.objektuak.mezuak.service.MezuaService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -44,6 +50,9 @@ public class KoadernoaControllerKudeatzaile {
     private final FamiliaRepository familiaRepository;
     private final TaldeaRepository taldeaRepository;
     private final IrakasleaRepository irakasleaRepository;
+    private final KoadernoPlangintzaKontrolService koadernoPlangintzaKontrolService;
+    private final MezuaService mezuaService;
+    private final IrakasleaService irakasleaService;
 
     /**
      * Kudeatzaileko koaderno zerrenda:
@@ -169,6 +178,53 @@ public class KoadernoaControllerKudeatzaile {
         model.addAttribute("badagoJabeGabekoKoadernorik", koadernoJabeEsleipenService.badagoJabeGabekoKoadernorik());
 
         return "kudeatzaile/koadernoak/index";
+    }
+
+    @GetMapping("/plangintza-kontrola")
+    public String plangintzaKontrola(
+            @RequestParam(defaultValue = "OSATU_GABE") String egoera,
+            Model model) {
+        List<KoadernoPlangintzaKontrola> kontrolGuztiak = koadernoPlangintzaKontrolService.lortuKontrola();
+        String filtroa = List.of("GUZTIAK", "OSATU_GABE", "ONDO", "KLASE_EGUNIK_EZ").contains(egoera)
+                ? egoera
+                : "OSATU_GABE";
+        long ondo = kontrolGuztiak.stream().filter(k -> k.egoera() == Egoera.ONDO).count();
+        long osatuGabe = kontrolGuztiak.stream().filter(k -> k.egoera() == Egoera.OSATU_GABE).count();
+        long klaseEgunikEz = kontrolGuztiak.stream().filter(k -> k.egoera() == Egoera.KLASE_EGUNIK_EZ).count();
+        List<KoadernoPlangintzaKontrola> erakustekoak = switch (filtroa) {
+            case "ONDO" -> kontrolGuztiak.stream().filter(k -> k.egoera() == Egoera.ONDO).toList();
+            case "OSATU_GABE" -> kontrolGuztiak.stream().filter(k -> k.egoera() == Egoera.OSATU_GABE).toList();
+            case "KLASE_EGUNIK_EZ" -> kontrolGuztiak.stream()
+                    .filter(k -> k.egoera() == Egoera.KLASE_EGUNIK_EZ).toList();
+            default -> kontrolGuztiak;
+        };
+        List<String> abisuEmailak = koadernoPlangintzaKontrolService.abisuHartzaileEmailak(kontrolGuztiak);
+
+        model.addAttribute("kontrolak", erakustekoak);
+        model.addAttribute("koadernoAktiboKopurua", kontrolGuztiak.size());
+        model.addAttribute("ondoKopurua", ondo);
+        model.addAttribute("osatuGabeKopurua", osatuGabe);
+        model.addAttribute("klaseEgunikEzKopurua", klaseEgunikEz);
+        model.addAttribute("abisuHartzaileKopurua",
+                koadernoPlangintzaKontrolService.abisuHartzaileKopurua(kontrolGuztiak));
+        model.addAttribute("abisuEmailKopurua", abisuEmailak.size());
+        model.addAttribute("abisuEmailak", String.join(";", abisuEmailak));
+        model.addAttribute("filtroa", filtroa);
+        return "kudeatzaile/koadernoak/plangintza-kontrola";
+    }
+
+    @PostMapping("/plangintza-kontrola/abisuak")
+    public String bidaliPlangintzaAbisuak(Authentication auth, RedirectAttributes ra) {
+        try {
+            List<KoadernoPlangintzaKontrola> kontrolak = koadernoPlangintzaKontrolService.lortuKontrola();
+            int bidalitakoak = mezuaService.bidaliPlangintzaAbisuak(
+                    irakasleaService.getLogeatutaDagoenIrakaslea(auth), kontrolak);
+            ra.addFlashAttribute("success", bidalitakoak + " irakasleri bidali zaie plangintza-abisua.");
+        } catch (RuntimeException ex) {
+            ra.addFlashAttribute("error", "Ezin izan dira plangintza-abisuak bidali: " + ex.getMessage());
+        }
+        ra.addAttribute("egoera", "OSATU_GABE");
+        return "redirect:/kudeatzaile/koadernoak/plangintza-kontrola";
     }
 
 

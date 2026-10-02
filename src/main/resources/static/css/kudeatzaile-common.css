@@ -516,3 +516,79 @@ input[type="url"]{
   gap:.6rem;
   margin-top:.8rem;
 }
+
+/* Koadernoen plangintza-kontrola */
+.planning-summary{
+  display:grid;
+  grid-template-columns:repeat(4, minmax(0, 1fr));
+  gap:12px;
+  margin:16px 0;
+}
+.planning-summary__item{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px 16px;
+  border:1px solid var(--b);
+  border-radius:12px;
+  background:var(--surface);
+  box-shadow:var(--shadow);
+}
+.planning-summary__item strong{ font-size:1.4rem; }
+.planning-summary__item--success{ border-color:#bbf7d0; background:#f0fdf4; color:#166534; }
+.planning-summary__item--danger{ border-color:#fecaca; background:#fef2f2; color:#b91c1c; }
+.planning-toolbar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:12px;
+  margin:16px 0 12px;
+}
+.planning-filter{ display:flex; flex-wrap:wrap; gap:8px; }
+.planning-actions{ display:flex; flex-wrap:wrap; gap:8px; }
+.planning-filter .planning-filter--active{
+  border-color:var(--m);
+  background:#eff6ff;
+  color:#1d4ed8;
+  font-weight:600;
+}
+.btn:disabled{ opacity:.5; cursor:not-allowed; }
+.planning-email-label{
+  display:block;
+  margin:.75rem 0 .35rem;
+  font-weight:600;
+}
+.planning-email-list{
+  width:100%;
+  min-height:9rem;
+  resize:vertical;
+  padding:10px;
+  border:1px solid var(--b);
+  border-radius:10px;
+  background:#f9fafb;
+  color:var(--t);
+  font:inherit;
+  line-height:1.45;
+}
+.planning-copy-status{
+  min-height:1.25rem;
+  margin:.4rem 0 0;
+  color:#166534;
+  font-size:.88rem;
+}
+.planning-missing-days summary{
+  color:var(--m);
+  cursor:pointer;
+  white-space:nowrap;
+}
+.planning-missing-days ul{
+  margin:.45rem 0 0;
+  padding-left:1.25rem;
+  white-space:nowrap;
+}
+@media (max-width:640px){
+  .planning-summary{ grid-template-columns:1fr; }
+  .planning-toolbar{ align-items:stretch; }
+}

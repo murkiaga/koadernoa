@@ -567,6 +567,17 @@
 	      <input type="checkbox" th:field="*{besteMintegiaBaimendu}">
 	      Beste mintegi bateko koadernoak sortzea baimendu
 	    </label>
+	    <div style="margin:16px 0;">
+	      <label style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+	        <input type="checkbox" th:field="*{plangintzaKontrolAutomatikoa}">
+	        Eguneroko plangintza-kontrol automatikoa
+	      </label>
+	      <p class="muted" style="margin:0 0 0 24px;max-width:760px;">
+	        Aktibatuta dagoenean, astelehenetik ostiralera goizeko 07:00etan ikasturte aktiboko
+	        koadernoen plangintza egiaztatzen da eta plangintza osatu gabe duten koadernoetako
+	        irakasleei abisua bidaltzen zaie.
+	      </p>
+	    </div>
 	    <div class="actions">
 	      <button type="submit">Gorde aldaketak</button>
 	    </div>

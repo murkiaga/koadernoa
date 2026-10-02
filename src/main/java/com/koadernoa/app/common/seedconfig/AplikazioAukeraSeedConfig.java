@@ -19,6 +19,7 @@ public class AplikazioAukeraSeedConfig {
             ensure(repo, AplikazioAukeraService.AUTH_DEFAULT, "google");
             ensure(repo, AplikazioAukeraService.KOADERNO_BIKOIZTUAK_BAIMENDU, "true");
             ensure(repo, AplikazioAukeraService.KOADERNO_BESTE_MINTEGIA_BAIMENDU, "false");
+            ensure(repo, AplikazioAukeraService.PLANGINTZA_KONTROL_AUTOMATIKOA, "false");
         };
     }
 

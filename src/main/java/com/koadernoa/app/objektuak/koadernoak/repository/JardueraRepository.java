@@ -34,6 +34,17 @@ public interface JardueraRepository extends JpaRepository<Jarduera, Long>{
 	List<Jarduera> findByKoadernoaAndMotaAndDataBetween(Koadernoa koadernoa, String mota, LocalDate from, LocalDate to);
 	
     void deleteByKoadernoa_Id(Long koadernoId);
+
+    @Query("""
+            select distinct j.koadernoa.id, j.data
+            from Jarduera j
+            where j.koadernoa.id in :koadernoIds
+              and j.data between :hasiera and :bukaera
+            """)
+    List<Object[]> findJardueraDatak(
+            @Param("koadernoIds") List<Long> koadernoIds,
+            @Param("hasiera") LocalDate hasiera,
+            @Param("bukaera") LocalDate bukaera);
     
     
 }

@@ -1,6 +1,5 @@
 package com.koadernoa.app.objektuak.koadernoak.service;
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.ArrayList;
@@ -8,15 +7,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
-import com.koadernoa.app.objektuak.egutegia.entitateak.EgunBerezi;
-import com.koadernoa.app.objektuak.egutegia.entitateak.EgunMota;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Asistentzia;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoOrdutegiBlokea;
@@ -41,6 +35,7 @@ public class DenboralizazioFaltaService {
     private final MatrikulaRepository matrikulaRepository;
     private final AsistentziaRepository asistentziaRepository;
     private final KoadernoOrdutegiBlokeaRepository koadernoOrdutegiBlokeaRepository;
+    private final KoadernoKlaseEgunService koadernoKlaseEgunService;
 
     /**
      * Matrikula bakoitzak bere koadernoan dituen hutsegiteen ehunekoa kalkulatzen du.
@@ -123,42 +118,13 @@ public class DenboralizazioFaltaService {
         List<KoadernoOrdutegiBlokea> blokak =
                 koadernoOrdutegiBlokeaRepository.findByKoadernoa_Id(koadernoId);
 
-        LocalDate ikastHas = egutegia.getHasieraData();
-        java.util.NavigableMap<LocalDate, Map<Astegunak, Integer>> orduakByDate = new java.util.TreeMap<>();
-        for (KoadernoOrdutegiBlokea b : blokak) {
-            LocalDate has = b.getHasieraData() != null ? b.getHasieraData() : ikastHas;
-            if (b.isTarteHutsa()) {
-                orduakByDate.putIfAbsent(has, new java.util.EnumMap<>(Astegunak.class));
-                continue;
-            }
-            if (b.getAsteguna() == null || b.getIraupenaSlot() <= 0 || b.isDualOrdutegia()) {
-                continue;
-            }
-            orduakByDate.computeIfAbsent(has, __ -> new java.util.EnumMap<>(Astegunak.class))
-                    .merge(b.getAsteguna(), b.getIraupenaSlot(), Integer::sum);
-        }
-
-        List<EgunBerezi> egunBereziak = egutegia.getEgunBereziak();
-        if (egunBereziak == null) {
-            egunBereziak = List.of();
-        }
-
-        Map<LocalDate,EgunBerezi> bereziMap =
-                egunBereziak.stream()
-                        .filter(eb -> eb.getData() != null)
-                        .collect(Collectors.toMap(
-                                EgunBerezi::getData,
-                                eb -> eb,
-                                (a,b) -> a
-                        ));
-
         Map<LocalDate,Integer> egunekoOrduak =
-                kalkulatuEgunekoOrduakHilabetean(egutegia, orduakByDate, bereziMap, from, to);
+                koadernoKlaseEgunService.egunekoSlotak(egutegia, blokak, from, to);
 
         List<LocalDate> egunak = new ArrayList<>(egunekoOrduak.keySet());
 
         // Programatutako ordu GUZTIAK (ikasturte osoan) → 2. puntuan komentatuko dugu
-        int programaOrduak = kalkulatuProgramaOrduakUrteOsoan(egutegia, orduakByDate, bereziMap);
+        int programaOrduak = koadernoKlaseEgunService.ikasturtekoKlaseSlotak(egutegia, blokak);
 
         // Koaderno honetako MATRIKULATUAK
         List<Matrikula> matrikulak = mugatutakoMatrikulak != null
@@ -246,117 +212,13 @@ public class DenboralizazioFaltaService {
         return dto;
     }
 
-    /** Hilabete jakin bateko egunak + ordu kopurua, Egutegia + ordutegia kontuan hartuta */
-    private Map<LocalDate,Integer> kalkulatuEgunekoOrduakHilabetean(
-            Egutegia egutegia,
-            java.util.NavigableMap<LocalDate, Map<Astegunak,Integer>> orduakByDate,
-            Map<LocalDate,EgunBerezi> bereziMap,
-            LocalDate from,
-            LocalDate to) {
-
-        LocalDate ikastHasiera = egutegia.getHasieraData();
-        LocalDate ikastBukaera = egutegia.getBukaeraData();
-
-        Map<LocalDate,Integer> ema = new LinkedHashMap<>();
-
-        for (LocalDate d = from; !d.isAfter(to); d = d.plusDays(1)) {
-            // Ikasturtearen barruan ez badago, salto
-            if (ikastHasiera != null && d.isBefore(ikastHasiera)) continue;
-            if (ikastBukaera != null && d.isAfter(ikastBukaera)) continue;
-
-            Astegunak ag = astegunEraginkorra(d, bereziMap);
-            if (ag == null) continue;
-
-            var ordutegia = orduakByDate.floorEntry(d) != null ? orduakByDate.floorEntry(d).getValue() : Map.<Astegunak,Integer>of();
-            int ordu = ordutegia.getOrDefault(ag, 0);
-            if (ordu > 0) {
-                ema.put(d, ordu);
-            }
-        }
-
-        return ema;
-    }
-
-    /** Ikasturte osoan programan dauden orduak (3 ebaluazio guztiak) */
-    private int kalkulatuProgramaOrduakUrteOsoan(
-            Egutegia egutegia,
-            java.util.NavigableMap<LocalDate, Map<Astegunak,Integer>> orduakByDate,
-            Map<LocalDate,EgunBerezi> bereziMap) {
-
-        LocalDate ikastHasiera = egutegia.getHasieraData();
-        LocalDate ikastBukaera = egutegia.getBukaeraData();
-
-        if (ikastHasiera == null || ikastBukaera == null) return 0;
-
-        int total = 0;
-        for (LocalDate d = ikastHasiera; !d.isAfter(ikastBukaera); d = d.plusDays(1)) {
-            Astegunak ag = astegunEraginkorra(d, bereziMap);
-            if (ag == null) continue;
-
-            var ordutegia = orduakByDate.floorEntry(d) != null ? orduakByDate.floorEntry(d).getValue() : Map.<Astegunak,Integer>of();
-            total += ordutegia.getOrDefault(ag, 0);
-        }
-        return total;
-    }
-
     private int kalkulatuProgramaOrduakUrteOsoan(Koadernoa koadernoa) {
         if (koadernoa == null || koadernoa.getId() == null || koadernoa.getEgutegia() == null) {
             return 0;
         }
 
-        Egutegia egutegia = koadernoa.getEgutegia();
-        LocalDate ikastHas = egutegia.getHasieraData();
-        java.util.NavigableMap<LocalDate, Map<Astegunak, Integer>> orduakByDate = new TreeMap<>();
-        for (KoadernoOrdutegiBlokea b : koadernoOrdutegiBlokeaRepository.findByKoadernoa_Id(koadernoa.getId())) {
-            LocalDate has = b.getHasieraData() != null ? b.getHasieraData() : ikastHas;
-            if (has == null) continue;
-            if (b.isTarteHutsa()) {
-                orduakByDate.putIfAbsent(has, new java.util.EnumMap<>(Astegunak.class));
-                continue;
-            }
-            if (b.getAsteguna() == null || b.getIraupenaSlot() <= 0 || b.isDualOrdutegia()) continue;
-            orduakByDate.computeIfAbsent(has, __ -> new java.util.EnumMap<>(Astegunak.class))
-                    .merge(b.getAsteguna(), b.getIraupenaSlot(), Integer::sum);
-        }
-
-        List<EgunBerezi> egunBereziak = egutegia.getEgunBereziak() != null
-                ? egutegia.getEgunBereziak()
-                : List.of();
-        Map<LocalDate, EgunBerezi> bereziMap = egunBereziak.stream()
-                .filter(eb -> eb.getData() != null)
-                .collect(Collectors.toMap(EgunBerezi::getData, eb -> eb, (a, b) -> a));
-        return kalkulatuProgramaOrduakUrteOsoan(egutegia, orduakByDate, bereziMap);
-    }
-
-    /**
-     * Egun jakin bateko "asteguna eraginkorra":
-     *  - Egun bereziak kontuan: EZ_LEKTIBOA/JAIEGUNA -> null (klaserik ez)
-     *  - ORDEZKATUA -> ordezkatua eremuak esaten duen asteguna
-     *  - Bestela: asteguna = d.getDayOfWeek (larunbata/igandea -> null)
-     */
-    private Astegunak astegunEraginkorra(LocalDate d, Map<LocalDate,EgunBerezi> bereziMap) {
-        EgunBerezi eb = bereziMap.get(d);
-        if (eb != null) {
-            EgunMota mota = eb.getMota();
-            switch (mota) {
-                case EZ_LEKTIBOA, JAIEGUNA:
-                    return null;
-                case ORDEZKATUA:
-                    return eb.getOrdezkatua(); // astelehena...ostirala (izan beharko luke)
-                case LEKTIBOA:
-                    // jarraitu beheko logikarekin (normal bezala)
-                    break;
-            }
-        }
-
-        DayOfWeek dow = d.getDayOfWeek();
-        return switch (dow) {
-            case MONDAY    -> Astegunak.ASTELEHENA;
-            case TUESDAY   -> Astegunak.ASTEARTEA;
-            case WEDNESDAY -> Astegunak.ASTEAZKENA;
-            case THURSDAY  -> Astegunak.OSTEGUNA;
-            case FRIDAY    -> Astegunak.OSTIRALA;
-            default        -> null; // larunbata/igandea
-        };
+        List<KoadernoOrdutegiBlokea> blokeak =
+                koadernoOrdutegiBlokeaRepository.findByKoadernoa_Id(koadernoa.getId());
+        return koadernoKlaseEgunService.ikasturtekoKlaseSlotak(koadernoa.getEgutegia(), blokeak);
     }
 }

@@ -24,6 +24,7 @@ public class AplikazioAukeraService {
     public static final String AUTH_DEFAULT = "auth.default";
     public static final String KOADERNO_BESTE_MINTEGIA_BAIMENDU = "koadernoak.beste.mintegia.baimendu";
     public static final String KOADERNO_BIKOIZTUAK_BAIMENDU = "koadernoak.bikoiztuak.baimendu";
+    public static final String PLANGINTZA_KONTROL_AUTOMATIKOA = "PLANGINTZA_KONTROL_AUTOMATIKOA";
     
     private final AplikazioAukeraRepository repo;
 
@@ -63,5 +64,13 @@ public class AplikazioAukeraService {
     
     public void setBool(String giltza, boolean balioa) {
         set(giltza, Boolean.toString(balioa));
+    }
+
+    public boolean isPlangintzaKontrolAutomatikoaAktibo() {
+        return getBool(PLANGINTZA_KONTROL_AUTOMATIKOA, false);
+    }
+
+    public void setPlangintzaKontrolAutomatikoa(boolean aktibo) {
+        setBool(PLANGINTZA_KONTROL_AUTOMATIKOA, aktibo);
     }
 }

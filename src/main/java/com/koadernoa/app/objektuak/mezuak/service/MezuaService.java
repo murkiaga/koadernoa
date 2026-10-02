@@ -3,8 +3,10 @@ package com.koadernoa.app.objektuak.mezuak.service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -15,6 +17,7 @@ import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.EstatistikaEbaluazioan;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
+import com.koadernoa.app.objektuak.koadernoak.service.KoadernoPlangintzaKontrola;
 import com.koadernoa.app.objektuak.mezuak.entitateak.Mezua;
 import com.koadernoa.app.objektuak.mezuak.repository.MezuaRepository;
 
@@ -72,6 +75,86 @@ public class MezuaService {
         }
         return bidaliak;
     }
+
+    @Transactional
+    public int bidaliPlangintzaAbisuak(
+            Irakaslea bidaltzailea, List<KoadernoPlangintzaKontrola> kontrolak) {
+        if (bidaltzailea == null || kontrolak == null || kontrolak.isEmpty()) return 0;
+
+        Map<Long, IrakaslearenPlangintzaAbisua> abisuak = new LinkedHashMap<>();
+        kontrolak.stream()
+                .filter(KoadernoPlangintzaKontrola::abisuaBeharDu)
+                .forEach(kontrola -> {
+                    Koadernoa koadernoa = kontrola.koadernoa();
+                    if (koadernoa == null || koadernoa.getIrakasleak() == null) return;
+                    for (Irakaslea hartzailea : koadernoa.getIrakasleak()) {
+                        if (hartzailea == null || hartzailea.getId() == null) continue;
+                        abisuak.computeIfAbsent(hartzailea.getId(),
+                                        id -> new IrakaslearenPlangintzaAbisua(hartzailea, new LinkedHashMap<>()))
+                                .kontrolak()
+                                .putIfAbsent(koadernoa.getId(), kontrola);
+                    }
+                });
+
+        for (IrakaslearenPlangintzaAbisua abisua : abisuak.values()) {
+            Mezua mezua = new Mezua();
+            mezua.setBidaltzailea(bidaltzailea);
+            mezua.setHartzailea(abisua.irakaslea());
+            mezua.setEdukia(sortuPlangintzaAbisuarenEdukia(
+                    abisua.irakaslea(), List.copyOf(abisua.kontrolak().values())));
+            mezua.setBidalketaData(LocalDateTime.now());
+            mezuaRepository.save(mezua);
+        }
+        return abisuak.size();
+    }
+
+    @Transactional
+    public int bidaliPlangintzaAbisuak(List<KoadernoPlangintzaKontrola> kontrolak) {
+        Irakaslea lehenHartzailea = kontrolak == null ? null : kontrolak.stream()
+                .filter(KoadernoPlangintzaKontrola::abisuaBeharDu)
+                .map(KoadernoPlangintzaKontrola::koadernoa)
+                .filter(java.util.Objects::nonNull)
+                .map(Koadernoa::getIrakasleak)
+                .filter(java.util.Objects::nonNull)
+                .flatMap(List::stream)
+                .filter(irakaslea -> irakaslea != null && irakaslea.getId() != null)
+                .findFirst()
+                .orElse(null);
+        if (lehenHartzailea == null) return 0;
+
+        Irakaslea bidaltzailea = irakasleaRepository.findByIzenaIgnoreCase("sistema")
+                .or(() -> irakasleaRepository.findByEmailaIgnoreCase("sistema@koadernoa.local"))
+                .orElse(lehenHartzailea);
+        return bidaliPlangintzaAbisuak(bidaltzailea, kontrolak);
+    }
+
+    private String sortuPlangintzaAbisuarenEdukia(
+            Irakaslea hartzailea, List<KoadernoPlangintzaKontrola> kontrolak) {
+        String izena = hartzailea.getIzena() == null || hartzailea.getIzena().isBlank()
+                ? "irakasle"
+                : hartzailea.getIzena().trim();
+        StringBuilder edukia = new StringBuilder()
+                .append("Kaixo ").append(izena).append(",\n\n")
+                .append("Gogorarazten dizugu koadernoetan hurrengo 15 klase-egunetako ")
+                .append("plangintza eginda egon behar dela.\n\n")
+                .append("Une honetan honako koaderno hauetan plangintza osatu gabe dago:\n\n");
+
+        for (KoadernoPlangintzaKontrola kontrola : kontrolak) {
+            Koadernoa koadernoa = kontrola.koadernoa();
+            String modulua = koadernoa.getModuloa() == null || koadernoa.getModuloa().getIzena() == null
+                    ? "Modulurik gabe"
+                    : koadernoa.getModuloa().getIzena();
+            String taldea = koadernoa.getModuloa() == null || koadernoa.getModuloa().getTaldea() == null
+                    || koadernoa.getModuloa().getTaldea().getIzena() == null
+                    ? "Talderik gabe"
+                    : koadernoa.getModuloa().getTaldea().getIzena();
+            edukia.append('-').append(modulua).append(" – ").append(taldea).append('\n');
+        }
+        return edukia.append("\nMesedez, eguneratu denboralizazioa.").toString();
+    }
+
+    private record IrakaslearenPlangintzaAbisua(
+            Irakaslea irakaslea, Map<Long, KoadernoPlangintzaKontrola> kontrolak) {}
 
     @Transactional
     public int bidaliEstatistikaFiltrotik(Irakaslea bidaltzailea, List<EstatistikaEbaluazioan> estatistikak, String edukia) {
