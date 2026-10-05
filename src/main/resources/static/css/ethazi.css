@@ -145,13 +145,3 @@
 .translation-editor [data-translation-panel] textarea,
 .translation-editor [data-translation-panel] input { width: 100%; box-sizing: border-box; }
 .translation-editor [hidden] { display: none !important; }
-
-/* PDF curriculum import preview. */
-.import-help{max-width:760px}.import-help small{display:block;margin-top:.35rem}
-.import-preview-page{max-width:none;padding-left:16px;padding-right:16px}
-.import-summary{display:flex;flex-wrap:wrap;gap:.75rem;margin:0 0 16px}.import-summary span,.import-status{display:inline-block;border-radius:999px;padding:.35rem .7rem;font-size:.85rem;font-weight:700}
-.status-sortu{background:#dcfce7;color:#166534}.status-eguneratu{background:#dbeafe;color:#1d4ed8}.status-aldaketarik_ez{background:#f1f5f9;color:#475569}.status-arazoa{background:#fee2e2;color:#b91c1c}
-.import-preview{min-width:1250px;table-layout:fixed}.import-preview th:nth-child(2){width:95px}.import-preview th:nth-child(3){width:75px}.import-preview th:nth-child(4){width:75px}.import-preview th:nth-child(5){width:44%}.import-preview th:nth-child(6){width:26%}.import-preview th:nth-child(7){width:135px}.import-preview th:nth-child(8){width:160px}.import-preview td{vertical-align:top}.import-preview td:nth-child(8){overflow-wrap:anywhere;font-size:.82rem}
-.import-preview .import-select{width:44px;min-width:44px;text-align:center}.import-preview .import-select input{width:1.15rem;height:1.15rem}
-.import-preview .import-description{display:block;box-sizing:border-box;width:100%;min-width:0;line-height:1.4;resize:vertical}
-.import-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:.75rem;margin-top:18px}.import-actions form{margin:0}

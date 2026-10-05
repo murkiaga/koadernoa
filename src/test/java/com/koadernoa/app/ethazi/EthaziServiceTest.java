@@ -86,12 +86,16 @@ class EthaziServiceTest {
 
     @Test void csvImportCreatesAndUpdatesOutcomesWithoutDeletingEnglish() {
         var m = module(cycle, "0221");
+        m.setKodea("BUAA");
+        var alternate = translatedModule(m, Hizkuntza.GAZTELERA);
+        alternate.setKodea("SALO");
         var existing = new IkaskuntzaEmaitza();
         existing.setEeiKodea("0221"); existing.setOrdena(1); existing.setKodea("zaharra");
         existing.setDeskribapena("Zaharra"); existing.setDeskribapenaEn("Keep this"); em.persist(existing);
         String csv = "\uFEFF\"eeiKodea\",\"modulu_kodea\",\"ordena\",\"kodea\",\"deskribapenaEU\",\"deskribapenaES\"\r\n"
-                + "\"0221\",\"0221\",\"1\",\"0221.1\",\"EU berria, komarekin\",\"ES nueva\"\r\n"
-                + "\"0221\",\"0221\",\"2\",\"0221.2\",\"Bi lerroko\n"
+                + "\"0221\",\"0221\",\"1\",\"CSV-KODEA-1\",\"EU berria, komarekin\",\"ES nueva\"\r\n"
+                + "\"E100\",\"E100\",\"1\",\"E100.1\",\"Loturarik gabeko IEa\",\"IE sin módulo\"\r\n"
+                + "\"0221\",\"0221\",\"2\",\"CSV-KODEA-2\",\"Bi lerroko\n"
                 + "deskribapena\",\"Descripción\"\r\n";
         var file = new MockMultipartFile("fitxategia", "emaitzak.csv", "text/csv",
                 csv.getBytes(java.nio.charset.StandardCharsets.UTF_8));
@@ -101,8 +105,9 @@ class EthaziServiceTest {
 
         assertThat(result.sortuak()).isEqualTo(1);
         assertThat(result.eguneratuak()).isEqualTo(1);
+        assertThat(result.kargatuGabe()).containsExactly("3. lerroa: EEI E100");
         assertThat(service.emaitzak(cycle.getId(), m.getId())).extracting(IkaskuntzaEmaitza::getKodea)
-                .containsExactly("0221.1", "0221.2");
+                .containsExactly("BUAA1", "BUAA2");
         assertThat(service.emaitza(existing.getId()).getDeskribapena()).isEqualTo("EU berria, komarekin");
         assertThat(service.emaitza(existing.getId()).getDeskribapenaEs()).isEqualTo("ES nueva");
         assertThat(service.emaitza(existing.getId()).getDeskribapenaEn()).isEqualTo("Keep this");
@@ -111,9 +116,9 @@ class EthaziServiceTest {
     }
 
     @Test void invalidCsvRollsBackAllRows() {
-        String csv = "eeiKodea,ordena,kodea,deskribapenaEU,deskribapenaES\n"
-                + "0221,1,0221.1,Lehena,Primera\n"
-                + "0221,ez-da-zenbakia,0221.2,Biga,Segunda\n";
+        String csv = "eeiKodea,modulu_kodea,ordena,kodea,deskribapenaEU,deskribapenaES\n"
+                + "0221,BUAA,1,0221.1,Lehena,Primera\n"
+                + "0221,BUAA,ez-da-zenbakia,0221.2,Biga,Segunda\n";
         var file = new MockMultipartFile("fitxategia", "emaitzak.csv", "text/csv",
                 csv.getBytes(java.nio.charset.StandardCharsets.UTF_8));
         assertThatThrownBy(() -> csvImportService.inportatu(file)).hasMessageContaining("ordena");
@@ -648,6 +653,10 @@ class EthaziServiceTest {
                 String html = mvc.perform(get(path).principal(auth)).andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
                 assertThat(html).contains("ETHAZI", "ethazi-nav", "k-navbar").doesNotContain("th:replace=");
             }
+            String outcomes = mvc.perform(get("/ethazi/ikaskuntza-emaitzak").principal(auth))
+                    .andReturn().getResponse().getContentAsString();
+            assertThat(outcomes).contains("modulu_kodea", "BUAA1")
+                    .doesNotContain("/ethazi/ikaskuntza-emaitzak/importatu", "PDFtik inportatu");
             String rubric = mvc.perform(get("/ethazi/gaitasunak").param("zikloaId", cycle.getId().toString()).principal(auth))
                     .andReturn().getResponse().getContentAsString();
             assertThat(rubric).contains("TRMM · RA1", "Mailaren deskribapena", "Osagaiak identifikatzen ditu",
@@ -714,6 +723,59 @@ class EthaziServiceTest {
         var wrong = module(cycle, "WRONG");
         assertThatThrownBy(() -> kiniela.gordeOharra(cycle.getId(), a, ie.getId(), wrong.getId(), "X"))
             .isInstanceOf(IllegalArgumentException.class);
+    }
+    @Test void kinielaSortsAndFiltersModulesByCodeAndLanguage() {
+        var zeta = module(cycle, "ZZZZ"); zeta.setHizkuntza(Hizkuntza.EUSKARA);
+        var alphaEu = module(cycle, "AAAA-EU"); alphaEu.setKodea("AAAA"); alphaEu.setHizkuntza(Hizkuntza.EUSKARA);
+        var alphaEs = translatedModule(alphaEu, Hizkuntza.GAZTELERA); alphaEs.setKodea("AAAA");
+
+        assertThat(kiniela.kiniela(cycle.getId())).extracting(com.koadernoa.app.ethazi.service.KinielaService.Modulua::id)
+            .containsExactly(alphaEu.getId(), alphaEs.getId(), zeta.getId());
+        assertThat(kiniela.kiniela(cycle.getId(), Hizkuntza.GAZTELERA))
+            .extracting(com.koadernoa.app.ethazi.service.KinielaService.Modulua::id)
+            .containsExactly(alphaEs.getId());
+    }
+    @Test void weightsAndChallengeSelectionsStaySynchronizedAcrossLanguages() {
+        var eu = module(cycle, "SHARED"); eu.setHizkuntza(Hizkuntza.EUSKARA);
+        var es = translatedModule(eu, Hizkuntza.GAZTELERA);
+        var ie = outcome(eu);
+        Long g = createCompetency(); Long level = service.eredua(modelId).getMailak().get(0).getId();
+        service.gordeErrubrikaAdierazlea(g, level, null, indicator(ie.getId()));
+        Long indicatorId = service.gaitasuna(g).getMailak().get(0).getLorpenAdierazleak().get(0).getId();
+
+        kiniela.gordePisua(cycle.getId(), ie.getId(), indicatorId, new java.math.BigDecimal("5"));
+        assertThat(kiniela.kiniela(cycle.getId())).filteredOn(m -> Set.of(eu.getId(), es.getId()).contains(m.id()))
+            .extracting(m -> m.emaitzak().get(0).loturak().get(0).pisua())
+            .containsExactly(new java.math.BigDecimal("5"), new java.math.BigDecimal("5"));
+
+        kiniela.gordeErronka(null, challenge(eu));
+        Long euChallenge = kiniela.erronkak(cycle.getId()).get(0).getId();
+        Long esChallenge = kiniela.sortuBertsioa(euChallenge, Hizkuntza.GAZTELERA);
+        kiniela.gordeErronkaLotura(cycle.getId(), indicatorId, ie.getId(), eu.getId(), euChallenge, true);
+        var modules = kiniela.kiniela(cycle.getId());
+        assertThat(modules.stream().filter(m -> m.id().equals(eu.getId())).findFirst().orElseThrow()
+            .emaitzak().get(0).loturak().get(0).erronkaIds()).containsExactly(euChallenge);
+        assertThat(modules.stream().filter(m -> m.id().equals(es.getId())).findFirst().orElseThrow()
+            .emaitzak().get(0).loturak().get(0).erronkaIds()).containsExactly(esChallenge);
+
+        kiniela.gordeErronkaLotura(cycle.getId(), indicatorId, ie.getId(), es.getId(), esChallenge, false);
+        modules = kiniela.kiniela(cycle.getId());
+        assertThat(modules.stream().filter(m -> Set.of(eu.getId(), es.getId()).contains(m.id()))
+            .flatMap(m -> m.emaitzak().get(0).loturak().get(0).erronkaIds().stream())).isEmpty();
+    }
+    @Test void kinielaLanguageFilterRendersAndKeepsSelection() throws Exception {
+        var es = module(cycle, "FILTER-ES"); es.setHizkuntza(Hizkuntza.GAZTELERA);
+        var eu = module(cycle, "FILTER-EU"); eu.setHizkuntza(Hizkuntza.EUSKARA);
+        var auth = new UsernamePasswordAuthenticationToken("manager", "", AuthorityUtils.createAuthorityList("ROLE_KUDEATZAILEA"));
+        SecurityContextHolder.getContext().setAuthentication(auth);
+        try {
+            mvc().perform(get("/ethazi/kiniela").principal(auth).param("zikloaId", cycle.getId().toString())
+                    .param("hizkuntza", "GAZTELERA"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"hizkuntza\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("FILTER-ES")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("FILTER-EU"))));
+        } finally { SecurityContextHolder.clearContext(); }
     }
     @Test void translationsPersistAndRubricFilterRendersSelectedLanguage() throws Exception {
         Long g = createCompetency(); var f = service.gaitasunaForm(g, null, null);

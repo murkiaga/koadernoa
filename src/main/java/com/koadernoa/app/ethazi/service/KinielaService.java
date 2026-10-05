@@ -146,13 +146,16 @@ public class KinielaService {
         erronkak.delete(e);
     }
 
-    public record ErronkaZutabea(Long id, String izena, String maila, Hizkuntza hizkuntza, Set<Long> moduloIds) {}
+    public record ErronkaZutabea(Long id, String izena, String maila, Hizkuntza hizkuntza, Set<Long> moduloIds,
+            String sinkronizazioGakoa) {}
     public List<ErronkaZutabea> erronkaZutabeak(Long zikloaId) {
         return erronkak(zikloaId).stream()
             .sorted(Comparator.comparing((Erronka e) -> e.getMaila().getOrdena(), Comparator.nullsLast(Comparator.naturalOrder()))
                 .thenComparing(e -> e.getMaila().getId())
                 .thenComparing(Erronka::getHasieraData).thenComparing(Erronka::getId))
-            .map(e -> new ErronkaZutabea(e.getId(), e.getIzena(), e.getMaila().getIzena(), e.getHizkuntza(), e.getModuluak().stream().map(Moduloa::getId).collect(java.util.stream.Collectors.toSet()))).toList();
+            .map(e -> new ErronkaZutabea(e.getId(), e.getIzena(), e.getMaila().getIzena(), e.getHizkuntza(),
+                e.getModuluak().stream().map(Moduloa::getId).collect(java.util.stream.Collectors.toSet()),
+                e.getBertsioTaldea() == null ? "erronka-" + e.getId() : "bertsioa-" + e.getBertsioTaldea())).toList();
     }
 
     private LorpenAdierazlea ziklokoAdierazlea(Long zikloaId, Long id) {
@@ -165,10 +168,17 @@ public class KinielaService {
         var a = ziklokoAdierazlea(zikloaId, adierazleaId);
         var e = erronka(erronkaId);
         require(Objects.equals(e.getZikloa().getId(), zikloaId), "Erronka ez da ziklo honetakoa.");
-        var lotura = kinielaLotura(a, zikloaId, ieId, moduloaId);
+        var ie = ethazi.emaitza(ieId);
+        var sourceModule = ethazi.moduloa(zikloaId, moduloaId);
+        kinielaLotura(a, zikloaId, ieId, moduloaId);
         require(e.getModuluak().stream().anyMatch(m -> m.getId().equals(moduloaId)), "Erronkak ez du modulu honetan parte hartzen.");
-        if (landuta) lotura.getErronkak().add(e);
-        else lotura.getErronkak().removeIf(item -> item.getId().equals(erronkaId));
+        var versions = e.getBertsioTaldea() == null ? List.of(e) : erronkak.findByBertsioTaldea(e.getBertsioTaldea());
+        for (var version : versions) for (var module : version.getModuluak()) {
+            if (!Objects.equals(module.getEeiKodea(), sourceModule.getEeiKodea()) || !ethazi.dagokio(ie, module)) continue;
+            var related = kinielaLotura(a, zikloaId, ieId, module.getId());
+            if (landuta) related.getErronkak().add(version);
+            else related.getErronkak().removeIf(item -> item.getId().equals(version.getId()));
+        }
     }
     @Transactional public void gordeOharra(Long zikloaId, Long adierazleaId, Long ieId, Long moduloaId, String oharra) {
         var a = ziklokoAdierazlea(zikloaId, adierazleaId);
@@ -205,9 +215,18 @@ public class KinielaService {
             .flatMap(r -> r.gelaxkak().stream()).filter(Objects::nonNull).flatMap(gm -> gm.getLorpenAdierazleak().stream()).toList();
     }
     public List<Modulua> kiniela(Long zikloaId) {
+        return kiniela(zikloaId, null);
+    }
+    public List<Modulua> kiniela(Long zikloaId, Hizkuntza hizkuntza) {
         var indicators = adierazleak(zikloaId);
         var challenges = erronkaZutabeak(zikloaId);
-        return ethazi.curriculum(zikloaId).stream().map(c -> {
+        return ethazi.curriculum(zikloaId).stream()
+            .filter(c -> hizkuntza == null || c.moduloa().getHizkuntza() == hizkuntza)
+            .sorted(Comparator.comparing((EthaziService.ModuluEmaitzak c) -> c.moduloa().getKodea(),
+                    Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))
+                .thenComparing(c -> c.moduloa().getHizkuntza().ordinal())
+                .thenComparing(c -> c.moduloa().getId()))
+            .map(c -> {
             var results = c.emaitzak().stream().map(ie -> {
                 var links = indicators.stream().filter(a -> lotuta(a, ie.getId())).map(a -> new Lotura(a.getId(),
                     a.getGaitasunMaila().getGaitasuna().getKodea() + "." + a.getGaitasunMaila().getMaila().getOrdena() + "." + a.getOrdena(),

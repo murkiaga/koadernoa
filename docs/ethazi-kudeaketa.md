@@ -55,7 +55,7 @@ Ondoko guztiak `/ethazi` aurrizkiaren azpian daude:
 | POST | `/mailakatzeak/{id}/mailak/{mailaId}/ezabatu` | Maila ezabatu |
 | POST | `/mailakatzeak/{id}/mailak/{mailaId}/mugitu` | Ordena aldatu (`norabidea`: -1 edo 1) |
 | GET | `/ikaskuntza-emaitzak` | IE zerrenda (`zikloaId`, `moduloaId`) |
-| POST | `/ikaskuntza-emaitzak/inportatu` | IEak CSV bidez sortu edo eguneratu (`eeiKodea` + `ordena`) |
+| POST | `/ikaskuntza-emaitzak/inportatu` | IEak CSV bidez sortu edo eguneratu (`eeiKodea` + `ordena`); IE kodea DBko `Moduloa.kodea + ordena` gisa sortzen da |
 | GET, POST | `/ikaskuntza-emaitzak/berria` | IE sortu |
 | GET, POST | `/ikaskuntza-emaitzak/{id}/editatu` | IE editatu |
 | POST | `/ikaskuntza-emaitzak/{id}/ezabatu` | IE ezabatu |
@@ -134,6 +134,7 @@ Hizkuntzaren Java konstantea `GAZTELERA` da. `HizkuntzaConverter` bihurgailuak l
 - Formularioetako hizkuntza-hautatzaile bakoitzak testu bat erakusten du aldi bakoitzean. Hautatzailea aldatzean idatzitako zirriborroak mantentzen dira, eta formularioa gordetzean hirurak gordetzen dira. Gutxienez hizkuntza bat bete behar da; gaitasun-mailako azalpenak aukerakoak dira. Ez da itzulpen automatikorik egiten.
 - Gaitasunen mapan eta mailakatzeen zerrendan `hizkuntza=EUSKARA|GAZTELERA|INGELERA` iragazkia dago. Kinielako eta IE-zerrendako testuak moduluaren hizkuntzan erakusten dira. Itzulpenik ez badago, `[Itzulpena falta da]` agertzen da; hizkuntza zehaztu gabeko moduluetan euskara erabiltzen da.
 - Lorpen-adierazle/IE loturak eta pisuak partekatuak dira. Oharrak eta erronka-hautaketak, ordea, `(adierazlea, IE, modulua)` testuinguruan gordetzen dira. Etorkizuneko ebidentziak `KinielaLotura.id` horri lotu ahal izango zaizkio, hizkuntzetako irakasleen datuak nahastu gabe. Ez da ebidentzia-kudeatzaile berririk sortu.
+- Kinielako moduluak kodearen arabera ordenatzen dira eta hizkuntzaren arabera iragaz daitezke. Pisu partekatu bat aldatzean pantailako hizkuntza guztietan eguneratzen da; erronka baten hizkuntza-bertsioetako "landuta" hautaketak ere batera markatu edo desmarkatzen dira.
 - Erronkaren edizioan beste hizkuntzetako bertsioak sortzeko botoiak daude. Bertsio berriaren izena/deskribapena jatorrizkotik kopiatzen dira, ondoren eskuz itzultzeko. Bertsioa lehendik badago, haren ediziora joaten da, bikoiztu gabe.
 - Erronken bertsioek `bertsioTaldea` partekatzen dute. Edozein bertsiotan datak, zikloa, maila edo moduluen parte-hartzea gordetzean, beste bertsioetan ere eguneratzen dira transakzio berean. Izenak/deskribapenak hizkuntza bakoitzekoak dira. Lotutako bertsioaren hizkuntza ezin da aldatu.
 - Pareko modulua EEI kodearen, zikloaren, mailaren eta helburuko hizkuntzaren arabera aurkitzen da. Lehenik hizkuntza zehatza bilatzen da; halakorik ez badago, hizkuntza zehaztu gabeko modulua erabil daiteke. Bat bera ere ez badago edo bat baino gehiago badaude, aldaketa osoa baztertzen da, mezua erakutsiz. Ez da hautaketa isilik galtzen. Parte-hartzea kentzean dagokion erronka-hautaketa garbitzen da; oharrak mantentzen dira.

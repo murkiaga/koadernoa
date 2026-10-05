@@ -323,8 +323,12 @@ public class EthaziController {
             @RequestParam(required = false) Long moduloaId, RedirectAttributes flash) {
         try {
             var result = emaitzaCsvImportService.inportatu(fitxategia);
-            flash.addFlashAttribute("success", "CSV inportazioa osatu da: " + result.sortuak()
-                    + " sortu eta " + result.eguneratuak() + " eguneratu (" + result.guztira() + " guztira).");
+            String mezua = "CSV inportazioa osatu da: " + result.sortuak()
+                    + " sortu eta " + result.eguneratuak() + " eguneratu (" + result.guztira() + " guztira).";
+            if (!result.kargatuGabe().isEmpty()) {
+                mezua += " Kargatu gabe: " + String.join("; ", result.kargatuGabe()) + ".";
+            }
+            flash.addFlashAttribute("success", mezua);
         } catch (IllegalArgumentException | DataIntegrityViolationException ex) {
             flash.addFlashAttribute("error", mezua(ex));
         }

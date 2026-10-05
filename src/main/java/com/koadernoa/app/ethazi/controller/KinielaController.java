@@ -15,6 +15,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.koadernoa.app.ethazi.entitateak.gaitasunak.GaitasunMota;
 import com.koadernoa.app.ethazi.service.EthaziService;
 import com.koadernoa.app.ethazi.service.KinielaService;
+import com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza;
 import lombok.RequiredArgsConstructor;
 
 @Controller
@@ -33,9 +34,11 @@ public class KinielaController {
     }
 
     @GetMapping({"", "/"})
-    String kiniela(@RequestParam(required = false) Long zikloaId, Model model) {
+    String kiniela(@RequestParam(required = false) Long zikloaId,
+            @RequestParam(required = false) Hizkuntza hizkuntza, Model model) {
         model.addAttribute("zikloaId", zikloaId);
-        model.addAttribute("moduluak", service.kiniela(zikloaId));
+        model.addAttribute("hizkuntza", hizkuntza);
+        model.addAttribute("moduluak", service.kiniela(zikloaId, hizkuntza));
         model.addAttribute("errubrikak", Arrays.stream(GaitasunMota.values())
                 .map(m -> ethazi.errubrika(zikloaId, m)).toList());
         return "Ethazi/kinielak/index";
@@ -43,6 +46,7 @@ public class KinielaController {
 
     @PostMapping("/{ieId}/loturak")
     String loturak(@PathVariable Long ieId, @RequestParam Long zikloaId, @RequestParam(required=false) Long moduloaId,
+            @RequestParam(required = false) Hizkuntza hizkuntza,
             @RequestParam(required = false) Set<Long> adierazleaIds, RedirectAttributes flash) {
         try {
             service.gordeLoturak(zikloaId, ieId, adierazleaIds == null ? Set.of() : adierazleaIds);
@@ -50,7 +54,9 @@ public class KinielaController {
         } catch (IllegalArgumentException ex) {
             flash.addFlashAttribute("error", ex.getMessage());
         }
-        return "redirect:/ethazi/kiniela?zikloaId=" + zikloaId + (moduloaId == null ? "" : "#ie-" + moduloaId + "-" + ieId);
+        return "redirect:/ethazi/kiniela?zikloaId=" + zikloaId
+                + (hizkuntza == null ? "" : "&hizkuntza=" + hizkuntza)
+                + (moduloaId == null ? "" : "#ie-" + moduloaId + "-" + ieId);
     }
 
     @PostMapping("/{ieId}/pisua")

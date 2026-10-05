@@ -18,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.koadernoa.app.objektuak.modulua.entitateak.IkaskuntzaEmaitza;
 import com.koadernoa.app.objektuak.modulua.repository.IkaskuntzaEmaitzaRepository;
+import com.koadernoa.app.objektuak.modulua.repository.ModuloaRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -25,15 +26,16 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class IkaskuntzaEmaitzaCsvImportService {
     private static final List<String> REQUIRED_HEADERS = List.of(
-            "eeiKodea", "ordena", "kodea", "deskribapenaEU", "deskribapenaES");
+            "eeiKodea", "modulu_kodea", "ordena", "kodea", "deskribapenaEU", "deskribapenaES");
 
     private final IkaskuntzaEmaitzaRepository emaitzak;
+    private final ModuloaRepository moduluak;
 
-    public record InportazioEmaitza(int sortuak, int eguneratuak) {
+    public record InportazioEmaitza(int sortuak, int eguneratuak, List<String> kargatuGabe) {
         public int guztira() { return sortuak + eguneratuak; }
     }
 
-    private record CsvEmaitza(String eeiKodea, int ordena, String kodea,
+    private record CsvEmaitza(int lerroa, String eeiKodea, int ordena,
             String deskribapenaEu, String deskribapenaEs) {}
 
     @Transactional
@@ -51,12 +53,18 @@ public class IkaskuntzaEmaitzaCsvImportService {
 
         int sortuak = 0;
         int eguneratuak = 0;
+        List<String> kargatuGabe = new ArrayList<>();
         for (CsvEmaitza lerroa : lerroak) {
+            var kodea = ieKodea(lerroa);
+            if (kodea.isEmpty()) {
+                kargatuGabe.add(lerroa.lerroa() + ". lerroa: EEI " + lerroa.eeiKodea());
+                continue;
+            }
             var aurkitua = emaitzak.findByEeiKodeaAndOrdena(lerroa.eeiKodea(), lerroa.ordena());
             var emaitza = aurkitua.orElseGet(IkaskuntzaEmaitza::new);
             emaitza.setEeiKodea(lerroa.eeiKodea());
             emaitza.setOrdena(lerroa.ordena());
-            emaitza.setKodea(lerroa.kodea());
+            emaitza.setKodea(kodea.get());
             emaitza.setDeskribapena(lerroa.deskribapenaEu());
             emaitza.setDeskribapenaEs(lerroa.deskribapenaEs());
             // CSVak ez du ingelesezko zutaberik: lehendik eskuz sartutakoa ez da ezabatzen.
@@ -64,7 +72,7 @@ public class IkaskuntzaEmaitzaCsvImportService {
             if (aurkitua.isPresent()) eguneratuak++; else sortuak++;
         }
         emaitzak.flush();
-        return new InportazioEmaitza(sortuak, eguneratuak);
+        return new InportazioEmaitza(sortuak, eguneratuak, List.copyOf(kargatuGabe));
     }
 
     private List<CsvEmaitza> irakurri(java.io.Reader input) throws IOException {
@@ -99,7 +107,9 @@ public class IkaskuntzaEmaitzaCsvImportService {
                         + " eremu ditu; " + headers.size() + " espero ziren.");
             }
             String eeiKodea = required(row, columns, "eeiKodea", line, 255);
-            String kodea = required(row, columns, "kodea", line, 20);
+            // Bi kode-zutabeak bateragarritasunagatik mantentzen dira, baina IE kodea DBko modulutik sortzen da.
+            required(row, columns, "modulu_kodea", line, 20);
+            required(row, columns, "kodea", line, 20);
             String eu = required(row, columns, "deskribapenaEU", line, 60000);
             String es = optional(row, columns, "deskribapenaES", 60000, line);
             int ordena;
@@ -112,10 +122,23 @@ public class IkaskuntzaEmaitzaCsvImportService {
             if (!keys.add(eeiKodea + "\u0000" + ordena)) {
                 throw new IllegalArgumentException(line + ". lerroan EEI kode eta ordena bera errepikatuta dago.");
             }
-            result.add(new CsvEmaitza(eeiKodea, ordena, kodea, eu, es));
+            result.add(new CsvEmaitza(line, eeiKodea, ordena, eu, es));
         }
         if (result.isEmpty()) throw new IllegalArgumentException("CSV fitxategiak ez du datu-lerrorik.");
         return result;
+    }
+
+    private java.util.Optional<String> ieKodea(CsvEmaitza lerroa) {
+        var moduluKodea = moduluak.findByEeiKodeaIgnoreCaseOrderByIdAsc(lerroa.eeiKodea()).stream()
+                .map(com.koadernoa.app.objektuak.modulua.entitateak.Moduloa::getKodea)
+                .filter(java.util.Objects::nonNull).map(String::strip).filter(kodea -> !kodea.isEmpty())
+                .findFirst();
+        if (moduluKodea.isEmpty()) return java.util.Optional.empty();
+        String kodea = moduluKodea.get() + lerroa.ordena();
+        if (kodea.length() > 20) {
+            throw new IllegalArgumentException("EEI " + lerroa.eeiKodea() + " kodeko modulu-kodea eta IE ordena elkartuta luzeegiak dira.");
+        }
+        return java.util.Optional.of(kodea);
     }
 
     private String required(List<String> row, Map<String, Integer> columns, String name, int line, int max) {

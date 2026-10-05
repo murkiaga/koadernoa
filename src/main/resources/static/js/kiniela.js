@@ -85,11 +85,11 @@
     module.querySelectorAll('.weight-form').forEach(weightForm => {
       const input = weightForm.querySelector('[name=pisua]');
       const status = weightForm.querySelector('.save-status');
-      let savedValue = input.value;
+      input.dataset.savedValue = input.value;
       let pending = null;
       const save = () => {
         if (pending) return pending;
-        if (input.value === savedValue) {
+        if (input.value === input.dataset.savedValue) {
           unsaved.delete(weightForm);
           status.textContent = '';
           return Promise.resolve(true);
@@ -107,8 +107,17 @@
             const response = await fetch(weightForm.action, { method: 'POST', body: payload, headers: { Accept: 'application/json' } });
             if (!response.ok || !response.headers.get('content-type')?.includes('application/json')) throw new Error();
             status.textContent = (await response.json()).message;
-            savedValue = value;
-            unsaved.delete(weightForm);
+            const row = weightForm.closest('.kiniela-link');
+            document.querySelectorAll('.kiniela-link').forEach(relatedRow => {
+              if (relatedRow.dataset.indicator !== row.dataset.indicator || relatedRow.dataset.outcome !== row.dataset.outcome) return;
+              const relatedForm = relatedRow.querySelector('.weight-form');
+              const relatedInput = relatedForm.querySelector('[name=pisua]');
+              relatedInput.value = value;
+              relatedInput.dataset.savedValue = value;
+              unsaved.delete(relatedForm);
+              relatedForm.querySelector('.save-status').textContent = 'Gordeta';
+              recalculate(relatedRow.closest('.kiniela-module'));
+            });
             return true;
           } catch (_) {
             status.textContent = 'Ez da gorde. Sakatu Enter berriro saiatzeko.';
@@ -140,8 +149,11 @@
     const input = challengeForm.querySelector('[name=landuta]');
     input.addEventListener('change', async () => {
       const row = challengeForm.closest('.kiniela-link');
-      const forms = indicatorRows(row.dataset.indicator, row.dataset.outcome, row.dataset.module).flatMap(item => [...item.querySelectorAll('.challenge-form')]);
-      const related = forms.filter(item => item.elements.erronkaId.value === challengeForm.elements.erronkaId.value);
+      const forms = [...document.querySelectorAll('.challenge-form')].filter(item => {
+        const itemRow = item.closest('.kiniela-link');
+        return itemRow.dataset.indicator === row.dataset.indicator && itemRow.dataset.outcome === row.dataset.outcome
+          && item.dataset.syncKey === challengeForm.dataset.syncKey;
+      });
       const checked = input.checked;
       forms.forEach(item => { item.elements.landuta.disabled = true; });
       const payload = new URLSearchParams(new FormData(challengeForm));
@@ -151,8 +163,8 @@
       unsaved.add(challengeForm);
       try {
         await post(challengeForm.action, payload);
-        related.forEach(item => { item.elements.landuta.checked = checked; });
-        indicatorRows(row.dataset.indicator, row.dataset.outcome, row.dataset.module).forEach(item => {
+        forms.forEach(item => { item.elements.landuta.checked = checked; });
+        new Set(forms.map(item => item.closest('.kiniela-link'))).forEach(item => {
           item.classList.toggle('is-covered', !!item.querySelector('[name=landuta]:checked'));
         });
         status.textContent = 'Gordeta';

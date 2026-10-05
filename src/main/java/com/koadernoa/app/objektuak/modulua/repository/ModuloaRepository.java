@@ -24,6 +24,7 @@ public interface ModuloaRepository extends JpaRepository<Moduloa, Long>{
 	Optional<Moduloa> findByKodeaIgnoreCaseAndEeiKodeaIgnoreCaseAndTaldeaAndMaila(String kodea, String eeiKodea, Taldea taldea, Maila maila);
 
 	List<Moduloa> findByTaldeaId(Long taldeaId);
+	List<Moduloa> findByEeiKodeaIgnoreCaseOrderByIdAsc(String eeiKodea);
 	Page<Moduloa> findByTaldeaId(Long taldeaId, Pageable pageable);
 	Page<Moduloa> findAll(Pageable pageable);
 	List<Moduloa> findByMaila_Id(Long mailaId);
