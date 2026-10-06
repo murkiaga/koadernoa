@@ -40,4 +40,23 @@ class AplikazioAukeraServiceTest {
                 .isEqualTo(AplikazioAukeraService.PLANGINTZA_KONTROL_AUTOMATIKOA);
         assertThat(captor.getValue().getBalioa()).isEqualTo("true");
     }
+
+    @Test
+    void plangintzaKontrolLanegunakDefektuzHamarDiraEtaBalioOkerraBabestenDu() {
+        when(repository.findById(AplikazioAukeraService.PLANGINTZA_KONTROL_LANEGUNAK))
+                .thenReturn(Optional.empty(), Optional.of(aukera("ez-da-zenbakia")),
+                        Optional.of(aukera("0")), Optional.of(aukera("999")));
+
+        assertThat(service.getPlangintzaKontrolLanegunak()).isEqualTo(10);
+        assertThat(service.getPlangintzaKontrolLanegunak()).isEqualTo(10);
+        assertThat(service.getPlangintzaKontrolLanegunak()).isEqualTo(1);
+        assertThat(service.getPlangintzaKontrolLanegunak()).isEqualTo(365);
+    }
+
+    private AplikazioAukera aukera(String balioa) {
+        AplikazioAukera aukera = new AplikazioAukera();
+        aukera.setGiltza(AplikazioAukeraService.PLANGINTZA_KONTROL_LANEGUNAK);
+        aukera.setBalioa(balioa);
+        return aukera;
+    }
 }

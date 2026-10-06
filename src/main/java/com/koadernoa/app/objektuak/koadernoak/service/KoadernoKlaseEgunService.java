@@ -23,6 +23,25 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoOrdutegiBlokea;
 @Service
 public class KoadernoKlaseEgunService {
 
+    public List<LocalDate> hurrengoLanEgunak(Egutegia egutegia, LocalDate gaur, int kopurua) {
+        if (egutegia == null || egutegia.getBukaeraData() == null || gaur == null || kopurua <= 0) {
+            return List.of();
+        }
+        LocalDate data = gaur.plusDays(1);
+        if (egutegia.getHasieraData() != null && data.isBefore(egutegia.getHasieraData())) {
+            data = egutegia.getHasieraData();
+        }
+        Map<LocalDate, EgunBerezi> egunBereziak = prestatuEgunBereziak(egutegia);
+        List<LocalDate> emaitza = new ArrayList<>();
+        while (!data.isAfter(egutegia.getBukaeraData()) && emaitza.size() < kopurua) {
+            if (astegunEraginkorra(data, egunBereziak) != null) {
+                emaitza.add(data);
+            }
+            data = data.plusDays(1);
+        }
+        return List.copyOf(emaitza);
+    }
+
     public List<LocalDate> hurrengoKlaseEgunak(
             Egutegia egutegia, List<KoadernoOrdutegiBlokea> blokeak, LocalDate hasiera, int gehienez) {
         if (egutegia == null || egutegia.getBukaeraData() == null || hasiera == null || gehienez <= 0) {

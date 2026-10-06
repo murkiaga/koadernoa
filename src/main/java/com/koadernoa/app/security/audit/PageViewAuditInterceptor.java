@@ -12,6 +12,7 @@ import com.koadernoa.app.objektuak.audit.entitateak.AuditAtala;
 import com.koadernoa.app.objektuak.audit.entitateak.AuditEvent;
 import com.koadernoa.app.objektuak.audit.service.AuditService;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.IrakasleUserDetails;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -58,6 +59,12 @@ public class PageViewAuditInterceptor implements HandlerInterceptor {
             atala,
             null
         );
+        Object koadernoAktiboa = request.getSession(false) != null
+                ? request.getSession(false).getAttribute("koadernoAktiboa")
+                : null;
+        if (koadernoAktiboa instanceof Koadernoa koadernoa) {
+            event.setKoadernoId(koadernoa.getId());
+        }
 
         auditService.recordPageView(event);
     }
@@ -71,6 +78,7 @@ public class PageViewAuditInterceptor implements HandlerInterceptor {
         if (uri.equals("/irakasle/denboralizazioa")) return AuditAtala.DENBORALIZAZIOA;
         if (uri.equals("/irakasle/notak")) return AuditAtala.NOTAK;
         if (uri.equals("/irakasle/estatistikak")) return AuditAtala.ESTATISTIKAK;
+        if (uri.equals("/irakasle/ikasleak-kontsultatu")) return AuditAtala.IRAKASLE;
         if (uri.startsWith("/kudeatzaile/")) return AuditAtala.KUDEATZAILE;
         if (uri.equals("/kudeatzaile")) return AuditAtala.KUDEATZAILE;
         if (uri.startsWith("/admin/")) return AuditAtala.ADMIN;

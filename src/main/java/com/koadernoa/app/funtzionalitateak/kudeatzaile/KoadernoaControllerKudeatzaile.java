@@ -210,6 +210,7 @@ public class KoadernoaControllerKudeatzaile {
         model.addAttribute("abisuEmailKopurua", abisuEmailak.size());
         model.addAttribute("abisuEmailak", String.join(";", abisuEmailak));
         model.addAttribute("filtroa", filtroa);
+        model.addAttribute("plangintzaKontrolLanegunak", koadernoPlangintzaKontrolService.getKontrolLanegunak());
         return "kudeatzaile/koadernoak/plangintza-kontrola";
     }
 

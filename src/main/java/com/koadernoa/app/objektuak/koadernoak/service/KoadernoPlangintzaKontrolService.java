@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
 import com.koadernoa.app.objektuak.egutegia.service.IkasturteaService;
+import com.koadernoa.app.objektuak.konfigurazioa.service.AplikazioAukeraService;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoOrdutegiBlokea;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
@@ -30,13 +31,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class KoadernoPlangintzaKontrolService {
 
-    static final int KONTROL_EGUNAK = 15;
-
     private final IkasturteaService ikasturteaService;
     private final KoadernoaRepository koadernoaRepository;
     private final JardueraRepository jardueraRepository;
     private final KoadernoOrdutegiBlokeaRepository ordutegiBlokeaRepository;
     private final KoadernoKlaseEgunService klaseEgunService;
+    private final AplikazioAukeraService aplikazioAukeraService;
 
     @Transactional(readOnly = true)
     public List<KoadernoPlangintzaKontrola> lortuKontrola() {
@@ -58,10 +58,15 @@ public class KoadernoPlangintzaKontrolService {
 
         Map<Long, List<LocalDate>> kontrolEgunak = new HashMap<>();
         LocalDate azkenKontrolData = null;
+        int lanegunak = aplikazioAukeraService.getPlangintzaKontrolLanegunak();
         for (Koadernoa koadernoa : koadernoak) {
-            List<LocalDate> egunak = klaseEgunService.hurrengoKlaseEgunak(
-                    koadernoa.getEgutegia(), blokeak.getOrDefault(koadernoa.getId(), List.of()),
-                    gaur, KONTROL_EGUNAK);
+            List<LocalDate> lanEgunenLeihoa = klaseEgunService.hurrengoLanEgunak(
+                    koadernoa.getEgutegia(), gaur, lanegunak);
+            List<LocalDate> egunak = lanEgunenLeihoa.isEmpty()
+                    ? List.of()
+                    : List.copyOf(klaseEgunService.egunekoSlotak(
+                            koadernoa.getEgutegia(), blokeak.getOrDefault(koadernoa.getId(), List.of()),
+                            lanEgunenLeihoa.get(0), lanEgunenLeihoa.get(lanEgunenLeihoa.size() - 1)).keySet());
             kontrolEgunak.put(koadernoa.getId(), egunak);
             if (!egunak.isEmpty()) {
                 LocalDate azkena = egunak.get(egunak.size() - 1);
@@ -79,6 +84,10 @@ public class KoadernoPlangintzaKontrolService {
                 kontrolEgunak.getOrDefault(koadernoa.getId(), List.of()),
                 jardueraDatak.getOrDefault(koadernoa.getId(), Set.of())))
                 .toList();
+    }
+
+    public int getKontrolLanegunak() {
+        return aplikazioAukeraService.getPlangintzaKontrolLanegunak();
     }
 
     public long abisuHartzaileKopurua(List<KoadernoPlangintzaKontrola> kontrolak) {

@@ -68,10 +68,11 @@
   <section class="table-wrap" style="margin-top:12px;">
     <h3>Azken eventuak</h3>
     <table>
-      <tr><th>Data</th><th>Mota</th><th>Atala</th><th>Emaila</th><th>Url</th><th>Method</th><th>UserAgent</th></tr>
+      <tr><th>Data</th><th>Mota</th><th>Atala</th><th>Emaila</th><th>Koaderno ID</th><th>Url</th><th>Method</th><th>UserAgent</th></tr>
       <tr th:each="e : ${eventsPage.content}">
         <td th:text="${e.dataOrdua}"></td><td th:text="${e.mota}"></td><td th:text="${e.atala}"></td>
-        <td th:text="${e.erabiltzaileEmaila}"></td><td th:text="${e.url}"></td><td th:text="${e.httpMethod}"></td>
+        <td th:text="${e.erabiltzaileEmaila}"></td><td th:text="${e.koadernoId != null ? e.koadernoId : '—'}"></td>
+        <td th:text="${e.url}"></td><td th:text="${e.httpMethod}"></td>
         <td th:text="${e.userAgent != null && #strings.length(e.userAgent) > 80 ? #strings.substring(e.userAgent,0,80) + '…' : e.userAgent}"></td>
       </tr>
     </table>

@@ -13,10 +13,13 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
+import com.koadernoa.app.objektuak.egutegia.entitateak.EgunBerezi;
+import com.koadernoa.app.objektuak.egutegia.entitateak.EgunMota;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
 import com.koadernoa.app.objektuak.egutegia.service.IkasturteaService;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
+import com.koadernoa.app.objektuak.konfigurazioa.service.AplikazioAukeraService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoOrdutegiBlokea;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.repository.JardueraRepository;
@@ -34,8 +37,10 @@ class KoadernoPlangintzaKontrolServiceTest {
     private final JardueraRepository jardueraRepository = mock(JardueraRepository.class);
     private final KoadernoOrdutegiBlokeaRepository blokeRepository = mock(KoadernoOrdutegiBlokeaRepository.class);
     private final KoadernoKlaseEgunService klaseEgunService = new KoadernoKlaseEgunService();
+    private final AplikazioAukeraService aukeraService = mock(AplikazioAukeraService.class);
     private final KoadernoPlangintzaKontrolService service = new KoadernoPlangintzaKontrolService(
-            ikasturteaService, koadernoaRepository, jardueraRepository, blokeRepository, klaseEgunService);
+            ikasturteaService, koadernoaRepository, jardueraRepository, blokeRepository, klaseEgunService,
+            aukeraService);
 
     @Test
     void jardueraBatEgunekoNahikoaDaEtaEgoerakZuzenKalkulatzenDitu() {
@@ -48,20 +53,24 @@ class KoadernoPlangintzaKontrolServiceTest {
         Koadernoa klaseEgunikEz = koadernoa(3L, egutegia);
         KoadernoOrdutegiBlokea ondoBlokea = blokea(ondo, Astegunak.ASTELEHENA, 3);
         KoadernoOrdutegiBlokea osatuGabeBlokea = blokea(osatuGabe, Astegunak.ASTEARTEA, 1);
-        List<LocalDate> ondoEgunak = klaseEgunService.hurrengoKlaseEgunak(
-                egutegia, List.of(ondoBlokea), gaur, 15);
-        List<LocalDate> osatuGabeEgunak = klaseEgunService.hurrengoKlaseEgunak(
-                egutegia, List.of(osatuGabeBlokea), gaur, 15);
-        LocalDate azkenData = ondoEgunak.get(14).isAfter(osatuGabeEgunak.get(14))
-                ? ondoEgunak.get(14) : osatuGabeEgunak.get(14);
+        List<LocalDate> lanEgunak = klaseEgunService.hurrengoLanEgunak(egutegia, gaur, 10);
+        List<LocalDate> ondoEgunak = List.copyOf(klaseEgunService.egunekoSlotak(
+                egutegia, List.of(ondoBlokea), lanEgunak.get(0), lanEgunak.get(9)).keySet());
+        List<LocalDate> osatuGabeEgunak = List.copyOf(klaseEgunService.egunekoSlotak(
+                egutegia, List.of(osatuGabeBlokea), lanEgunak.get(0), lanEgunak.get(9)).keySet());
+        LocalDate azkenData = ondoEgunak.get(ondoEgunak.size() - 1)
+                .isAfter(osatuGabeEgunak.get(osatuGabeEgunak.size() - 1))
+                ? ondoEgunak.get(ondoEgunak.size() - 1) : osatuGabeEgunak.get(osatuGabeEgunak.size() - 1);
 
         when(ikasturteaService.getAktiboa()).thenReturn(Optional.of(ikasturtea));
         when(koadernoaRepository.findByIkasturteaIdWithPlangintzaKontrolRelations(9L))
                 .thenReturn(List.of(ondo, osatuGabe, klaseEgunikEz));
         when(blokeRepository.findByIkasturteaId(9L)).thenReturn(List.of(ondoBlokea, osatuGabeBlokea));
+        when(aukeraService.getPlangintzaKontrolLanegunak()).thenReturn(10);
         List<Object[]> jardueraDatak = new ArrayList<>();
         ondoEgunak.forEach(data -> jardueraDatak.add(new Object[] {1L, data}));
-        osatuGabeEgunak.subList(0, 14).forEach(data -> jardueraDatak.add(new Object[] {2L, data}));
+        osatuGabeEgunak.subList(0, osatuGabeEgunak.size() - 1)
+                .forEach(data -> jardueraDatak.add(new Object[] {2L, data}));
         when(jardueraRepository.findJardueraDatak(List.of(1L, 2L, 3L), gaur, azkenData))
                 .thenReturn(jardueraDatak);
 
@@ -69,10 +78,45 @@ class KoadernoPlangintzaKontrolServiceTest {
 
         assertThat(kontrolak).extracting(KoadernoPlangintzaKontrola::egoera)
                 .containsExactly(Egoera.ONDO, Egoera.OSATU_GABE, Egoera.KLASE_EGUNIK_EZ);
-        assertThat(kontrolak.get(0).planifikatutakoEgunak()).isEqualTo(15);
-        assertThat(kontrolak.get(1).faltaDirenEgunak()).containsExactly(osatuGabeEgunak.get(14));
+        assertThat(kontrolak.get(0).planifikatutakoEgunak()).isEqualTo(ondoEgunak.size());
+        assertThat(kontrolak.get(1).faltaDirenEgunak())
+                .containsExactly(osatuGabeEgunak.get(osatuGabeEgunak.size() - 1));
         assertThat(kontrolak.get(2).kontrolatuBeharrekoEgunak()).isZero();
         verify(jardueraRepository).findJardueraDatak(List.of(1L, 2L, 3L), gaur, azkenData);
+    }
+
+    @Test
+    void hurrengoHamarLanegunetakoKlaseakBakarrikKontrolatzenDituJaiegunakKontuanHartuta() {
+        LocalDate gaur = LocalDate.of(2026, 10, 6);
+        Ikasturtea ikasturtea = new Ikasturtea();
+        ikasturtea.setId(9L);
+        Egutegia egutegia = egutegia();
+        egutegia.setEgunBereziak(new ArrayList<>(List.of(
+                egunBerezia(LocalDate.of(2026, 10, 12), EgunMota.JAIEGUNA),
+                egunBerezia(LocalDate.of(2026, 10, 13), EgunMota.JAIEGUNA))));
+        Koadernoa koadernoa = koadernoa(1L, egutegia);
+        KoadernoOrdutegiBlokea blokea = blokea(koadernoa, Astegunak.ASTEARTEA, 1);
+
+        when(ikasturteaService.getAktiboa()).thenReturn(Optional.of(ikasturtea));
+        when(koadernoaRepository.findByIkasturteaIdWithPlangintzaKontrolRelations(9L))
+                .thenReturn(List.of(koadernoa));
+        when(blokeRepository.findByIkasturteaId(9L)).thenReturn(List.of(blokea));
+        when(aukeraService.getPlangintzaKontrolLanegunak()).thenReturn(10);
+        when(jardueraRepository.findJardueraDatak(
+                List.of(1L), gaur, LocalDate.of(2026, 10, 20)))
+                .thenReturn(List.<Object[]>of(new Object[] {1L, LocalDate.of(2026, 10, 20)}));
+
+        KoadernoPlangintzaKontrola kontrola = service.lortuKontrola(gaur).get(0);
+
+        assertThat(klaseEgunService.hurrengoLanEgunak(egutegia, gaur, 10))
+                .containsExactly(
+                        LocalDate.of(2026, 10, 7), LocalDate.of(2026, 10, 8), LocalDate.of(2026, 10, 9),
+                        LocalDate.of(2026, 10, 14), LocalDate.of(2026, 10, 15), LocalDate.of(2026, 10, 16),
+                        LocalDate.of(2026, 10, 19), LocalDate.of(2026, 10, 20), LocalDate.of(2026, 10, 21),
+                        LocalDate.of(2026, 10, 22));
+        assertThat(kontrola.egoera()).isEqualTo(Egoera.ONDO);
+        assertThat(kontrola.egunak()).extracting(KoadernoPlangintzaKontrola.PlangintzaEgunKontrola::data)
+                .containsExactly(LocalDate.of(2026, 10, 20));
     }
 
     @Test
@@ -141,5 +185,12 @@ class KoadernoPlangintzaKontrolServiceTest {
         irakaslea.setId(id);
         irakaslea.setEmaila(emaila);
         return irakaslea;
+    }
+
+    private EgunBerezi egunBerezia(LocalDate data, EgunMota mota) {
+        EgunBerezi eguna = new EgunBerezi();
+        eguna.setData(data);
+        eguna.setMota(mota);
+        return eguna;
     }
 }

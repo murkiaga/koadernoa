@@ -15,7 +15,9 @@
   <div class="page-header">
     <div>
       <h1>Koadernoen plangintza-kontrola</h1>
-      <p class="muted">Ikasturte aktiboko koadernoen hurrengo 15 benetako klase-egunen plangintza.</p>
+      <p class="muted" th:text="|Ikasturte aktiboko koadernoen hurrengo ${plangintzaKontrolLanegunak} lanegunetako klaseen plangintza.|">
+        Ikasturte aktiboko koadernoen hurrengo 10 lanegunetako klaseen plangintza.
+      </p>
     </div>
     <a class="btn btn-secondary" th:href="@{/kudeatzaile/koadernoak}">Koadernoetara itzuli</a>
   </div>
@@ -48,11 +50,11 @@
          th:classappend="${filtroa == 'GUZTIAK'} ? ' planning-filter--active'"
          th:href="@{/kudeatzaile/koadernoak/plangintza-kontrola(egoera=GUZTIAK)}">Guztiak</a>
       <a class="btn btn-secondary"
-         th:classappend="${filtroa == 'OSATU_GABE'} ? ' planning-filter--active'"
-         th:href="@{/kudeatzaile/koadernoak/plangintza-kontrola(egoera=OSATU_GABE)}">Osatu gabe</a>
-      <a class="btn btn-secondary"
          th:classappend="${filtroa == 'ONDO'} ? ' planning-filter--active'"
          th:href="@{/kudeatzaile/koadernoak/plangintza-kontrola(egoera=ONDO)}">Ondo</a>
+      <a class="btn btn-secondary"
+         th:classappend="${filtroa == 'OSATU_GABE'} ? ' planning-filter--active'"
+         th:href="@{/kudeatzaile/koadernoak/plangintza-kontrola(egoera=OSATU_GABE)}">Osatu gabe</a>
       <a class="btn btn-secondary"
          th:classappend="${filtroa == 'KLASE_EGUNIK_EZ'} ? ' planning-filter--active'"
          th:href="@{/kudeatzaile/koadernoak/plangintza-kontrola(egoera=KLASE_EGUNIK_EZ)}">Klase-egunik ez</a>

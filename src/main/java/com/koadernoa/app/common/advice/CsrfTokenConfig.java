@@ -41,7 +41,7 @@ public class CsrfTokenConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(pageViewAuditInterceptor)
-                .addPathPatterns("/irakasle", "/irakasle/programazioa", "/irakasle/denboralizazioa", "/irakasle/notak", "/irakasle/estatistikak", "/kudeatzaile/**", "/admin/**")
+                .addPathPatterns("/irakasle", "/irakasle/programazioa", "/irakasle/denboralizazioa", "/irakasle/notak", "/irakasle/estatistikak", "/irakasle/ikasleak-kontsultatu", "/kudeatzaile/**", "/admin/**")
                 .excludePathPatterns("/css/**", "/js/**", "/images/**", "/webjars/**", "/favicon.ico", "/uploads/**", "/error", "/login");
 
         registry.addInterceptor(new HandlerInterceptor() {

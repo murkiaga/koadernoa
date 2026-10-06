@@ -25,6 +25,9 @@ public class AplikazioAukeraService {
     public static final String KOADERNO_BESTE_MINTEGIA_BAIMENDU = "koadernoak.beste.mintegia.baimendu";
     public static final String KOADERNO_BIKOIZTUAK_BAIMENDU = "koadernoak.bikoiztuak.baimendu";
     public static final String PLANGINTZA_KONTROL_AUTOMATIKOA = "PLANGINTZA_KONTROL_AUTOMATIKOA";
+    public static final String PLANGINTZA_KONTROL_LANEGUNAK = "PLANGINTZA_KONTROL_LANEGUNAK";
+    public static final int PLANGINTZA_KONTROL_LANEGUNAK_DEFEKTUZ = 10;
+    public static final int PLANGINTZA_KONTROL_LANEGUNAK_GEHIENEZ = 365;
     
     private final AplikazioAukeraRepository repo;
 
@@ -72,5 +75,26 @@ public class AplikazioAukeraService {
 
     public void setPlangintzaKontrolAutomatikoa(boolean aktibo) {
         setBool(PLANGINTZA_KONTROL_AUTOMATIKOA, aktibo);
+    }
+
+    public int getPlangintzaKontrolLanegunak() {
+        String balioa = get(PLANGINTZA_KONTROL_LANEGUNAK,
+                Integer.toString(PLANGINTZA_KONTROL_LANEGUNAK_DEFEKTUZ));
+        try {
+            return mugatuPlangintzaKontrolLanegunak(Integer.parseInt(balioa));
+        } catch (NumberFormatException ex) {
+            return PLANGINTZA_KONTROL_LANEGUNAK_DEFEKTUZ;
+        }
+    }
+
+    public void setPlangintzaKontrolLanegunak(Integer lanegunak) {
+        int balioa = lanegunak == null
+                ? PLANGINTZA_KONTROL_LANEGUNAK_DEFEKTUZ
+                : mugatuPlangintzaKontrolLanegunak(lanegunak);
+        set(PLANGINTZA_KONTROL_LANEGUNAK, Integer.toString(balioa));
+    }
+
+    private int mugatuPlangintzaKontrolLanegunak(int lanegunak) {
+        return Math.min(PLANGINTZA_KONTROL_LANEGUNAK_GEHIENEZ, Math.max(1, lanegunak));
     }
 }

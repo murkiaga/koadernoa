@@ -568,13 +568,17 @@
 	      Beste mintegi bateko koadernoak sortzea baimendu
 	    </label>
 	    <div style="margin:16px 0;">
+	      <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+	        Plangintza-kontrolaren lanegunak
+	        <input type="number" min="1" max="365" required th:field="*{plangintzaKontrolLanegunak}" style="width:90px;">
+	      </label>
 	      <label style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
 	        <input type="checkbox" th:field="*{plangintzaKontrolAutomatikoa}">
 	        Eguneroko plangintza-kontrol automatikoa
 	      </label>
 	      <p class="muted" style="margin:0 0 0 24px;max-width:760px;">
 	        Aktibatuta dagoenean, astelehenetik ostiralera goizeko 07:00etan ikasturte aktiboko
-	        koadernoen plangintza egiaztatzen da eta plangintza osatu gabe duten koadernoetako
+	        koadernoen hurrengo lanegunetako plangintza egiaztatzen da eta plangintza osatu gabe duten koadernoetako
 	        irakasleei abisua bidaltzen zaie.
 	      </p>
 	    </div>
