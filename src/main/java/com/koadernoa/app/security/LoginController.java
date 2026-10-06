@@ -1,5 +1,7 @@
 package com.koadernoa.app.security;
 
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,8 +24,19 @@ public class LoginController {
 	private final FamiliaRepository familiaRepository;
     private final AuthProviderStatusService statusService;
 
-    @GetMapping({"/", "/login"})
-    public String loginPage(Model model) {
+    @GetMapping("/")
+    public String hasiera() {
+        return "redirect:/irakasle";
+    }
+
+    @GetMapping("/login")
+    public String loginPage(Model model, Authentication authentication) {
+        if (authentication != null
+                && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken)) {
+            return "redirect:/irakasle";
+        }
+
         model.addAttribute("googleEnabled", statusService.isGoogleEnabled());
         model.addAttribute("googleConfigured", statusService.isGoogleConfigured());
         model.addAttribute("ldapEnabled", statusService.isLdapEnabled());
