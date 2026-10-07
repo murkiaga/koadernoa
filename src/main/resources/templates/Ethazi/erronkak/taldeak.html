@@ -1,0 +1,20 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head th:replace="~{Ethazi/fragments/common :: head('Erronkako taldeak')}"></head><body class="ethazi-body">
+<div th:replace="~{kudeatzaile/fragments/navbar :: kudeatzaile-navbar}"></div>
+<nav th:replace="~{Ethazi/fragments/navbar :: navbar('erronkak')}"></nav>
+<main class="page ethazi-page"><div th:replace="~{Ethazi/fragments/common :: messages}"></div>
+<header class="page-header"><div><h1>Taldeak · <span th:text="${erronka.izena}"></span></h1>
+  <p class="muted"><span th:text="${erronka.ikasturtea != null ? erronka.ikasturtea.izena : 'Ikasturterik gabe'}"></span>. Erronkan parte hartzen duen moduluren batean matrikulatutako ikasleak bakarrik agertzen dira.</p></div>
+  <div class="form-actions"><form method="post" th:action="@{/ethazi/erronkak/{id}/taldeak/berria(id=${erronka.id})}"><input type="hidden" name="zikloaId" th:value="${itzuliZikloaId}"><input type="hidden" name="mailaId" th:value="${itzuliMailaId}"><input type="hidden" name="hizkuntza" th:value="${itzuliHizkuntza}"><input type="hidden" name="ikasturteaId" th:value="${itzuliIkasturteaId}"><button class="btn btn-primary">+ Taldea</button></form><a class="btn" th:href="@{/ethazi/erronkak(zikloaId=${itzuliZikloaId},mailaId=${itzuliMailaId},hizkuntza=${itzuliHizkuntza},ikasturteaId=${itzuliIkasturteaId})}">← Erronketara</a></div></header>
+<section class="ethazi-card"><h2>Sortutako taldeak</h2><p class="muted" th:if="${#lists.isEmpty(taldeak)}">Oraindik ez dago talderik.</p>
+  <div class="challenge-team-list"><article th:each="t : ${taldeak}" class="challenge-team"><div><strong th:text="${t.izena}"></strong><span class="muted" th:text="${' · ' + #lists.size(t.kideak) + ' ikasle'}"></span></div>
+    <ul><li th:each="k : ${t.kideak}" th:text="${k.ikaslea.izenOsoa}"></li></ul>
+    <form method="post" th:action="@{/ethazi/erronkak/{id}/taldeak/{tid}/ezabatu(id=${erronka.id},tid=${t.id})}" data-confirm="Talde hutsa ezabatu?"><input type="hidden" name="zikloaId" th:value="${itzuliZikloaId}"><input type="hidden" name="mailaId" th:value="${itzuliMailaId}"><input type="hidden" name="hizkuntza" th:value="${itzuliHizkuntza}"><input type="hidden" name="ikasturteaId" th:value="${itzuliIkasturteaId}"><button class="btn btn-danger" th:disabled="${!#lists.isEmpty(t.kideak)}">Ezabatu</button></form></article></div></section>
+<form class="ethazi-card form" method="post" th:object="${form}" th:action="@{/ethazi/erronkak/{id}/taldeak/gorde(id=${erronka.id})}"><h2>Ikasleen esleipena</h2>
+  <input type="hidden" name="zikloaId" th:value="${itzuliZikloaId}"><input type="hidden" name="mailaId" th:value="${itzuliMailaId}"><input type="hidden" name="hizkuntza" th:value="${itzuliHizkuntza}"><input type="hidden" name="ikasturteaId" th:value="${itzuliIkasturteaId}">
+  <p class="muted">Ikasle bakoitza talde bakarrean egon daiteke, zerrendako ikasle guztiak esleitu behar dira eta sortutako talde bakoitzak gutxienez ikasle bat izan behar du.</p>
+  <p class="empty-state" th:if="${#lists.isEmpty(ikasleak)}">Ez dago erronkako moduluetan ikasturte honetan matrikulatutako ikaslerik.</p>
+  <table class="rubric" th:if="${!#lists.isEmpty(ikasleak)}"><thead><tr><th>Ikaslea</th><th>Erronkako taldea</th></tr></thead><tbody>
+    <tr th:each="ikaslea, s : ${ikasleak}"><td><input type="hidden" th:field="*{ikasleak[__${s.index}__].ikasleaId}"><span th:text="${ikaslea.izenOsoa}"></span></td><td><select required th:field="*{ikasleak[__${s.index}__].taldeaId}"><option value="">— Aukeratu taldea —</option><option th:each="t : ${taldeak}" th:value="${t.id}" th:text="${t.izena}"></option></select></td></tr>
+  </tbody></table><div class="form-actions" th:if="${!#lists.isEmpty(ikasleak)}"><button class="btn btn-primary" th:disabled="${#lists.isEmpty(taldeak)}">Esleipenak gorde</button></div></form>
+</main><script th:src="@{/js/ethazi.js}" defer></script></body></html>

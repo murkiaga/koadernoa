@@ -10,6 +10,16 @@ import com.koadernoa.app.objektuak.modulua.entitateak.Matrikula;
 import com.koadernoa.app.objektuak.modulua.entitateak.MatrikulaEgoera;
 
 public interface MatrikulaRepository extends JpaRepository<Matrikula, Long> {
+	@Query("""
+	    select distinct m.ikaslea from Matrikula m
+	    where m.egoera = com.koadernoa.app.objektuak.modulua.entitateak.MatrikulaEgoera.MATRIKULATUA
+	      and m.koadernoa.egutegia.ikasturtea.id = :ikasturteaId
+	      and m.koadernoa.moduloa.id in :moduloIds
+	    order by m.ikaslea.abizena1 asc, m.ikaslea.abizena2 asc, m.ikaslea.izena asc
+	""")
+	List<com.koadernoa.app.objektuak.modulua.entitateak.Ikaslea> findErronkarakoHautagaiak(
+	        @Param("ikasturteaId") Long ikasturteaId, @Param("moduloIds") java.util.Collection<Long> moduloIds);
+
 	boolean existsByIkasleaIdAndKoadernoaId(Long ikasleaId, Long koadernoaId);
 	boolean existsByKoadernoa_Id(Long koadernoaId);
 	java.util.Optional<Matrikula> findByIkasleaIdAndKoadernoaId(Long ikasleaId, Long koadernoaId);

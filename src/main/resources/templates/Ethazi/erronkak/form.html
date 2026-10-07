@@ -5,6 +5,7 @@
 <main class="page ethazi-page"><div th:replace="~{Ethazi/fragments/common :: messages}"></div>
 <h1 th:text="${id == null ? 'Erronka berria' : 'Editatu erronka'}"></h1>
 <form class="ethazi-card form" id="erronka-form" th:object="${form}" method="post" th:action="${id == null} ? @{/ethazi/erronkak/berria} : @{/ethazi/erronkak/{id}/editatu(id=${id})}">
+<p><strong>Ikasturtea:</strong> <span th:text="${formIkasturtea != null ? formIkasturtea.izena : 'Ez dago ikasturte aktiborik'}"></span></p>
 <div class="field"><label for="izena">Izena</label><input th:field="*{izena}" required maxlength="200"></div>
 <div class="field"><label for="deskribapena">Deskribapena</label><textarea th:field="*{deskribapena}" required maxlength="60000" rows="5"></textarea></div>
 <div class="ethazi-filters"><div class="field"><label for="zikloaId">Zikloa</label><select th:field="*{zikloaId}" required><option value="">— Aukeratu zikloa —</option><option th:each="z : ${zikloak}" th:value="${z.id}" th:text="${z.izena}"></option></select></div>
@@ -13,7 +14,7 @@
 <div class="ethazi-filters"><div class="field"><label for="hasieraData">Hasiera data</label><input type="date" th:field="*{hasieraData}" required></div><div class="field"><label for="bukaeraData">Bukaera data</label><input type="date" th:field="*{bukaeraData}" required></div></div>
 <fieldset><legend>Parte hartuko duten moduluak</legend><p class="muted">Ziklo eta maila bereko moduluak; hautatutako hizkuntza edo hizkuntza hutsik dutenak.</p>
 <label class="erronka-module" th:each="m : ${moduluak}" th:attr="data-cycle=${m.taldea.zikloa.id},data-level=${m.maila.id},data-language=${m.hizkuntza}"><input type="checkbox" th:field="*{moduloIds}" th:value="${m.id}"><span th:text="${m.kodea + ' · ' + m.izena + ' (' + m.taldea.izena + ', ' + m.hizkuntza.etiketa + ')'}"></span></label><p id="no-modules" class="muted">Ez dago iragazki horiek betetzen dituen modulurik.</p></fieldset>
-<div class="form-actions"><a class="btn" th:href="@{/ethazi/erronkak(zikloaId=${form.zikloaId})}">Ezeztatu</a><button class="btn btn-primary">Gorde</button></div></form>
+<div class="form-actions"><a class="btn" th:href="@{/ethazi/erronkak(zikloaId=${form.zikloaId},ikasturteaId=${formIkasturtea != null ? formIkasturtea.id : null})}">Ezeztatu</a><button class="btn btn-primary">Gorde</button></div></form>
 <section th:if="${id != null}" class="ethazi-card"><h2>Hizkuntza bertsioak</h2>
 <p>Izena eta deskribapena bertsio bakoitzean itzuli. Datak, zikloa, maila eta moduluen parte-hartzea lotutako bertsio guztietan eguneratzen dira.</p>
 <div class="form-actions"><a class="btn" th:each="v : ${bertsioak}" th:href="@{/ethazi/erronkak/{id}/editatu(id=${v.id})}" th:text="${v.hizkuntza.etiketa}"></a></div>

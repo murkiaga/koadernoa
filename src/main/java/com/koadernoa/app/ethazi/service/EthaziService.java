@@ -27,6 +27,7 @@ public class EthaziService {
     private final GaitasunaRepository gaitasunak;
     private final GaitasunMailaRepository gaitasunMailak;
     private final LorpenAdierazleaRepository adierazleak;
+    private final ErronkaEbidentziaRepository erronkaEbidentziak;
     private final IkaskuntzaEmaitzaRepository emaitzak;
 
     public record ErrubrikaLerroa(Gaitasuna gaitasuna, List<GaitasunMaila> gelaxkak) {}
@@ -217,7 +218,12 @@ public class EthaziService {
         return gaitasunak.save(g).getId();
     }
     @Transactional
-    public void ezabatuGaitasuna(Long id) { gaitasunak.delete(gaitasuna(id)); gaitasunak.flush(); }
+    public void ezabatuGaitasuna(Long id) {
+        var g = gaitasuna(id);
+        g.getMailak().stream().flatMap(m -> m.getLorpenAdierazleak().stream()).map(LorpenAdierazlea::getId)
+            .forEach(this::kenduErronkaEbidentzietatik);
+        gaitasunak.delete(g); gaitasunak.flush();
+    }
 
     /** A rubric column is a level of the unique cycle/type model, not another model. */
     @Transactional
@@ -317,10 +323,16 @@ public class EthaziService {
         kenduAdierazlea(gaitasunMaila(gaitasunaAldatzeko(gaitasunaId), mailaId), id);
     }
     private void kenduAdierazlea(GaitasunMaila gm, Long id) {
+        kenduErronkaEbidentzietatik(id);
         gm.getLorpenAdierazleak().remove(adierazlea(gm, id));
         gm.getLorpenAdierazleak().sort(Comparator.comparing(LorpenAdierazlea::getOrdena));
         for (int i = 0; i < gm.getLorpenAdierazleak().size(); i++) gm.getLorpenAdierazleak().get(i).setOrdena(i + 1);
         gaitasunak.flush();
+    }
+    private void kenduErronkaEbidentzietatik(Long adierazleaId) {
+        erronkaEbidentziak.findByLorpenAdierazleakId(adierazleaId).forEach(eb ->
+            eb.getLorpenAdierazleak().removeIf(a -> a.getId().equals(adierazleaId)));
+        erronkaEbidentziak.flush();
     }
     private GaitasunMaila gaitasunMaila(Gaitasuna g, Long id) {
         return g.getMailak().stream().filter(m -> m.getId().equals(id)).findFirst()

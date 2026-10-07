@@ -8,4 +8,5 @@ public interface ErronkaRepository extends JpaRepository<Erronka,Long> {
     java.util.Optional<Erronka> findLockedById(Long id);
     List<Erronka> findByBertsioTaldea(Long bertsioTaldea);
     List<Erronka> findByZikloaIdOrderByHasieraDataDescIdDesc(Long zikloaId);
+    List<Erronka> findByZikloaIdAndIkasturteaIdOrderByHasieraDataDescIdDesc(Long zikloaId, Long ikasturteaId);
 }

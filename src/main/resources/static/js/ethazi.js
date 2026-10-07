@@ -17,7 +17,7 @@ document.querySelectorAll('[data-cycle-filter]').forEach(select => {
 const dirtyForms = new Set();
 document.querySelectorAll('form[data-dirty-warning]').forEach(form => {
   form.addEventListener('input', event => {
-    if (!event.target.matches('[data-translation-select]')) dirtyForms.add(form);
+    if (!event.target.matches('[data-translation-select], [data-team-grade]')) dirtyForms.add(form);
   });
   form.addEventListener('submit', () => dirtyForms.delete(form));
 });
@@ -26,6 +26,39 @@ window.addEventListener('beforeunload', event => {
     event.preventDefault();
     event.returnValue = '';
   }
+});
+
+document.querySelectorAll('[data-team-grade]').forEach(select => {
+  select.dataset.savedValue = select.value;
+  select.addEventListener('change', async () => {
+    const status = select.parentElement.querySelector('.team-grade-status');
+    const previous = select.dataset.savedValue;
+    const payload = new URLSearchParams({
+      ebidentziaId: select.dataset.evidenceId,
+      taldeaId: select.dataset.teamId
+    });
+    if (select.value) payload.set('mailaId', select.value);
+    const csrf = document.querySelector('#team-grade-csrf');
+    if (csrf?.name) payload.set(csrf.name, csrf.value);
+    select.disabled = true;
+    status.classList.remove('is-error');
+    status.textContent = 'Gordetzen…';
+    try {
+      const response = await fetch(select.dataset.action, {
+        method: 'POST', body: payload, credentials: 'same-origin', headers: { Accept: 'application/json' }
+      });
+      const result = response.headers.get('content-type')?.includes('application/json') ? await response.json() : null;
+      if (!response.ok || !result) throw new Error(result?.message || 'Ezin izan da kalifikazioa gorde.');
+      select.dataset.savedValue = select.value;
+      status.textContent = result.message || 'Gordeta';
+    } catch (error) {
+      select.value = previous;
+      status.classList.add('is-error');
+      status.textContent = error.message || 'Ezin izan da kalifikazioa gorde.';
+    } finally {
+      select.disabled = false;
+    }
+  });
 });
 
 // The lock is a consultation-mode control, like the teacher timetable toggle.
@@ -50,6 +83,7 @@ function setRubricEditable(editable) {
   // Keep the choice across form redirects in this tab, independently per rubric.
   try { sessionStorage.setItem(rubricEditKey, String(editable)); } catch (_) { /* Storage may be disabled. */ }
   const toggle = rubricSection.querySelector('.rubric-lock-toggle');
+  if (!toggle) return;
   toggle.setAttribute('aria-pressed', String(editable));
   toggle.setAttribute('aria-label', editable ? 'Errubrikaren edizioa blokeatu' : 'Errubrikaren edizioa desblokeatu');
   toggle.textContent = editable ? '🔓 Desblokeatuta · Blokeatu' : '🔒 Blokeatuta · Desblokeatu';
@@ -203,11 +237,12 @@ if (rubricSection) {
   refreshRubricHeaderHeight();
   window.addEventListener('resize', refreshRubricHeaderHeight);
   if ('ResizeObserver' in window) new ResizeObserver(refreshRubricHeaderHeight).observe(rubricSection.querySelector('thead'));
-  rubricSection.querySelector('.rubric-lock-toggle').addEventListener('click', () => {
-    setRubricEditable(rubricIsLocked());
-  });
+  const rubricLockToggle = rubricSection.querySelector('.rubric-lock-toggle');
+  rubricLockToggle?.addEventListener('click', () => setRubricEditable(rubricIsLocked()));
   // Validation errors and a newly created level must remain immediately editable.
-  setRubricEditable(savedRubricEditable() || rubricSection.dataset.editRequired === 'true');
+  setRubricEditable(rubricLockToggle
+    ? savedRubricEditable() || rubricSection.dataset.editRequired === 'true'
+    : false);
   rubricSection.addEventListener('submit', event => {
     if (rubricIsLocked()) {
       event.preventDefault();
@@ -266,6 +301,18 @@ if (rubricSection) {
     if (scrollPageBeforeRubric(delta)) event.preventDefault();
   });
 }
+
+const rubricWeightInputs = document.querySelectorAll('.evidence-weight-input');
+const rubricWeightTotal = document.querySelector('#rubric-weight-total');
+const rubricWeightStatus = rubricWeightTotal?.closest('.rubric-weight-total');
+function refreshRubricWeight() {
+  if (!rubricWeightTotal) return;
+  const total = Array.from(rubricWeightInputs).reduce((sum, input) => sum + (Number.parseFloat(input.value) || 0), 0);
+  rubricWeightTotal.textContent = new Intl.NumberFormat('eu', { maximumFractionDigits: 2 }).format(total);
+  rubricWeightStatus.classList.toggle('is-invalid', Math.abs(total - 100) > 0.00001 && rubricWeightInputs.length > 0);
+}
+rubricWeightInputs.forEach(input => input.addEventListener('input', refreshRubricWeight));
+refreshRubricWeight();
 
 // Keep the edited/new column or cell in view after an ordinary form submission.
 if (/^#(maila|gelaxka)-[\d-]+$/.test(window.location.hash)) {

@@ -105,6 +105,18 @@ public interface KoadernoaRepository extends JpaRepository<Koadernoa, Long>{
           order by k.id asc
         """)
     List<Koadernoa> findByModuloaIdInAktiboIkasturtea(@Param("moduloaId") Long moduloaId);
+
+    @Query("""
+          select case when count(k) > 0 then true else false end
+          from Koadernoa k
+            join k.irakasleak ir
+          where k.moduloa.id = :moduloaId
+            and k.egutegia.ikasturtea.aktiboa = true
+            and ir.id = :irakasleId
+        """)
+    boolean existsAktiboIkasturtekoKoadernoaIrakaslearentzat(
+            @Param("moduloaId") Long moduloaId,
+            @Param("irakasleId") Long irakasleId);
     
     
     @Query("""

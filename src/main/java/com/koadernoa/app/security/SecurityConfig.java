@@ -4,6 +4,7 @@ package com.koadernoa.app.security;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
@@ -50,6 +51,8 @@ public class SecurityConfig {
     	        )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/admin/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/ethazi/erronkak/*/errubrikak").hasAnyRole("ADMIN", "KUDEATZAILEA", "IRAKASLEA")
+                .requestMatchers(HttpMethod.POST, "/ethazi/erronkak/*/errubrikak/*/notak").hasAnyRole("ADMIN", "KUDEATZAILEA", "IRAKASLEA")
                 .requestMatchers("/ethazi", "/ethazi/**").hasAnyRole("ADMIN", "KUDEATZAILEA")
                 .requestMatchers("/kudeatzaile/**").hasAnyRole("ADMIN", "KUDEATZAILEA")
                 .requestMatchers("/irakasle", "/irakasle/**").hasAnyRole("ADMIN", "KUDEATZAILEA", "IRAKASLEA")

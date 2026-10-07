@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.math.BigDecimal;
 
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -28,6 +29,53 @@ public final class EthaziForms {
         @DateTimeFormat(iso=DateTimeFormat.ISO.DATE)
         private java.time.LocalDate bukaeraData;
         private Set<Long> moduloIds = new LinkedHashSet<>();
+    }
+
+    @Getter @Setter
+    public static class ErronkaErrubrikaForm {
+        private List<ErronkaMailaForm> mailak = new ArrayList<>();
+        private List<ErronkaEbidentziaForm> ebidentziak = new ArrayList<>();
+    }
+
+    @Getter @Setter
+    public static class ErronkaMailaForm {
+        private Long id;
+        private String izena;
+        private BigDecimal balioa;
+    }
+
+    @Getter @Setter
+    public static class ErronkaEbidentziaForm {
+        private Long id;
+        private String deskribapena;
+        private BigDecimal pisua;
+        private Set<Long> adierazleaIds = new LinkedHashSet<>();
+        private List<ErronkaEbidentziaMailaForm> mailak = new ArrayList<>();
+        private List<ErronkaTaldeNotaForm> taldeNotak = new ArrayList<>();
+    }
+
+    @Getter @Setter
+    public static class ErronkaEbidentziaMailaForm {
+        private Long mailaId;
+        private String deskribapena;
+    }
+
+    @Getter @Setter
+    public static class ErronkaTaldeNotaForm {
+        private Long taldeaId;
+        private Long mailaId;
+        private String mailaIzena;
+    }
+
+    @Getter @Setter
+    public static class ErronkaTaldeEsleipenForm {
+        private List<ErronkaIkasleTaldeForm> ikasleak = new ArrayList<>();
+    }
+
+    @Getter @Setter
+    public static class ErronkaIkasleTaldeForm {
+        private Long ikasleaId;
+        private Long taldeaId;
     }
 
 
