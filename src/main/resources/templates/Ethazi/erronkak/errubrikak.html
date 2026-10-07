@@ -16,9 +16,30 @@
   <input type="hidden" id="team-grade-csrf" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
   <header class="page-header rubric-toolbar"><div><h2 th:text="${errubrika.moduloa.kodea + ' · ' + errubrika.moduloa.izena}"></h2></div><div class="rubric-actions">
     <button th:if="${errubrikaEditatuDezake}" type="button" class="btn rubric-lock-toggle" aria-pressed="false">🔒 Blokeatuta · Desblokeatu</button>
+    <button th:if="${errubrikaEditatuDezake and #lists.isEmpty(errubrika.mailak) and #lists.isEmpty(errubrika.ebidentziak)}"
+      type="button" class="btn" id="rubric-import-toggle" aria-expanded="false" aria-controls="rubric-import-panel">Inportatu</button>
     <form class="rubric-edit-only" method="post" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/mailak/berria(id=${erronka.id},mid=${moduloaId})}"><button class="btn">+ Mailakatzea</button></form>
     <form class="rubric-edit-only" method="post" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/ebidentziak/berria(id=${erronka.id},mid=${moduloaId})}"><button class="btn">+ Ebidentzia</button></form>
   </div></header>
+  <section id="rubric-import-panel" class="rubric-import-panel rubric-toolbar" hidden
+    th:if="${errubrikaEditatuDezake and #lists.isEmpty(errubrika.mailak) and #lists.isEmpty(errubrika.ebidentziak)}">
+    <h3>Inportatu errubrika</h3>
+    <p class="muted">EEI kode bera duten moduluetan aurretik prestatutako errubrika baten kopia independentea sortu.</p>
+    <p class="empty-state" th:if="${#lists.isEmpty(errubrikaIturriak)}">Ez dago EEI kode bereko aurreko errubrikarik inportatzeko.</p>
+    <details class="rubric-import-source" th:each="source : ${errubrikaIturriak}">
+      <summary><strong th:text="${source.erronkaIzena}"></strong><span class="muted" th:text="${' · ' + source.moduluaKodea + ' · ' + source.hizkuntza + ' · ' + source.ikasturtea}"></span></summary>
+      <div class="rubric-import-preview"><div class="rubric-scroll" role="region" aria-label="Inportatu aurreko errubrikaren aurrebista" tabindex="0">
+        <table class="rubric challenge-rubric-table"><thead><tr><th>Ebidentzia</th><th>Lorpen-adierazleak</th>
+          <th th:each="level : ${source.mailak}"><strong th:text="${level.izena}"></strong><span class="level-value" th:text="${#numbers.formatDecimal(level.balioa,1,2) + ' puntu'}"></span></th>
+        </tr></thead><tbody><tr th:each="evidence : ${source.ebidentziak}"><th><p class="preserve" th:text="${evidence.deskribapena}"></p><strong th:text="${evidence.pisua + '%'}"></strong></th>
+          <td><span class="indicator-badge" th:each="kodea : ${evidence.adierazleKodeak}" th:text="${kodea}"></span><span class="muted" th:if="${#lists.isEmpty(evidence.adierazleKodeak)}">—</span></td>
+          <td th:each="description : ${evidence.mailaAzalpenak}"><p class="preserve" th:text="${description}"></p></td>
+        </tr><tr th:if="${#lists.isEmpty(source.ebidentziak)}"><td th:colspan="${#lists.size(source.mailak) + 2}" class="empty-state">Iturriak ez du ebidentziarik.</td></tr></tbody></table>
+      </div><form method="post" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/inportatu(id=${erronka.id},mid=${moduloaId})}" data-confirm="Errubrika honen kopia inportatu?">
+        <input type="hidden" name="iturriErrubrikaId" th:value="${source.id}"><button class="btn btn-primary">Errubrika hau inportatu</button>
+      </form></div>
+    </details>
+  </section>
   <aside class="module-indicators rubric-toolbar rubric-edit-only" aria-label="Moduluaren lorpen-adierazleak">
     <h3>Lorpen-adierazleak</h3><p class="muted">Soilik erronkan ebaluatuko direnak agertzen dira. Errubrika honetan erabili gabe daudenak letra lodiz agertzen dira.</p>
     <div class="indicator-summary"><span th:each="a : ${adierazleak}" class="indicator-code"

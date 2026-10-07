@@ -187,10 +187,14 @@ public class ErronkaController {
         model.addAttribute("erronka", erronka); model.addAttribute("moduluak", moduluak); model.addAttribute("moduloaId", moduloaId);
         model.addAttribute("errubrikaEditatuDezake", service.errubrikaEditatuDezake(auth));
         if (moduloaId != null) {
-            model.addAttribute("errubrika", service.errubrika(id, moduloaId));
+            var errubrika = service.errubrika(id, moduloaId);
+            model.addAttribute("errubrika", errubrika);
             model.addAttribute("form", service.errubrikaForm(id, moduloaId));
             model.addAttribute("adierazleak", service.modulukoAdierazleak(id, moduloaId));
             model.addAttribute("taldeak", service.taldeak(id));
+            model.addAttribute("errubrikaIturriak", service.errubrikaEditatuDezake(auth)
+                && errubrika.getMailak().isEmpty() && errubrika.getEbidentziak().isEmpty()
+                    ? service.errubrikaIturriak(id, moduloaId) : java.util.List.of());
         }
         return "Ethazi/erronkak/errubrikak";
     }
@@ -200,6 +204,18 @@ public class ErronkaController {
             @ModelAttribute("form") ErronkaErrubrikaForm form, RedirectAttributes flash) {
         try { service.gordeErrubrika(id, moduloaId, form); flash.addFlashAttribute("success", "Errubrika gorde da."); }
         catch (IllegalArgumentException ex) { flash.addFlashAttribute("error", ex.getMessage()); }
+        return errubrikara(id, moduloaId);
+    }
+
+    @PostMapping("/{id}/errubrikak/{moduloaId}/inportatu")
+    String inportatuErrubrika(@PathVariable Long id, @PathVariable Long moduloaId,
+            @RequestParam Long iturriErrubrikaId, RedirectAttributes flash) {
+        try {
+            service.inportatuErrubrika(id, moduloaId, iturriErrubrikaId);
+            flash.addFlashAttribute("success", "Errubrikaren kopia inportatu da.");
+        } catch (IllegalArgumentException ex) {
+            flash.addFlashAttribute("error", ex.getMessage());
+        }
         return errubrikara(id, moduloaId);
     }
 

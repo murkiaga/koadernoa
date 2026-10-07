@@ -151,6 +151,13 @@
 .module-tabs { display:flex; gap:.5rem; overflow-x:auto; padding-top:.5rem; padding-bottom:.5rem; }
 .module-tabs a { flex:none; padding:.7rem 1rem; border:1px solid #cbd5e1; border-radius:8px; background:#fff; color:#17497a; text-decoration:none; }
 .module-tabs a.active { background:#17497a; color:#fff; border-color:#17497a; }
+.rubric-import-panel { border:1px solid #bfdbfe; border-radius:10px; background:#eff6ff; padding:1rem; margin:1rem 0; }
+.rubric-import-panel > h3 { margin-top:0; }
+.rubric-import-source { background:#fff; border:1px solid #cbd5e1; border-radius:8px; margin:.7rem 0; overflow:hidden; }
+.rubric-import-source > summary { cursor:pointer; padding:.85rem 1rem; }
+.rubric-import-preview { border-top:1px solid #cbd5e1; padding:1rem; }
+.rubric-import-preview .rubric-scroll { margin-bottom:1rem; }
+.rubric-import-preview form { display:flex; justify-content:flex-end; }
 .challenge-rubric-table { min-width:max-content; }
 .challenge-rubric-table th, .challenge-rubric-table td { min-width:260px; vertical-align:top; }
 .challenge-rubric-table .evidence-column { min-width:320px; width:320px; position:sticky; left:0; z-index:2; background:#f3f6fb; }

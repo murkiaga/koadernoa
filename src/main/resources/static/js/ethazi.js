@@ -61,6 +61,16 @@ document.querySelectorAll('[data-team-grade]').forEach(select => {
   });
 });
 
+const rubricImportToggle = document.querySelector('#rubric-import-toggle');
+const rubricImportPanel = document.querySelector('#rubric-import-panel');
+rubricImportToggle?.addEventListener('click', () => {
+  const opening = rubricImportPanel.hidden;
+  rubricImportPanel.hidden = !opening;
+  rubricImportToggle.setAttribute('aria-expanded', String(opening));
+  rubricImportToggle.textContent = opening ? 'Inportazioa itxi' : 'Inportatu';
+  if (opening) rubricImportPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+});
+
 // The lock is a consultation-mode control, like the teacher timetable toggle.
 const rubricSection = document.querySelector('.rubric-section');
 const rubricIsLocked = () => rubricSection?.dataset.editable === 'false';

@@ -609,6 +609,78 @@ class EthaziServiceTest {
         assertThat(copied.getEbidentziak()).extracting(x -> x.getDeskribapena()).containsExactly("Inportatutako ebidentzia");
     }
 
+    @Test void emptyModuleRubricCanPreviewAndImportAnIndependentSameEeiCopy() throws Exception {
+        var eu = module(cycle, "BUAA"); eu.setHizkuntza(Hizkuntza.EUSKARA);
+        var es = translatedModule(eu, Hizkuntza.GAZTELERA); es.setKodea("BUAA-ES");
+        var sourceChallenge = challenge(eu); sourceChallenge.setIzena("Euskarazko erronka");
+        kiniela.gordeErronka(null, sourceChallenge);
+        Long sourceChallengeId = kiniela.erronkak(cycle.getId()).stream()
+            .filter(e -> "Euskarazko erronka".equals(e.getIzena())).findFirst().orElseThrow().getId();
+        kiniela.gehituErrubrikaMaila(sourceChallengeId, eu.getId());
+        kiniela.gehituErrubrikaMaila(sourceChallengeId, eu.getId());
+        kiniela.gehituEbidentzia(sourceChallengeId, eu.getId());
+        var sourceForm = kiniela.errubrikaForm(sourceChallengeId, eu.getId());
+        sourceForm.getMailak().get(0).setIzena("Gaizki"); sourceForm.getMailak().get(0).setBalioa(java.math.BigDecimal.ZERO);
+        sourceForm.getMailak().get(1).setIzena("Bikain"); sourceForm.getMailak().get(1).setBalioa(java.math.BigDecimal.TEN);
+        sourceForm.getEbidentziak().get(0).setDeskribapena("Konexio segurua erabiltzea");
+        sourceForm.getEbidentziak().get(0).setPisua(new java.math.BigDecimal("100"));
+        sourceForm.getEbidentziak().get(0).getMailak().get(0).setDeskribapena("Ez du konexio segururik erabili");
+        sourceForm.getEbidentziak().get(0).getMailak().get(1).setDeskribapena("Konexio segurua zuzen erabili du");
+        kiniela.gordeErrubrika(sourceChallengeId, eu.getId(), sourceForm);
+
+        var targetChallenge = challenge(es); targetChallenge.setIzena("Gaztelerazko erronka");
+        targetChallenge.setHizkuntza(Hizkuntza.GAZTELERA); kiniela.gordeErronka(null, targetChallenge);
+        Long targetChallengeId = kiniela.erronkak(cycle.getId()).stream()
+            .filter(e -> "Gaztelerazko erronka".equals(e.getIzena())).findFirst().orElseThrow().getId();
+        Long sourceRubricId = kiniela.errubrika(sourceChallengeId, eu.getId()).getId();
+
+        var sources = kiniela.errubrikaIturriak(targetChallengeId, es.getId());
+        assertThat(sources).hasSize(1);
+        assertThat(sources.get(0).id()).isEqualTo(sourceRubricId);
+        assertThat(sources.get(0).mailak()).extracting(x -> x.izena()).containsExactly("Gaizki", "Bikain");
+        assertThat(sources.get(0).ebidentziak()).extracting(x -> x.deskribapena())
+            .containsExactly("Konexio segurua erabiltzea");
+
+        var auth = new UsernamePasswordAuthenticationToken("manager", "", AuthorityUtils.createAuthorityList("ROLE_KUDEATZAILEA"));
+        SecurityContextHolder.getContext().setAuthentication(auth);
+        try {
+            mvc().perform(get("/ethazi/erronkak/" + targetChallengeId + "/errubrikak").principal(auth)
+                    .param("moduloaId", es.getId().toString()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("id=\"rubric-import-toggle\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("id=\"rubric-import-panel\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"rubric-import-panel rubric-toolbar\" hidden")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Euskarazko erronka")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Konexio segurua zuzen erabili du")));
+            mvc().perform(post("/ethazi/erronkak/" + targetChallengeId + "/errubrikak/" + es.getId() + "/inportatu")
+                    .principal(auth).param("iturriErrubrikaId", sourceRubricId.toString()))
+                .andExpect(status().is3xxRedirection()).andExpect(flash().attributeExists("success"));
+        } finally { SecurityContextHolder.clearContext(); }
+        em.flush(); em.clear();
+
+        var copied = kiniela.errubrika(targetChallengeId, es.getId());
+        assertThat(copied.getMailak()).extracting(x -> x.getIzena()).containsExactly("Gaizki", "Bikain");
+        assertThat(copied.getEbidentziak()).extracting(x -> x.getDeskribapena())
+            .containsExactly("Konexio segurua erabiltzea");
+        assertThat(copied.getEbidentziak().get(0).getTaldeNotak()).isEmpty();
+        assertThatThrownBy(() -> kiniela.inportatuErrubrika(targetChallengeId, es.getId(), sourceRubricId))
+            .hasMessageContaining("ez dago hutsik");
+
+        var copiedForm = kiniela.errubrikaForm(targetChallengeId, es.getId());
+        copiedForm.getMailak().get(0).setIzena("Suspendido");
+        kiniela.gordeErrubrika(targetChallengeId, es.getId(), copiedForm); em.flush(); em.clear();
+        assertThat(kiniela.errubrika(sourceChallengeId, eu.getId()).getMailak())
+            .extracting(x -> x.getIzena()).containsExactly("Gaizki", "Bikain");
+
+        var unrelated = module(cycle, "OTHER-EEI");
+        var unrelatedChallenge = challenge(unrelated); unrelatedChallenge.setIzena("Beste modulua");
+        kiniela.gordeErronka(null, unrelatedChallenge);
+        Long unrelatedChallengeId = kiniela.erronkak(cycle.getId()).stream()
+            .filter(e -> "Beste modulua".equals(e.getIzena())).findFirst().orElseThrow().getId();
+        assertThatThrownBy(() -> kiniela.inportatuErrubrika(unrelatedChallengeId, unrelated.getId(), sourceRubricId))
+            .hasMessageContaining("EEI bereko");
+    }
+
     @Test void challengeTeamsUseActiveYearEnrollmentsAndRubricStoresTeamGrades() throws Exception {
         var m = module(cycle, "TEAMS");
         kiniela.gordeErronka(null, challenge(m)); Long challengeId = kiniela.erronkak(cycle.getId()).get(0).getId();

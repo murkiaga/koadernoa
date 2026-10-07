@@ -331,6 +331,56 @@ public class KinielaService {
         }
     }
 
+    public record ErrubrikaIturriMaila(Long id, String izena, BigDecimal balioa) {}
+    public record ErrubrikaIturriEbidentzia(String deskribapena, BigDecimal pisua,
+            List<String> adierazleKodeak, List<String> mailaAzalpenak) {}
+    public record ErrubrikaIturria(Long id, String erronkaIzena, String moduluaKodea, String hizkuntza,
+            String ikasturtea, List<ErrubrikaIturriMaila> mailak, List<ErrubrikaIturriEbidentzia> ebidentziak) {}
+
+    public List<ErrubrikaIturria> errubrikaIturriak(Long erronkaId, Long moduloaId) {
+        var target = errubrika(erronkaId, moduloaId);
+        String eeiKodea = target.getModuloa().getEeiKodea();
+        if (eeiKodea == null || eeiKodea.isBlank()) return List.of();
+        return errubrikak.findByModuloa_EeiKodeaOrderByErronka_IdDesc(eeiKodea).stream()
+            .filter(source -> !source.getId().equals(target.getId()))
+            .filter(source -> !source.getMailak().isEmpty() || !source.getEbidentziak().isEmpty())
+            .map(this::errubrikaIturria).toList();
+    }
+
+    private ErrubrikaIturria errubrikaIturria(ErronkaErrubrika source) {
+        var levels = source.getMailak().stream()
+            .map(m -> new ErrubrikaIturriMaila(m.getId(), m.getIzena(), m.getBalioa())).toList();
+        var evidence = source.getEbidentziak().stream().map(eb -> new ErrubrikaIturriEbidentzia(
+            eb.getDeskribapena(), eb.getPisua(), eb.getLorpenAdierazleak().stream().map(this::adierazleKodea)
+                .sorted(String.CASE_INSENSITIVE_ORDER).toList(),
+            source.getMailak().stream().map(level -> eb.getMailak().stream()
+                .filter(cell -> cell.getMaila().getId().equals(level.getId()))
+                .map(ErronkaEbidentziaMaila::getDeskribapena).findFirst().orElse("")).toList())).toList();
+        var challenge = source.getErronka();
+        String language = challenge.getHizkuntza() == null ? "" : challenge.getHizkuntza().getEtiketa();
+        String year = challenge.getIkasturtea() == null ? "—" : challenge.getIkasturtea().getIzena();
+        return new ErrubrikaIturria(source.getId(), challenge.getIzena(), source.getModuloa().getKodea(),
+            language, year, levels, evidence);
+    }
+
+    @Transactional public void inportatuErrubrika(Long erronkaId, Long moduloaId, Long iturriErrubrikaId) {
+        var target = errubrika(erronkaId, moduloaId);
+        entityManager.lock(target, jakarta.persistence.LockModeType.PESSIMISTIC_WRITE);
+        require(target.getMailak().isEmpty() && target.getEbidentziak().isEmpty(),
+            "Errubrika ez dago hutsik; inportazioa ezin da egin.");
+        var source = errubrikak.findById(iturriErrubrikaId)
+            .orElseThrow(() -> new IllegalArgumentException("Inportatzeko errubrika ez da aurkitu."));
+        require(!source.getId().equals(target.getId()), "Errubrika ezin da bere burutik inportatu.");
+        String targetEei = target.getModuloa().getEeiKodea();
+        String sourceEei = source.getModuloa().getEeiKodea();
+        require(targetEei != null && !targetEei.isBlank() && targetEei.equals(sourceEei),
+            "Iturriaren modulua ez da EEI bereko modulua.");
+        require(!source.getMailak().isEmpty() || !source.getEbidentziak().isEmpty(),
+            "Iturri-errubrika hutsik dago.");
+        kopiatuErrubrika(source, target);
+        errubrikak.flush();
+    }
+
     @Transactional public ErronkaErrubrika errubrika(Long erronkaId, Long moduloaId) {
         var e = erronka(erronkaId);
         require(e.getModuluak().stream().anyMatch(m -> m.getId().equals(moduloaId)), "Modulua ez da erronka honetako parte-hartzailea.");

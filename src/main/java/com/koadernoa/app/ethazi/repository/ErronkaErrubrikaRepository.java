@@ -8,4 +8,5 @@ import com.koadernoa.app.ethazi.entitateak.errubrikak.ErronkaErrubrika;
 public interface ErronkaErrubrikaRepository extends JpaRepository<ErronkaErrubrika, Long> {
     Optional<ErronkaErrubrika> findByErronkaIdAndModuloaId(Long erronkaId, Long moduloaId);
     List<ErronkaErrubrika> findByErronkaId(Long erronkaId);
+    List<ErronkaErrubrika> findByModuloa_EeiKodeaOrderByErronka_IdDesc(String eeiKodea);
 }
