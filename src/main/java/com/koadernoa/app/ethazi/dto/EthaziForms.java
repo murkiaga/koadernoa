@@ -65,6 +65,8 @@ public final class EthaziForms {
         private Long taldeaId;
         private Long mailaId;
         private String mailaIzena;
+        private String ondoEgindakoak;
+        private String hobetuBeharrekoak;
     }
 
     @Getter @Setter

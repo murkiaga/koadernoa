@@ -18,4 +18,6 @@ public class ErronkaEbidentziaTaldeNota {
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "maila_id") private ErronkaErrubrikaMaila maila;
     // Mailaren balioaren kopia, ondorengo kalkuluak eta aurreko datuen bateragarritasuna errazteko.
     @Column(precision = 5, scale = 2) private BigDecimal nota;
+    @Column(name = "ondo_egindakoak", columnDefinition = "TEXT") private String ondoEgindakoak;
+    @Column(name = "hobetu_beharrekoak", columnDefinition = "TEXT") private String hobetuBeharrekoak;
 }

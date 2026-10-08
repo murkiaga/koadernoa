@@ -417,6 +417,8 @@ public class KinielaService {
                             .filter(m -> m.getBalioa().compareTo(n.getNota()) == 0).findFirst().ifPresent(m -> {
                                 tf.setMailaId(m.getId()); tf.setMailaIzena(m.getIzena());
                             });
+                        tf.setOndoEgindakoak(n.getOndoEgindakoak());
+                        tf.setHobetuBeharrekoak(n.getHobetuBeharrekoak());
                     });
                 ef.getTaldeNotak().add(tf);
             }
@@ -509,7 +511,10 @@ public class KinielaService {
         require(team.getErronka().getId().equals(erronkaId), "Taldea ez da erronka honetakoa.");
         var existing = eb.getTaldeNotak().stream().filter(n -> n.getTaldea().getId().equals(taldeaId)).findFirst();
         if (mailaId == null) {
-            existing.ifPresent(eb.getTaldeNotak()::remove);
+            existing.ifPresent(note -> {
+                note.setMaila(null); note.setNota(null);
+                if (feedbackHutsik(note)) eb.getTaldeNotak().remove(note);
+            });
         } else {
             var selectedLevel = r.getMailak().stream().filter(m -> m.getId().equals(mailaId)).findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Hautatutako maila ez da errubrika honetakoa."));
@@ -520,6 +525,44 @@ public class KinielaService {
             note.setMaila(selectedLevel); note.setNota(selectedLevel.getBalioa());
         }
         errubrikak.flush();
+    }
+
+    @Transactional public void gordeTaldeOharrak(Long erronkaId, Long moduloaId, Long ebidentziaId,
+            Long taldeaId, String ondoEgindakoak, String hobetuBeharrekoak, Authentication auth) {
+        if (!erronkaKalifikatuDezake(auth, erronkaId, moduloaId)) {
+            throw new AccessDeniedException("Ez duzu modulu honetako kalifikazioak aldatzeko baimenik.");
+        }
+        var r = errubrika(erronkaId, moduloaId);
+        var eb = r.getEbidentziak().stream().filter(x -> x.getId().equals(ebidentziaId)).findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Ebidentzia ez da errubrika honetakoa."));
+        var team = erronkaTaldeak.findById(taldeaId)
+            .orElseThrow(() -> new IllegalArgumentException("Taldea ez da aurkitu."));
+        require(team.getErronka().getId().equals(erronkaId), "Taldea ez da erronka honetakoa.");
+        String strengths = aukerakoTestua(ondoEgindakoak, 60000);
+        String improvements = aukerakoTestua(hobetuBeharrekoak, 60000);
+        var existing = eb.getTaldeNotak().stream().filter(n -> n.getTaldea().getId().equals(taldeaId)).findFirst();
+        if (strengths.isEmpty() && improvements.isEmpty() && existing.isPresent()
+                && existing.get().getMaila() == null && existing.get().getNota() == null) {
+            eb.getTaldeNotak().remove(existing.get());
+        } else if (!strengths.isEmpty() || !improvements.isEmpty() || existing.isPresent()) {
+            var note = existing.orElseGet(() -> {
+                var n = new ErronkaEbidentziaTaldeNota(); n.setEbidentzia(eb); n.setTaldea(team);
+                eb.getTaldeNotak().add(n); return n;
+            });
+            note.setOndoEgindakoak(strengths); note.setHobetuBeharrekoak(improvements);
+        }
+        errubrikak.flush();
+    }
+
+    private static boolean feedbackHutsik(ErronkaEbidentziaTaldeNota note) {
+        return (note.getOndoEgindakoak() == null || note.getOndoEgindakoak().isBlank())
+            && (note.getHobetuBeharrekoak() == null || note.getHobetuBeharrekoak().isBlank());
+    }
+
+    private static String aukerakoTestua(String value, int max) {
+        String normalized = value == null ? "" : value.strip();
+        require(normalized.length() <= max, "Oharra luzeegia da.");
+        return normalized;
     }
 
     @Transactional public Long gehituErrubrikaMaila(Long erronkaId, Long moduloaId) {

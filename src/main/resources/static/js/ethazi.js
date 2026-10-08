@@ -17,7 +17,7 @@ document.querySelectorAll('[data-cycle-filter]').forEach(select => {
 const dirtyForms = new Set();
 document.querySelectorAll('form[data-dirty-warning]').forEach(form => {
   form.addEventListener('input', event => {
-    if (!event.target.matches('[data-translation-select], [data-team-grade]')) dirtyForms.add(form);
+    if (!event.target.matches('[data-translation-select], [data-team-grade], [data-team-feedback]')) dirtyForms.add(form);
   });
   form.addEventListener('submit', () => dirtyForms.delete(form));
 });
@@ -28,8 +28,29 @@ window.addEventListener('beforeunload', event => {
   }
 });
 
+const teamGradeNumber = value => Number.parseFloat(String(value ?? '0').replace(',', '.')) || 0;
+const teamGradeFormatter = new Intl.NumberFormat('eu-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+function refreshTeamTotal(select) {
+  const table = select.closest('.challenge-rubric-table');
+  const teamId = select.dataset.teamId;
+  const output = Array.from(table.querySelectorAll('[data-team-total]'))
+    .find(candidate => candidate.dataset.teamId === teamId);
+  if (!output) return;
+  const total = Array.from(table.querySelectorAll('[data-team-grade]'))
+    .filter(candidate => candidate.dataset.teamId === teamId)
+    .reduce((sum, grade) => {
+      const levelValue = teamGradeNumber(grade.selectedOptions[0]?.dataset.levelValue);
+      const evidenceWeight = teamGradeNumber(grade.closest('tr')?.dataset.evidenceWeight);
+      return sum + levelValue * evidenceWeight / 100;
+    }, 0);
+  output.value = teamGradeFormatter.format(total);
+  output.textContent = output.value;
+}
+
 document.querySelectorAll('[data-team-grade]').forEach(select => {
   select.dataset.savedValue = select.value;
+  refreshTeamTotal(select);
   select.addEventListener('change', async () => {
     const status = select.parentElement.querySelector('.team-grade-status');
     const previous = select.dataset.savedValue;
@@ -51,14 +72,87 @@ document.querySelectorAll('[data-team-grade]').forEach(select => {
       if (!response.ok || !result) throw new Error(result?.message || 'Ezin izan da kalifikazioa gorde.');
       select.dataset.savedValue = select.value;
       status.textContent = result.message || 'Gordeta';
+      refreshTeamTotal(select);
     } catch (error) {
       select.value = previous;
       status.classList.add('is-error');
       status.textContent = error.message || 'Ezin izan da kalifikazioa gorde.';
+      refreshTeamTotal(select);
     } finally {
       select.disabled = false;
     }
   });
+});
+
+function closeTeamFeedbackPanels(except = null) {
+  document.querySelectorAll('[data-team-feedback-panel]:not([hidden])').forEach(panel => {
+    if (panel === except) return;
+    panel.hidden = true;
+    panel.closest('.team-feedback').querySelector(`[data-team-feedback-toggle="${panel.dataset.teamFeedbackPanel}"]`)
+      ?.setAttribute('aria-expanded', 'false');
+  });
+}
+
+document.querySelectorAll('.team-feedback').forEach(feedback => {
+  feedback.querySelectorAll('[data-team-feedback-toggle]').forEach(toggle => {
+    toggle.addEventListener('click', () => {
+      const panel = feedback.querySelector(`[data-team-feedback-panel="${toggle.dataset.teamFeedbackToggle}"]`);
+      const opening = panel.hidden;
+      closeTeamFeedbackPanels(opening ? panel : null);
+      panel.hidden = !opening;
+      toggle.setAttribute('aria-expanded', String(opening));
+      if (opening) panel.querySelector('textarea').focus();
+    });
+  });
+  feedback.querySelectorAll('[data-team-feedback-close]').forEach(button => {
+    button.addEventListener('click', () => closeTeamFeedbackPanels());
+  });
+  feedback.querySelectorAll('[data-team-feedback]').forEach(textarea => {
+    textarea.addEventListener('input', () => {
+      const status = textarea.closest('[data-team-feedback-panel]').querySelector('.team-feedback-status');
+      status.classList.remove('is-error');
+      status.textContent = 'Gorde gabe';
+    });
+  });
+  feedback.querySelectorAll('[data-team-feedback-save]').forEach(button => button.addEventListener('click', async () => {
+    const panel = button.closest('[data-team-feedback-panel]');
+    const status = panel.querySelector('.team-feedback-status');
+    const payload = new URLSearchParams({
+      ebidentziaId: feedback.dataset.evidenceId,
+      taldeaId: feedback.dataset.teamId,
+      ondoEgindakoak: feedback.querySelector('[data-feedback-kind="strengths"]').value,
+      hobetuBeharrekoak: feedback.querySelector('[data-feedback-kind="improvements"]').value
+    });
+    const csrf = document.querySelector('#team-grade-csrf');
+    if (csrf?.name) payload.set(csrf.name, csrf.value);
+    button.disabled = true;
+    status.classList.remove('is-error');
+    status.textContent = 'Gordetzen…';
+    try {
+      const response = await fetch(feedback.dataset.action, {
+        method: 'POST', body: payload, credentials: 'same-origin', headers: { Accept: 'application/json' }
+      });
+      const result = response.headers.get('content-type')?.includes('application/json') ? await response.json() : null;
+      if (!response.ok || !result) throw new Error(result?.message || 'Ezin izan dira oharrak gorde.');
+      status.textContent = result.message || 'Oharrak gordeta';
+      feedback.querySelectorAll('[data-team-feedback-toggle]').forEach(toggle => {
+        const textarea = feedback.querySelector(`[data-feedback-kind="${toggle.dataset.teamFeedbackToggle}"]`);
+        toggle.querySelector('.feedback-present').classList.toggle('is-empty', !textarea.value.trim());
+      });
+    } catch (error) {
+      status.classList.add('is-error');
+      status.textContent = error.message || 'Ezin izan dira oharrak gorde.';
+    } finally {
+      button.disabled = false;
+    }
+  }));
+});
+
+document.addEventListener('click', event => {
+  if (!event.target.closest('.team-feedback')) closeTeamFeedbackPanels();
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') closeTeamFeedbackPanels();
 });
 
 const rubricImportToggle = document.querySelector('#rubric-import-toggle');

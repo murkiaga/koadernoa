@@ -29,12 +29,12 @@
     <details class="rubric-import-source" th:each="source : ${errubrikaIturriak}">
       <summary><strong th:text="${source.erronkaIzena}"></strong><span class="muted" th:text="${' · ' + source.moduluaKodea + ' · ' + source.hizkuntza + ' · ' + source.ikasturtea}"></span></summary>
       <div class="rubric-import-preview"><div class="rubric-scroll" role="region" aria-label="Inportatu aurreko errubrikaren aurrebista" tabindex="0">
-        <table class="rubric challenge-rubric-table"><thead><tr><th>Ebidentzia</th><th>Lorpen-adierazleak</th>
+        <table class="rubric challenge-rubric-table"><thead><tr><th>Ebidentzia</th>
           <th th:each="level : ${source.mailak}"><strong th:text="${level.izena}"></strong><span class="level-value" th:text="${#numbers.formatDecimal(level.balioa,1,2) + ' puntu'}"></span></th>
-        </tr></thead><tbody><tr th:each="evidence : ${source.ebidentziak}"><th><p class="preserve" th:text="${evidence.deskribapena}"></p><strong th:text="${evidence.pisua + '%'}"></strong></th>
-          <td><span class="indicator-badge" th:each="kodea : ${evidence.adierazleKodeak}" th:text="${kodea}"></span><span class="muted" th:if="${#lists.isEmpty(evidence.adierazleKodeak)}">—</span></td>
+        </tr></thead><tbody><tr th:each="evidence : ${source.ebidentziak}"><th><p class="preserve" th:text="${evidence.deskribapena}"></p><strong th:text="${evidence.pisua + '%'}"></strong>
+          <div class="indicator-badges evidence-indicators"><span class="indicator-badge" th:each="kodea : ${evidence.adierazleKodeak}" th:text="${kodea}"></span><span class="muted" th:if="${#lists.isEmpty(evidence.adierazleKodeak)}">—</span></div></th>
           <td th:each="description : ${evidence.mailaAzalpenak}"><p class="preserve" th:text="${description}"></p></td>
-        </tr><tr th:if="${#lists.isEmpty(source.ebidentziak)}"><td th:colspan="${#lists.size(source.mailak) + 2}" class="empty-state">Iturriak ez du ebidentziarik.</td></tr></tbody></table>
+        </tr><tr th:if="${#lists.isEmpty(source.ebidentziak)}"><td th:colspan="${#lists.size(source.mailak) + 1}" class="empty-state">Iturriak ez du ebidentziarik.</td></tr></tbody></table>
       </div><form method="post" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/inportatu(id=${erronka.id},mid=${moduloaId})}" data-confirm="Errubrika honen kopia inportatu?">
         <input type="hidden" name="iturriErrubrikaId" th:value="${source.id}"><button class="btn btn-primary">Errubrika hau inportatu</button>
       </form></div>
@@ -50,33 +50,53 @@
   <div class="rubric-weight-total rubric-toolbar" role="status">Ebidentzien pisua guztira: <strong><span id="rubric-weight-total"
     th:text="${#aggregates.sum(form.ebidentziak.![pisua]) ?: 0}">0</span>%</strong> <span id="rubric-weight-warning">(%100 izan behar du)</span></div>
   <div class="rubric-scroll" role="region" aria-label="Moduluaren ebaluazio-errubrika" tabindex="0"><table class="rubric challenge-rubric-table">
-    <thead><tr><th class="evidence-column">Ebidentzia</th><th class="indicators-column">Lorpen-adierazleak</th>
-      <th th:each="m, ms : *{mailak}"><input type="hidden" th:field="*{mailak[__${ms.index}__].id}">
+    <thead><tr><th class="evidence-column">Ebidentzia</th>
+      <th class="level-column" th:each="m, ms : *{mailak}" th:classappend="${ms.last} ? ' frozen-edge'" th:style="${'left:' + (280 + ms.index * 260) + 'px'}"><input type="hidden" th:field="*{mailak[__${ms.index}__].id}">
         <div class="rubric-read-only"><strong th:text="${m.izena}"></strong><span class="level-value" th:text="${#numbers.formatDecimal(m.balioa,1,2) + ' puntu'}"></span></div>
         <div class="rubric-edit-only level-fields"><label>Izena<input required maxlength="100" th:field="*{mailak[__${ms.index}__].izena}"></label><label>Balioa<input required type="number" min="0" max="10" step="0.01" th:field="*{mailak[__${ms.index}__].balioa}"></label>
           <button type="submit" class="btn btn-danger" th:form="${'delete-level-' + m.id}">Ezabatu</button></div>
       </th>
       <th class="team-grade-column rubric-grading-only" th:each="t : ${taldeak}" th:title="${t.kideenIzenak}" th:text="${t.izena}"></th>
     </tr></thead>
-    <tbody><tr th:each="eb, es : *{ebidentziak}"><th class="evidence-column"><input type="hidden" th:field="*{ebidentziak[__${es.index}__].id}">
+    <tbody><tr th:each="eb, es : *{ebidentziak}" th:attr="data-evidence-weight=${eb.pisua}"><th class="evidence-column"><input type="hidden" th:field="*{ebidentziak[__${es.index}__].id}">
       <p class="preserve rubric-read-only" th:text="${eb.deskribapena}"></p><textarea class="rubric-edit-only" required rows="5" th:field="*{ebidentziak[__${es.index}__].deskribapena}"></textarea>
       <p class="rubric-read-only evidence-weight"><strong th:text="${eb.pisua + '%'}"></strong></p>
       <label class="rubric-edit-only evidence-weight">Pisua (%)<input class="evidence-weight-input" required type="number" min="0" max="100" step="0.01" th:field="*{ebidentziak[__${es.index}__].pisua}"></label>
-      <button type="submit" class="btn btn-danger rubric-edit-only" th:form="${'delete-evidence-' + eb.id}">Ebidentzia ezabatu</button></th>
-      <td class="indicators-column"><div class="rubric-read-only indicator-badges"><span class="indicator-badge" th:each="a : ${adierazleak}"
+      <div class="rubric-read-only indicator-badges evidence-indicators"><span class="indicator-badge" th:each="a : ${adierazleak}"
         th:if="${eb.adierazleaIds.contains(a.id)}" th:title="${a.deskribapena}" th:text="${a.kodea}"></span>
         <span class="muted" th:if="${#sets.isEmpty(eb.adierazleaIds)}">—</span></div>
-        <p class="rubric-edit-only indicator-edit-hint">Sakatu <strong>+</strong> lotzeko edo <strong class="badge-remove-hint">×</strong> kentzeko.</p>
-        <div class="rubric-edit-only indicator-picker"><label class="indicator-badge indicator-choice" th:each="a : ${adierazleak}" th:title="${a.deskribapena}">
+      <p class="rubric-edit-only indicator-edit-hint">Sakatu <strong>+</strong> lotzeko edo <strong class="badge-remove-hint">×</strong> kentzeko.</p>
+      <div class="rubric-edit-only indicator-picker"><label class="indicator-badge indicator-choice" th:each="a : ${adierazleak}" th:title="${a.deskribapena}">
           <input type="checkbox" th:field="*{ebidentziak[__${es.index}__].adierazleaIds}" th:value="${a.id}"><span th:text="${a.kodea}"></span><span class="badge-remove" aria-hidden="true">×</span><span class="badge-add" aria-hidden="true">+</span>
-        </label><span class="muted" th:if="${#lists.isEmpty(adierazleak)}">Ez dago hautatzeko adierazlerik.</span></div></td>
-      <td th:each="cell, cs : ${eb.mailak}"><input type="hidden" th:field="*{ebidentziak[__${es.index}__].mailak[__${cs.index}__].mailaId}">
+        </label><span class="muted" th:if="${#lists.isEmpty(adierazleak)}">Ez dago hautatzeko adierazlerik.</span></div>
+      <button type="submit" class="btn btn-danger rubric-edit-only" th:form="${'delete-evidence-' + eb.id}">Ebidentzia ezabatu</button></th>
+      <td class="level-column" th:each="cell, cs : ${eb.mailak}" th:classappend="${cs.last} ? ' frozen-edge'" th:style="${'left:' + (280 + cs.index * 260) + 'px'}"><input type="hidden" th:field="*{ebidentziak[__${es.index}__].mailak[__${cs.index}__].mailaId}">
         <p class="preserve rubric-read-only" th:text="${cell.deskribapena}"></p><textarea class="rubric-edit-only" rows="7" th:field="*{ebidentziak[__${es.index}__].mailak[__${cs.index}__].deskribapena}" placeholder="Maila hau lortzeko zer egin behar den…"></textarea></td>
       <td class="team-grade-column rubric-grading-only" th:each="tn, ts : ${eb.taldeNotak}">
         <select class="team-grade-input" data-team-grade th:attr="data-action=@{/ethazi/erronkak/{id}/errubrikak/{mid}/notak(id=${erronka.id},mid=${moduloaId})},data-evidence-id=${eb.id},data-team-id=${tn.taldeaId}">
-          <option value="" th:selected="${tn.mailaId == null}">---</option><option th:each="level : ${form.mailak}" th:value="${level.id}" th:text="${level.izena}" th:selected="${level.id == tn.mailaId}"></option>
-        </select><small class="team-grade-status" aria-live="polite"></small></td>
-    </tr><tr th:if="*{#lists.isEmpty(ebidentziak)}"><td th:colspan="${#lists.size(form.mailak) + #lists.size(taldeak) + 2}" class="empty-state">Oraindik ez dago ebidentziarik.</td></tr></tbody>
+          <option value="" data-level-value="0" th:selected="${tn.mailaId == null}">---</option><option th:each="level : ${form.mailak}" th:value="${level.id}" th:text="${level.izena}" th:selected="${level.id == tn.mailaId}" th:attr="data-level-value=${level.balioa}"></option>
+        </select><small class="team-grade-status" aria-live="polite"></small>
+        <div class="team-feedback" th:attr="data-action=@{/ethazi/erronkak/{id}/errubrikak/{mid}/oharrak(id=${erronka.id},mid=${moduloaId})},data-evidence-id=${eb.id},data-team-id=${tn.taldeaId}">
+          <div class="team-feedback-buttons">
+            <button type="button" class="btn team-feedback-toggle team-feedback-strengths-toggle" data-team-feedback-toggle="strengths" aria-expanded="false">Ondo egindakoak<span class="feedback-present" th:classappend="${#strings.isEmpty(tn.ondoEgindakoak)} ? ' is-empty'" aria-label="Oharra gordeta">●</span></button>
+            <button type="button" class="btn team-feedback-toggle team-feedback-improvements-toggle" data-team-feedback-toggle="improvements" aria-expanded="false">Hobetu beharrekoak<span class="feedback-present" th:classappend="${#strings.isEmpty(tn.hobetuBeharrekoak)} ? ' is-empty'" aria-label="Oharra gordeta">●</span></button>
+          </div>
+          <div class="team-feedback-popover team-feedback-strengths" data-team-feedback-panel="strengths" hidden>
+            <label>Ondo egindakoak<textarea data-team-feedback data-feedback-kind="strengths" rows="5" maxlength="60000" th:text="${tn.ondoEgindakoak}"></textarea></label>
+            <div class="team-feedback-popover-actions"><button type="button" class="btn btn-primary" data-team-feedback-save>Gorde</button><button type="button" class="btn" data-team-feedback-close>Itxi</button></div>
+            <small class="team-feedback-status" aria-live="polite"></small>
+          </div>
+          <div class="team-feedback-popover team-feedback-improvements" data-team-feedback-panel="improvements" hidden>
+            <label>Hobetu beharrekoak<textarea data-team-feedback data-feedback-kind="improvements" rows="5" maxlength="60000" th:text="${tn.hobetuBeharrekoak}"></textarea></label>
+            <div class="team-feedback-popover-actions"><button type="button" class="btn btn-primary" data-team-feedback-save>Gorde</button><button type="button" class="btn" data-team-feedback-close>Itxi</button></div>
+            <small class="team-feedback-status" aria-live="polite"></small>
+          </div>
+        </div></td>
+    </tr><tr th:if="*{#lists.isEmpty(ebidentziak)}"><td th:colspan="${#lists.size(form.mailak) + #lists.size(taldeak) + 1}" class="empty-state">Oraindik ez dago ebidentziarik.</td></tr>
+    <tr class="rubric-total-row rubric-grading-only"><th class="evidence-column">GUZTIRA</th>
+      <td class="level-column rubric-total-spacer" th:each="m, ms : *{mailak}" th:classappend="${ms.last} ? ' frozen-edge'" th:style="${'left:' + (280 + ms.index * 260) + 'px'}" aria-hidden="true"></td>
+      <td class="team-grade-column" th:each="t : ${taldeak}"><output data-team-total th:attr="data-team-id=${t.id}">0,00</output></td>
+    </tr></tbody>
   </table></div><div class="form-actions rubric-toolbar rubric-edit-only"><button class="btn btn-primary">Errubrika gorde</button></div></form>
   <th:block th:each="m : ${errubrika.mailak}"><form th:id="${'delete-level-' + m.id}" method="post" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/mailak/{lid}/ezabatu(id=${erronka.id},mid=${moduloaId},lid=${m.id})}" data-confirm="Mailakatzea ezabatu?"></form></th:block>
   <th:block th:each="eb : ${errubrika.ebidentziak}"><form th:id="${'delete-evidence-' + eb.id}" method="post" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/ebidentziak/{eid}/ezabatu(id=${erronka.id},mid=${moduloaId},eid=${eb.id})}" data-confirm="Ebidentzia eta maila guztietako azalpenak ezabatu?"></form></th:block>

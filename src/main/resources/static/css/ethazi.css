@@ -159,10 +159,12 @@
 .rubric-import-preview .rubric-scroll { margin-bottom:1rem; }
 .rubric-import-preview form { display:flex; justify-content:flex-end; }
 .challenge-rubric-table { min-width:max-content; }
-.challenge-rubric-table th, .challenge-rubric-table td { min-width:260px; vertical-align:top; }
-.challenge-rubric-table .evidence-column { min-width:320px; width:320px; position:sticky; left:0; z-index:2; background:#f3f6fb; }
+.challenge-rubric-table th, .challenge-rubric-table td { box-sizing:border-box; min-width:260px; width:260px; vertical-align:top; }
+.challenge-rubric-table .evidence-column { min-width:280px; width:280px; position:sticky; left:0; z-index:2; background:#f3f6fb; }
 .challenge-rubric-table thead .evidence-column { z-index:4; }
-.challenge-rubric-table .indicators-column { min-width:220px; width:220px; }
+.challenge-rubric-table .level-column { position:sticky; z-index:2; background:#fff; }
+.challenge-rubric-table thead .level-column { z-index:4; background:#edf3fa; }
+.challenge-rubric-table .level-column.frozen-edge { box-shadow:4px 0 6px -4px rgb(15 23 42 / 35%); }
 .challenge-rubric-table textarea, .challenge-rubric-table input { box-sizing:border-box; width:100%; }
 .challenge-rubric-table textarea { resize:vertical; }
 .level-value { display:block; margin-top:.35rem; color:#475569; font-weight:500; }
@@ -184,10 +186,15 @@
 .badge-add { color:#166534; font-size:1rem; font-weight:800; }
 .indicator-edit-hint { margin:.1rem 0 .55rem; font-size:.78rem; color:#64748b; }
 .badge-remove-hint { color:#b91c1c; }
+.evidence-indicators { margin-top:.75rem; }
 .evidence-weight { display:block; margin:.75rem 0; }
 .evidence-weight input { margin-top:.25rem; max-width:8rem; }
 .rubric-weight-total { margin-bottom:.75rem; }
 .rubric-weight-total.is-invalid { color:#b91c1c; }
 .challenge-team-list{display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}.challenge-team{border:1px solid var(--border,#d7dce3);border-radius:.6rem;padding:1rem}.challenge-team ul{min-height:1.5rem}.team-grade-column{min-width:8rem;text-align:center}.team-grade-input{min-width:6rem;width:100%}
 .team-grade-status{display:block;min-height:1.1rem;margin-top:.3rem;color:#166534}.team-grade-status.is-error{color:#b91c1c}
+.team-feedback{position:relative;margin-top:.65rem;text-align:left}.team-feedback-buttons{display:flex;gap:.4rem;flex-wrap:wrap}.team-feedback-toggle{position:relative;font-size:.72rem;padding:.42rem .55rem}.team-feedback-strengths-toggle{border-color:#86d6a1;background:#f0fdf4;color:#166534}.team-feedback-improvements-toggle{border-color:#f2a3a3;background:#fef2f2;color:#991b1b}.feedback-present{margin-left:.35rem;font-size:.55rem}.feedback-present.is-empty{display:none}.team-feedback-popover{position:absolute;z-index:20;top:calc(100% + .4rem);right:0;width:280px;box-sizing:border-box;padding:.8rem;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 10px 28px rgb(15 23 42 / 25%);background:#fff}.team-feedback-popover[hidden]{display:none}.team-feedback-popover label{display:grid;gap:.4rem;font-size:.82rem;font-weight:700}.team-feedback textarea{box-sizing:border-box;width:100%;resize:vertical;border-radius:6px;padding:.55rem;color:#172033}.team-feedback-strengths textarea{border:1px solid #86d6a1;background:#f0fdf4}.team-feedback-improvements textarea{border:1px solid #f2a3a3;background:#fef2f2}.team-feedback-popover-actions{display:flex;gap:.45rem;margin-top:.65rem}.team-feedback-status{display:block;min-height:1.1rem;margin-top:.35rem;color:#166534}.team-feedback-status.is-error{color:#b91c1c}
+.rubric-total-row > th, .rubric-total-row > td { border-top:3px solid #94a3b8; background:#e2e8f0; font-weight:800; vertical-align:middle; }
+.rubric-total-row .evidence-column, .rubric-total-row .level-column { background:#e2e8f0; }
+.rubric-total-row output { font-variant-numeric:tabular-nums; }
 .challenge-main-actions,.challenge-admin-actions{display:flex;align-items:center;gap:.65rem;flex-wrap:wrap}.challenge-main-actions h2{margin:0 .4rem 0 0}.challenge-list-header{gap:2rem}.challenge-admin-actions{margin-left:auto;padding-left:1.25rem;border-left:1px solid #d7dce3}

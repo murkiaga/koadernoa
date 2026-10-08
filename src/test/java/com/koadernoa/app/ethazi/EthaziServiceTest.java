@@ -733,8 +733,19 @@ class EthaziServiceTest {
                 .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Taldea 1")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Aranburu, Ane")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Eginda")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("<option value=\"\">---</option>")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("<option value=\"\" data-level-value=\"0\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("data-team-grade")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("data-level-value=\"10.00\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("data-evidence-weight=\"100.00\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("data-team-total")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(">GUZTIRA</th>")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("frozen-edge\" style=\"left:280px\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("class=\"indicators-column\""))))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Ondo egindakoak")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Hobetu beharrekoak")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("data-team-feedback-toggle=\"strengths\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("data-team-feedback-panel=\"improvements\" hidden")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("data-team-feedback-save")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("rubric-grading-only")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("module-indicators rubric-toolbar rubric-edit-only")))
                 .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Taldeen kalifikazioak gorde"))));
@@ -746,8 +757,25 @@ class EthaziServiceTest {
                     .param("ebidentziaId", evidenceId.toString()).param("taldeaId", team2.toString())
                     .param("mailaId", levelId.toString()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.message").value("Gordeta"));
+            mvc().perform(post("/ethazi/erronkak/" + challengeId + "/errubrikak/" + m.getId() + "/oharrak")
+                    .principal(auth)
+                    .param("ebidentziaId", evidenceId.toString()).param("taldeaId", team2.toString())
+                    .param("ondoEgindakoak", "Azalpen argia").param("hobetuBeharrekoak", "Adibide gehiago"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.message").value("Oharrak gordeta"));
+            mvc().perform(post("/ethazi/erronkak/" + challengeId + "/errubrikak/" + m.getId() + "/notak")
+                    .principal(auth)
+                    .param("ebidentziaId", evidenceId.toString()).param("taldeaId", team2.toString()))
+                .andExpect(status().isOk());
             em.flush(); em.clear();
             assertThat(kiniela.errubrika(challengeId, m.getId()).getEbidentziak().get(0).getTaldeNotak()).hasSize(2);
+            assertThat(kiniela.errubrika(challengeId, m.getId()).getEbidentziak().get(0).getTaldeNotak())
+                .filteredOn(n -> n.getTaldea().getId().equals(team2)).singleElement()
+                .satisfies(n -> {
+                    assertThat(n.getMaila()).isNull();
+                    assertThat(n.getNota()).isNull();
+                    assertThat(n.getOndoEgindakoak()).isEqualTo("Azalpen argia");
+                    assertThat(n.getHobetuBeharrekoak()).isEqualTo("Adibide gehiago");
+                });
 
             var teacherAuth = new UsernamePasswordAuthenticationToken("teacher@example.test", "",
                 AuthorityUtils.createAuthorityList("ROLE_IRAKASLEA"));
@@ -765,6 +793,11 @@ class EthaziServiceTest {
             mvc().perform(post("/ethazi/erronkak/" + challengeId + "/errubrikak/" + m.getId() + "/notak")
                     .principal(outsiderAuth).param("ebidentziaId", evidenceId.toString())
                     .param("taldeaId", team1.toString()).param("mailaId", levelId.toString()))
+                .andExpect(status().isForbidden()).andExpect(jsonPath("$.message").value(
+                    "Ez duzu modulu honetako kalifikazioak aldatzeko baimenik."));
+            mvc().perform(post("/ethazi/erronkak/" + challengeId + "/errubrikak/" + m.getId() + "/oharrak")
+                    .principal(outsiderAuth).param("ebidentziaId", evidenceId.toString())
+                    .param("taldeaId", team1.toString()).param("ondoEgindakoak", "Ezin gorde"))
                 .andExpect(status().isForbidden()).andExpect(jsonPath("$.message").value(
                     "Ez duzu modulu honetako kalifikazioak aldatzeko baimenik."));
 

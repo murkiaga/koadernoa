@@ -234,6 +234,23 @@ public class ErronkaController {
         }
     }
 
+    @PostMapping("/{id}/errubrikak/{moduloaId}/oharrak")
+    @ResponseBody
+    ResponseEntity<java.util.Map<String, String>> gordeTaldeOharrak(@PathVariable Long id, @PathVariable Long moduloaId,
+            @RequestParam Long ebidentziaId, @RequestParam Long taldeaId,
+            @RequestParam(required = false) String ondoEgindakoak,
+            @RequestParam(required = false) String hobetuBeharrekoak, Authentication auth) {
+        try {
+            service.gordeTaldeOharrak(id, moduloaId, ebidentziaId, taldeaId,
+                ondoEgindakoak, hobetuBeharrekoak, auth);
+            return ResponseEntity.ok(java.util.Map.of("message", "Oharrak gordeta"));
+        } catch (AccessDeniedException ex) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(java.util.Map.of("message", ex.getMessage()));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", ex.getMessage()));
+        }
+    }
+
     @PostMapping("/{id}/errubrikak/{moduloaId}/mailak/berria")
     String gehituMaila(@PathVariable Long id, @PathVariable Long moduloaId, RedirectAttributes flash) {
         service.gehituErrubrikaMaila(id, moduloaId); flash.addFlashAttribute("success", "Mailakatze berria sortu da.");
