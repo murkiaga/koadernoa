@@ -53,14 +53,16 @@ public class EthaziService {
                 .map(m -> new ModuluEmaitzak(m, moduluEmaitzak(m))).toList();
     }
     public List<MailakatzeEredua> ereduak() {
-        var result = ereduak.findAll();
+        // Zeharkako gaitasunen eredu pribatuak gaitasunaren beraren pantailan
+        // kudeatzen dira; ez dira ziklo-mailako ereduen katalogoan agertu behar.
+        var result = ereduak.findAll().stream().filter(e -> e.getZikloa() != null).collect(Collectors.toList());
         result.forEach(this::prestatu);
         result.sort(Comparator.comparing((MailakatzeEredua e) -> e.getZikloa().getIzena())
                 .thenComparing(MailakatzeEredua::getMota));
         return result;
     }
     private MailakatzeEredua prestatu(MailakatzeEredua e) {
-        e.getZikloa().getIzena();
+        if (e.getZikloa() != null) e.getZikloa().getIzena();
         e.getMailak().sort(Comparator.comparing(MailakatzeMaila::getOrdena));
         return e;
     }
@@ -72,17 +74,40 @@ public class EthaziService {
         return ereduak.findByZikloaIdAndMota(zikloaId, mota).map(this::prestatu).orElse(null);
     }
     public Errubrika errubrika(Long zikloaId, GaitasunMota mota) {
+        if (mota == GaitasunMota.ZEHARKAKOA) {
+            var globalak = zeharkakoErrubrikak();
+            if (!globalak.isEmpty()) return globalak.get(0);
+            // Aurreko instalazioetako ziklo-mailako zeharkako datuak irakurgarri
+            // mantendu migrazioa egin bitartean.
+        }
         var e = eredua(zikloaId, mota);
         if (e == null) return new Errubrika(null, List.of());
-        var rows = gaitasunak.findByZikloaIdAndMotaOrderByKodeaAsc(zikloaId, mota).stream().map(g -> {
+        return errubrika(e, gaitasunak.findByZikloaIdAndMotaOrderByKodeaAsc(zikloaId, mota));
+    }
+    private Errubrika errubrika(MailakatzeEredua e, List<Gaitasuna> gaitasunZerrenda) {
+        var rows = gaitasunZerrenda.stream().map(g -> {
             prestatu(g);
             var byLevel = g.getMailak().stream().collect(Collectors.toMap(m -> m.getMaila().getId(), Function.identity()));
             return new ErrubrikaLerroa(g, e.getMailak().stream().map(m -> byLevel.get(m.getId())).toList());
         }).toList();
         return new Errubrika(e, rows);
     }
+    /** Ikastetxe osorako zeharkako gaitasun bakoitza errubrika independentea da. */
+    public List<Errubrika> zeharkakoErrubrikak() {
+        return gaitasunak.findByZikloaIsNullAndMotaOrderByKodeaAsc(GaitasunMota.ZEHARKAKOA).stream()
+                .filter(g -> g.getEredua() != null)
+                .map(g -> errubrika(prestatu(g.getEredua()), List.of(g))).toList();
+    }
+    public List<Errubrika> errubrikak(Long zikloaId) {
+        var result = new ArrayList<Errubrika>();
+        var teknikoa = errubrika(zikloaId, GaitasunMota.TEKNIKOA);
+        if (teknikoa.eredua() != null) result.add(teknikoa);
+        result.addAll(zeharkakoErrubrikak());
+        return result;
+    }
     private Gaitasuna prestatu(Gaitasuna g) {
-        g.getZikloa().getIzena();
+        if (g.getZikloa() != null) g.getZikloa().getIzena();
+        if (g.getEredua() != null) prestatu(g.getEredua());
         g.getMailak().forEach(m -> {
             m.getMaila().getIzena();
             m.getLorpenAdierazleak().sort(Comparator.comparing(LorpenAdierazlea::getOrdena));
@@ -99,13 +124,18 @@ public class EthaziService {
         return e == null ? Map.of() : e.getMailak().stream().collect(Collectors.toMap(
                 MailakatzeMaila::getId, m -> m.getOrdena() + ". maila · " + m.getIzena()));
     }
+    public Map<Long, String> mailaIzenak(Gaitasuna g) {
+        var e = g.getEredua() != null ? g.getEredua() : eredua(g.getZikloa().getId(), g.getMota());
+        return e == null ? Map.of() : e.getMailak().stream().collect(Collectors.toMap(
+                MailakatzeMaila::getId, m -> m.getOrdena() + ". maila · " + m.getIzena()));
+    }
     public GaitasunaForm gaitasunaForm(Long id, Long zikloaId, GaitasunMota mota) {
         var f = new GaitasunaForm();
         Gaitasuna g = id == null ? null : gaitasuna(id);
-        f.setZikloaId(g == null ? zikloaId : g.getZikloa().getId());
+        f.setZikloaId(g == null ? zikloaId : g.getZikloa() == null ? null : g.getZikloa().getId());
         f.setMota(g == null ? mota : g.getMota());
-        if (g != null) { f.setKodea(g.getKodea()); f.setDeskribapena(g.getDeskribapena()); f.setDeskribapenaEs(g.getDeskribapenaEs()); f.setDeskribapenaEn(g.getDeskribapenaEn()); }
-        var e = eredua(f.getZikloaId(), f.getMota());
+        if (g != null) { f.setKodea(g.getKodea()); f.setIzena(g.getLegacyIzena()); f.setDeskribapena(g.getDeskribapena()); f.setDeskribapenaEs(g.getDeskribapenaEs()); f.setDeskribapenaEn(g.getDeskribapenaEn()); }
+        var e = g != null && g.getEredua() != null ? g.getEredua() : eredua(f.getZikloaId(), f.getMota());
         if (e != null) for (var m : e.getMailak()) {
             var mf = new GaitasunMailaForm();
             mf.setMailaId(m.getId());
@@ -195,20 +225,44 @@ public class EthaziService {
 
     @Transactional
     public Long gordeGaitasuna(Long id, GaitasunaForm f) {
-        var z = zikloa(f.getZikloaId());
-        var e = eredua(f.getZikloaId(), f.getMota());
-        require(e != null && !e.getMailak().isEmpty(), "Lehenengo sortu ziklo eta mota honen mailakatze eredua eta mailak.");
+        require(f.getMota() != null, "Aukeratu gaitasun mota.");
+        boolean zeharkakoa = f.getMota() == GaitasunMota.ZEHARKAKOA;
+        var z = zeharkakoa ? null : zikloa(f.getZikloaId());
+        var g = id == null ? new Gaitasuna() : gaitasuna(id);
+        var e = zeharkakoa ? g.getEredua() : eredua(f.getZikloaId(), f.getMota());
+        if (zeharkakoa && id == null) {
+            e = new MailakatzeEredua();
+            e.setMota(GaitasunMota.ZEHARKAKOA);
+            e.setIzena("Zeharkako gaitasunaren errubrika");
+            e = ereduak.save(e);
+            for (int i = 1; i <= 4; i++) {
+                var m = new MailakatzeMaila(); m.setEredua(e); m.setOrdena(i); m.setIzena(i + ". maila");
+                e.getMailak().add(m); mailak.save(m);
+            }
+            g.setEredua(e);
+        }
+        require(e != null && !e.getMailak().isEmpty(), "Lehenengo sortu ziklo honen mailakatze eredua eta mailak.");
         String kodea = testua(f.getKodea(), 30, "Kodea");
         String deskribapena = HizkuntzaTestua.balidatu(f.getDeskribapena(), f.getDeskribapenaEs(), f.getDeskribapenaEn(), 60000, true);
+        String izena = zeharkakoa && f.getIzena() != null && !f.getIzena().isBlank()
+                ? testua(f.getIzena(), 200, "Izena") : deskribapena.substring(0, Math.min(200, deskribapena.length()));
+        if (zeharkakoa) {
+            String ereduIzena = kodea + " · " + izena;
+            e.setIzena(ereduIzena.substring(0, Math.min(150, ereduIzena.length())));
+        }
         var expected = e.getMailak().stream().map(MailakatzeMaila::getId).collect(Collectors.toSet());
         var submitted = f.getMailak().stream().map(GaitasunMailaForm::getMailaId).collect(Collectors.toSet());
+        if (zeharkakoa && id == null && submitted.isEmpty()) for (var m : e.getMailak()) {
+            var mf = new GaitasunMailaForm(); mf.setMailaId(m.getId()); f.getMailak().add(mf);
+        }
+        submitted = f.getMailak().stream().map(GaitasunMailaForm::getMailaId).collect(Collectors.toSet());
         require(expected.equals(submitted) && f.getMailak().size() == expected.size(),
                 "Mailakatzea aldatu da edo mailak ez dira zuzenak. Kargatu berriro editatzeko pantaila.");
-        var g = id == null ? new Gaitasuna() : gaitasuna(id);
-        if (id != null) require(g.getZikloa().getId().equals(f.getZikloaId()) && g.getMota() == f.getMota(),
+        if (id != null) require(g.getMota() == f.getMota()
+                        && (zeharkakoa ? g.getZikloa() == null : g.getZikloa().getId().equals(f.getZikloaId())),
                 "Gaitasunaren zikloa eta mota ezin dira aldatu mailen loturak mantentzeko.");
         g.setZikloa(z); g.setMota(f.getMota()); g.setKodea(kodea); g.setDeskribapena(deskribapena); g.setDeskribapenaEs(f.getDeskribapenaEs()); g.setDeskribapenaEn(f.getDeskribapenaEn());
-        g.setLegacyIzena(deskribapena.substring(0, Math.min(200, deskribapena.length())));
+        g.setLegacyIzena(izena);
         for (var mf : f.getMailak()) {
             var gm = g.getMailak().stream().filter(m -> m.getMaila().getId().equals(mf.getMailaId())).findFirst().orElse(null);
             if (gm == null) { gm = new GaitasunMaila(); gm.setGaitasuna(g); gm.setMaila(maila(e, mf.getMailaId())); g.getMailak().add(gm); }
@@ -220,9 +274,11 @@ public class EthaziService {
     @Transactional
     public void ezabatuGaitasuna(Long id) {
         var g = gaitasuna(id);
+        var bereEredua = g.getEredua();
         g.getMailak().stream().flatMap(m -> m.getLorpenAdierazleak().stream()).map(LorpenAdierazlea::getId)
             .forEach(this::kenduErronkaEbidentzietatik);
         gaitasunak.delete(g); gaitasunak.flush();
+        if (bereEredua != null) { ereduak.delete(bereEredua); ereduak.flush(); }
     }
 
     /** A rubric column is a level of the unique cycle/type model, not another model. */
@@ -259,7 +315,7 @@ public class EthaziService {
 
     /** Resolve a rubric cell using the model level ID; materialize empty cells only on write. */
     private GaitasunMaila errubrikaGelaxka(Gaitasuna g, Long mailaId, boolean sortu) {
-        var e = eredua(g.getZikloa().getId(), g.getMota());
+        var e = g.getEredua() != null ? g.getEredua() : eredua(g.getZikloa().getId(), g.getMota());
         require(e != null, "Mailakatze eredua ez da aurkitu.");
         var level = maila(e, mailaId);
         var cell = g.getMailak().stream().filter(m -> m.getMaila().getId().equals(mailaId)).findFirst().orElse(null);
@@ -301,19 +357,27 @@ public class EthaziService {
     }
     private void gordeAdierazlea(Gaitasuna g, GaitasunMaila gm, Long id, AdierazleaForm f) {
         String deskribapena = HizkuntzaTestua.balidatu(f.getDeskribapena(), f.getDeskribapenaEs(), f.getDeskribapenaEn(), 60000, true);
-        Set<IkaskuntzaEmaitza> selected = new LinkedHashSet<>();
-        for (Long ieId : f.getEmaitzaIds()) {
-            var ie = emaitza(ieId);
-            require(ziklokoa(ie, g.getZikloa().getId()),
-                    "Ikaskuntza-emaitzak gaitasunaren ziklokoak izan behar dira.");
-            selected.add(ie);
-        }
         var a = id == null ? new LorpenAdierazlea() : adierazlea(gm, id);
+        Set<IkaskuntzaEmaitza> selected = new LinkedHashSet<>();
+        if (g.getZikloa() == null) {
+            // Zeharkako adierazlearen ziklo bakoitzeko loturak Kinielan kudeatzen dira;
+            // errubrikako testua editatzeak ezin ditu beste zikloetako loturak ezabatu.
+            selected.addAll(a.getIkaskuntzaEmaitzak());
+        } else {
+            for (Long ieId : f.getEmaitzaIds()) {
+                var ie = emaitza(ieId);
+                require(ziklokoa(ie, g.getZikloa().getId()),
+                        "Ikaskuntza-emaitzak gaitasunaren ziklokoak izan behar dira.");
+                selected.add(ie);
+            }
+        }
         a.setGaitasunMaila(gm);
         if (id == null) a.setOrdena(gm.getLorpenAdierazleak().stream().mapToInt(LorpenAdierazlea::getOrdena).max().orElse(0) + 1);
         a.setDeskribapena(deskribapena); a.setDeskribapenaEs(f.getDeskribapenaEs()); a.setDeskribapenaEn(f.getDeskribapenaEn());
-        a.getKinielaLoturak().removeIf(l -> !f.getEmaitzaIds().contains(l.getEmaitza().getId()));
-        a.getPisuak().keySet().removeIf(ie -> !f.getEmaitzaIds().contains(ie.getId()));
+        if (g.getZikloa() != null) {
+            a.getKinielaLoturak().removeIf(l -> !f.getEmaitzaIds().contains(l.getEmaitza().getId()));
+            a.getPisuak().keySet().removeIf(ie -> !f.getEmaitzaIds().contains(ie.getId()));
+        }
         a.getIkaskuntzaEmaitzak().clear(); a.getIkaskuntzaEmaitzak().addAll(selected);
         if (id == null) gm.getLorpenAdierazleak().add(a);
         adierazleak.save(a);

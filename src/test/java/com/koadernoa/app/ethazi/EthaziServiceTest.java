@@ -65,6 +65,32 @@ class EthaziServiceTest {
         f.getMailak().forEach(m -> m.setDeskribapena("Mailaren deskribapena"));
         return service.gordeGaitasuna(null, f);
     }
+    @Test void transversalCompetenciesAreSchoolWideAndOwnIndependentRubrics() throws Exception {
+        var first = new GaitasunaForm(); first.setMota(GaitasunMota.ZEHARKAKOA);
+        first.setKodea("GP"); first.setIzena("Gaitasun pertsonalak"); first.setDeskribapena("Pertsonen arteko harremanak eraginkortasunez kudeatzen ditu");
+        Long firstId = service.gordeGaitasuna(null, first);
+        var second = new GaitasunaForm(); second.setMota(GaitasunMota.ZEHARKAKOA);
+        second.setKodea("GK"); second.setIzena("Gaitasun komunikatiboak"); second.setDeskribapena("Komunikazio eraginkorra erabiltzen du");
+        Long secondId = service.gordeGaitasuna(null, second);
+
+        em.flush(); em.clear();
+        var g1 = service.gaitasuna(firstId); var g2 = service.gaitasuna(secondId);
+        assertThat(g1.getZikloa()).isNull();
+        assertThat(g1.getEredua()).isNotNull().isNotSameAs(g2.getEredua());
+        assertThat(g1.getEredua().getMailak()).hasSize(4);
+        assertThat(service.zeharkakoErrubrikak()).hasSize(2)
+                .allSatisfy(r -> assertThat(r.lerroak()).hasSize(1));
+        assertThat(service.ereduak()).noneMatch(e -> e.getZikloa() == null);
+
+        var auth = new UsernamePasswordAuthenticationToken("manager", "", AuthorityUtils.createAuthorityList("ROLE_KUDEATZAILEA"));
+        SecurityContextHolder.getContext().setAuthentication(auth);
+        try {
+            String html = mvc().perform(get("/ethazi/gaitasunak/zeharkakoak").principal(auth))
+                    .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+            assertThat(html).contains("Gaitasun pertsonalak", "Gaitasun komunikatiboak", "Errubrika editatu")
+                    .doesNotContain("Gaitasun mota");
+        } finally { SecurityContextHolder.clearContext(); }
+    }
     Moduloa module(Zikloa z, String code) {
         var level = new Maila(); level.setKodea(code); em.persist(level);
         var group = new Taldea(); group.setZikloa(z); group.setIzena("1 " + code); em.persist(group);

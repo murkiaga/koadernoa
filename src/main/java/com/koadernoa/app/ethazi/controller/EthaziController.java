@@ -42,16 +42,22 @@ public class EthaziController {
             com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza.INGELERA));
     }
     @GetMapping({"", "/"})
-    public String index() { return "redirect:/ethazi/gaitasunak"; }
+    public String index() { return "redirect:/ethazi/gaitasunak/teknikoak"; }
 
-    @GetMapping("/gaitasunak")
+    @GetMapping({"/gaitasunak", "/gaitasunak/teknikoak"})
     public String gaitasunak(@RequestParam(required = false) Long zikloaId,
             @RequestParam(defaultValue = "TEKNIKOA") GaitasunMota mota, Model model) {
+        mota = GaitasunMota.TEKNIKOA;
         model.addAttribute("zikloaId", zikloaId);
         model.addAttribute("mota", mota);
         model.addAttribute("errubrika", service.errubrika(zikloaId, mota));
         model.addAttribute("curriculum", service.curriculum(zikloaId));
         return "Ethazi/gaitasunak/index";
+    }
+    @GetMapping("/gaitasunak/zeharkakoak")
+    public String zeharkakoGaitasunak(Model model) {
+        model.addAttribute("errubrikak", service.zeharkakoErrubrikak());
+        return "Ethazi/gaitasunak/zeharkakoak";
     }
     @GetMapping({"/kinielak", "/kinielak/"})
     public String kinielakHelbideZaharra(@RequestParam(required = false) Long zikloaId) {
@@ -59,7 +65,11 @@ public class EthaziController {
     }
 
     private String errubrikaHelbidea(Long zikloaId, GaitasunMota mota, Hizkuntza h) {
-        return "/gaitasunak?zikloaId=" + zikloaId + "&mota=" + mota + (h == Hizkuntza.EUSKARA ? "" : "&hizkuntza=" + h);
+        if (mota == GaitasunMota.ZEHARKAKOA) return "/gaitasunak/zeharkakoak" + (h == Hizkuntza.EUSKARA ? "" : "?hizkuntza=" + h);
+        return "/gaitasunak?zikloaId=" + zikloaId + "&mota=TEKNIKOA" + (h == Hizkuntza.EUSKARA ? "" : "&hizkuntza=" + h);
+    }
+    private String errubrikaHelbidea(com.koadernoa.app.ethazi.entitateak.gaitasunak.Gaitasuna g, Hizkuntza h) {
+        return errubrikaHelbidea(g.getZikloa() == null ? null : g.getZikloa().getId(), g.getMota(), h);
     }
 
     @PostMapping("/errubrika/mailak/berria")
@@ -108,13 +118,14 @@ public class EthaziController {
         try {
             balidatu(binding); service.gordeErrubrikaAdierazlea(id, mailaId, adierazleaId, form);
             flash.addFlashAttribute("success", "Lorpen-adierazlea gorde da.");
-            return "redirect:/ethazi" + errubrikaHelbidea(g.getZikloa().getId(), g.getMota(), hizkuntza) + "#gelaxka-" + id + "-" + mailaId;
+            return "redirect:/ethazi" + errubrikaHelbidea(g, hizkuntza) + "#gelaxka-" + id + "-" + mailaId;
         } catch (IllegalArgumentException | DataIntegrityViolationException ex) {
             model.addAttribute("error", mezua(ex));
             model.addAttribute("failedForm", form);
             model.addAttribute("failedGaitasunaId", id);
             model.addAttribute("failedMailaId", mailaId);
             model.addAttribute("failedAdierazleaId", adierazleaId);
+            if (g.getMota() == GaitasunMota.ZEHARKAKOA) return zeharkakoGaitasunak(model);
             return gaitasunak(g.getZikloa().getId(), g.getMota(), model);
         }
     }
@@ -124,7 +135,7 @@ public class EthaziController {
             @PathVariable Long adierazleaId, RedirectAttributes flash, @RequestParam(defaultValue="EUSKARA") Hizkuntza hizkuntza) {
         var g = service.gaitasuna(id);
         return egin(() -> service.ezabatuErrubrikaAdierazlea(id, mailaId, adierazleaId), "Lorpen-adierazlea ezabatu da.",
-                errubrikaHelbidea(g.getZikloa().getId(), g.getMota(), hizkuntza) + "#gelaxka-" + id + "-" + mailaId, flash);
+                errubrikaHelbidea(g, hizkuntza) + "#gelaxka-" + id + "-" + mailaId, flash);
     }
 
     @PostMapping("/errubrika/gaitasunak/{id}/mailak/{mailaId}/adierazleak/berrordenatu")
@@ -144,6 +155,10 @@ public class EthaziController {
             @RequestParam(defaultValue = "TEKNIKOA") GaitasunMota mota, Model model) {
         return gaitasunForm(null, service.gaitasunaForm(null, zikloaId, mota), model);
     }
+    @GetMapping("/gaitasunak/zeharkakoak/berria")
+    public String zeharkakoGaitasunBerria(Model model) {
+        return gaitasunForm(null, service.gaitasunaForm(null, null, GaitasunMota.ZEHARKAKOA), model);
+    }
     @GetMapping("/gaitasunak/{id}/editatu")
     public String gaitasunEditatu(@PathVariable Long id, Model model) {
         return gaitasunForm(id, service.gaitasunaForm(id, null, null), model);
@@ -151,10 +166,12 @@ public class EthaziController {
     private String gaitasunForm(Long id, GaitasunaForm form, Model model) {
         model.addAttribute("id", id);
         model.addAttribute("form", form);
-        model.addAttribute("eredua", service.eredua(form.getZikloaId(), form.getMota()));
-        model.addAttribute("gaitasuna", id == null ? null : service.gaitasuna(id));
+        var gaitasuna = id == null ? null : service.gaitasuna(id);
+        model.addAttribute("eredua", gaitasuna != null && gaitasuna.getEredua() != null
+                ? gaitasuna.getEredua() : service.eredua(form.getZikloaId(), form.getMota()));
+        model.addAttribute("gaitasuna", gaitasuna);
         model.addAttribute("curriculum", service.curriculum(form.getZikloaId()));
-        model.addAttribute("mailaIzenak", service.mailaIzenak(form.getZikloaId(), form.getMota()));
+        model.addAttribute("mailaIzenak", gaitasuna == null ? service.mailaIzenak(form.getZikloaId(), form.getMota()) : service.mailaIzenak(gaitasuna));
         return "Ethazi/gaitasunak/form";
     }
     @PostMapping({"/gaitasunak/berria", "/gaitasunak/{id}/editatu"})
@@ -172,7 +189,9 @@ public class EthaziController {
     }
     @PostMapping("/gaitasunak/{id}/ezabatu")
     public String gaitasunEzabatu(@PathVariable Long id, RedirectAttributes flash) {
-        return egin(() -> service.ezabatuGaitasuna(id), "Gaitasuna ezabatu da.", "/gaitasunak", flash);
+        var g = service.gaitasuna(id);
+        return egin(() -> service.ezabatuGaitasuna(id), "Gaitasuna ezabatu da.",
+                g.getMota() == GaitasunMota.ZEHARKAKOA ? "/gaitasunak/zeharkakoak" : "/gaitasunak/teknikoak", flash);
     }
     @PostMapping({"/gaitasunak/{id}/mailak/{mailaId}/adierazleak/berria",
             "/gaitasunak/{id}/mailak/{mailaId}/adierazleak/{adierazleaId}/editatu"})

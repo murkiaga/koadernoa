@@ -15,5 +15,6 @@ public interface GaitasunaRepository extends JpaRepository<Gaitasuna, Long> {
     Optional<Gaitasuna> findLockedById(Long id);
 
     List<Gaitasuna> findByZikloaIdAndMotaOrderByKodeaAsc(Long zikloaId, GaitasunMota mota);
+    List<Gaitasuna> findByZikloaIsNullAndMotaOrderByKodeaAsc(GaitasunMota mota);
     boolean existsByZikloaIdAndMota(Long zikloaId, GaitasunMota mota);
 }

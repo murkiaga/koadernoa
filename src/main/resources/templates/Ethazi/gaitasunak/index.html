@@ -3,27 +3,23 @@
 <head th:replace="~{Ethazi/fragments/common :: head('Gaitasunen errubrika')}"></head>
 <body class="ethazi-body">
 <div th:replace="~{kudeatzaile/fragments/navbar :: kudeatzaile-navbar}"></div>
-<nav th:replace="~{Ethazi/fragments/navbar :: navbar('gaitasunak')}"></nav>
+<nav th:replace="~{Ethazi/fragments/navbar :: navbar('gaitasun-teknikoak')}"></nav>
 <main class="page ethazi-page ethazi-rubric-page">
     <div class="rubric-toolbar">
         <div th:replace="~{Ethazi/fragments/common :: messages}"></div>
         <header class="page-header">
-            <div><h1>Gaitasunen errubrika</h1><p class="muted">Klikatu gaitasunaren kodean xehetasunak tolestu edo zabaltzeko.</p></div>
+            <div><h1>Gaitasun teknikoak</h1><p class="muted">Ziklo bakoitzak bere gaitasun teknikoen errubrika du.</p></div>
         </header>
-        <form class="ethazi-filters ethazi-card" method="get" th:action="@{/ethazi/gaitasunak}">
+        <form class="ethazi-filters ethazi-card" method="get" th:action="@{/ethazi/gaitasunak/teknikoak}">
             <div class="field"><label for="zikloaId">Zikloa</label>
                 <select id="zikloaId" name="zikloaId"><option value="">— Aukeratu zikloa —</option>
                     <option th:each="z : ${zikloak}" th:value="${z.id}" th:text="${z.izena}" th:selected="${z.id == zikloaId}"></option>
                 </select>
             </div>
-            <div class="field"><label for="mota">Gaitasun mota</label>
-                <select id="mota" name="mota"><option th:each="m : ${motak}" th:value="${m}"
-                    th:text="${m.name() == 'TEKNIKOA' ? 'Teknikoa' : 'Zeharkakoa'}" th:selected="${m == mota}"></option></select>
-            </div>
             <div class="field"><label for="hizkuntza">Hizkuntza</label><select name="hizkuntza" id="hizkuntza"><option th:each="h : ${itzulpenHizkuntzak}" th:value="${h}" th:text="${h.etiketa}" th:selected="${h == hizkuntza}"></option></select></div>
             <button class="btn btn-primary">Erakutsi</button>
         </form>
-        <p class="empty-state" th:if="${zikloaId == null}">Aukeratu zikloa eta gaitasun mota errubrika ikusteko.</p>
+        <p class="empty-state" th:if="${zikloaId == null}">Aukeratu zikloa gaitasun teknikoen errubrika ikusteko.</p>
     </div>
     <section class="rubric-section" data-editable="false" th:attr="data-edit-required=${failedForm != null or failedMaila != null or addedMailaId != null},data-rubric-key=${zikloaId + '-' + mota}" th:if="${zikloaId != null}" th:with="mailak=${errubrika.eredua != null ? errubrika.eredua.mailak : {}}">
         <header class="page-header rubric-toolbar">

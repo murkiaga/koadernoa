@@ -1,7 +1,13 @@
 <!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" lang="eu"><body>
 <nav th:fragment="navbar(active)" class="ethazi-nav" aria-label="ETHAZI nabigazioa">
 <strong>ETHAZI</strong>
-<a th:href="@{/ethazi/gaitasunak}" th:classappend="${active == 'gaitasunak'} ? 'active'" th:attr="aria-current=${active == 'gaitasunak' ? 'page' : null}">Gaitasunak</a>
+<details class="ethazi-dropdown">
+<summary th:classappend="${active == 'gaitasun-teknikoak' or active == 'gaitasun-zeharkakoak'} ? 'active'">Gaitasunak</summary>
+<div class="ethazi-dropdown-menu">
+<a th:href="@{/ethazi/gaitasunak/teknikoak}" th:classappend="${active == 'gaitasun-teknikoak'} ? 'active'" th:attr="aria-current=${active == 'gaitasun-teknikoak' ? 'page' : null}">Teknikoak</a>
+<a th:href="@{/ethazi/gaitasunak/zeharkakoak}" th:classappend="${active == 'gaitasun-zeharkakoak'} ? 'active'" th:attr="aria-current=${active == 'gaitasun-zeharkakoak' ? 'page' : null}">Zeharkakoak</a>
+</div>
+</details>
 <a th:href="@{/ethazi/ikaskuntza-emaitzak}" th:classappend="${active == 'ikaskuntza-emaitzak'} ? 'active'" th:attr="aria-current=${active == 'ikaskuntza-emaitzak' ? 'page' : null}">Ikaskuntza Emaitzak</a>
 <a th:href="@{/ethazi/erronkak}" th:classappend="${active == 'erronkak'} ? 'active'">Erronkak</a>
 <a th:href="@{/ethazi/kiniela}" th:classappend="${active == 'kinielak'} ? 'active'">Kinielak</a>

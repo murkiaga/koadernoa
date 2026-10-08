@@ -43,8 +43,8 @@ public class MailakatzeEredua {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "zikloa_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "zikloa_id")
     private Zikloa zikloa;
 
     @Enumerated(EnumType.STRING)

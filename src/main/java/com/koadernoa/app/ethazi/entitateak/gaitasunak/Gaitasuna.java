@@ -17,6 +17,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -40,9 +41,18 @@ public class Gaitasuna {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "zikloa_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "zikloa_id")
     private Zikloa zikloa;
+
+    /**
+     * Zeharkako gaitasun bakoitzak bere errubrika du eta ez dago ziklo bati
+     * lotuta. Gaitasun teknikoek, bateragarritasunagatik, ziklo/mota eredua
+     * erabiltzen jarraitzen dute eta eremu hau hutsik dute.
+     */
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "eredua_id", unique = true)
+    private MailakatzeEredua eredua;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)

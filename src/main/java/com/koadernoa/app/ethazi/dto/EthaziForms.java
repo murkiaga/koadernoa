@@ -102,6 +102,7 @@ public final class EthaziForms {
         private Long zikloaId;
         private GaitasunMota mota = GaitasunMota.TEKNIKOA;
         private String kodea;
+        private String izena;
         private String deskribapena;
         private String deskribapenaEs;
         private String deskribapenaEn;

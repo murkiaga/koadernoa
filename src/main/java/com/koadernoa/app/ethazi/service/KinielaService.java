@@ -648,7 +648,8 @@ public class KinielaService {
 
     private LorpenAdierazlea ziklokoAdierazlea(Long zikloaId, Long id) {
         var a = adierazleak.findById(id).orElseThrow(() -> new IllegalArgumentException("Adierazlea ez da aurkitu."));
-        require(Objects.equals(a.getGaitasunMaila().getGaitasuna().getZikloa().getId(), zikloaId),
+        var gaitasuna = a.getGaitasunMaila().getGaitasuna();
+        require(gaitasuna.getZikloa() == null || Objects.equals(gaitasuna.getZikloa().getId(), zikloaId),
             "Adierazlea ez da ziklo honetakoa.");
         return a;
     }
@@ -699,7 +700,7 @@ public class KinielaService {
     public record Modulua(Long id, String izena, String taldea, String hizkuntza, Hizkuntza hizkuntzaKodea,
             List<Emaitza> emaitzak, BigDecimal guztira, List<ErronkaZutabea> erronkak) {}
     public List<LorpenAdierazlea> adierazleak(Long zikloaId) {
-        return Arrays.stream(GaitasunMota.values()).flatMap(mota -> ethazi.errubrika(zikloaId, mota).lerroak().stream())
+        return ethazi.errubrikak(zikloaId).stream().flatMap(r -> r.lerroak().stream())
             .flatMap(r -> r.gelaxkak().stream()).filter(Objects::nonNull).flatMap(gm -> gm.getLorpenAdierazleak().stream()).toList();
     }
     public List<Modulua> kiniela(Long zikloaId) {
@@ -747,8 +748,9 @@ public class KinielaService {
     @Transactional public void gordePisua(Long zikloaId, Long ieId, Long adierazleaId, BigDecimal pisua) {
         var ie = ethazi.emaitza(ieId);
         var a = adierazleak.findById(adierazleaId).orElseThrow(() -> new IllegalArgumentException("Adierazlea ez da aurkitu."));
+        var gaitasuna = a.getGaitasunMaila().getGaitasuna();
         require(ethazi.ziklokoa(ie, zikloaId)
-            && a.getGaitasunMaila().getGaitasuna().getZikloa().getId().equals(zikloaId) && lotuta(a, ieId), "Lotura ez da baliozkoa.");
+            && (gaitasuna.getZikloa() == null || gaitasuna.getZikloa().getId().equals(zikloaId)) && lotuta(a, ieId), "Lotura ez da baliozkoa.");
         require(pisua != null && pisua.signum() >= 0 && pisua.compareTo(new BigDecimal("100")) <= 0 && pisua.stripTrailingZeros().scale() <= 2,
             "Pisua 0 eta 100 artekoa izan behar da, gehienez bi hamartarrekin.");
         a.getPisuak().put(ie, pisua);

@@ -1,7 +1,6 @@
 package com.koadernoa.app.ethazi.controller;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 
@@ -12,7 +11,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.koadernoa.app.ethazi.entitateak.gaitasunak.GaitasunMota;
 import com.koadernoa.app.ethazi.service.EthaziService;
 import com.koadernoa.app.ethazi.service.KinielaService;
 import com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza;
@@ -39,8 +37,7 @@ public class KinielaController {
         model.addAttribute("zikloaId", zikloaId);
         model.addAttribute("hizkuntza", hizkuntza);
         model.addAttribute("moduluak", service.kiniela(zikloaId, hizkuntza));
-        model.addAttribute("errubrikak", Arrays.stream(GaitasunMota.values())
-                .map(m -> ethazi.errubrika(zikloaId, m)).toList());
+        model.addAttribute("errubrikak", ethazi.errubrikak(zikloaId));
         return "Ethazi/kinielak/index";
     }
 
