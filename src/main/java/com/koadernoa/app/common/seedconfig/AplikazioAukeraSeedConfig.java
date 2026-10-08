@@ -21,6 +21,7 @@ public class AplikazioAukeraSeedConfig {
             ensure(repo, AplikazioAukeraService.KOADERNO_BESTE_MINTEGIA_BAIMENDU, "false");
             ensure(repo, AplikazioAukeraService.PLANGINTZA_KONTROL_AUTOMATIKOA, "false");
             ensure(repo, AplikazioAukeraService.PLANGINTZA_KONTROL_LANEGUNAK, "10");
+            ensure(repo, AplikazioAukeraService.JOKABIDE_DESEGOKIEN_ARDURADUNA_ID, "");
         };
     }
 

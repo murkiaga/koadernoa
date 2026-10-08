@@ -33,6 +33,8 @@ import com.koadernoa.app.objektuak.zikloak.repository.FamiliaRepository;
 import com.koadernoa.app.objektuak.konfigurazioa.service.AplikazioAukeraService;
 import com.koadernoa.app.objektuak.jokabidea.repository.PortaeraArrazoiaRepository;
 import com.koadernoa.app.objektuak.jokabidea.repository.NeurriZuzentzaileaRepository;
+import com.koadernoa.app.objektuak.irakasleak.entitateak.Rola;
+import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
@@ -57,6 +59,7 @@ public class KonfigurazioaController {
     private final MintegiModuluBaimenaRepository mintegiModuluBaimenaRepository;
     private final PortaeraArrazoiaRepository portaeraArrazoiaRepository;
     private final NeurriZuzentzaileaRepository neurriZuzentzaileaRepository;
+    private final IrakasleaRepository irakasleaRepository;
 
     // ---- GET: orria ----
     @GetMapping
@@ -109,6 +112,10 @@ public class KonfigurazioaController {
         model.addAttribute("sortuMintegiModuluBaimenaForm", new SortuMintegiModuluBaimenaForm());
         model.addAttribute("portaeraArrazoiak", portaeraArrazoiaRepository.findAllByOrderByOrdenaAscIdAsc());
         model.addAttribute("neurriZuzentzaileak", neurriZuzentzaileaRepository.findAllByOrderByOrdenaAscIdAsc());
+        model.addAttribute("jokabideArduradunAukerak",
+                irakasleaRepository.findAllByRolaOrderByIzenaAsc(Rola.KUDEATZAILEA));
+        model.addAttribute("jokabideArduradunaId",
+                aplikazioAukeraService.getJokabideDesegokienArduradunaId());
 
         KoadernoKonfigForm koadernoKonfigForm = new KoadernoKonfigForm();
         koadernoKonfigForm.setBikoiztuakBaimendu(aplikazioAukeraService.getBool(AplikazioAukeraService.KOADERNO_BIKOIZTUAK_BAIMENDU, true));

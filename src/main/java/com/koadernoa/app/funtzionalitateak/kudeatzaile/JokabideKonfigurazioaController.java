@@ -7,6 +7,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.koadernoa.app.objektuak.jokabidea.entitateak.*;
 import com.koadernoa.app.objektuak.jokabidea.repository.*;
+import com.koadernoa.app.objektuak.irakasleak.entitateak.Rola;
+import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
+import com.koadernoa.app.objektuak.konfigurazioa.service.AplikazioAukeraService;
 import lombok.RequiredArgsConstructor;
 
 @Controller
@@ -15,6 +18,25 @@ import lombok.RequiredArgsConstructor;
 public class JokabideKonfigurazioaController {
     private final PortaeraArrazoiaRepository arrazoiak;
     private final NeurriZuzentzaileaRepository neurriak;
+    private final IrakasleaRepository irakasleak;
+    private final AplikazioAukeraService aplikazioAukeraService;
+
+    @PostMapping("/arduraduna/gorde")
+    @Transactional
+    public String gordeArduraduna(
+            @RequestParam(required = false) Long arduradunaId,
+            RedirectAttributes ra) {
+        if (arduradunaId != null) {
+            var arduraduna = irakasleak.findById(arduradunaId).orElse(null);
+            if (arduraduna == null || arduraduna.getRola() != Rola.KUDEATZAILEA) {
+                ra.addFlashAttribute("error", "Aukeratutako irakaslea ez da kudeatzailea.");
+                return redirect();
+            }
+        }
+        aplikazioAukeraService.setJokabideDesegokienArduradunaId(arduradunaId);
+        ra.addFlashAttribute("success", "Jokabide desegokien arduraduna gorde da.");
+        return redirect();
+    }
 
     @PostMapping("/portaera-arrazoiak/sortu") @Transactional
     public String sortuArrazoia(@RequestParam String kodea,@RequestParam String testua,@RequestParam(defaultValue="0") int ordena,@RequestParam(defaultValue="false") boolean defektuzkoa,RedirectAttributes ra){

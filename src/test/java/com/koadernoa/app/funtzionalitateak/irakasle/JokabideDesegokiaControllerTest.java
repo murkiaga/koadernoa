@@ -22,6 +22,7 @@ import com.koadernoa.app.objektuak.jokabidea.repository.NeurriZuzentzaileaReposi
 import com.koadernoa.app.objektuak.jokabidea.repository.PortaeraArrazoiaRepository;
 import com.koadernoa.app.objektuak.jokabidea.service.IkasleEgunJardueraService;
 import com.koadernoa.app.objektuak.jokabidea.service.JokabideDesegokiaPdfService;
+import com.koadernoa.app.objektuak.jokabidea.service.JokabideDesegokiaService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.modulua.entitateak.Ikaslea;
 
@@ -32,7 +33,7 @@ class JokabideDesegokiaControllerTest {
     private final Authentication auth = mock(Authentication.class);
     private final JokabideDesegokiaController controller = new JokabideDesegokiaController(
         mock(PortaeraArrazoiaRepository.class), mock(NeurriZuzentzaileaRepository.class),
-        repository, testuinguruService, pdfService);
+        repository, testuinguruService, pdfService, mock(JokabideDesegokiaService.class));
 
     @BeforeEach
     void hasiTransakzioSinkronizazioa() {

@@ -28,6 +28,7 @@ public class JokabideDesegokiaController {
     private final JokabideDesegokiaRepository repository;
     private final IkasleEgunJardueraService testuinguruService;
     private final JokabideDesegokiaPdfService pdfService;
+    private final JokabideDesegokiaService jokabideDesegokiaService;
 
     @GetMapping("/form-data")
     public ResponseEntity<?> formData() {
@@ -78,7 +79,7 @@ public class JokabideDesegokiaController {
             var neurria=neurriRepository.findById(neurriZuzentzaileaId).filter(n->n.isAktibo()).orElseThrow(()->new IllegalArgumentException("Neurri zuzentzailea ez da baliozkoa."));
             JokabideDesegokia j=new JokabideDesegokia(); j.setIkaslea(t.matrikula().getIkaslea()); j.setKoadernoa(t.matrikula().getKoadernoa()); j.setIrakaslea(t.irakaslea());
             j.setModuloa(t.matrikula().getKoadernoa().getModuloa()); j.setData(data); j.setPortaeraArrazoia(arrazoia); j.setNeurriZuzentzailea(neurria); j.setDeskribapenZehatza(deskribapenZehatza.trim());
-            pdf=pdfService.sortu(j); j.setPdfPath(pdf.path()); j.setPdfFilename(pdf.filename()); repository.saveAndFlush(j);
+            pdf=pdfService.sortu(j); j.setPdfPath(pdf.path()); j.setPdfFilename(pdf.filename()); jokabideDesegokiaService.sortu(j);
             return ResponseEntity.ok(Map.of("ok",true,"id",j.getId(),"pdfUrl","/irakasle/jokabide-desegokia/"+j.getId()+"/pdf","mezua","Jokabide desegokiaren ohartarazpena sortu da."));
         } catch (SecurityException e) { if(pdf!=null)pdfService.ezabatuIsilean(pdf.path()); return errorea(HttpStatus.FORBIDDEN,e); }
           catch (IllegalArgumentException e) { if(pdf!=null)pdfService.ezabatuIsilean(pdf.path()); return errorea(HttpStatus.BAD_REQUEST,e); }

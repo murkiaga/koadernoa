@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
+import com.koadernoa.app.objektuak.irakasleak.entitateak.Rola;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Familia;
 
 public interface IrakasleaRepository extends JpaRepository<Irakaslea, Long> {
@@ -34,4 +35,6 @@ public interface IrakasleaRepository extends JpaRepository<Irakaslea, Long> {
     );
     
     List<Irakaslea> findAllByMintegia_IdOrderByIzenaAsc(Long familiaId);
+
+    List<Irakaslea> findAllByRolaOrderByIzenaAsc(Rola rola);
 }

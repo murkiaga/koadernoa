@@ -610,6 +610,19 @@
     <h2>Jokabide desegokia</h2>
     <p class="muted">Ohartarazpenetan erabiliko diren portaera arrazoiak eta neurri zuzentzaileak kudeatu.</p>
 
+    <h3>Jokabide desegokien arduraduna</h3>
+    <form th:action="@{/kudeatzaile/konfigurazioa/jokabide-desegokia/arduraduna/gorde}" method="post">
+      <label for="jokabideArduradunaId">Jokabide desegokien arduraduna</label>
+      <select id="jokabideArduradunaId" name="arduradunaId">
+        <option value="">Arduradunik gabe</option>
+        <option th:each="ir : ${jokabideArduradunAukerak}"
+                th:value="${ir.id}"
+                th:text="${ir.izena}"
+                th:selected="${jokabideArduradunaId != null and jokabideArduradunaId == ir.id}"></option>
+      </select>
+      <button type="submit">Gorde arduraduna</button>
+    </form>
+
     <h3>Portaera arrazoiak</h3>
     <div class="table-wrap">
       <table class="jokabide-konfig-taula">

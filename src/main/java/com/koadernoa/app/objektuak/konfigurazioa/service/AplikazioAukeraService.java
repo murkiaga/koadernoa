@@ -26,6 +26,7 @@ public class AplikazioAukeraService {
     public static final String KOADERNO_BIKOIZTUAK_BAIMENDU = "koadernoak.bikoiztuak.baimendu";
     public static final String PLANGINTZA_KONTROL_AUTOMATIKOA = "PLANGINTZA_KONTROL_AUTOMATIKOA";
     public static final String PLANGINTZA_KONTROL_LANEGUNAK = "PLANGINTZA_KONTROL_LANEGUNAK";
+    public static final String JOKABIDE_DESEGOKIEN_ARDURADUNA_ID = "jokabide.desegokiak.arduraduna.id";
     public static final int PLANGINTZA_KONTROL_LANEGUNAK_DEFEKTUZ = 10;
     public static final int PLANGINTZA_KONTROL_LANEGUNAK_GEHIENEZ = 365;
     
@@ -67,6 +68,20 @@ public class AplikazioAukeraService {
     
     public void setBool(String giltza, boolean balioa) {
         set(giltza, Boolean.toString(balioa));
+    }
+
+    public Long getJokabideDesegokienArduradunaId() {
+        String balioa = get(JOKABIDE_DESEGOKIEN_ARDURADUNA_ID);
+        if (balioa == null || balioa.isBlank()) return null;
+        try {
+            return Long.valueOf(balioa);
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
+
+    public void setJokabideDesegokienArduradunaId(Long irakasleaId) {
+        set(JOKABIDE_DESEGOKIEN_ARDURADUNA_ID, irakasleaId == null ? "" : irakasleaId.toString());
     }
 
     public boolean isPlangintzaKontrolAutomatikoaAktibo() {

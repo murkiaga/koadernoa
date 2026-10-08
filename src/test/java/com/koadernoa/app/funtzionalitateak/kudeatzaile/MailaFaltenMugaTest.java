@@ -23,6 +23,7 @@ import com.koadernoa.app.objektuak.zikloak.repository.FamiliaRepository;
 import com.koadernoa.app.objektuak.modulua.repository.MintegiModuluBaimenaRepository;
 import com.koadernoa.app.objektuak.konfigurazioa.service.AplikazioAukeraService;
 import com.koadernoa.app.objektuak.jokabidea.repository.*;
+import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
 
 class MailaFaltenMugaTest {
     private final MailaRepository mailak = mock(MailaRepository.class);
@@ -31,7 +32,8 @@ class MailaFaltenMugaTest {
             mock(EbaluazioEgoeraRepository.class), mock(EbaluazioNotaRepository.class),
             mock(EzadostasunKonfigRepository.class), mock(PendienteEbaluazioMomentuKonfigRepository.class),
             mock(AplikazioAukeraService.class), mock(MintegiModuluBaimenaRepository.class),
-            mock(PortaeraArrazoiaRepository.class), mock(NeurriZuzentzaileaRepository.class));
+            mock(PortaeraArrazoiaRepository.class), mock(NeurriZuzentzaileaRepository.class),
+            mock(IrakasleaRepository.class));
 
     @Test
     void mailaBerriakHogeiLehenetsitaDu() throws Exception {
