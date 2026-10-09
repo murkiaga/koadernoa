@@ -10,7 +10,10 @@
 <body>
   <div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
   <main class="page">
-	  <h1>Irakasle zerrenda</h1>
+	  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+	    <h1>Irakasle zerrenda</h1>
+	    <a th:if="${ldapEnabled}" class="btn btn-primary" th:href="@{/kudeatzaile/irakasleak/ad}">+ Irakaslea gehitu</a>
+	  </div>
 	  <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
 	  <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
 	  <form method="get" th:action="@{/kudeatzaile/irakasleak}" style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:16px">

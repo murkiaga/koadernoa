@@ -13,6 +13,7 @@ public class LdapSettings {
     private String userDnPattern;
     private String userSearchBase;
     private String userSearchFilter;
+    private boolean userSearchSubtree = true;
     private String groupSearchBase = "";
     private String groupSearchFilter;
 }

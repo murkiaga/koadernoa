@@ -24,6 +24,7 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -34,6 +35,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(name = "uk_irakaslea_emaila", columnNames = "emaila"))
 public class Irakaslea {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

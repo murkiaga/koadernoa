@@ -9,8 +9,7 @@ import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
 
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
-import com.koadernoa.app.objektuak.irakasleak.entitateak.Rola;
-import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
+import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaProvisioningService;
 
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 
@@ -25,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class CustomOAuth2UserService implements OAuth2UserService<OidcUserRequest, OidcUser> {
 
-    private final IrakasleaRepository irakasleaRepository;
+    private final IrakasleaProvisioningService provisioningService;
     private final HttpSession httpSession;
     
     @PostConstruct
@@ -48,15 +47,8 @@ public class CustomOAuth2UserService implements OAuth2UserService<OidcUserReques
         }
 
         // Irakaslea bilatu edo sortu
-        Irakaslea irakaslea = irakasleaRepository.findByEmaila(email)
-            .orElseGet(() -> {
-                Irakaslea berria = new Irakaslea();
-                berria.setEmaila(email);
-                berria.setIzena(oidcUser.getAttribute("name"));
-                berria.setKontu_mota("Google erabiltzailea");
-                berria.setRola(Rola.IRAKASLEA);
-                return irakasleaRepository.save(berria);
-            });
+        Irakaslea irakaslea = provisioningService.bilatuEdoSortu(
+                email, oidcUser.getAttribute("name"), "Google erabiltzailea");
 
         //Gorde irakasleaId sessionean mintegia falta bada
         if (irakaslea.getMintegia() == null) {

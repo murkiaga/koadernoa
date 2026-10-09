@@ -8,9 +8,10 @@ import org.springframework.security.ldap.authentication.BindAuthenticator;
 import org.springframework.security.ldap.authentication.LdapAuthenticationProvider;
 import org.springframework.security.ldap.search.FilterBasedLdapUserSearch;
 import org.springframework.ldap.core.support.LdapContextSource;
+import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.util.StringUtils;
 
-import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
+import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaProvisioningService;
 
 @Configuration
 @EnableConfigurationProperties(LdapSettings.class)
@@ -27,10 +28,15 @@ public class LdapConfig {
     }
 
     @Bean
+    public LdapTemplate ldapTemplate(LdapContextSource contextSource) {
+        return new LdapTemplate(contextSource);
+    }
+
+    @Bean
     public LdapAuthenticationProvider ldapAuthenticationProvider(LdapContextSource contextSource,
                                                                  LdapSettings settings,
                                                                  AuthProviderStatusService statusService,
-                                                                 IrakasleaRepository irakasleaRepository) {
+                                                                 IrakasleaProvisioningService provisioningService) {
         BindAuthenticator authenticator = new BindAuthenticator(contextSource);
         if (StringUtils.hasText(settings.getUserDnPattern())) {
             authenticator.setUserDnPatterns(new String[] { settings.getUserDnPattern() });
@@ -41,12 +47,12 @@ public class LdapConfig {
                     settings.getUserSearchFilter(),
                     contextSource
             );
-            userSearch.setSearchSubtree(true);
+            userSearch.setSearchSubtree(settings.isUserSearchSubtree());
             authenticator.setUserSearch(userSearch);
         }
 
         LdapIrakasleaAuthoritiesPopulator authoritiesPopulator =
-                new LdapIrakasleaAuthoritiesPopulator(irakasleaRepository);
+                new LdapIrakasleaAuthoritiesPopulator(provisioningService);
 
         LdapAuthenticationProvider provider =
                 new StatusAwareLdapAuthenticationProvider(authenticator, authoritiesPopulator, statusService);

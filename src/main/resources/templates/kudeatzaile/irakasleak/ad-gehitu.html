@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Irakaslea Active Directorytik gehitu</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" th:href="@{/css/navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
+</head>
+<body>
+  <div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+  <main class="page">
+    <p><a th:href="@{/kudeatzaile/irakasleak}">← Irakasle zerrendara itzuli</a></p>
+    <h1>Irakaslea Active Directorytik gehitu</h1>
+    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+    <form method="post" th:action="@{/kudeatzaile/irakasleak/ad/bilatu}"
+          style="display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-bottom:20px">
+      <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+      <label>Erabiltzailea edo izena<br>
+        <input type="search" name="bilaketa" th:value="${bilaketa}" minlength="2" required
+               placeholder="sAMAccountName, UPN edo izena" autocomplete="off">
+      </label>
+      <button class="btn btn-primary" type="submit">Bilatu Active Directoryn</button>
+    </form>
+
+    <form th:if="${emaitzak != null and !#lists.isEmpty(emaitzak)}" method="post"
+          th:action="@{/kudeatzaile/irakasleak/ad/gehitu}">
+      <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Aukeratu</th><th>Izena</th><th>Abizenak</th><th>Erabiltzailea</th><th>Emaila</th></tr></thead>
+          <tbody>
+            <tr th:each="e : ${emaitzak}">
+              <td><input type="radio" name="identifikatzailea" th:value="${e.identifikatzailea}" required
+                         th:disabled="${e.emaila == null}"></td>
+              <td th:text="${e.izena != null ? e.izena : e.izenOsoa}">Izena</td>
+              <td th:text="${e.abizenak != null ? e.abizenak : '-'}">Abizenak</td>
+              <td th:text="${e.erabiltzaileIzena != null ? e.erabiltzaileIzena : e.userPrincipalName}">Erabiltzailea</td>
+              <td th:text="${e.emaila != null ? e.emaila : 'Ez dago erabilgarri'}">Emaila</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap;margin-top:18px">
+        <label>Mintegia<br>
+          <select name="mintegiaId" required>
+            <option value="">— Aukeratu —</option>
+            <option th:each="fam : ${familiaGuztiak}" th:value="${fam.id}" th:text="${fam.izena}"></option>
+          </select>
+        </label>
+        <button class="btn btn-primary" type="submit">Irakaslea gehitu</button>
+      </div>
+    </form>
+  </main>
+  <script th:src="@{/js/kudeatzaile-nav.js}"></script>
+</body>
+</html>

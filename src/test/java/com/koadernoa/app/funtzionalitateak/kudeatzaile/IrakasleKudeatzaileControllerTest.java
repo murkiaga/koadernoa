@@ -37,6 +37,7 @@ import com.koadernoa.app.objektuak.ordutegiak.service.OrdezkoOrdutegiService;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Taldea;
 import com.koadernoa.app.objektuak.zikloak.repository.FamiliaRepository;
 import com.koadernoa.app.objektuak.zikloak.repository.TaldeaRepository;
+import com.koadernoa.app.security.AuthProviderStatusService;
 
 @ExtendWith(MockitoExtension.class)
 class IrakasleKudeatzaileControllerTest {
@@ -60,7 +61,8 @@ class IrakasleKudeatzaileControllerTest {
         controller = new IrakasleKudeatzaileController(irakasleaRepository,
                 mock(FamiliaRepository.class), mock(IkasturteaService.class),
                 mock(IrakasleOrdutegiaRepository.class), mock(IrakasleOrdutegiLerroaRepository.class),
-                koadernoaRepository, ezabatzeService, egiaztapenService, mock(OrdezkoOrdutegiService.class));
+                koadernoaRepository, ezabatzeService, egiaztapenService, mock(OrdezkoOrdutegiService.class),
+                mock(AuthProviderStatusService.class));
         irakaslea = new Irakaslea();
         irakaslea.setId(42L);
         ra = new RedirectAttributesModelMap();

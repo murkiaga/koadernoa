@@ -42,6 +42,7 @@ import com.koadernoa.app.objektuak.ordutegiak.repository.IrakasleOrdutegiaReposi
 import com.koadernoa.app.objektuak.ordutegiak.service.OrdezkoOrdutegiService;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Familia;
 import com.koadernoa.app.objektuak.zikloak.repository.FamiliaRepository;
+import com.koadernoa.app.security.AuthProviderStatusService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -59,6 +60,7 @@ public class IrakasleKudeatzaileController {
     private final IrakasleaEzabatzeService irakasleaEzabatzeService;
     private final IrakasleaEzabatzeEgiaztapenService irakasleaEzabatzeEgiaztapenService;
     private final OrdezkoOrdutegiService ordezkoOrdutegiService;
+    private final AuthProviderStatusService authProviderStatusService;
 
     private static final List<Astegunak> ASTE_ORDENA = List.of(
             Astegunak.ASTELEHENA, Astegunak.ASTEARTEA, Astegunak.ASTEAZKENA,
@@ -102,6 +104,7 @@ public class IrakasleKudeatzaileController {
 	    model.addAttribute("ordezkoa", ordezkoa);
 	    model.addAttribute("ordenatu", ordenatu);
 	    model.addAttribute("norabidea", norabidea);
+	    model.addAttribute("ldapEnabled", authProviderStatusService.isLdapEnabled());
 	    return "kudeatzaile/irakasleak/index";
 	}
 

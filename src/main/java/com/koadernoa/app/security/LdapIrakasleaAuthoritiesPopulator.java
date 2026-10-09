@@ -9,15 +9,14 @@ import org.springframework.util.StringUtils;
 import org.springframework.ldap.core.DirContextOperations;
 
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
-import com.koadernoa.app.objektuak.irakasleak.entitateak.Rola;
-import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
+import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaProvisioningService;
 
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class LdapIrakasleaAuthoritiesPopulator implements LdapAuthoritiesPopulator {
 
-    private final IrakasleaRepository irakasleaRepository;
+    private final IrakasleaProvisioningService provisioningService;
 
     @Override
     public Collection<? extends GrantedAuthority> getGrantedAuthorities(DirContextOperations userData, String username) {
@@ -26,23 +25,10 @@ public class LdapIrakasleaAuthoritiesPopulator implements LdapAuthoritiesPopulat
             throw new AuthenticationServiceException("LDAP erabiltzaileak ez du email atributurik.");
         }
 
-        Irakaslea irakaslea = irakasleaRepository.findByEmailaIgnoreCase(email)
-                .orElseGet(() -> sortuIrakaslea(userData, email));
-
-        if (irakaslea.getRola() == null) {
-            irakaslea.setRola(Rola.IRAKASLEA);
-            irakasleaRepository.save(irakaslea);
-        }
+        Irakaslea irakaslea = provisioningService.bilatuEdoSortu(
+                email, LdapUserAttributeHelper.resolveDisplayName(userData, email), "LDAP erabiltzailea");
 
         return IrakasleAuthorities.from(irakaslea);
     }
 
-    private Irakaslea sortuIrakaslea(DirContextOperations userData, String email) {
-        Irakaslea berria = new Irakaslea();
-        berria.setEmaila(email);
-        berria.setIzena(LdapUserAttributeHelper.resolveDisplayName(userData, email));
-        berria.setKontu_mota("LDAP erabiltzailea");
-        berria.setRola(Rola.IRAKASLEA);
-        return irakasleaRepository.save(berria);
-    }
 }

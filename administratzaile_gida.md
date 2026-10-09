@@ -83,6 +83,13 @@ Beharrezkoa da gutxienez:
 - base DN-a,
 - eta erabiltzaileen bilaketa konfigurazioa.
 
+Kudeatzaileek irakasleak Active Directorytik lehen login-a baino lehen gehitu ahal izateko,
+`spring.ldap.username` eta `spring.ldap.password` propietateetan bind kontu tekniko bat
+konfiguratu behar da. Kontu horrek `koadernoa.ldap.user-search-base` azpiko erabiltzaileak
+irakurtzeko baimena bakarrik behar du; ez du ADko datuak aldatzeko baimenik behar.
+Bilaketak `sAMAccountName`, `userPrincipalName` eta `displayName` atributuak erabiltzen ditu,
+eta alta egiteko `mail` atributua edo, bestela, `userPrincipalName` behar du.
+
 ### Gomendioak
 - Ez aktibatu autentikazio mota bat aurrez benetan probatu gabe.
 - Ez desaktibatu unean erabiltzaile gehienek erabiltzen duten hornitzailea alternatiba egonkor bat prestatu gabe.
