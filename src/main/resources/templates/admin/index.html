@@ -28,6 +28,14 @@
     <button type="button" class="tab-btn"
             role="tab"
             aria-selected="true"
+            aria-controls="panel-ikastetxea"
+            id="tab-ikastetxea">
+      Ikastetxea
+    </button>
+
+    <button type="button" class="tab-btn"
+            role="tab"
+            aria-selected="false"
             aria-controls="panel-logoa"
             id="tab-logoa">
       Logoa
@@ -71,8 +79,13 @@
   </div>
 
   <!-- LOGOA PANELA -->
-  <section id="panel-logoa" class="tab-panel active" role="tabpanel"
-           aria-labelledby="tab-logoa" tabindex="0">
+  <section id="panel-ikastetxea" class="tab-panel active" role="tabpanel"
+           aria-labelledby="tab-ikastetxea" tabindex="0">
+    <div th:replace="~{admin/fragments/ikastetxea :: ikastetxea-panel}"></div>
+  </section>
+
+  <section id="panel-logoa" class="tab-panel" role="tabpanel"
+           aria-labelledby="tab-logoa" tabindex="0" aria-hidden="true">
     <div th:replace="~{admin/fragments/logo :: logo-panel}"></div>
   </section>
 

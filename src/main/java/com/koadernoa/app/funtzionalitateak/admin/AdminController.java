@@ -65,6 +65,8 @@ public class AdminController {
         String faviconUrl = aukService.get(AplikazioAukeraService.APP_FAVICON_URL, "");
         model.addAttribute("faviconUrl", faviconUrl);
         model.addAttribute("faviconBadago", faviconUrl != null && !faviconUrl.isBlank());
+        model.addAttribute("ikastetxearenHerria",
+                aukService.get(AplikazioAukeraService.IKASTETXEAREN_HERRIA, ""));
         
         model.addAttribute("googleEnabled", statusService.isGoogleEnabled());
         model.addAttribute("googleConfigured", statusService.isGoogleConfigured());
@@ -77,6 +79,16 @@ public class AdminController {
         model.addAttribute("seedImportRequest", new SeedImportRequest());
 
         return "admin/index";
+    }
+
+    @PostMapping("/ikastetxea")
+    public String saveIkastetxea(@RequestParam(name = "herria", defaultValue = "") String herria) {
+        String balioa = herria.trim();
+        if (balioa.length() > 255) {
+            return "redirect:/admin/?tab=ikastetxea&error=Herriaren%20izena%20luzeegia%20da";
+        }
+        aukService.set(AplikazioAukeraService.IKASTETXEAREN_HERRIA, balioa);
+        return "redirect:/admin/?tab=ikastetxea&success=Ikastetxearen%20datuak%20gordeta";
     }
 
     private Path getMd6309Path() {

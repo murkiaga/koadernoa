@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
+import com.koadernoa.app.objektuak.konfigurazioa.service.AplikazioAukeraService;
 import com.koadernoa.app.objektuak.jokabidea.entitateak.JokabideDesegokia;
 import lombok.RequiredArgsConstructor;
 
@@ -16,9 +17,9 @@ import lombok.RequiredArgsConstructor;
 public class JokabideDesegokiaPdfService {
     private final TemplateEngine templateEngine;
     private final JokabideDesegokiaTxantiloiService txantiloiService;
+    private final AplikazioAukeraService aplikazioAukeraService;
     @Value("${koadernoa.uploads.dir:uploads}") private String uploadsDir;
     @Value("${koadernoa.uploads.jokabide-desegokiak-subdir:jokabide-desegokiak}") private String subdir;
-    @Value("${koadernoa.herria:}") private String herria;
 
     public SortutakoPdfa sortu(JokabideDesegokia j) throws IOException {
         String ikasturtea = j.getKoadernoa().getEgutegia().getIkasturtea().getIzena().replaceAll("[^A-Za-z0-9._-]", "_");
@@ -27,14 +28,15 @@ public class JokabideDesegokiaPdfService {
         String filename = "jokabide-desegokia-" + j.getIkaslea().getId() + "-" + j.getData() + "-" + java.util.UUID.randomUUID() + ".pdf";
         Path target = dir.resolve(filename);
         Context c = new Context(new Locale("eu", "ES"));
+        String herria = herriaTestua();
         c.setVariable("ikaslea", ikasleIzena(j));
         c.setVariable("maila", maila(j));
         c.setVariable("portaeraArrazoia", j.getPortaeraArrazoia().getKodea() + " - " + j.getPortaeraArrazoia().getTestua());
         c.setVariable("deskribapenZehatza", j.getDeskribapenZehatza());
         c.setVariable("neurriZuzentzailea", j.getNeurriZuzentzailea().getKodea() + " - " + j.getNeurriZuzentzailea().getTestua());
-        c.setVariable("herria", herriaTestua());
+        c.setVariable("herria", herria);
         c.setVariable("dataTestua", dataTestua(j));
-        c.setVariable("herriaEtaData", herriaEtaData(j));
+        c.setVariable("herriaEtaData", herriaEtaData(j, herria));
         c.setVariable("irakaslea", j.getIrakaslea().getIzena());
         String html = errendatuHtml(c);
         try (OutputStream os = Files.newOutputStream(target, StandardOpenOption.CREATE_NEW)) {
@@ -79,11 +81,12 @@ public class JokabideDesegokiaPdfService {
     public void ezabatuIsilean(String path) { if (path != null) try { Files.deleteIfExists(Paths.get(path)); } catch (IOException ignored) {} }
     private String ikasleIzena(JokabideDesegokia j) { var i=j.getIkaslea(); return ((i.getIzena()==null?"":i.getIzena())+" "+(i.getAbizena1()==null?"":i.getAbizena1())+" "+(i.getAbizena2()==null?"":i.getAbizena2())).trim(); }
     private String maila(JokabideDesegokia j) { var m=j.getModuloa().getMaila(); var t=j.getModuloa().getTaldea(); String base=m==null?"":(m.getIzena()==null?m.getKodea():m.getIzena()); return t!=null&&t.getIzena()!=null?base+" - "+t.getIzena():base; }
-    private String herriaEtaData(JokabideDesegokia j) {
-        return herriaTestua() + "(e)n, " + dataTestua(j);
+    private String herriaEtaData(JokabideDesegokia j, String herria) {
+        return herria + "(e)n, " + dataTestua(j);
     }
 
-    private String herriaTestua() {
+    String herriaTestua() {
+        String herria = aplikazioAukeraService.get(AplikazioAukeraService.IKASTETXEAREN_HERRIA);
         return herria == null || herria.isBlank() ? "………….…………." : herria.trim();
     }
 

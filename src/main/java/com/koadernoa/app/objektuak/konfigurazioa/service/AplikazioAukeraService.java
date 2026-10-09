@@ -18,6 +18,7 @@ public class AplikazioAukeraService {
     
     public static final String APP_LOGO_URL = "APP_LOGO_URL"; // adib: /uploads/logo.png
     public static final String APP_FAVICON_URL = "APP_FAVICON_URL";
+    public static final String IKASTETXEAREN_HERRIA = "ikastetxea.herria";
     
     public static final String AUTH_GOOGLE_ENABLED = "auth.google.enabled";
     public static final String AUTH_LDAP_ENABLED = "auth.ldap.enabled";

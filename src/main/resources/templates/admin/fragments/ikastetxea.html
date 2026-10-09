@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<body>
+<div th:fragment="ikastetxea-panel">
+  <h2>Ikastetxearen datu orokorrak</h2>
+  <p class="muted">Datu hauek ikastetxearen dokumentuetan erabiliko dira.</p>
+
+  <form method="post" th:action="@{/admin/ikastetxea}">
+    <input type="hidden"
+           th:if="${_csrf != null}"
+           th:name="${_csrf.parameterName}"
+           th:value="${_csrf.token}"/>
+
+    <div class="row" style="align-items:end;">
+      <label for="herria">
+        <div class="muted">Ikastetxearen herria</div>
+        <input id="herria" type="text" name="herria" maxlength="255"
+               th:value="${ikastetxearenHerria}" autocomplete="address-level2">
+      </label>
+      <div style="align-self:end;">
+        <button type="submit" class="btn btn-primary">Gorde</button>
+      </div>
+    </div>
+
+    <p class="muted" style="margin-top:8px;">
+      Hutsik utziz gero, jokabide desegokien PDFek puntuzko ordezko balioa erakutsiko dute.
+    </p>
+  </form>
+</div>
+</body>
+</html>
