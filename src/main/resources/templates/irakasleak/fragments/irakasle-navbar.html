@@ -86,6 +86,10 @@
             <a th:href="@{/irakasle/ikasleak-kontsultatu}"
                th:classappend="${currentPath.startsWith('/irakasle/ikasleak-kontsultatu')} ? 'active'">Ikasleak kontsultatu</a>
           </li>
+          <li th:if="${tutoretzaTaldea != null}">
+            <a th:href="@{/irakasle/tutore/{id}(id=${tutoretzaTaldea.id})}"
+               th:classappend="${currentPath.startsWith('/irakasle/tutore/')} ? 'active'">Tutoretza</a>
+          </li>
           <li th:if="${#authorization.expression('hasAnyRole(''KUDEATZAILEA'',''ADMIN'')')}">
             <a th:href="@{/kudeatzaile}">Kudeaketa</a>
           </li>
@@ -129,6 +133,10 @@
           <li th:if="${#authorization.expression('hasAuthority(''BAIMENA_IKASLEAK_KONTSULTATU'')')}">
             <a th:href="@{/irakasle/ikasleak-kontsultatu}"
                th:classappend="${currentPath.startsWith('/irakasle/ikasleak-kontsultatu')} ? 'active'">Ikasleak kontsultatu</a>
+          </li>
+          <li th:if="${tutoretzaTaldea != null}">
+            <a th:href="@{/irakasle/tutore/{id}(id=${tutoretzaTaldea.id})}"
+               th:classappend="${currentPath.startsWith('/irakasle/tutore/')} ? 'active'">Tutoretza</a>
           </li>
           <li th:if="${#authorization.expression('hasAnyRole(''KUDEATZAILEA'',''ADMIN'')')}">
             <a th:href="@{/kudeatzaile}">Kudeaketa</a>

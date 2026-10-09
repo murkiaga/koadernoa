@@ -179,4 +179,35 @@ public interface MatrikulaRepository extends JpaRepository<Matrikula, Long> {
                                      @Param("ikasturteaId") Long ikasturteaId);
 
 	void deleteByKoadernoa_Id(Long koadernoId);
+
+    @Query("""
+        select distinct i from Matrikula m
+        join m.ikaslea i
+        join m.koadernoa k
+        join k.moduloa mo
+        join k.egutegia e
+        where i.taldea.id = :taldeaId
+          and mo.taldea.id = :taldeaId
+          and e.ikasturtea.id = :ikasturteaId
+        order by i.abizena1 asc, i.abizena2 asc, i.izena asc
+    """)
+    List<com.koadernoa.app.objektuak.modulua.entitateak.Ikaslea> findTaldekoIkasleakByIkasturtea(
+            @Param("taldeaId") Long taldeaId,
+            @Param("ikasturteaId") Long ikasturteaId);
+
+    @Query("""
+        select count(m) > 0 from Matrikula m
+        join m.ikaslea i
+        join m.koadernoa k
+        join k.moduloa mo
+        join k.egutegia e
+        where i.id = :ikasleaId
+          and i.taldea.id = :taldeaId
+          and mo.taldea.id = :taldeaId
+          and e.ikasturtea.id = :ikasturteaId
+    """)
+    boolean existsTaldekoMatrikulaByIkasturtea(
+            @Param("taldeaId") Long taldeaId,
+            @Param("ikasleaId") Long ikasleaId,
+            @Param("ikasturteaId") Long ikasturteaId);
 }

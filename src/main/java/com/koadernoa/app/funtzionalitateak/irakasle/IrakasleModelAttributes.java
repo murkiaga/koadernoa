@@ -13,6 +13,7 @@ import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
+import com.koadernoa.app.objektuak.zikloak.entitateak.Taldea;
 
 import lombok.RequiredArgsConstructor;
 
@@ -86,6 +87,20 @@ public class IrakasleModelAttributes {
                           && k.getEgutegia().getIkasturtea() != null
                           && k.getEgutegia().getIkasturtea().isAktiboa())
                 .toList();
+    }
+
+    @ModelAttribute("tutoretzaTaldea")
+    @Transactional(readOnly = true)
+    public Taldea getTutoretzaTaldea(Authentication auth) {
+        if (auth == null) {
+            return null;
+        }
+        try {
+            Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+            return irakasleaService.lortuTutorearenTaldeaEdoThrow(irakaslea.getId());
+        } catch (RuntimeException ex) {
+            return null;
+        }
     }
     
     @ModelAttribute("navbarKontsultaModua")

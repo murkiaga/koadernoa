@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="${taldea.izena} + ' — Tutoretza'">Tutoretza</title>
+  <link rel="stylesheet" th:href="@{/css/navbar.css}"><link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}"><link rel="stylesheet" th:href="@{/css/irakasle-common.css}">
+  <style>
+    .photo-page h1{font-size:1.5rem;margin:.5rem 0}.photo-page .subtitle{color:#64748b;margin:0 0 1rem}.photo-page .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+    .photo-page .card{border:1px solid var(--b);border-radius:14px;overflow:hidden;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.04);transition:transform .15s,box-shadow .15s}.photo-page .ph{display:block;width:100%;height:160px;object-fit:cover;background:#f3f4f6}
+    .photo-page .meta{padding:.6rem .75rem .75rem}.photo-page .surnames{font-size:.95rem;line-height:1.1}.photo-page .name{font-weight:700;font-size:1.05rem;line-height:1.2}.photo-page .card-link{color:inherit;text-decoration:none;display:block}.photo-page .card-link:hover .card{transform:translateY(-2px);box-shadow:0 10px 24px rgba(15,23,42,.14)}
+  </style>
+</head>
+<body>
+<div th:replace="~{irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})}"></div>
+<main class="page photo-page">
+  <h1 th:text="${taldea.izena} + ' — Tutoretza'">Taldeko ikasleak</h1>
+  <p class="subtitle" th:text="${ikasturtea.izena} + ' · Taldeko ikasleak'">Ikasturte aktiboa</p>
+  <div class="grid" th:if="${!#lists.isEmpty(ikasleak)}">
+    <a class="card-link" th:each="ik : ${ikasleak}" th:href="@{/irakasle/tutore/{taldeaId}/{ikasleaId}(taldeaId=${taldea.id},ikasleaId=${ik.id})}">
+      <article class="card"><th:block th:with="tick=${#dates.createNow().time / 300000}"><img class="ph" th:src="${#strings.isEmpty(ik.argazkiPath) ? '/img/avatar-user.svg' : ik.argazkiPath + '?v=' + tick}" th:alt="${ik.izena != null ? ik.izena + ' - argazkia' : 'Ikaslearen argazkia'}"></th:block>
+        <div class="meta"><div class="surnames" th:text="${(ik.abizena1?:'') + (ik.abizena2 != null and !#strings.isEmpty(ik.abizena2) ? ' ' + ik.abizena2 : '')}">Abizenak</div><div class="name" th:text="${ik.izena}">Izena</div></div>
+      </article>
+    </a>
+  </div>
+  <p th:if="${#lists.isEmpty(ikasleak)}">Ez dago ikasturte aktiboko matrikula duen ikaslerik talde honetan.</p>
+</main>
+</body></html>
