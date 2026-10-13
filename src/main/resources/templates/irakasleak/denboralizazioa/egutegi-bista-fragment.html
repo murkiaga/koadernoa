@@ -83,7 +83,7 @@
 						  <li class="jarduera-item"
 						    draggable="true"
 						    th:each="j : ${jardueraMap[egunaBista.data]}"
-						    th:text="${(j.unitatea != null ? '[' + j.unitatea.kodea + '] ' : '') + j.titulua + ' - ' + ( #strings.isEmpty(j.mota) ? 'planifikatua' : j.mota ) }"
+						    th:text="${(j.kalifikagarria ? '📝 ' : '') + (j.unitatea != null ? '[' + j.unitatea.kodea + '] ' : '') + j.titulua + ' - ' + ( #strings.isEmpty(j.mota) ? 'planifikatua' : j.mota ) }"
 						    th:attr="data-id=${j.id}"
 						    onclick="editatuJarduera(event, this)">
 						  </li>
@@ -119,7 +119,7 @@
                             th:attr="data-id=${j.id}"
                             onclick="editatuJarduera(event, this)">
                             <span class="ud-badge" th:if="${j.unitatea != null}" th:text="${j.unitatea.kodea}">UD</span>
-                            <strong th:text="${j.titulua}"></strong>
+                            <strong th:text="${(j.kalifikagarria ? '📝 ' : '') + j.titulua}"></strong>
                             <div class="week-desc" th:if="${!#strings.isEmpty(j.deskribapena)}" th:text="${j.deskribapena}"></div>
                             <div th:text="${'Orduak: ' + (j.orduak != null ? j.orduak : 0)}"></div>
                         </li>
@@ -128,9 +128,10 @@
             </tr>
         </tbody>
     </table>
+</div>
 
-    <!-- MODALA -->
-    <div id="jardueraModal" class="modal" style="display:none">
+    <!-- MODALA: animatutako egutegi-paneletik kanpo txertatzen da, viewport-ak moztu ez dezan. -->
+    <div th:fragment="jardueraModal" id="jardueraModal" class="modal" style="display:none">
       <div class="modal-content" onclick="event.stopPropagation()">
         <div class="modal-header">
           <h3 id="jardueraModalTitle">Jarduera berria</h3>
@@ -181,6 +182,24 @@
             </select>
           </div>
 
+          <div class="form-row">
+            <label for="jardueraKalifikagarria" style="display:flex;align-items:center;gap:.5rem;">
+              <input name="kalifikagarria" id="jardueraKalifikagarria" type="checkbox" value="true"
+                     onchange="eguneratuKalifikazioEremuak()">
+              Kalifikagarria
+            </label>
+          </div>
+
+          <div id="jardueraKalifikazioEremuak" style="display:none;">
+            <!-- Pisua Jardueren kalifikazioak orrian kudeatzen da; hidden-ak editatzean balioa mantentzen du. -->
+            <input name="pisua" id="jardueraPisua" type="hidden">
+            <div class="form-row">
+              <label for="jardueraMoodleEsteka">Moodle jardueraren esteka</label>
+              <input name="moodleEsteka" id="jardueraMoodleEsteka" type="url" maxlength="2048"
+                     placeholder="https://moodle.example/...">
+            </div>
+          </div>
+
           <div class="modal-actions" style="display:flex; align-items:center; gap:.5rem; justify-content:flex-end;">
             <button type="button"
                     id="jardueraEzabatuBtn"
@@ -189,6 +208,8 @@
                     onclick="berretsiEtaEzabatu()">Ezabatu</button>
 
             <button type="button" class="btn secondary" onclick="itxiJardueraModala()">Ezeztatu</button>
+            <a id="jardueraKalifikazioakBtn" class="btn secondary" style="display:none;"
+               href="#" target="_self">Kalifikazioak</a>
             <button type="submit" class="btn primary">Gorde</button>
           </div>
         </form>
@@ -204,6 +225,4 @@
           <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
         </form>
       </div>
-    </div>
-
 </div>

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -30,6 +31,7 @@ import com.koadernoa.app.objektuak.audit.entitateak.AuditAtala;
 import com.koadernoa.app.objektuak.audit.entitateak.AuditEkintza;
 import com.koadernoa.app.objektuak.audit.service.AuditService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
+import com.koadernoa.app.objektuak.koadernoak.service.JardueraKalifikazioService;
 import com.koadernoa.app.objektuak.modulua.entitateak.Matrikula;
 import com.koadernoa.app.objektuak.modulua.entitateak.MatrikulaEgoera;
 import com.koadernoa.app.objektuak.modulua.repository.MatrikulaRepository;
@@ -50,6 +52,7 @@ public class NotakController {
     private final PendienteEbaluazioMomentuKonfigRepository pendienteEbaluazioMomentuKonfigRepository;
     private final EbaluazioNotaService ebaluazioNotaService;
     private final AuditService auditService;
+    private final JardueraKalifikazioService jardueraKalifikazioService;
 
     @GetMapping
     public String notakPantaila(@ModelAttribute("koadernoAktiboa") Koadernoa koadernoa,
@@ -127,6 +130,8 @@ public class NotakController {
         model.addAttribute("pendienteEgoerakKodearenArabera", pendienteEgoerakKodearenArabera);
         model.addAttribute("notaMap", notaMap);
         model.addAttribute("bigarrenFinalaErakutsiMap", bigarrenFinalaErakutsiMap);
+        model.addAttribute("jardueraKalifikagarriakBadira",
+                jardueraKalifikazioService.badagoJardueraKalifikagarririk(koadernoa.getId()));
 
         return "irakasleak/notak/index";
     }
@@ -193,6 +198,53 @@ public class NotakController {
         }
 
         return "redirect:/irakasle/notak";
+    }
+
+    @GetMapping("/jarduerak")
+    public String jarduerenKalifikazioak(
+            @ModelAttribute("koadernoAktiboa") Koadernoa koadernoa,
+            @RequestParam(name = "ebaluaketaId", required = false) Long ebaluaketaId,
+            @RequestParam(name = "jardueraId", required = false) Long jardueraId,
+            Model model,
+            RedirectAttributes redirectAttributes) {
+        if (koadernoa == null || koadernoa.getId() == null) {
+            redirectAttributes.addFlashAttribute("error", "Ez dago koaderno aktiborik aukeratuta.");
+            return "redirect:/irakasle";
+        }
+        var data = jardueraKalifikazioService.prestatu(koadernoa.getId(), ebaluaketaId, jardueraId);
+        model.addAttribute("ebaluaketak", data.ebaluaketak());
+        model.addAttribute("jarduerakEbaluaketaka", data.jarduerakEbaluaketaka());
+        model.addAttribute("hautatutakoEbaluaketaId", data.hautatutakoEbaluaketaId());
+        model.addAttribute("jarduerak", data.hautatutakoJarduerak());
+        model.addAttribute("jarduerenPisuGuztira", data.hautatutakoJarduerak().stream()
+                .map(j -> j.getPisua() == null ? java.math.BigDecimal.ZERO : j.getPisua())
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add));
+        model.addAttribute("matrikulak", data.matrikulak());
+        model.addAttribute("jardueraNotak", data.notak());
+        model.addAttribute("guztirakoak", data.guztirakoak());
+        model.addAttribute("fokukoJardueraId", data.fokukoJardueraId());
+        model.addAttribute("jardueraKalifikagarriakBadira",
+                jardueraKalifikazioService.badagoJardueraKalifikagarririk(koadernoa.getId()));
+        return "irakasleak/notak/jardueren-kalifikazioak";
+    }
+
+    @PostMapping("/jarduerak")
+    public String gordeJarduerenKalifikazioak(
+            @ModelAttribute("koadernoAktiboa") Koadernoa koadernoa,
+            @RequestParam("ebaluaketaId") Long ebaluaketaId,
+            HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
+        if (koadernoa == null || koadernoa.getId() == null) {
+            redirectAttributes.addFlashAttribute("error", "Ez dago koaderno aktiborik aukeratuta.");
+            return "redirect:/irakasle";
+        }
+        try {
+            jardueraKalifikazioService.gorde(koadernoa.getId(), ebaluaketaId, request.getParameterMap());
+            redirectAttributes.addFlashAttribute("success", "Jardueren kalifikazioak ondo gorde dira.");
+        } catch (IllegalArgumentException ex) {
+            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+        }
+        return "redirect:/irakasle/notak/jarduerak?ebaluaketaId=" + ebaluaketaId;
     }
 
     private String buildKey(Long matrikulaId, Long momentuaId) {

@@ -7,6 +7,7 @@ import java.util.List;
 import com.koadernoa.app.objektuak.ebaluazioa.entitateak.EbaluazioNota;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Asistentzia;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.JardueraKalifikazioa;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
@@ -61,4 +62,7 @@ public class Matrikula {
     
     @OneToMany(mappedBy = "matrikula", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<EbaluazioNota> notak = new ArrayList<>();
+
+    @OneToMany(mappedBy = "matrikula", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<JardueraKalifikazioa> jardueraKalifikazioak = new ArrayList<>();
 }

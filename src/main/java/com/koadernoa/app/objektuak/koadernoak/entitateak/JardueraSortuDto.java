@@ -1,5 +1,6 @@
 package com.koadernoa.app.objektuak.koadernoak.entitateak;
 import java.time.LocalDate;
+import java.math.BigDecimal;
 import lombok.Getter; import lombok.Setter;
 
 @Getter
@@ -12,4 +13,7 @@ public class JardueraSortuDto {
     private float orduak;
     private String mota; // "planifikatua", "eginda", "ebaluazioa", ...
     private Long unitateaId;
+    private boolean kalifikagarria;
+    private BigDecimal pisua;
+    private String moodleEsteka;
 }

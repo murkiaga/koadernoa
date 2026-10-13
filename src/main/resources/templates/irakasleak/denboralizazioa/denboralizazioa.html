@@ -378,6 +378,9 @@
     </div>
 </div>
 
+<div th:if="${bista == null or bista == 'egutegia'}"
+     th:replace="~{irakasleak/denboralizazioa/egutegi-bista-fragment :: jardueraModal}"></div>
+
 <!-- FRAGMENT Falten Bista -->
 <div th:if="${bista == 'faltak'}"
      th:insert="irakasleak/denboralizazioa/falten-bista-fragment :: faltakBista">

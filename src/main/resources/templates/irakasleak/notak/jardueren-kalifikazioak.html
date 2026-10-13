@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jardueren kalifikazioak</title>
+  <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/irakasle-common.css}">
+  <style>
+    main { max-width: 1100px; margin: 24px auto; padding: 0 16px 96px; }
+    h1 { font-size: 1.6rem; margin-bottom: .2rem; }
+    .taula-wrap { width: 100%; max-width: 100%; box-sizing: border-box; overflow-x: auto; border: 1px solid var(--b); border-radius: 10px; }
+    #kalifikazioForm { width: calc(100vw - 32px); position: relative; left: 50%; transform: translateX(-50%); }
+    .kalifikazio-taula { min-width: 700px; margin: 0; }
+    .kalifikazio-taula th { vertical-align: top; min-width: 130px; }
+    .kalifikazio-taula th:first-child { min-width: 210px; position: sticky; left: 0; z-index: 3; }
+    .kalifikazio-taula td:first-child { position: sticky; left: 0; z-index: 2; background: #fff; font-weight: 600; }
+    .kalifikazio-taula .guztira { min-width: 90px; font-weight: 800; text-align: center; }
+    .jarduera-izena { display: block; margin-bottom: .45rem; color: inherit; }
+    .jarduera-izena[href] { color: var(--primary); text-decoration: underline; }
+    .jarduera-data, .pisu-guztira { display:block; margin-bottom:.45rem; color:#6b7280; font-size:.82rem; font-weight:500; }
+    .pisua-wrap { display:flex; align-items:center; justify-content:center; gap:.25rem; font-weight:400; }
+    .pisua-input, .nota-input { width: 76px; box-sizing:border-box; padding:.4rem; border:1px solid var(--b); border-radius:6px; }
+    .nota-input:invalid, .pisua-input:invalid { border-color:#dc2626; background:#fef2f2; }
+    .fokua { box-shadow: inset 0 0 0 2px #f59e0b; background:#fffbeb; }
+    .actions { display:flex; justify-content:flex-end; margin-top:1rem; }
+    .empty { padding:1rem; background:#f9fafb; border:1px solid var(--b); border-radius:8px; }
+  </style>
+</head>
+<body>
+<div th:replace="~{irakasleak/fragments/irakasle-navbar :: navbar(${koadernoAktiboa}, ${irakasleKoadernoAktiboak})}"></div>
+
+<main>
+  <h1>Jardueren kalifikazioak</h1>
+  <p class="muted" th:text="${koadernoAktiboa != null ? koadernoAktiboa.izena : '(koaderno aktiborik ez)'}">Koadernoa</p>
+
+  <nav class="nota-main-tabs" aria-label="Noten bistak">
+    <a th:href="@{/irakasle/notak}">Notak</a>
+    <a class="active" th:href="@{/irakasle/notak/jarduerak}">Jardueren kalifikazioak</a>
+  </nav>
+
+  <div th:if="${success}" class="flash flash-success" th:text="${success}"></div>
+  <div th:if="${error}" class="flash flash-error" th:text="${error}"></div>
+
+  <nav class="ebaluaketa-tabs" aria-label="Ebaluaketak" th:if="${!#lists.isEmpty(ebaluaketak)}">
+    <a th:each="eb, stat : ${ebaluaketak}"
+       th:href="@{/irakasle/notak/jarduerak(ebaluaketaId=${eb.id})}"
+       th:classappend="${eb.id == hautatutakoEbaluaketaId} ? ' active'"
+       th:text="${stat.count + '. ebal'}">1. ebal</a>
+  </nav>
+
+  <p class="empty" th:if="${#lists.isEmpty(ebaluaketak)}">Programazioak ez du ebaluaketarik definituta.</p>
+  <p class="empty" th:if="${!#lists.isEmpty(ebaluaketak) and #lists.isEmpty(jarduerak)}">
+    Ebaluaketa honetan ez dago jarduera kalifikagarririk.
+  </p>
+
+  <form method="post" th:action="@{/irakasle/notak/jarduerak}" th:if="${!#lists.isEmpty(jarduerak)}" id="kalifikazioForm">
+    <input type="hidden" name="ebaluaketaId" th:value="${hautatutakoEbaluaketaId}">
+    <div class="taula-wrap">
+      <table class="kalifikazio-taula">
+        <thead>
+          <tr>
+            <th>Ikaslea</th>
+            <th class="guztira">
+              Guztira
+              <span id="pisuGuztira" class="pisu-guztira"
+                    th:text="${#numbers.formatDecimal(jarduerenPisuGuztira, 1, 2)} + '%'">0%</span>
+            </th>
+            <th th:each="j : ${jarduerak}" th:classappend="${j.id == fokukoJardueraId} ? ' fokua'">
+              <a class="jarduera-izena" th:if="${j.moodleEsteka != null and !#strings.isEmpty(j.moodleEsteka)}"
+                 th:href="${j.moodleEsteka}" target="_blank" rel="noopener noreferrer" th:text="${j.titulua}">Jarduera</a>
+              <span class="jarduera-izena" th:unless="${j.moodleEsteka != null and !#strings.isEmpty(j.moodleEsteka)}"
+                    th:text="${j.titulua}">Jarduera</span>
+              <span class="jarduera-data" th:if="${j.data != null}"
+                    th:text="${'(' + #temporals.format(j.data, 'yyyy-M-d') + ')'}">(2026-9-15)</span>
+              <label class="pisua-wrap">
+                <span>Pisua</span>
+                <input class="pisua-input" type="number" min="0" max="100" step="0.01" required
+                       th:name="${'pisua_' + j.id}" th:value="${j.pisua != null ? j.pisua : 0}"
+                       th:attr="data-jarduera-id=${j.id}" aria-label="Pisua ehunekotan">
+                <span>%</span>
+              </label>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr th:each="mat : ${matrikulak}" th:attr="data-matrikula-id=${mat.id}">
+            <td th:text="${mat.ikaslea != null ? mat.ikaslea.izenOsoa : ''}">Ikaslea</td>
+            <td class="guztira" th:id="${'guztira_' + mat.id}"
+                th:text="${#numbers.formatDecimal(guztirakoak[mat.id], 1, 2)}">0,00</td>
+            <td th:each="j : ${jarduerak}" th:classappend="${j.id == fokukoJardueraId} ? ' fokua'">
+              <input class="nota-input" type="number" min="0" max="10" step="0.01"
+                     th:name="${'nota_' + mat.id + '_' + j.id}"
+                     th:value="${jardueraNotak[mat.id + '_' + j.id]}"
+                     th:attr="data-matrikula-id=${mat.id},data-jarduera-id=${j.id}"
+                     aria-label="Ikaslearen kalifikazioa">
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="actions"><button class="btn primary" type="submit">Gorde</button></div>
+  </form>
+</main>
+
+<script>
+(() => {
+  const form = document.getElementById('kalifikazioForm');
+  if (!form) return;
+  const kalkulatu = () => {
+    let pisuGuztira = 0;
+    form.querySelectorAll('.pisua-input').forEach(input => {
+      const pisua = Number.parseFloat(input.value);
+      if (Number.isFinite(pisua)) pisuGuztira += pisua;
+    });
+    document.getElementById('pisuGuztira').textContent = `${pisuGuztira.toFixed(2)}%`;
+
+    form.querySelectorAll('tr[data-matrikula-id]').forEach(row => {
+      const matrikulaId = row.dataset.matrikulaId;
+      let guztira = 0;
+      row.querySelectorAll('.nota-input').forEach(input => {
+        const nota = Number.parseFloat(input.value);
+        const pisuaInput = form.querySelector(`.pisua-input[data-jarduera-id="${input.dataset.jardueraId}"]`);
+        const pisua = pisuaInput ? Number.parseFloat(pisuaInput.value) : NaN;
+        if (Number.isFinite(nota) && Number.isFinite(pisua)) guztira += nota * pisua / 100;
+      });
+      document.getElementById(`guztira_${matrikulaId}`).textContent = Math.min(10, guztira).toFixed(2);
+    });
+  };
+  form.addEventListener('input', kalkulatu);
+  kalkulatu();
+})();
+</script>
+</body>
+</html>

@@ -448,6 +448,7 @@ public class KoadernoaService {
         j.setData(dto.getData());
         j.setOrduak(dto.getOrduak());
         j.setMota(dto.getMota());
+        ezarriKalifikazioDatuak(j, dto);
         ezarriJarduerarenUnitatea(j, dto.getUnitateaId(), koadernoa.getId());
 
         jardueraRepository.save(j);
@@ -469,9 +470,41 @@ public class KoadernoaService {
         j.setData(dto.getData());
         j.setOrduak(dto.getOrduak());
         j.setMota(dto.getMota());
+        ezarriKalifikazioDatuak(j, dto);
         ezarriJarduerarenUnitatea(j, dto.getUnitateaId(), koadernoa.getId());
 
         jardueraRepository.save(j);
+    }
+
+    private void ezarriKalifikazioDatuak(Jarduera jarduera, JardueraSortuDto dto) {
+        jarduera.setKalifikagarria(dto.isKalifikagarria());
+        if (!dto.isKalifikagarria()) {
+            jarduera.setPisua(null);
+            jarduera.setMoodleEsteka(null);
+            jarduera.getKalifikazioak().clear();
+            return;
+        }
+        if (dto.getPisua() != null
+                && (dto.getPisua().signum() < 0 || dto.getPisua().compareTo(new java.math.BigDecimal("100")) > 0)) {
+            throw new IllegalArgumentException("Jardueraren pisua 0 eta 100 artekoa izan behar da.");
+        }
+        jarduera.setPisua(dto.getPisua());
+        jarduera.setMoodleEsteka(normalizatuHttpEsteka(dto.getMoodleEsteka()));
+    }
+
+    private String normalizatuHttpEsteka(String esteka) {
+        if (esteka == null || esteka.isBlank()) return null;
+        String garbia = esteka.trim();
+        try {
+            java.net.URI uri = java.net.URI.create(garbia);
+            if (!("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme()))
+                    || uri.getHost() == null) {
+                throw new IllegalArgumentException();
+            }
+            return garbia;
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException("Moodle estekak http edo https URL balioduna izan behar du.");
+        }
     }
 
 

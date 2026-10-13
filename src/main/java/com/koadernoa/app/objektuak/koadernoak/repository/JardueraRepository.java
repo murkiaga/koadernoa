@@ -18,6 +18,10 @@ public interface JardueraRepository extends JpaRepository<Jarduera, Long>{
 
     List<Jarduera> findByKoadernoaIdOrderByDataAscIdAsc(Long koadernoaId);
 
+    List<Jarduera> findByKoadernoaIdAndKalifikagarriaTrueOrderByDataAscIdAsc(Long koadernoaId);
+
+    boolean existsByKoadernoaIdAndKalifikagarriaTrue(Long koadernoaId);
+
     // Editatzeko erabiliko duguna
 	Jarduera findByIdAndKoadernoaId(Long id, Long koadernoaId);
 	

@@ -123,6 +123,11 @@
     Koadernoa
   </p>
 
+  <nav class="nota-main-tabs" th:if="${jardueraKalifikagarriakBadira}" aria-label="Noten bistak">
+    <a class="active" th:href="@{/irakasle/notak}">Notak</a>
+    <a th:href="@{/irakasle/notak/jarduerak}">Jardueren kalifikazioak</a>
+  </nav>
+
   <!-- Flash mezuak -->
   <div th:if="${success}" class="flash flash-success"
        th:text="${success}">Success mezua</div>

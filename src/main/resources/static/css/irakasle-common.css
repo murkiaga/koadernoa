@@ -190,3 +190,24 @@ tbody tr:nth-child(even) {
 
 .is-active{ font-weight:700; color:darkgreen; }
 
+.nota-main-tabs,
+.ebaluaketa-tabs {
+  display: flex;
+  gap: .45rem;
+  flex-wrap: wrap;
+  margin: 1rem 0;
+  border-bottom: 1px solid var(--b);
+}
+.nota-main-tabs a,
+.ebaluaketa-tabs a {
+  padding: .65rem .9rem;
+  color: #374151;
+  text-decoration: none;
+  border-bottom: 3px solid transparent;
+}
+.nota-main-tabs a.active,
+.ebaluaketa-tabs a.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 700;
+}

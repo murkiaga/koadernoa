@@ -415,23 +415,27 @@ public class DenboralizazioaController {
 	    @RequestParam("hilabetea") int hilabetea,
 	    @RequestParam(name="egutegiMota", required=false, defaultValue="hilabetea") String egutegiMota,
 	    @RequestParam(name="asteHasiera", required=false) String asteHasiera,
-	    @RequestParam(value = "id", required = false) Long id) {
+	    @RequestParam(value = "id", required = false) Long id,
+	    RedirectAttributes redirectAttributes) {
 
 	    if (koadernoa == null || koadernoa.getId() == null) {
 	        throw new IllegalStateException("Koaderno aktiborik ez");
 	    }
 
-	    if (id == null) {
-	        koadernoaService.gordeJarduera(koadernoa, dto);
-	        auditDenbAction(null, AuditEkintza.JARDUERA_SORTU, koadernoa.getId(), "Jarduera", null);
-	    } else {
-	        koadernoaService.eguneratuJarduera(koadernoa, id, dto);
-	        auditDenbAction(null, AuditEkintza.JARDUERA_EDITATU, koadernoa.getId(), "Jarduera", String.valueOf(id));
-	    }
-
 	    String redirect = "redirect:/irakasle/denboralizazioa?urtea=" + urtea + "&hilabetea=" + hilabetea + "&egutegiMota=" + egutegiMota;
 	    if ("astea".equalsIgnoreCase(egutegiMota) && asteHasiera != null && !asteHasiera.isBlank()) {
 	        redirect += "&asteHasiera=" + asteHasiera;
+	    }
+	    try {
+	        if (id == null) {
+	            koadernoaService.gordeJarduera(koadernoa, dto);
+	            auditDenbAction(null, AuditEkintza.JARDUERA_SORTU, koadernoa.getId(), "Jarduera", null);
+	        } else {
+	            koadernoaService.eguneratuJarduera(koadernoa, id, dto);
+	            auditDenbAction(null, AuditEkintza.JARDUERA_EDITATU, koadernoa.getId(), "Jarduera", String.valueOf(id));
+	        }
+	    } catch (IllegalArgumentException ex) {
+	        redirectAttributes.addFlashAttribute("error", ex.getMessage());
 	    }
 	    return redirect;
 	}

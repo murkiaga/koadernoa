@@ -1,6 +1,8 @@
 package com.koadernoa.app.objektuak.koadernoak.entitateak;
 
 import java.time.LocalDate;
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.koadernoa.app.objektuak.zikloak.entitateak.Taldea;
@@ -10,6 +12,9 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -26,6 +31,15 @@ public class Jarduera {
     private float orduak;
     
     private String mota; //"planifikatua", "eginda", "ebaluazioa", etab.
+
+    @Column(nullable = false)
+    private boolean kalifikagarria = false;
+
+    @Column(precision = 5, scale = 2)
+    private BigDecimal pisua;
+
+    @Column(length = 2048)
+    private String moodleEsteka;
     
 
     @ManyToOne
@@ -33,4 +47,7 @@ public class Jarduera {
 
     @ManyToOne
     private UnitateDidaktikoa unitatea;
+
+    @OneToMany(mappedBy = "jarduera", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<JardueraKalifikazioa> kalifikazioak = new ArrayList<>();
 }
