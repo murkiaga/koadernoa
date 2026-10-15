@@ -21,10 +21,16 @@ public class ErronkaEbidentzia {
     @Column(nullable = false, columnDefinition = "TEXT") private String deskribapena;
     @Column(nullable = false, precision = 5, scale = 2, columnDefinition = "decimal(5,2) default 0.00")
     private BigDecimal pisua = BigDecimal.ZERO;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "ebaluazio_mota", nullable = false, length = 20,
+        columnDefinition = "varchar(20) default 'TALDEKAKOA'")
+    private EbidentziaEbaluazioMota ebaluazioMota = EbidentziaEbaluazioMota.TALDEKAKOA;
     @OneToMany(mappedBy = "ebidentzia", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ErronkaEbidentziaMaila> mailak = new ArrayList<>();
     @OneToMany(mappedBy = "ebidentzia", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ErronkaEbidentziaTaldeNota> taldeNotak = new ArrayList<>();
+    @OneToMany(mappedBy = "ebidentzia", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ErronkaEbidentziaIkasleNota> ikasleNotak = new ArrayList<>();
     // Prest dago etorkizuneko ebidentzia ↔ lorpen-adierazle N:M loturarako.
     @ManyToMany @JoinTable(name = "ethazi_erronka_ebidentzia_adierazlea",
         // Keep Hibernate's original implicit column names: existing installations already have these columns.

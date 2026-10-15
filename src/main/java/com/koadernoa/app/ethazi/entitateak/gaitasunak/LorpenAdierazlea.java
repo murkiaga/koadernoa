@@ -80,6 +80,9 @@ public class LorpenAdierazlea {
     @OneToMany(mappedBy="adierazlea", cascade=CascadeType.ALL, orphanRemoval=true)
     private Set<KinielaLotura> kinielaLoturak = new LinkedHashSet<>();
 
+    @OneToMany(mappedBy="adierazlea", cascade=CascadeType.ALL, orphanRemoval=true)
+    private Set<ZeharkakoKinielaLotura> zeharkakoKinielaLoturak = new LinkedHashSet<>();
+
     // Legacy global data retained for manual recovery: its original IE cannot be inferred.
     // Active Kiniela reads and writes only kinielaLoturak.
     @ManyToMany

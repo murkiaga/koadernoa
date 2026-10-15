@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import com.koadernoa.app.ethazi.entitateak.gaitasunak.GaitasunMota;
+import com.koadernoa.app.ethazi.entitateak.errubrikak.EbidentziaEbaluazioMota;
 import com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza;
 
 import lombok.Getter;
@@ -33,8 +34,33 @@ public final class EthaziForms {
 
     @Getter @Setter
     public static class ErronkaErrubrikaForm {
+        private BigDecimal errubrikaPisua;
+        private BigDecimal bestelakoProbenPisua;
         private List<ErronkaMailaForm> mailak = new ArrayList<>();
         private List<ErronkaEbidentziaForm> ebidentziak = new ArrayList<>();
+    }
+
+    @Getter @Setter
+    public static class BestelakoProbakForm {
+        private List<BestelakoProbaForm> probak = new ArrayList<>();
+    }
+
+    @Getter @Setter
+    public static class BestelakoProbaForm {
+        private Long id;
+        private String izena;
+        @DateTimeFormat(pattern="yyyy/MM/dd")
+        private java.time.LocalDate data;
+        private BigDecimal pisua;
+        private Set<Long> adierazleaIds = new LinkedHashSet<>();
+        private List<BestelakoProbaNotaForm> notak = new ArrayList<>();
+    }
+
+    @Getter @Setter
+    public static class BestelakoProbaNotaForm {
+        private Long ikasleaId;
+        private String ikasleaIzena;
+        private BigDecimal nota;
     }
 
     @Getter @Setter
@@ -49,9 +75,11 @@ public final class EthaziForms {
         private Long id;
         private String deskribapena;
         private BigDecimal pisua;
+        private EbidentziaEbaluazioMota ebaluazioMota = EbidentziaEbaluazioMota.TALDEKAKOA;
         private Set<Long> adierazleaIds = new LinkedHashSet<>();
         private List<ErronkaEbidentziaMailaForm> mailak = new ArrayList<>();
         private List<ErronkaTaldeNotaForm> taldeNotak = new ArrayList<>();
+        private List<ErronkaIkasleNotaForm> ikasleNotak = new ArrayList<>();
     }
 
     @Getter @Setter
@@ -63,6 +91,15 @@ public final class EthaziForms {
     @Getter @Setter
     public static class ErronkaTaldeNotaForm {
         private Long taldeaId;
+        private Long mailaId;
+        private String mailaIzena;
+        private String ondoEgindakoak;
+        private String hobetuBeharrekoak;
+    }
+
+    @Getter @Setter
+    public static class ErronkaIkasleNotaForm {
+        private Long ikasleaId;
         private Long mailaId;
         private String mailaIzena;
         private String ondoEgindakoak;

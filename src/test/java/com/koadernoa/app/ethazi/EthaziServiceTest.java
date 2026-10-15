@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.*;
 
 import java.util.Set;
 import java.util.List;
+import java.time.LocalDate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -353,6 +354,55 @@ class EthaziServiceTest {
         assertThat(kiniela.kiniela(cycle.getId()).get(0).guztira()).isEqualByComparingTo("0");
         kiniela.gordeLoturak(cycle.getId(), ie.getId(), Set.of()); em.flush(); em.clear();
         assertThat(service.gaitasuna(g).getMailak().get(0).getLorpenAdierazleak().get(0).getIkaskuntzaEmaitzak()).isEmpty();
+    }
+    @Test void transversalKinielaKeepsItsOwnIndicatorsWeightsChallengesAndNotes() throws Exception {
+        var m = module(cycle, "TRANS-KIN"); outcome(m);
+        var form = new GaitasunaForm(); form.setMota(GaitasunMota.ZEHARKAKOA);
+        form.setKodea("ZK1"); form.setIzena("Elkarlana"); form.setDeskribapena("Taldean lan egiten du");
+        Long g = service.gordeGaitasuna(null, form);
+        var competency = service.gaitasuna(g);
+        var level = competency.getMailak().get(0);
+        service.gordeErrubrikaAdierazlea(g, level.getMaila().getId(), null, indicator());
+        Long a = service.gaitasuna(g).getMailak().get(0).getLorpenAdierazleak().get(0).getId();
+
+        kiniela.gordeZeharkakoLoturak(cycle.getId(), g, Set.of(a));
+        kiniela.gordeZeharkakoPisua(cycle.getId(), g, a, new java.math.BigDecimal("20.50"));
+        kiniela.gordeErronka(null, challenge(m));
+        Long challenge = kiniela.erronkak(cycle.getId()).get(0).getId();
+        kiniela.gordeZeharkakoErronkaLotura(cycle.getId(), g, a, challenge, true);
+        kiniela.gordeZeharkakoOharra(cycle.getId(), g, a, "  Taldeko oharra  ");
+        em.flush(); em.clear();
+
+        var transversalBoard = kiniela.zeharkakoKiniela(cycle.getId(), null);
+        assertThat(transversalBoard).hasSize(1);
+        var row = transversalBoard.get(0).emaitzak().get(0);
+        assertThat(row.deskribapena()).isEqualTo("Taldean lan egiten du");
+        assertThat(row.guztira()).isEqualByComparingTo("20.50");
+        assertThat(row.loturak()).singleElement().satisfies(link -> {
+            assertThat(link.erronkaIds()).containsExactly(challenge);
+            assertThat(link.oharra()).isEqualTo("Taldeko oharra");
+        });
+        assertThat(kiniela.kiniela(cycle.getId()).get(0).emaitzak().get(0).loturak()).isEmpty();
+
+        var auth = new UsernamePasswordAuthenticationToken("manager", "",
+            AuthorityUtils.createAuthorityList("ROLE_KUDEATZAILEA"));
+        SecurityContextHolder.getContext().setAuthentication(auth);
+        try {
+            String technical = mvc().perform(get("/ethazi/kiniela").param("zikloaId", cycle.getId().toString()).principal(auth))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+            String transversal = mvc().perform(get("/ethazi/kiniela").param("zikloaId", cycle.getId().toString())
+                    .param("gaitasunMota", "ZEHARKAKOA").principal(auth))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+            assertThat(technical).contains("Gaitasun mota", "Teknikoak", "Zeharkakoak")
+                .doesNotContain("Taldean lan egiten du");
+            assertThat(transversal).contains("Taldean lan egiten du", "Zeharkako gaitasuna",
+                "/ethazi/kiniela/zeharkakoak/IE_ID/loturak", "kiniela-transverse-board")
+                .doesNotContain("TRANS-KIN · TRANS-KIN", "<details class=\"ethazi-card kiniela-module\"");
+        } finally { SecurityContextHolder.clearContext(); }
+
+        kiniela.gordeZeharkakoLoturak(cycle.getId(), g, Set.of());
+        em.flush(); em.clear();
+        assertThat(kiniela.zeharkakoKiniela(cycle.getId(), null).get(0).emaitzak().get(0).loturak()).isEmpty();
     }
     @Test void weightsArePerOutcomeAndTotalsSumAcrossTheModule() {
         var m = module(cycle, "SUM"); var ie = outcome(m); Long g = createCompetency();
@@ -772,6 +822,10 @@ class EthaziServiceTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("data-team-feedback-toggle=\"strengths\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("data-team-feedback-panel=\"improvements\" hidden")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("data-team-feedback-save")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("data-evaluation-view=\"PERTSONALA\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("title=\"Ohar orokorra\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("👍🏽")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("👎🏽")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("rubric-grading-only")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("module-indicators rubric-toolbar rubric-edit-only")))
                 .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Taldeen kalifikazioak gorde"))));
@@ -786,8 +840,12 @@ class EthaziServiceTest {
             mvc().perform(post("/ethazi/erronkak/" + challengeId + "/errubrikak/" + m.getId() + "/oharrak")
                     .principal(auth)
                     .param("ebidentziaId", evidenceId.toString()).param("taldeaId", team2.toString())
-                    .param("ondoEgindakoak", "Azalpen argia").param("hobetuBeharrekoak", "Adibide gehiago"))
+                    .param("ondoEgindakoak", "Azalpen argia")
+                    .param("hobetuBeharrekoak", "Adibide gehiago"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.message").value("Oharrak gordeta"));
+            mvc().perform(post("/ethazi/erronkak/" + challengeId + "/errubrikak/" + m.getId() + "/ohar-orokorra")
+                    .principal(auth).param("taldeaId", team2.toString()).param("oharra", "Taldearen oharra"))
+                .andExpect(status().isOk());
             mvc().perform(post("/ethazi/erronkak/" + challengeId + "/errubrikak/" + m.getId() + "/notak")
                     .principal(auth)
                     .param("ebidentziaId", evidenceId.toString()).param("taldeaId", team2.toString()))
@@ -802,6 +860,7 @@ class EthaziServiceTest {
                     assertThat(n.getOndoEgindakoak()).isEqualTo("Azalpen argia");
                     assertThat(n.getHobetuBeharrekoak()).isEqualTo("Adibide gehiago");
                 });
+            assertThat(kiniela.taldeOrokorOharrak(challengeId, m.getId())).containsEntry(team2, "Taldearen oharra");
 
             var teacherAuth = new UsernamePasswordAuthenticationToken("teacher@example.test", "",
                 AuthorityUtils.createAuthorityList("ROLE_IRAKASLEA"));
@@ -864,6 +923,73 @@ class EthaziServiceTest {
                     .principal(auth).param("ebidentziaId", evidenceId.toString())
                     .param("taldeaId", team1.toString()).param("mailaId", alienLevel.toString()))
                 .andExpect(status().isBadRequest());
+
+            var personalForm = kiniela.errubrikaForm(challengeId, m.getId());
+            personalForm.getEbidentziak().get(0).setEbaluazioMota(
+                com.koadernoa.app.ethazi.entitateak.errubrikak.EbidentziaEbaluazioMota.PERTSONALA);
+            kiniela.gordeErrubrika(challengeId, m.getId(), personalForm);
+            mvc().perform(post("/ethazi/erronkak/" + challengeId + "/errubrikak/" + m.getId() + "/ikasle-notak")
+                    .principal(auth).param("ebidentziaId", evidenceId.toString())
+                    .param("ikasleaId", first.getId().toString()).param("mailaId", levelId.toString()))
+                .andExpect(status().isOk());
+            mvc().perform(post("/ethazi/erronkak/" + challengeId + "/errubrikak/" + m.getId() + "/ikasle-oharrak")
+                    .principal(auth).param("ebidentziaId", evidenceId.toString())
+                    .param("ikasleaId", first.getId().toString()).param("ondoEgindakoak", "Lan ona"))
+                .andExpect(status().isOk());
+            mvc().perform(post("/ethazi/erronkak/" + challengeId + "/errubrikak/" + m.getId() + "/ohar-orokorra")
+                    .principal(auth).param("ikasleaId", first.getId().toString()).param("oharra", "Ohar orokorra"))
+                .andExpect(status().isOk());
+            mvc().perform(post("/ethazi/erronkak/" + challengeId + "/errubrikak/" + m.getId() + "/notak")
+                    .principal(auth).param("ebidentziaId", evidenceId.toString())
+                    .param("taldeaId", team1.toString()).param("mailaId", levelId.toString()))
+                .andExpect(status().isBadRequest());
+            em.flush(); em.clear();
+            assertThat(kiniela.errubrika(challengeId, m.getId()).getEbidentziak().get(0).getIkasleNotak())
+                .filteredOn(n -> n.getIkaslea().getId().equals(first.getId())).singleElement()
+                .satisfies(n -> {
+                    assertThat(n.getMaila().getId()).isEqualTo(levelId);
+                    assertThat(n.getOndoEgindakoak()).isEqualTo("Lan ona");
+                });
+            assertThat(kiniela.ikasleOrokorOharrak(challengeId, m.getId())).containsEntry(first.getId(), "Ohar orokorra");
+
+            Long test1 = kiniela.gehituBestelakoProba(challengeId, m.getId(), "Lehen proba", LocalDate.now());
+            Long test2 = kiniela.gehituBestelakoProba(challengeId, m.getId(), "Bigarren proba", LocalDate.now());
+            Long test3 = kiniela.gehituBestelakoProba(challengeId, m.getId(), "Hirugarren proba", LocalDate.now());
+            var weightedRubric = kiniela.errubrika(challengeId, m.getId());
+            assertThat(weightedRubric.getErrubrikaPisua()).isEqualByComparingTo("50.00");
+            assertThat(weightedRubric.getBestelakoProbenPisua()).isEqualByComparingTo("50.00");
+            assertThat(weightedRubric.getBestelakoProbak()).extracting(x -> x.getPisua())
+                .containsExactly(new java.math.BigDecimal("33.33"), new java.math.BigDecimal("33.33"), new java.math.BigDecimal("33.34"));
+            kiniela.gordeEbaluazioPisuak(challengeId, m.getId(), new java.math.BigDecimal("45"), new java.math.BigDecimal("55"));
+            var testsForm = kiniela.bestelakoProbakForm(challengeId, m.getId());
+            testsForm.getProbak().get(0).setIzena("Sareen azterketa");
+            testsForm.getProbak().get(0).setData(java.time.LocalDate.of(2026, 11, 3));
+            kiniela.gordeBestelakoProbak(challengeId, m.getId(), testsForm);
+            mvc().perform(post("/ethazi/erronkak/" + challengeId + "/errubrikak/" + m.getId()
+                    + "/bestelako-probak/" + test1 + "/notak").principal(auth)
+                    .param("ikasleaId", first.getId().toString()).param("nota", "8.5"))
+                .andExpect(status().isOk());
+            em.flush(); em.clear();
+            var savedTest = kiniela.errubrika(challengeId, m.getId()).getBestelakoProbak().stream()
+                .filter(p -> p.getId().equals(test1)).findFirst().orElseThrow();
+            assertThat(savedTest.getIzena()).isEqualTo("Sareen azterketa");
+            assertThat(savedTest.getNotak()).filteredOn(n -> n.getIkaslea().getId().equals(first.getId()))
+                .extracting(n -> n.getNota()).containsExactly(new java.math.BigDecimal("8.50"));
+            mvc().perform(get("/ethazi/erronkak/" + challengeId + "/errubrikak").principal(auth)
+                    .param("moduloaId", m.getId().toString()))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("+ Bestelako proba")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Errubrika teknikoa")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Sareen azterketa")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("value=\"2026/11/03\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("data-other-test-grade")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString(
+                    "form=\"delete-other-test-" + test1 + "\""))));
+            assertThatThrownBy(() -> kiniela.ezabatuBestelakoProba(challengeId, m.getId(), test1))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("kalifikazioa dauka");
+            kiniela.ezabatuBestelakoProba(challengeId, m.getId(), test3);
+            kiniela.ezabatuBestelakoProba(challengeId, m.getId(), test2);
         } finally { SecurityContextHolder.clearContext(); }
     }
     @Test void legacyGazteleraValuesRemainReadableAndNewValuesUseTheNewName() {

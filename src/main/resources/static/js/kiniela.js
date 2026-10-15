@@ -22,6 +22,7 @@
   const dialog = document.querySelector('#rubric-dialog');
   if (!dialog) return;
   const form = document.querySelector('#rubric-form');
+  const transverse = dialog.dataset.transverse === 'true';
   const unsaved = new Set();
   const saveWeights = new Map();
   const updateSelectionCounts = () => {
@@ -53,8 +54,13 @@
   document.querySelectorAll('.ie-select').forEach(button => button.addEventListener('click', () => {
     const selected = new Set([...button.closest('.kiniela-module').querySelectorAll(`.kiniela-link[data-outcome="${button.dataset.ieId}"]`)].map(row => row.dataset.indicator));
     form.querySelectorAll('[name=adierazleaIds]').forEach(input => { input.checked = selected.has(input.value); });
-    form.elements.moduloaId.value = button.closest('.kiniela-module').dataset.module;
+    if (form.elements.moduloaId) form.elements.moduloaId.value = button.closest('.kiniela-module').dataset.module;
     form.action = form.dataset.actionTemplate.replace('IE_ID', button.dataset.ieId);
+    if (transverse) {
+      const buttons = [...button.closest('.kiniela-module').querySelectorAll('.ie-select')];
+      const selectedIndex = buttons.indexOf(button);
+      form.querySelectorAll('.rubric-scroll > section').forEach((section, index) => { section.hidden = index !== selectedIndex; });
+    }
     document.querySelector('#selected-outcome').textContent = button.textContent;
     updateSelectionCounts();
     const language = button.closest('.kiniela-module').dataset.language;
@@ -73,14 +79,18 @@
     });
     module.querySelectorAll('.module-total').forEach(cell => { cell.textContent = `${total / 100}%`; });
     const status = module.querySelector('.module-status');
-    status.textContent = `${total / 100}% / 100%`;
-    status.classList.toggle('complete', total === 10000);
-    status.classList.toggle('incomplete', total !== 10000);
+    if (status) {
+      status.textContent = `${total / 100}% / 100%`;
+      status.classList.toggle('complete', total === 10000);
+      status.classList.toggle('incomplete', total !== 10000);
+    }
   };
   document.querySelectorAll('.kiniela-module').forEach(module => {
     const key = `kiniela-module-${module.dataset.module}`;
-    try { if (localStorage.getItem(key) === 'closed') module.open = false; } catch (_) { /* Storage may be disabled. */ }
-    module.addEventListener('toggle', () => { try { localStorage.setItem(key, module.open ? 'open' : 'closed'); } catch (_) {} });
+    if (module.tagName === 'DETAILS') {
+      try { if (localStorage.getItem(key) === 'closed') module.open = false; } catch (_) { /* Storage may be disabled. */ }
+      module.addEventListener('toggle', () => { try { localStorage.setItem(key, module.open ? 'open' : 'closed'); } catch (_) {} });
+    }
     recalculate(module);
     module.querySelectorAll('.weight-form').forEach(weightForm => {
       const input = weightForm.querySelector('[name=pisua]');
@@ -110,6 +120,7 @@
             const row = weightForm.closest('.kiniela-link');
             document.querySelectorAll('.kiniela-link').forEach(relatedRow => {
               if (relatedRow.dataset.indicator !== row.dataset.indicator || relatedRow.dataset.outcome !== row.dataset.outcome) return;
+              if (transverse && relatedRow.dataset.module !== row.dataset.module) return;
               const relatedForm = relatedRow.querySelector('.weight-form');
               const relatedInput = relatedForm.querySelector('[name=pisua]');
               relatedInput.value = value;
@@ -151,6 +162,7 @@
       const row = challengeForm.closest('.kiniela-link');
       const forms = [...document.querySelectorAll('.challenge-form')].filter(item => {
         const itemRow = item.closest('.kiniela-link');
+        if (transverse) return item === challengeForm;
         return itemRow.dataset.indicator === row.dataset.indicator && itemRow.dataset.outcome === row.dataset.outcome
           && item.dataset.syncKey === challengeForm.dataset.syncKey;
       });
@@ -191,7 +203,7 @@
     noteText.value = row.dataset.note || '';
     noteStatus.textContent = '';
     document.querySelector('#indicator-note-label').textContent = document.getElementById('ie-' + row.dataset.module + '-' + row.dataset.outcome).querySelector('.ie-select').textContent + ' · ' + row.querySelector('.indicator-text').textContent;
-    noteForm.action = noteForm.dataset.actionTemplate.replace('INDICATOR_ID', noteIndicator);
+    noteForm.action = noteForm.dataset.actionTemplate.replace('OUTCOME_ID', row.dataset.outcome).replace('INDICATOR_ID', noteIndicator);
     noteDialog.showModal();
     noteText.focus();
   };

@@ -17,7 +17,7 @@ document.querySelectorAll('[data-cycle-filter]').forEach(select => {
 const dirtyForms = new Set();
 document.querySelectorAll('form[data-dirty-warning]').forEach(form => {
   form.addEventListener('input', event => {
-    if (!event.target.matches('[data-translation-select], [data-team-grade], [data-team-feedback]')) dirtyForms.add(form);
+    if (!event.target.matches('[data-translation-select], [data-rubric-grade], [data-team-feedback], [data-general-feedback], [data-overall-weight], [data-other-test-grade]')) dirtyForms.add(form);
   });
   form.addEventListener('submit', () => dirtyForms.delete(form));
 });
@@ -31,14 +31,18 @@ window.addEventListener('beforeunload', event => {
 const teamGradeNumber = value => Number.parseFloat(String(value ?? '0').replace(',', '.')) || 0;
 const teamGradeFormatter = new Intl.NumberFormat('eu-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-function refreshTeamTotal(select) {
+function refreshParticipantTotal(select) {
   const table = select.closest('.challenge-rubric-table');
-  const teamId = select.dataset.teamId;
-  const output = Array.from(table.querySelectorAll('[data-team-total]'))
-    .find(candidate => candidate.dataset.teamId === teamId);
+  const participantId = select.dataset.participantId;
+  const participantKind = select.dataset.participantKind;
+  const output = Array.from(table.querySelectorAll('[data-grade-total]'))
+    .find(candidate => candidate.dataset.participantId === participantId
+      && candidate.dataset.participantKind === participantKind);
   if (!output) return;
-  const total = Array.from(table.querySelectorAll('[data-team-grade]'))
-    .filter(candidate => candidate.dataset.teamId === teamId)
+  const total = Array.from(table.querySelectorAll('[data-rubric-grade]'))
+    .filter(candidate => candidate.dataset.participantId === participantId
+      && candidate.dataset.participantKind === participantKind
+      && candidate.closest('tr')?.dataset.evaluationType === (participantKind === 'student' ? 'PERTSONALA' : 'TALDEKAKOA'))
     .reduce((sum, grade) => {
       const levelValue = teamGradeNumber(grade.selectedOptions[0]?.dataset.levelValue);
       const evidenceWeight = teamGradeNumber(grade.closest('tr')?.dataset.evidenceWeight);
@@ -48,16 +52,16 @@ function refreshTeamTotal(select) {
   output.textContent = output.value;
 }
 
-document.querySelectorAll('[data-team-grade]').forEach(select => {
+document.querySelectorAll('[data-rubric-grade]').forEach(select => {
   select.dataset.savedValue = select.value;
-  refreshTeamTotal(select);
+  refreshParticipantTotal(select);
   select.addEventListener('change', async () => {
     const status = select.parentElement.querySelector('.team-grade-status');
     const previous = select.dataset.savedValue;
     const payload = new URLSearchParams({
-      ebidentziaId: select.dataset.evidenceId,
-      taldeaId: select.dataset.teamId
+      ebidentziaId: select.dataset.evidenceId
     });
+    payload.set(select.dataset.participantKind === 'student' ? 'ikasleaId' : 'taldeaId', select.dataset.participantId);
     if (select.value) payload.set('mailaId', select.value);
     const csrf = document.querySelector('#team-grade-csrf');
     if (csrf?.name) payload.set(csrf.name, csrf.value);
@@ -72,12 +76,12 @@ document.querySelectorAll('[data-team-grade]').forEach(select => {
       if (!response.ok || !result) throw new Error(result?.message || 'Ezin izan da kalifikazioa gorde.');
       select.dataset.savedValue = select.value;
       status.textContent = result.message || 'Gordeta';
-      refreshTeamTotal(select);
+      refreshParticipantTotal(select);
     } catch (error) {
       select.value = previous;
       status.classList.add('is-error');
       status.textContent = error.message || 'Ezin izan da kalifikazioa gorde.';
-      refreshTeamTotal(select);
+      refreshParticipantTotal(select);
     } finally {
       select.disabled = false;
     }
@@ -119,10 +123,10 @@ document.querySelectorAll('.team-feedback').forEach(feedback => {
     const status = panel.querySelector('.team-feedback-status');
     const payload = new URLSearchParams({
       ebidentziaId: feedback.dataset.evidenceId,
-      taldeaId: feedback.dataset.teamId,
       ondoEgindakoak: feedback.querySelector('[data-feedback-kind="strengths"]').value,
       hobetuBeharrekoak: feedback.querySelector('[data-feedback-kind="improvements"]').value
     });
+    payload.set(feedback.dataset.participantKind === 'student' ? 'ikasleaId' : 'taldeaId', feedback.dataset.participantId);
     const csrf = document.querySelector('#team-grade-csrf');
     if (csrf?.name) payload.set(csrf.name, csrf.value);
     button.disabled = true;
@@ -148,11 +152,96 @@ document.querySelectorAll('.team-feedback').forEach(feedback => {
   }));
 });
 
+function closeGeneralFeedbackPanels(except = null) {
+  document.querySelectorAll('.general-feedback .team-feedback-popover:not([hidden])').forEach(panel => {
+    if (panel === except) return;
+    panel.hidden = true;
+    panel.closest('.general-feedback').querySelector('.general-feedback-toggle')?.setAttribute('aria-expanded', 'false');
+  });
+}
+
+document.querySelectorAll('.general-feedback').forEach(feedback => {
+  const toggle = feedback.querySelector('.general-feedback-toggle');
+  const panel = feedback.querySelector('.team-feedback-popover');
+  const textarea = feedback.querySelector('[data-general-feedback]');
+  toggle.addEventListener('click', () => {
+    const opening = panel.hidden;
+    closeTeamFeedbackPanels(); closeGeneralFeedbackPanels(opening ? panel : null);
+    panel.hidden = !opening; toggle.setAttribute('aria-expanded', String(opening));
+    if (opening) textarea.focus();
+  });
+  feedback.querySelector('[data-general-feedback-close]').addEventListener('click', () => closeGeneralFeedbackPanels());
+  feedback.querySelector('[data-general-feedback-save]').addEventListener('click', async event => {
+    const button = event.currentTarget;
+    const status = feedback.querySelector('.team-feedback-status');
+    const payload = new URLSearchParams({ oharra: textarea.value });
+    payload.set(feedback.dataset.participantKind === 'student' ? 'ikasleaId' : 'taldeaId', feedback.dataset.participantId);
+    const csrf = document.querySelector('#team-grade-csrf');
+    if (csrf?.name) payload.set(csrf.name, csrf.value);
+    button.disabled = true; status.classList.remove('is-error'); status.textContent = 'Gordetzen…';
+    try {
+      const response = await fetch(feedback.dataset.action, { method: 'POST', body: payload, credentials: 'same-origin', headers: { Accept: 'application/json' } });
+      const result = response.headers.get('content-type')?.includes('application/json') ? await response.json() : null;
+      if (!response.ok || !result) throw new Error(result?.message || 'Ezin izan da ohar orokorra gorde.');
+      status.textContent = result.message || 'Ohar orokorra gordeta';
+      toggle.querySelector('.feedback-present').classList.toggle('is-empty', !textarea.value.trim());
+    } catch (error) {
+      status.classList.add('is-error'); status.textContent = error.message || 'Ezin izan da ohar orokorra gorde.';
+    } finally { button.disabled = false; }
+  });
+});
+
+const overallWeightEditor = document.querySelector('.overall-weight-editor');
+if (overallWeightEditor) {
+  const rubricWeight = overallWeightEditor.querySelector('[data-overall-weight="rubric"]');
+  const testsWeight = overallWeightEditor.querySelector('[data-overall-weight="tests"]');
+  const status = overallWeightEditor.querySelector('[data-overall-weight-status]');
+  let saved = [rubricWeight.value, testsWeight.value];
+  let timer;
+  const saveWeights = async () => {
+    const payload = new URLSearchParams({ errubrikaPisua: rubricWeight.value, bestelakoProbenPisua: testsWeight.value });
+    const csrf = document.querySelector('#team-grade-csrf'); if (csrf?.name) payload.set(csrf.name, csrf.value);
+    status.classList.remove('is-error'); status.textContent = 'Gordetzen…';
+    try {
+      const response = await fetch(overallWeightEditor.dataset.action, { method:'POST', body:payload, credentials:'same-origin', headers:{Accept:'application/json'} });
+      const result = response.headers.get('content-type')?.includes('application/json') ? await response.json() : null;
+      if (!response.ok || !result) throw new Error(result?.message || 'Ezin izan dira pisuak gorde.');
+      saved = [rubricWeight.value, testsWeight.value]; status.textContent = result.message || 'Pisuak gordeta';
+    } catch (error) {
+      [rubricWeight.value, testsWeight.value] = saved; status.classList.add('is-error'); status.textContent = error.message || 'Ezin izan dira pisuak gorde.';
+    }
+  };
+  [rubricWeight, testsWeight].forEach(input => input.addEventListener('input', () => {
+    const value = Number.parseFloat(input.value);
+    if (Number.isFinite(value) && value >= 0 && value <= 100) (input === rubricWeight ? testsWeight : rubricWeight).value = (100 - value).toFixed(2);
+    clearTimeout(timer); timer = setTimeout(saveWeights, 500);
+  }));
+}
+
+document.querySelectorAll('[data-other-test-grade]').forEach(input => {
+  input.dataset.savedValue = input.value;
+  input.addEventListener('change', async () => {
+    const payload = new URLSearchParams({ ikasleaId: input.dataset.studentId });
+    if (input.value !== '') payload.set('nota', input.value);
+    const csrf = document.querySelector('#team-grade-csrf'); if (csrf?.name) payload.set(csrf.name, csrf.value);
+    const status = input.parentElement.querySelector('.team-grade-status'); input.disabled = true; status.classList.remove('is-error'); status.textContent = 'Gordetzen…';
+    try {
+      const response = await fetch(input.dataset.action, { method:'POST', body:payload, credentials:'same-origin', headers:{Accept:'application/json'} });
+      const result = response.headers.get('content-type')?.includes('application/json') ? await response.json() : null;
+      if (!response.ok || !result) throw new Error(result?.message || 'Ezin izan da nota gorde.');
+      input.dataset.savedValue = input.value; status.textContent = result.message || 'Nota gordeta';
+    } catch (error) {
+      input.value = input.dataset.savedValue; status.classList.add('is-error'); status.textContent = error.message || 'Ezin izan da nota gorde.';
+    } finally { input.disabled = false; }
+  });
+});
+
 document.addEventListener('click', event => {
   if (!event.target.closest('.team-feedback')) closeTeamFeedbackPanels();
+  if (!event.target.closest('.general-feedback')) closeGeneralFeedbackPanels();
 });
 document.addEventListener('keydown', event => {
-  if (event.key === 'Escape') closeTeamFeedbackPanels();
+  if (event.key === 'Escape') { closeTeamFeedbackPanels(); closeGeneralFeedbackPanels(); }
 });
 
 const rubricImportToggle = document.querySelector('#rubric-import-toggle');
@@ -169,6 +258,27 @@ rubricImportToggle?.addEventListener('click', () => {
 const rubricSection = document.querySelector('.rubric-section');
 const rubricIsLocked = () => rubricSection?.dataset.editable === 'false';
 const rubricEditKey = rubricSection ? `ethazi:rubric-editable:${rubricSection.dataset.rubricKey}` : null;
+const rubricGradeViewKey = rubricSection ? `ethazi:rubric-grade-view:${rubricSection.dataset.rubricKey}` : null;
+
+function setEvaluationView(view) {
+  if (!rubricSection || !['TALDEKAKOA', 'PERTSONALA'].includes(view)) return;
+  closeTeamFeedbackPanels();
+  rubricSection.dataset.gradeView = view;
+  rubricSection.querySelectorAll('[data-evaluation-view]').forEach(button => {
+    const active = button.dataset.evaluationView === view;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+  try { sessionStorage.setItem(rubricGradeViewKey, view); } catch (_) { /* Storage may be disabled. */ }
+  rubricSection.querySelectorAll('[data-rubric-grade]').forEach(refreshParticipantTotal);
+  refreshRubricHeaderHeight();
+}
+
+rubricSection?.querySelectorAll('[data-evaluation-view]').forEach(button => {
+  button.addEventListener('click', () => setEvaluationView(button.dataset.evaluationView));
+});
+try { setEvaluationView(sessionStorage.getItem(rubricGradeViewKey) || 'TALDEKAKOA'); }
+catch (_) { setEvaluationView('TALDEKAKOA'); }
 
 function savedRubricEditable() {
   try { return sessionStorage.getItem(rubricEditKey) === 'true'; }
@@ -187,6 +297,7 @@ function setRubricEditable(editable) {
   // Keep the choice across form redirects in this tab, independently per rubric.
   try { sessionStorage.setItem(rubricEditKey, String(editable)); } catch (_) { /* Storage may be disabled. */ }
   const toggle = rubricSection.querySelector('.rubric-lock-toggle');
+  refreshRubricHeaderHeight();
   if (!toggle) return;
   toggle.setAttribute('aria-pressed', String(editable));
   toggle.setAttribute('aria-label', editable ? 'Errubrikaren edizioa blokeatu' : 'Errubrikaren edizioa desblokeatu');
@@ -348,7 +459,8 @@ if (rubricSection) {
     ? savedRubricEditable() || rubricSection.dataset.editRequired === 'true'
     : false);
   rubricSection.addEventListener('submit', event => {
-    if (rubricIsLocked()) {
+    if (rubricIsLocked() && !event.target.closest('.other-tests-section')
+        && !event.target.id?.startsWith('delete-other-test-')) {
       event.preventDefault();
       event.stopImmediatePropagation();
     }
@@ -405,6 +517,18 @@ if (rubricSection) {
     if (scrollPageBeforeRubric(delta)) event.preventDefault();
   });
 }
+
+const otherTestModal = document.querySelector('#other-test-modal');
+const openOtherTestModal = document.querySelector('#other-test-modal-open');
+const closeOtherTestModal = () => otherTestModal?.close();
+openOtherTestModal?.addEventListener('click', () => {
+  otherTestModal.showModal();
+  otherTestModal.querySelector('input[name="izena"]')?.focus();
+});
+document.querySelector('#other-test-modal-close')?.addEventListener('click', closeOtherTestModal);
+otherTestModal?.addEventListener('click', event => {
+  if (event.target === otherTestModal) closeOtherTestModal();
+});
 
 const rubricWeightInputs = document.querySelectorAll('.evidence-weight-input');
 const rubricWeightTotal = document.querySelector('#rubric-weight-total');

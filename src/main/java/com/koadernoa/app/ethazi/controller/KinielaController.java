@@ -13,6 +13,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.koadernoa.app.ethazi.service.EthaziService;
 import com.koadernoa.app.ethazi.service.KinielaService;
+import com.koadernoa.app.ethazi.entitateak.gaitasunak.GaitasunMota;
 import com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza;
 import lombok.RequiredArgsConstructor;
 
@@ -33,11 +34,16 @@ public class KinielaController {
 
     @GetMapping({"", "/"})
     String kiniela(@RequestParam(required = false) Long zikloaId,
+            @RequestParam(defaultValue = "TEKNIKOA") GaitasunMota gaitasunMota,
             @RequestParam(required = false) Hizkuntza hizkuntza, Model model) {
         model.addAttribute("zikloaId", zikloaId);
         model.addAttribute("hizkuntza", hizkuntza);
-        model.addAttribute("moduluak", service.kiniela(zikloaId, hizkuntza));
-        model.addAttribute("errubrikak", ethazi.errubrikak(zikloaId));
+        model.addAttribute("gaitasunMota", gaitasunMota);
+        model.addAttribute("zeharkakoa", gaitasunMota == GaitasunMota.ZEHARKAKOA);
+        model.addAttribute("moduluak", gaitasunMota == GaitasunMota.ZEHARKAKOA
+                ? service.zeharkakoKiniela(zikloaId, hizkuntza) : service.kiniela(zikloaId, hizkuntza));
+        model.addAttribute("errubrikak", gaitasunMota == GaitasunMota.ZEHARKAKOA
+                ? ethazi.zeharkakoErrubrikak() : java.util.List.of(ethazi.errubrika(zikloaId, GaitasunMota.TEKNIKOA)));
         return "Ethazi/kinielak/index";
     }
 
@@ -54,6 +60,55 @@ public class KinielaController {
         return "redirect:/ethazi/kiniela?zikloaId=" + zikloaId
                 + (hizkuntza == null ? "" : "&hizkuntza=" + hizkuntza)
                 + (moduloaId == null ? "" : "#ie-" + moduloaId + "-" + ieId);
+    }
+
+    @PostMapping("/zeharkakoak/{gaitasunaId}/loturak")
+    String zeharkakoLoturak(@PathVariable Long gaitasunaId, @RequestParam Long zikloaId,
+            @RequestParam(required = false) Hizkuntza hizkuntza,
+            @RequestParam(required = false) Set<Long> adierazleaIds, RedirectAttributes flash) {
+        try {
+            service.gordeZeharkakoLoturak(zikloaId, gaitasunaId,
+                    adierazleaIds == null ? Set.of() : adierazleaIds);
+            flash.addFlashAttribute("success", "Loturak gorde dira.");
+        } catch (IllegalArgumentException ex) { flash.addFlashAttribute("error", ex.getMessage()); }
+        return "redirect:/ethazi/kiniela?zikloaId=" + zikloaId + "&gaitasunMota=ZEHARKAKOA"
+                + (hizkuntza == null ? "" : "&hizkuntza=" + hizkuntza) + "#ie-" + zikloaId + "-" + gaitasunaId;
+    }
+
+    @PostMapping("/zeharkakoak/{gaitasunaId}/pisua")
+    @ResponseBody ResponseEntity<Map<String, String>> zeharkakoPisua(@PathVariable Long gaitasunaId,
+            @RequestParam Long zikloaId,
+            @RequestParam Long adierazleaId, @RequestParam BigDecimal pisua) {
+        try {
+            service.gordeZeharkakoPisua(zikloaId, gaitasunaId, adierazleaId, pisua);
+            return ResponseEntity.ok(Map.of("message", "Pisua gorde da."));
+        } catch (IllegalArgumentException | DataIntegrityViolationException ex) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Ezin izan da pisua gorde."));
+        }
+    }
+
+    @PostMapping("/zeharkakoak/{gaitasunaId}/adierazleak/{id}/erronka")
+    @ResponseBody ResponseEntity<Map<String, String>> zeharkakoErronka(@PathVariable Long gaitasunaId,
+            @PathVariable Long id, @RequestParam Long zikloaId,
+            @RequestParam Long erronkaId, @RequestParam boolean landuta) {
+        try {
+            service.gordeZeharkakoErronkaLotura(zikloaId, gaitasunaId, id, erronkaId, landuta);
+            return ResponseEntity.ok(Map.of("message", "Hautaketa gorde da."));
+        } catch (IllegalArgumentException | DataIntegrityViolationException ex) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Ezin izan da erronkaren hautaketa gorde."));
+        }
+    }
+
+    @PostMapping("/zeharkakoak/{gaitasunaId}/adierazleak/{id}/oharra")
+    @ResponseBody ResponseEntity<Map<String, String>> zeharkakoOharra(@PathVariable Long gaitasunaId,
+            @PathVariable Long id, @RequestParam Long zikloaId,
+            @RequestParam String oharra) {
+        try {
+            service.gordeZeharkakoOharra(zikloaId, gaitasunaId, id, oharra);
+            return ResponseEntity.ok(Map.of("message", "Oharra gorde da."));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+        }
     }
 
     @PostMapping("/{ieId}/pisua")

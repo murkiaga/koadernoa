@@ -9,10 +9,12 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import com.koadernoa.app.ethazi.dto.EthaziForms.ErronkaForm;
 import com.koadernoa.app.ethazi.dto.EthaziForms.ErronkaErrubrikaForm;
 import com.koadernoa.app.ethazi.dto.EthaziForms.ErronkaTaldeEsleipenForm;
+import com.koadernoa.app.ethazi.dto.EthaziForms.BestelakoProbakForm;
 import com.koadernoa.app.ethazi.service.EthaziService;
 import com.koadernoa.app.ethazi.service.KinielaService;
 import com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza;
@@ -192,11 +194,69 @@ public class ErronkaController {
             model.addAttribute("form", service.errubrikaForm(id, moduloaId));
             model.addAttribute("adierazleak", service.modulukoAdierazleak(id, moduloaId));
             model.addAttribute("taldeak", service.taldeak(id));
+            model.addAttribute("ikasleak", service.errubrikaIkasleak(id));
+            model.addAttribute("taldeOrokorOharrak", service.taldeOrokorOharrak(id, moduloaId));
+            model.addAttribute("ikasleOrokorOharrak", service.ikasleOrokorOharrak(id, moduloaId));
+            model.addAttribute("bestelakoProbakForm", service.bestelakoProbakForm(id, moduloaId));
             model.addAttribute("errubrikaIturriak", service.errubrikaEditatuDezake(auth)
                 && errubrika.getMailak().isEmpty() && errubrika.getEbidentziak().isEmpty()
                     ? service.errubrikaIturriak(id, moduloaId) : java.util.List.of());
         }
         return "Ethazi/erronkak/errubrikak";
+    }
+
+    @PostMapping("/{id}/errubrikak/{moduloaId}/ebaluazio-pisuak")
+    @ResponseBody
+    ResponseEntity<java.util.Map<String, String>> gordeEbaluazioPisuak(@PathVariable Long id, @PathVariable Long moduloaId,
+            @RequestParam java.math.BigDecimal errubrikaPisua,
+            @RequestParam java.math.BigDecimal bestelakoProbenPisua) {
+        try {
+            service.gordeEbaluazioPisuak(id, moduloaId, errubrikaPisua, bestelakoProbenPisua);
+            return ResponseEntity.ok(java.util.Map.of("message", "Pisuak gordeta"));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", ex.getMessage()));
+        }
+    }
+
+    @PostMapping("/{id}/errubrikak/{moduloaId}/bestelako-probak/berria")
+    String gehituBestelakoProba(@PathVariable Long id, @PathVariable Long moduloaId,
+            @RequestParam String izena,
+            @RequestParam @DateTimeFormat(pattern = "yyyy/MM/dd") java.time.LocalDate data,
+            RedirectAttributes flash) {
+        service.gehituBestelakoProba(id, moduloaId, izena, data);
+        flash.addFlashAttribute("success", "Bestelako proba gehitu da.");
+        return errubrikara(id, moduloaId);
+    }
+
+    @PostMapping("/{id}/errubrikak/{moduloaId}/bestelako-probak/gorde")
+    String gordeBestelakoProbak(@PathVariable Long id, @PathVariable Long moduloaId,
+            @ModelAttribute("bestelakoProbakForm") BestelakoProbakForm form, RedirectAttributes flash) {
+        try { service.gordeBestelakoProbak(id, moduloaId, form); flash.addFlashAttribute("success", "Bestelako probak gorde dira."); }
+        catch (IllegalArgumentException ex) { flash.addFlashAttribute("error", ex.getMessage()); }
+        return errubrikara(id, moduloaId);
+    }
+
+    @PostMapping("/{id}/errubrikak/{moduloaId}/bestelako-probak/{probaId}/ezabatu")
+    String ezabatuBestelakoProba(@PathVariable Long id, @PathVariable Long moduloaId,
+            @PathVariable Long probaId, RedirectAttributes flash) {
+        try { service.ezabatuBestelakoProba(id, moduloaId, probaId); flash.addFlashAttribute("success", "Bestelako proba ezabatu da."); }
+        catch (IllegalArgumentException ex) { flash.addFlashAttribute("error", ex.getMessage()); }
+        return errubrikara(id, moduloaId);
+    }
+
+    @PostMapping("/{id}/errubrikak/{moduloaId}/bestelako-probak/{probaId}/notak")
+    @ResponseBody
+    ResponseEntity<java.util.Map<String, String>> gordeBestelakoProbaNota(@PathVariable Long id,
+            @PathVariable Long moduloaId, @PathVariable Long probaId, @RequestParam Long ikasleaId,
+            @RequestParam(required = false) java.math.BigDecimal nota, Authentication auth) {
+        try {
+            service.gordeBestelakoProbaNota(id, moduloaId, probaId, ikasleaId, nota, auth);
+            return ResponseEntity.ok(java.util.Map.of("message", "Nota gordeta"));
+        } catch (AccessDeniedException ex) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(java.util.Map.of("message", ex.getMessage()));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", ex.getMessage()));
+        }
     }
 
     @PostMapping("/{id}/errubrikak/{moduloaId}/gorde")
@@ -244,6 +304,53 @@ public class ErronkaController {
             service.gordeTaldeOharrak(id, moduloaId, ebidentziaId, taldeaId,
                 ondoEgindakoak, hobetuBeharrekoak, auth);
             return ResponseEntity.ok(java.util.Map.of("message", "Oharrak gordeta"));
+        } catch (AccessDeniedException ex) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(java.util.Map.of("message", ex.getMessage()));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", ex.getMessage()));
+        }
+    }
+
+    @PostMapping("/{id}/errubrikak/{moduloaId}/ikasle-notak")
+    @ResponseBody
+    ResponseEntity<java.util.Map<String, String>> gordeIkasleNota(@PathVariable Long id, @PathVariable Long moduloaId,
+            @RequestParam Long ebidentziaId, @RequestParam Long ikasleaId,
+            @RequestParam(required = false) Long mailaId, Authentication auth) {
+        try {
+            service.gordeIkasleNota(id, moduloaId, ebidentziaId, ikasleaId, mailaId, auth);
+            return ResponseEntity.ok(java.util.Map.of("message", "Gordeta"));
+        } catch (AccessDeniedException ex) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(java.util.Map.of("message", ex.getMessage()));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", ex.getMessage()));
+        }
+    }
+
+    @PostMapping("/{id}/errubrikak/{moduloaId}/ikasle-oharrak")
+    @ResponseBody
+    ResponseEntity<java.util.Map<String, String>> gordeIkasleOharrak(@PathVariable Long id, @PathVariable Long moduloaId,
+            @RequestParam Long ebidentziaId, @RequestParam Long ikasleaId,
+            @RequestParam(required = false) String ondoEgindakoak,
+            @RequestParam(required = false) String hobetuBeharrekoak, Authentication auth) {
+        try {
+            service.gordeIkasleOharrak(id, moduloaId, ebidentziaId, ikasleaId,
+                ondoEgindakoak, hobetuBeharrekoak, auth);
+            return ResponseEntity.ok(java.util.Map.of("message", "Oharrak gordeta"));
+        } catch (AccessDeniedException ex) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(java.util.Map.of("message", ex.getMessage()));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", ex.getMessage()));
+        }
+    }
+
+    @PostMapping("/{id}/errubrikak/{moduloaId}/ohar-orokorra")
+    @ResponseBody
+    ResponseEntity<java.util.Map<String, String>> gordeOharOrokorra(@PathVariable Long id, @PathVariable Long moduloaId,
+            @RequestParam(required = false) Long taldeaId, @RequestParam(required = false) Long ikasleaId,
+            @RequestParam(required = false) String oharra, Authentication auth) {
+        try {
+            service.gordeOharOrokorra(id, moduloaId, taldeaId, ikasleaId, oharra, auth);
+            return ResponseEntity.ok(java.util.Map.of("message", "Ohar orokorra gordeta"));
         } catch (AccessDeniedException ex) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(java.util.Map.of("message", ex.getMessage()));
         } catch (IllegalArgumentException ex) {
