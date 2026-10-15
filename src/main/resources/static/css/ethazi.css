@@ -120,6 +120,18 @@
 .kiniela-page .kiniela-module { width:100%; box-sizing:border-box; }
 .kiniela-table .module-total { vertical-align:middle; text-align:center; background:#e7edf6; width:7rem; }
 .kiniela-table .weight-form { margin:0; }
+.kiniela-table .weighting-cell { min-width:18rem; max-width:28rem; }
+.weighting-list { display:grid; gap:.55rem; }
+.weighting-form { margin:0; padding-bottom:.45rem; border-bottom:1px solid #dde3eb; }
+.weighting-form:last-child { padding-bottom:0; border-bottom:0; }
+.weighting-form label { display:flex; align-items:center; justify-content:space-between; gap:.7rem; font-size:.82rem; font-weight:600; }
+.weighting-form label > span:first-child { min-width:0; overflow-wrap:anywhere; }
+.weighting-form .weight-controls { flex:none; }
+.weighting-form .weight-controls input { width:5rem; }
+.weighting-totals { min-width:9rem; }
+.weighting-total { display:block; font-weight:700; white-space:nowrap; }
+.weighting-total.is-complete { color:#146b39; }
+.weighting-total.is-incomplete { color:#a13226; }
 #rubric-dialog .selection-scroll { overflow-x:auto; width:100%; }
 #rubric-dialog .selection-rubric { table-layout:fixed; width:100%; font-size:.8rem; }
 #rubric-dialog .selection-rubric th, #rubric-dialog .selection-rubric td { width:auto; min-width:0; padding:.45rem; white-space:normal; overflow-wrap:anywhere; line-height:1.35; }

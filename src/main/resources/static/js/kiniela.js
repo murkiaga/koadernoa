@@ -73,7 +73,7 @@
     let total = 0;
     module.querySelectorAll('.kiniela-ie').forEach(body => {
       let subtotal = 0;
-      module.querySelectorAll(`.kiniela-link[data-outcome="${body.dataset.outcome}"] [name=pisua]`).forEach(input => { subtotal += Math.round(Number(input.value || 0) * 100); });
+      module.querySelectorAll(`.kiniela-link[data-outcome="${body.dataset.outcome}"] .weight-form [name=pisua]`).forEach(input => { subtotal += Math.round(Number(input.value || 0) * 100); });
       body.querySelector('.ie-total').textContent = `${subtotal / 100}%`;
       total += subtotal;
     });
@@ -84,6 +84,17 @@
       status.classList.toggle('complete', total === 10000);
       status.classList.toggle('incomplete', total !== 10000);
     }
+  };
+  const recalculateWeighting = row => {
+    const total = [...row.querySelectorAll('.weighting-form [name=pisua]')]
+      .reduce((sum, input) => sum + Math.round(Number(input.value || 0) * 100), 0);
+    const outcome = row.dataset.outcome;
+    const indicator = row.dataset.indicator;
+    const output = row.closest('.kiniela-module').querySelector(`.kiniela-ie[data-outcome="${outcome}"] [data-weighting-total="${indicator}"]`);
+    if (!output) return;
+    output.textContent = `${row.querySelector('.indicator-text span')?.textContent || ''}: ${total / 100}%`;
+    output.classList.toggle('is-complete', total === 10000);
+    output.classList.toggle('is-incomplete', total !== 10000);
   };
   document.querySelectorAll('.kiniela-module').forEach(module => {
     const key = `kiniela-module-${module.dataset.module}`;
@@ -148,6 +159,31 @@
         if (event.key === 'Enter') { event.preventDefault(); save(); }
       });
       weightForm.addEventListener('submit', event => { event.preventDefault(); save(); });
+    });
+    module.querySelectorAll('.weighting-form').forEach(weightingForm => {
+      const input = weightingForm.querySelector('[name=pisua]');
+      const status = weightingForm.querySelector('.save-status');
+      input.dataset.savedValue = input.value;
+      let pending = null;
+      const save = async () => {
+        if (pending) return pending;
+        if (input.value === input.dataset.savedValue) {
+          unsaved.delete(weightingForm); status.textContent = ''; return true;
+        }
+        if (!weightingForm.reportValidity()) {
+          status.textContent = 'Sartu 0–100 arteko pisua.'; return false;
+        }
+        input.readOnly = true; status.textContent = 'Gordetzen…';
+        pending = post(weightingForm.action, new URLSearchParams(new FormData(weightingForm)))
+          .then(result => { input.dataset.savedValue = input.value; unsaved.delete(weightingForm); status.textContent = result.message; return true; })
+          .catch(() => { status.textContent = 'Ez da gorde. Saiatu berriro.'; return false; })
+          .finally(() => { input.readOnly = false; pending = null; });
+        return pending;
+      };
+      input.addEventListener('input', () => { unsaved.add(weightingForm); status.textContent = 'Gorde gabe'; recalculateWeighting(weightingForm.closest('.kiniela-link')); });
+      input.addEventListener('blur', save);
+      input.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); save(); } });
+      weightingForm.addEventListener('submit', event => { event.preventDefault(); save(); });
     });
   });
   const indicatorRows = (id, outcome, module) => [...document.querySelectorAll('.kiniela-link')].filter(row => row.dataset.indicator === id && row.dataset.outcome === outcome && row.dataset.module === module);

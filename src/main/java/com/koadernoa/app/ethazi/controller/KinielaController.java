@@ -124,6 +124,19 @@ public class KinielaController {
         }
     }
 
+    @PostMapping("/{ieId}/ponderazioa")
+    @ResponseBody
+    ResponseEntity<Map<String, String>> ponderazioa(@PathVariable Long ieId,
+            @RequestParam Long zikloaId, @RequestParam Long moduloaId, @RequestParam Long adierazleaId,
+            @RequestParam String mota, @RequestParam Long elementuaId, @RequestParam BigDecimal pisua) {
+        try {
+            service.gordePonderazioa(zikloaId, ieId, moduloaId, adierazleaId, mota, elementuaId, pisua);
+            return ResponseEntity.ok(Map.of("message", "Ponderazioa gorde da."));
+        } catch (IllegalArgumentException | DataIntegrityViolationException ex) {
+            return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+        }
+    }
+
     @PostMapping("/adierazleak/{id}/erronka")
     @ResponseBody
     ResponseEntity<Map<String, String>> erronka(@PathVariable Long id, @RequestParam Long zikloaId,

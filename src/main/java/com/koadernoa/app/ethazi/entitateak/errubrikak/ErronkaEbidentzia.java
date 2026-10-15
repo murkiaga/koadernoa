@@ -6,6 +6,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import com.koadernoa.app.ethazi.entitateak.gaitasunak.LorpenAdierazlea;
+import com.koadernoa.app.ethazi.entitateak.gaitasunak.KinielaLotura;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -37,4 +38,13 @@ public class ErronkaEbidentzia {
         joinColumns = @JoinColumn(name = "erronka_ebidentzia_id"), inverseJoinColumns = @JoinColumn(name = "lorpen_adierazleak_id"),
         uniqueConstraints = @UniqueConstraint(name = "uk_erronka_ebidentzia_adierazlea", columnNames = {"erronka_ebidentzia_id", "lorpen_adierazleak_id"}))
     private Set<LorpenAdierazlea> lorpenAdierazleak = new LinkedHashSet<>();
+    /**
+     * Lotura teknikoaren benetako identitatea. Adierazle bera IE batean baino
+     * gehiagotan erabil daitekeenez, adierazlea bera ez da nahikoa ebidentziak
+     * zer ikaskuntza-emaitzari egiten dion ekarpena jakiteko.
+     */
+    @ManyToMany @JoinTable(name = "ethazi_erronka_ebidentzia_kiniela_lotura",
+        joinColumns = @JoinColumn(name = "ebidentzia_id"), inverseJoinColumns = @JoinColumn(name = "kiniela_lotura_id"),
+        uniqueConstraints = @UniqueConstraint(name = "uk_erronka_ebidentzia_kiniela_lotura", columnNames = {"ebidentzia_id", "kiniela_lotura_id"}))
+    private Set<KinielaLotura> kinielaLoturak = new LinkedHashSet<>();
 }

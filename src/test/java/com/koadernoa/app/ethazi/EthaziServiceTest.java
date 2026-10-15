@@ -29,6 +29,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
 import com.koadernoa.app.ethazi.service.EthaziService;
+import com.koadernoa.app.ethazi.service.KinielaService;
 import com.koadernoa.app.ethazi.service.IkaskuntzaEmaitzaCsvImportService;
 import com.koadernoa.app.ethazi.dto.EthaziForms.*;
 import com.koadernoa.app.ethazi.entitateak.gaitasunak.*;
@@ -652,6 +653,46 @@ class EthaziServiceTest {
         service.ezabatuErrubrikaAdierazlea(competency, competencyLevel, selectedIndicator);
         em.flush(); em.clear();
         assertThat(kiniela.errubrika(challengeId, first.getId()).getEbidentziak().get(0).getLorpenAdierazleak()).isEmpty();
+    }
+
+    @Test void kinielaDistributesAndStoresIndicatorWeightingAcrossEvidenceAndOtherTest() {
+        var module = module(cycle, "POND");
+        var outcome = outcome(module);
+        Long competency = createCompetency();
+        Long competencyLevel = service.eredua(modelId).getMailak().get(0).getId();
+        service.gordeErrubrikaAdierazlea(competency, competencyLevel, null, indicator(outcome.getId()));
+        Long indicatorId = service.gaitasuna(competency).getMailak().get(0).getLorpenAdierazleak().get(0).getId();
+        kiniela.gordeErronka(null, challenge(module));
+        Long challengeId = kiniela.erronkak(cycle.getId()).get(0).getId();
+        kiniela.gordeErronkaLotura(cycle.getId(), indicatorId, outcome.getId(), module.getId(), challengeId, true);
+
+        kiniela.gehituEbidentzia(challengeId, module.getId());
+        Long linkId = kiniela.modulukoAdierazleak(challengeId, module.getId()).get(0).id();
+        var rubric = kiniela.errubrikaForm(challengeId, module.getId());
+        rubric.getEbidentziak().get(0).setDeskribapena("Proiektua");
+        rubric.getEbidentziak().get(0).setPisua(new java.math.BigDecimal("100"));
+        rubric.getEbidentziak().get(0).setAdierazleaIds(Set.of(linkId));
+        kiniela.gordeErrubrika(challengeId, module.getId(), rubric);
+
+        kiniela.gehituBestelakoProba(challengeId, module.getId(), "Azterketa", LocalDate.now());
+        var tests = kiniela.bestelakoProbakForm(challengeId, module.getId());
+        tests.getProbak().get(0).setAdierazleaIds(Set.of(linkId));
+        kiniela.gordeBestelakoProbak(challengeId, module.getId(), tests);
+        em.flush(); em.clear();
+
+        var link = kiniela.kiniela(cycle.getId()).stream().filter(m -> m.id().equals(module.getId())).findFirst().orElseThrow()
+            .emaitzak().stream().filter(e -> e.id().equals(outcome.getId())).findFirst().orElseThrow()
+            .loturak().stream().filter(l -> l.id().equals(indicatorId)).findFirst().orElseThrow();
+        assertThat(link.ponderazioak()).hasSize(2).extracting(KinielaService.Ponderazioa::pisua)
+            .containsExactly(new java.math.BigDecimal("50.00"), new java.math.BigDecimal("50.00"));
+        var first = link.ponderazioak().get(0);
+        kiniela.gordePonderazioa(cycle.getId(), outcome.getId(), module.getId(), indicatorId,
+            first.mota(), first.elementuaId(), new java.math.BigDecimal("80"));
+        em.flush(); em.clear();
+        var reloaded = kiniela.kiniela(cycle.getId()).stream().filter(m -> m.id().equals(module.getId())).findFirst().orElseThrow()
+            .emaitzak().stream().filter(e -> e.id().equals(outcome.getId())).findFirst().orElseThrow()
+            .loturak().stream().filter(l -> l.id().equals(indicatorId)).findFirst().orElseThrow();
+        assertThat(reloaded.ponderazioak().get(0).pisua()).isEqualByComparingTo("80");
     }
 
     @Test void challengeImportCopiesYearDatesAndRubricButNotTeams() {

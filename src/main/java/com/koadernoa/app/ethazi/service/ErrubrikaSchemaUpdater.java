@@ -31,12 +31,12 @@ public class ErrubrikaSchemaUpdater {
         try (Connection connection = dataSource.getConnection()) {
             String product = connection.getMetaData().getDatabaseProductName();
             if (product == null || !product.toLowerCase().contains("mysql")) return;
-            if (!zutabeaDago("erronka_ebidentzia_id") || !zutabeaDago("lorpen_adierazleak_id")
-                    || !zutabeaDago("ebidentzia_id") || !zutabeaDago("adierazlea_id")) return;
-
-            // Garapeneko izendapen laburrarekin gordetako loturak izendapen
-            // kanonikora ekarri, halakorik balego.
-            jdbcTemplate.update("""
+            boolean biIzenak = zutabeaDago("erronka_ebidentzia_id") && zutabeaDago("lorpen_adierazleak_id")
+                    && zutabeaDago("ebidentzia_id") && zutabeaDago("adierazlea_id");
+            if (biIzenak) {
+                // Garapeneko izendapen laburrarekin gordetako loturak izendapen
+                // kanonikora ekarri, halakorik balego.
+                jdbcTemplate.update("""
                     UPDATE ethazi_erronka_ebidentzia_adierazlea
                     SET erronka_ebidentzia_id=ebidentzia_id,
                         lorpen_adierazleak_id=adierazlea_id
@@ -46,14 +46,67 @@ public class ErrubrikaSchemaUpdater {
                       AND adierazlea_id IS NOT NULL AND adierazlea_id<>0
                     """);
 
-            // JPAk lehenengo bi zutabeak erabiltzen ditu. Beste biek nullable
-            // izan behar dute INSERT berriek baliorik eman behar ez izateko.
-            nullableEginBeharrezkoaBada("ebidentzia_id");
-            nullableEginBeharrezkoaBada("adierazlea_id");
+                // JPAk lehenengo bi zutabeak erabiltzen ditu. Beste biek nullable
+                // izan behar dute INSERT berriek baliorik eman behar ez izateko.
+                nullableEginBeharrezkoaBada("ebidentzia_id");
+                nullableEginBeharrezkoaBada("adierazlea_id");
+            }
+            if (zutabeaDago("erronka_ebidentzia_id") && zutabeaDago("lorpen_adierazleak_id"))
+                migratuIkaskuntzaEmaitzadunLoturak();
+            migratuBestelakoProbenIkaskuntzaEmaitzadunLoturak();
         } catch (Exception ex) {
             log.error("Ezin izan da errubrikako ebidentzia-adierazle lotura-taula bateratu. "
                     + "Exekutatu docs/migrations/20261007-errubrika-adierazle-zutabeak.sql.", ex);
         }
+    }
+
+    /**
+     * Aurreko ereduan ebidentziak adierazlearekin bakarrik lotzen ziren. Lotura
+     * zahar bakoitza erronka/modulu horretan kinielan hautatutako IE guztietara
+     * zabaltzen da; horrela ez da informaziorik galtzen eta aurrerantzean IE
+     * bakoitza bereizita aukeratu ahal da.
+     */
+    private void migratuIkaskuntzaEmaitzadunLoturak() {
+        if (!taulaDago("ethazi_erronka_ebidentzia_kiniela_lotura") || !taulaDago(TAULA)) return;
+        int migrated = jdbcTemplate.update("""
+                INSERT IGNORE INTO ethazi_erronka_ebidentzia_kiniela_lotura (ebidentzia_id, kiniela_lotura_id)
+                SELECT DISTINCT ea.erronka_ebidentzia_id, kl.id
+                FROM ethazi_erronka_ebidentzia_adierazlea ea
+                JOIN ethazi_erronka_ebidentzia eb ON eb.id=ea.erronka_ebidentzia_id
+                JOIN ethazi_erronka_errubrika er ON er.id=eb.errubrika_id
+                JOIN ethazi_kiniela_lotura kl
+                  ON kl.adierazlea_id=ea.lorpen_adierazleak_id AND kl.moduloa_id=er.moduloa_id
+                JOIN ethazi_kiniela_lotura_erronka kle
+                  ON kle.lotura_id=kl.id AND kle.erronka_id=er.erronka_id
+                WHERE ea.erronka_ebidentzia_id IS NOT NULL AND ea.lorpen_adierazleak_id IS NOT NULL
+                """);
+        if (migrated > 0) log.info("Errubrikako {} ebidentzia/IE/adierazle lotura migratu dira.", migrated);
+    }
+
+    private void migratuBestelakoProbenIkaskuntzaEmaitzadunLoturak() {
+        String legacy = "ethazi_erronka_bestelako_proba_adierazlea";
+        String target = "ethazi_erronka_bestelako_proba_kiniela_lotura";
+        if (!taulaDago(target) || !taulaDago(legacy)) return;
+        int migrated = jdbcTemplate.update("""
+                INSERT IGNORE INTO ethazi_erronka_bestelako_proba_kiniela_lotura (proba_id, kiniela_lotura_id)
+                SELECT DISTINCT pa.proba_id, kl.id
+                FROM ethazi_erronka_bestelako_proba_adierazlea pa
+                JOIN ethazi_erronka_bestelako_proba p ON p.id=pa.proba_id
+                JOIN ethazi_erronka_errubrika er ON er.id=p.errubrika_id
+                JOIN ethazi_kiniela_lotura kl
+                  ON kl.adierazlea_id=pa.adierazlea_id AND kl.moduloa_id=er.moduloa_id
+                JOIN ethazi_kiniela_lotura_erronka kle
+                  ON kle.lotura_id=kl.id AND kle.erronka_id=er.erronka_id
+                """);
+        if (migrated > 0) log.info("Bestelako probetako {} proba/IE/adierazle lotura migratu dira.", migrated);
+    }
+
+    private boolean taulaDago(String taula) {
+        Integer count = jdbcTemplate.queryForObject("""
+                SELECT COUNT(*) FROM information_schema.TABLES
+                WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=?
+                """, Integer.class, taula);
+        return count != null && count > 0;
     }
 
     private boolean zutabeaDago(String zutabea) {

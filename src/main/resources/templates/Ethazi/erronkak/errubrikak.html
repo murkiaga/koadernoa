@@ -43,7 +43,9 @@
   <aside class="module-indicators rubric-toolbar rubric-edit-only" aria-label="Moduluaren lorpen-adierazleak">
     <h3>Lorpen-adierazleak</h3><p class="muted">Soilik erronkan ebaluatuko direnak agertzen dira. Errubrika honetan erabili gabe daudenak letra lodiz agertzen dira.</p>
     <div class="indicator-summary"><span th:each="a : ${adierazleak}" class="indicator-code"
-      th:classappend="${!a.erabilita} ? ' is-unused'" th:title="${a.deskribapena}" th:text="${a.kodea}"></span>
+      th:classappend="${!a.erabilita} ? ' is-unused'"
+      th:title="${a.deskribapena + (#strings.isEmpty(a.oharra) ? '' : ' · Oharra: ' + a.oharra)}"
+      th:text="${(#strings.isEmpty(a.emaitzaKodea) ? '' : a.emaitzaKodea + ' · ') + a.kodea}"></span>
       <span class="muted" th:if="${#lists.isEmpty(adierazleak)}">Kinielan ez da lorpen-adierazlerik markatu erronka eta modulu honetarako.</span></div>
   </aside>
   <form id="challenge-rubric-form" data-dirty-warning method="post" th:object="${form}" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/gorde(id=${erronka.id},mid=${moduloaId})}">
@@ -79,11 +81,13 @@
       <label class="rubric-edit-only evidence-evaluation-type">Ebaluazioa<select th:field="*{ebidentziak[__${es.index}__].ebaluazioMota}"><option value="TALDEKAKOA">Taldekakoa</option><option value="PERTSONALA">Pertsonala</option></select></label>
       <span class="rubric-read-only evidence-type-badge" th:text="${eb.ebaluazioMota == T(com.koadernoa.app.ethazi.entitateak.errubrikak.EbidentziaEbaluazioMota).PERTSONALA ? 'Pertsonala' : 'Taldekakoa'}"></span>
       <div class="rubric-read-only indicator-badges evidence-indicators"><span class="indicator-badge" th:each="a : ${adierazleak}"
-        th:if="${eb.adierazleaIds.contains(a.id)}" th:title="${a.deskribapena}" th:text="${a.kodea}"></span>
+        th:if="${eb.adierazleaIds.contains(a.id)}"
+        th:title="${a.deskribapena + (#strings.isEmpty(a.oharra) ? '' : ' · Oharra: ' + a.oharra)}"
+        th:text="${(#strings.isEmpty(a.emaitzaKodea) ? '' : a.emaitzaKodea + ' · ') + a.kodea}"></span>
         <span class="muted" th:if="${#sets.isEmpty(eb.adierazleaIds)}">—</span></div>
       <p class="rubric-edit-only indicator-edit-hint">Sakatu <strong>+</strong> lotzeko edo <strong class="badge-remove-hint">×</strong> kentzeko.</p>
-      <div class="rubric-edit-only indicator-picker"><label class="indicator-badge indicator-choice" th:each="a : ${adierazleak}" th:title="${a.deskribapena}">
-          <input type="checkbox" th:field="*{ebidentziak[__${es.index}__].adierazleaIds}" th:value="${a.id}"><span th:text="${a.kodea}"></span><span class="badge-remove" aria-hidden="true">×</span><span class="badge-add" aria-hidden="true">+</span>
+      <div class="rubric-edit-only indicator-picker"><label class="indicator-badge indicator-choice" th:each="a : ${adierazleak}" th:title="${a.deskribapena + (#strings.isEmpty(a.oharra) ? '' : ' · Oharra: ' + a.oharra)}">
+          <input type="checkbox" th:field="*{ebidentziak[__${es.index}__].adierazleaIds}" th:value="${a.id}"><span th:text="${(#strings.isEmpty(a.emaitzaKodea) ? '' : a.emaitzaKodea + ' · ') + a.kodea}"></span><span class="badge-remove" aria-hidden="true">×</span><span class="badge-add" aria-hidden="true">+</span>
         </label><span class="muted" th:if="${#lists.isEmpty(adierazleak)}">Ez dago hautatzeko adierazlerik.</span></div>
       <button type="submit" class="btn btn-danger rubric-edit-only" th:form="${'delete-evidence-' + eb.id}">Ebidentzia ezabatu</button></th>
       <td class="level-column" th:each="cell, cs : ${eb.mailak}" th:classappend="${cs.last} ? ' frozen-edge'" th:style="${'left:' + (280 + cs.index * 260) + 'px'}"><input type="hidden" th:field="*{ebidentziak[__${es.index}__].mailak[__${cs.index}__].mailaId}">
@@ -146,7 +150,7 @@
       <div class="other-test-card" th:each="p, ps : *{probak}"><input type="hidden" th:field="*{probak[__${ps.index}__].id}">
         <div class="other-test-fields"><label>Izena<input required maxlength="200" th:field="*{probak[__${ps.index}__].izena}"></label><label>Data<input required type="text" inputmode="numeric" placeholder="yyyy/mm/dd" pattern="\d{4}/\d{2}/\d{2}" th:field="*{probak[__${ps.index}__].data}"></label><label>Proben barruko pisua (%)<input required type="number" min="0" max="100" step="0.01" th:field="*{probak[__${ps.index}__].pisua}"></label>
           <button th:if="${#lists.isEmpty(p.notak.?[nota != null])}" type="submit" class="btn btn-danger" th:form="${'delete-other-test-' + p.id}">Ezabatu</button></div>
-        <div class="other-test-indicators"><strong>Lorpen-adierazleak</strong><div class="indicator-picker"><label class="indicator-badge indicator-choice" th:each="a : ${adierazleak}" th:title="${a.deskribapena}"><input type="checkbox" th:field="*{probak[__${ps.index}__].adierazleaIds}" th:value="${a.id}"><span th:text="${a.kodea}"></span><span class="badge-remove" aria-hidden="true">×</span><span class="badge-add" aria-hidden="true">+</span></label></div></div>
+        <div class="other-test-indicators"><strong>Lorpen-adierazleak</strong><div class="indicator-picker"><label class="indicator-badge indicator-choice" th:each="a : ${adierazleak}" th:title="${a.deskribapena + (#strings.isEmpty(a.oharra) ? '' : ' · Oharra: ' + a.oharra)}"><input type="checkbox" th:field="*{probak[__${ps.index}__].adierazleaIds}" th:value="${a.id}"><span th:text="${(#strings.isEmpty(a.emaitzaKodea) ? '' : a.emaitzaKodea + ' · ') + a.kodea}"></span><span class="badge-remove" aria-hidden="true">×</span><span class="badge-add" aria-hidden="true">+</span></label></div></div>
         <div class="other-test-grades"><h3>Ikasleen kalifikazioak</h3><div class="other-test-grade-scroll" role="region" th:attr="aria-label=${p.izena + ' · ikasleen kalifikazioak'}" tabindex="0">
           <table class="rubric other-test-grade-table"><thead><tr><th class="other-test-grade-label">Kalifikazioa</th><th class="student-grade-column" th:each="n : ${p.notak}" th:title="${n.ikasleaIzena}"><span th:text="${n.ikasleaIzena}"></span></th></tr></thead>
             <tbody><tr><th class="other-test-grade-label">Nota</th><td class="student-grade-column" th:each="n : ${p.notak}"><input type="number" min="0" max="10" step="0.01" placeholder="—" data-other-test-grade th:attr="aria-label=${n.ikasleaIzena + ' · nota'},data-action=@{/ethazi/erronkak/{id}/errubrikak/{mid}/bestelako-probak/{pid}/notak(id=${erronka.id},mid=${moduloaId},pid=${p.id})},data-student-id=${n.ikasleaId}" th:value="${n.nota}"><small class="team-grade-status" aria-live="polite"></small></td></tr></tbody>

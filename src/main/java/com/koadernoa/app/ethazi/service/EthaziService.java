@@ -28,6 +28,7 @@ public class EthaziService {
     private final GaitasunMailaRepository gaitasunMailak;
     private final LorpenAdierazleaRepository adierazleak;
     private final ErronkaEbidentziaRepository erronkaEbidentziak;
+    private final ErronkaErrubrikaRepository erronkaErrubrikak;
     private final IkaskuntzaEmaitzaRepository emaitzak;
 
     public record ErrubrikaLerroa(Gaitasuna gaitasuna, List<GaitasunMaila> gelaxkak) {}
@@ -375,7 +376,10 @@ public class EthaziService {
         if (id == null) a.setOrdena(gm.getLorpenAdierazleak().stream().mapToInt(LorpenAdierazlea::getOrdena).max().orElse(0) + 1);
         a.setDeskribapena(deskribapena); a.setDeskribapenaEs(f.getDeskribapenaEs()); a.setDeskribapenaEn(f.getDeskribapenaEn());
         if (g.getZikloa() != null) {
-            a.getKinielaLoturak().removeIf(l -> !f.getEmaitzaIds().contains(l.getEmaitza().getId()));
+            var kenduBeharrekoLoturak = a.getKinielaLoturak().stream()
+                .filter(l -> !f.getEmaitzaIds().contains(l.getEmaitza().getId())).toList();
+            kenduKinielaLoturakErrubriketatik(kenduBeharrekoLoturak);
+            a.getKinielaLoturak().removeAll(kenduBeharrekoLoturak);
             a.getPisuak().keySet().removeIf(ie -> !f.getEmaitzaIds().contains(ie.getId()));
         }
         a.getIkaskuntzaEmaitzak().clear(); a.getIkaskuntzaEmaitzak().addAll(selected);
@@ -387,8 +391,10 @@ public class EthaziService {
         kenduAdierazlea(gaitasunMaila(gaitasunaAldatzeko(gaitasunaId), mailaId), id);
     }
     private void kenduAdierazlea(GaitasunMaila gm, Long id) {
+        var adierazlea = adierazlea(gm, id);
         kenduErronkaEbidentzietatik(id);
-        gm.getLorpenAdierazleak().remove(adierazlea(gm, id));
+        kenduKinielaLoturakErrubriketatik(adierazlea.getKinielaLoturak());
+        gm.getLorpenAdierazleak().remove(adierazlea);
         gm.getLorpenAdierazleak().sort(Comparator.comparing(LorpenAdierazlea::getOrdena));
         for (int i = 0; i < gm.getLorpenAdierazleak().size(); i++) gm.getLorpenAdierazleak().get(i).setOrdena(i + 1);
         gaitasunak.flush();
@@ -397,6 +403,15 @@ public class EthaziService {
         erronkaEbidentziak.findByLorpenAdierazleakId(adierazleaId).forEach(eb ->
             eb.getLorpenAdierazleak().removeIf(a -> a.getId().equals(adierazleaId)));
         erronkaEbidentziak.flush();
+    }
+    private void kenduKinielaLoturakErrubriketatik(Collection<KinielaLotura> loturak) {
+        var ids = loturak.stream().map(KinielaLotura::getId).filter(Objects::nonNull).collect(Collectors.toSet());
+        if (ids.isEmpty()) return;
+        erronkaErrubrikak.findAll().forEach(r -> {
+            r.getEbidentziak().forEach(e -> e.getKinielaLoturak().removeIf(l -> ids.contains(l.getId())));
+            r.getBestelakoProbak().forEach(p -> p.getKinielaLoturak().removeIf(l -> ids.contains(l.getId())));
+        });
+        erronkaErrubrikak.flush();
     }
     private GaitasunMaila gaitasunMaila(Gaitasuna g, Long id) {
         return g.getMailak().stream().filter(m -> m.getId().equals(id)).findFirst()

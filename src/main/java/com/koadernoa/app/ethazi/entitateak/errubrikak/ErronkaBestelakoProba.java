@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.koadernoa.app.ethazi.entitateak.gaitasunak.LorpenAdierazlea;
+import com.koadernoa.app.ethazi.entitateak.gaitasunak.KinielaLotura;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -26,6 +27,11 @@ public class ErronkaBestelakoProba {
         joinColumns = @JoinColumn(name = "proba_id"), inverseJoinColumns = @JoinColumn(name = "adierazlea_id"),
         uniqueConstraints = @UniqueConstraint(name = "uk_bestelako_proba_adierazlea", columnNames = {"proba_id", "adierazlea_id"}))
     private Set<LorpenAdierazlea> lorpenAdierazleak = new LinkedHashSet<>();
+    @ManyToMany
+    @JoinTable(name = "ethazi_erronka_bestelako_proba_kiniela_lotura",
+        joinColumns = @JoinColumn(name = "proba_id"), inverseJoinColumns = @JoinColumn(name = "kiniela_lotura_id"),
+        uniqueConstraints = @UniqueConstraint(name = "uk_bestelako_proba_kiniela_lotura", columnNames = {"proba_id", "kiniela_lotura_id"}))
+    private Set<KinielaLotura> kinielaLoturak = new LinkedHashSet<>();
     @OneToMany(mappedBy = "proba", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ErronkaBestelakoProbaNota> notak = new ArrayList<>();
 }
