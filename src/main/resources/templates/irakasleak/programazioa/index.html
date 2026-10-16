@@ -152,6 +152,7 @@
       border-radius:10px;
       width:100%;
     }
+    .field #jpPisua { width:90px; box-sizing:border-box; }
 
   	/* Ebaluaketa koloreak */
 	  /* Ebaluaketa koloreak: ebaluazio beraren “kolorea” erabili */
@@ -394,7 +395,9 @@
 		                  th:attr="data-jp-id=${jp.id}">
 		                <span class="handle jp-handle" title="Arrastatu jarduera ordena aldatzeko">≡</span>
 		                <div>
-		                  <span class="jp-title" th:text="${jp.izenburua}">Jarduera</span>
+		                  <span class="jp-title"
+		                        th:text="${(jp.kalifikagarria ? '📝 ' : '') + jp.izenburua
+		                          + (jp.kalifikagarria and jp.pisua != null ? ' (' + #numbers.formatDecimal(jp.pisua, 1, 2) + '%)' : '')}">Jarduera</span>
 		                  <span class="jp-hours" th:text="|(${jp.orduak}h)|">(0h)</span>
 		                </div>
 		                <div class="actions">
@@ -541,6 +544,16 @@
         <div class="field">
           <label>Orduak (h)</label>
           <input type="number" id="jpOrduak" min="0" step="1" value="0">
+        </div>
+        <div class="field" style="display:flex;align-items:end;gap:1rem;flex-wrap:wrap;">
+          <label for="jpKalifikagarria" style="display:flex;align-items:center;gap:.5rem;">
+            <input type="checkbox" id="jpKalifikagarria">
+            Kalifikagarria
+          </label>
+          <label id="jpPisuaWrap" for="jpPisua" style="display:none;min-width:170px;">
+            Ebaluaketako pisua (%)
+            <input type="number" id="jpPisua" min="0" max="100" step="0.01" value="0">
+          </label>
         </div>
       </div>
       <div class="actions">
@@ -870,12 +883,25 @@
   const jpModal = document.getElementById('jpModal');
   const jpForm  = document.getElementById('jpModalForm');
   const jpDeleteBtn = document.getElementById('jpDeleteBtn');
+  const jpKalifikagarria = document.getElementById('jpKalifikagarria');
+  const jpPisua = document.getElementById('jpPisua');
+  const jpPisuaWrap = document.getElementById('jpPisuaWrap');
+
+  function eguneratuJpPisua() {
+    const aktibo = jpKalifikagarria.checked;
+    jpPisuaWrap.style.display = aktibo ? 'block' : 'none';
+    jpPisua.required = aktibo;
+    jpPisua.disabled = !aktibo;
+    if (!aktibo) jpPisua.value = '';
+  }
+  jpKalifikagarria.addEventListener('change', eguneratuJpPisua);
 
   function openJpAdd(btn){
     jpForm.reset();
     document.getElementById('jpId').value = '';
     document.getElementById('jpUdId').value = btn.getAttribute('data-ud-id');
     jpDeleteBtn.style.display = 'none';
+    eguneratuJpPisua();
     jpModal.showModal();
   }
   function openJpEdit(btn){
@@ -885,6 +911,9 @@
       document.getElementById('jpUdId').value = d.udId;
       document.getElementById('jpIzenburua').value = d.izenburua;
       document.getElementById('jpOrduak').value = d.orduak ?? 0;
+      document.getElementById('jpKalifikagarria').checked = d.kalifikagarria === true;
+      document.getElementById('jpPisua').value = d.pisua ?? 0;
+      eguneratuJpPisua();
 
       jpDeleteBtn.style.display = 'inline-flex';
       jpDeleteBtn.onclick = () => {
@@ -903,7 +932,10 @@
     const payload = {
       udId: parseInt(document.getElementById('jpUdId').value, 10),
       izenburua: document.getElementById('jpIzenburua').value,
-      orduak: parseInt(document.getElementById('jpOrduak').value || '0', 10)
+      orduak: parseInt(document.getElementById('jpOrduak').value || '0', 10),
+      kalifikagarria: document.getElementById('jpKalifikagarria').checked,
+      pisua: document.getElementById('jpKalifikagarria').checked
+        ? Number.parseFloat(document.getElementById('jpPisua').value || '0') : null
     };
     const url = id ? `/irakasle/programazioa/api/jp/${id}` : `/irakasle/programazioa/api/jp`;
     const method = id ? 'PUT' : 'POST';

@@ -1,5 +1,6 @@
 package com.koadernoa.app.objektuak.koadernoak.service;
 
+import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -39,7 +40,8 @@ public class DenboralizazioGeneratorService {
 	private final JardueraRepository jardueraRepository;
 	
 	/** Aurreikuspena egiteko DTO sinplea */
-	public record PreviewItem(LocalDate data, String titulua, float orduak, String mota, String azalpena, UnitateDidaktikoa unitatea) {}
+	public record PreviewItem(LocalDate data, String titulua, float orduak, String mota, String azalpena,
+	                          UnitateDidaktikoa unitatea, boolean kalifikagarria, BigDecimal pisua) {}
 	
 	/**
 	* Oinarrizko API:
@@ -118,7 +120,8 @@ public class DenboralizazioGeneratorService {
 
 	    // 4) Slot -> chunk esleipena (effectiveSlots erabilita)
 	    List<PreviewItem> generated = allocate(chunks, effectiveSlots).stream()
-	            .map(a -> new PreviewItem(a.date, a.title, a.hours, "planifikatua", a.description, a.unitatea))
+	            .map(a -> new PreviewItem(a.date, a.title, a.hours, "planifikatua", a.description,
+	                    a.unitatea, a.kalifikagarria, a.pisua))
 	            .toList();
 
 	    // 5) DB-an idatzi
@@ -132,6 +135,8 @@ public class DenboralizazioGeneratorService {
 	            j.setUnitatea(p.unitatea());
 	            j.setOrduak(p.orduak());
 	            j.setMota(p.mota());
+	            j.setKalifikagarria(p.kalifikagarria());
+	            j.setPisua(p.kalifikagarria() ? p.pisua() : null);
 	            return j;
 	        }).toList();
 	        jardueraRepository.saveAll(entities);
@@ -221,7 +226,8 @@ public class DenboralizazioGeneratorService {
 	
 	// ==== 2) Programazioa -> chunk sekuentzia ====
 	
-	private record PlannedChunk(String title, String description, int hours, int udOrder, UnitateDidaktikoa unitatea) {}
+	private record PlannedChunk(String title, String description, int hours, int udOrder,
+	                            UnitateDidaktikoa unitatea, boolean kalifikagarria, BigDecimal pisua) {}
 
 
 	private List<PlannedChunk> flattenProgramazioa(Programazioa p) {
@@ -256,13 +262,15 @@ public class DenboralizazioGeneratorService {
 	            for (com.koadernoa.app.objektuak.koadernoak.entitateak.JardueraPlanifikatua jp : azpi) {
 	                String title = jp.getIzenburua();
 	                int h = java.lang.Math.max(0, java.util.Optional.ofNullable(jp.getOrduak()).orElse(0));
-	                if (h > 0) {
+	                if (h > 0 || jp.isKalifikagarria()) {
 	                    out.add(new PlannedChunk(
 	                        title,
 	                        ud.getKodea() + " — " + ud.getIzenburua(),
 	                        h,
 	                        udOrder,
-	                        ud
+	                        ud,
+	                        jp.isKalifikagarria(),
+	                        jp.isKalifikagarria() ? jp.getPisua() : null
 	                    ));
 	                    consumed += h;
 	                }
@@ -279,7 +287,9 @@ public class DenboralizazioGeneratorService {
 	                ud.getKodea() + " — (UD orokorra)",
 	                remaining,
 	                udOrder,
-	                ud
+	                ud,
+	                false,
+	                null
 	            ));
 	        }
 	    }
@@ -288,7 +298,8 @@ public class DenboralizazioGeneratorService {
 	
 	// ==== 4) Esleipena: slots -> chunks ====
 	
-	private record Alloc(LocalDate date, String title, String description, float hours, UnitateDidaktikoa unitatea) {}
+	private record Alloc(LocalDate date, String title, String description, float hours,
+	                     UnitateDidaktikoa unitatea, boolean kalifikagarria, BigDecimal pisua) {}
 
 
 	private List<Alloc> allocate(List<PlannedChunk> chunks, List<SessionSlot> slots) {
@@ -297,13 +308,34 @@ public class DenboralizazioGeneratorService {
 		int chunkIdx = 0;
 		int chunkRemaining = chunks.get(0).hours();
 		PlannedChunk current = chunks.get(0);
+		BigDecimal esleitutakoPisua = BigDecimal.ZERO;
 
 
 		for (SessionSlot s : slots) {
 			int capacity = s.slots(); // slot bakoitza = 1 ordu
 			while (capacity > 0 && chunkIdx < chunks.size()) {
+				if (chunkRemaining == 0) {
+					out.add(new Alloc(s.date(), current.title(), current.description(), 0,
+					        current.unitatea(), current.kalifikagarria(), current.pisua()));
+					chunkIdx++;
+					if (chunkIdx < chunks.size()) {
+						current = chunks.get(chunkIdx);
+						chunkRemaining = current.hours();
+						esleitutakoPisua = BigDecimal.ZERO;
+					}
+					continue;
+				}
 				int take = Math.min(capacity, chunkRemaining);
-				out.add(new Alloc(s.date(), current.title(), current.description(), take, current.unitatea()));
+				BigDecimal zatiPisua = null;
+				if (current.kalifikagarria() && current.pisua() != null) {
+					zatiPisua = take == chunkRemaining
+							? current.pisua().subtract(esleitutakoPisua)
+							: current.pisua().multiply(BigDecimal.valueOf(take))
+								.divide(BigDecimal.valueOf(current.hours()), 2, java.math.RoundingMode.HALF_UP);
+					esleitutakoPisua = esleitutakoPisua.add(zatiPisua);
+				}
+				out.add(new Alloc(s.date(), current.title(), current.description(), take,
+				        current.unitatea(), current.kalifikagarria(), zatiPisua));
 				capacity -= take;
 				chunkRemaining -= take;
 				if (chunkRemaining == 0) {
@@ -311,6 +343,7 @@ public class DenboralizazioGeneratorService {
 					if (chunkIdx < chunks.size()) {
 						current = chunks.get(chunkIdx);
 						chunkRemaining = current.hours();
+						esleitutakoPisua = BigDecimal.ZERO;
 					}
 				}
 			}

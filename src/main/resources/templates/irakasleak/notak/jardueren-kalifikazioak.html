@@ -16,6 +16,7 @@
     .kalifikazio-taula th:first-child { min-width: 210px; position: sticky; left: 0; z-index: 3; }
     .kalifikazio-taula td:first-child { position: sticky; left: 0; z-index: 2; background: #fff; font-weight: 600; }
     .kalifikazio-taula .guztira { min-width: 90px; font-weight: 800; text-align: center; }
+    .irauli-btn { margin-top:.25rem; padding:.35rem .55rem; white-space:normal; font-size:.75rem; line-height:1.2; }
     .jarduera-izena { display: block; margin-bottom: .45rem; color: inherit; }
     .jarduera-izena[href] { color: var(--primary); text-decoration: underline; }
     .jarduera-data, .pisu-guztira { display:block; margin-bottom:.45rem; color:#6b7280; font-size:.82rem; font-weight:500; }
@@ -65,6 +66,13 @@
               Guztira
               <span id="pisuGuztira" class="pisu-guztira"
                     th:text="${#numbers.formatDecimal(jarduerenPisuGuztira, 1, 2)} + '%'">0%</span>
+              <button class="btn primary irauli-btn" type="submit"
+                      th:if="${notaKalkulatuakIrauliDaitezke}"
+                      th:formaction="@{/irakasle/notak/jarduerak/irauli}"
+                      formmethod="post"
+                      onclick="return confirm('Kalkulatutako notek ebaluazio honetako oraingo notak ordezkatuko dituzte. 5etik beherako notak beheruntz borobilduko dira eta gainontzekoak ,51 edo handiagoak gorantza. Jarraitu?')">
+                Irauli ebaluaketako notara
+              </button>
             </th>
             <th th:each="j : ${jarduerak}" th:classappend="${j.id == fokukoJardueraId} ? ' fokua'">
               <a class="jarduera-izena" th:if="${j.moodleEsteka != null and !#strings.isEmpty(j.moodleEsteka)}"

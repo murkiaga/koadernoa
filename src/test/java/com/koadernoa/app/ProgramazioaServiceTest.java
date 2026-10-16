@@ -6,16 +6,19 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Ebaluaketa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoOrdutegiBlokea;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.JardueraPlanifikatua;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Programazioa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.UnitateDidaktikoa;
@@ -30,6 +33,28 @@ import com.koadernoa.app.objektuak.koadernoak.service.ProgramazioaService;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 
 class ProgramazioaServiceTest {
+
+    @Test
+    void jardueraPlanifikatuKalifikagarriarenPisuaGordetzenDu() {
+        UnitateDidaktikoaRepository udRepository = mock(UnitateDidaktikoaRepository.class);
+        JardueraPlanifikatuaRepository jpRepository = mock(JardueraPlanifikatuaRepository.class);
+        ProgramazioaService service = new ProgramazioaService(
+                mock(ProgramazioaRepository.class), udRepository, jpRepository,
+                mock(JardueraRepository.class), mock(EbaluaketaRepository.class),
+                mock(KoadernoaRepository.class), mock(DenboralizazioGeneratorService.class));
+        UnitateDidaktikoa ud = new UnitateDidaktikoa();
+        ud.setId(10L);
+        ud.setOrduak(10);
+        ud.setAzpiJarduerak(new ArrayList<>());
+        when(udRepository.findById(10L)).thenReturn(java.util.Optional.of(ud));
+
+        service.addJardueraPlanifikatua(10L, "Azterketa", 1, true, new BigDecimal("25.50"));
+
+        ArgumentCaptor<JardueraPlanifikatua> captor = ArgumentCaptor.forClass(JardueraPlanifikatua.class);
+        verify(jpRepository).save(captor.capture());
+        assertThat(captor.getValue().isKalifikagarria()).isTrue();
+        assertThat(captor.getValue().getPisua()).isEqualByComparingTo("25.50");
+    }
 
     @Test
     void syncDualUdForProgramazioaReusesDualUdMovedToAnotherEbaluaketa() {

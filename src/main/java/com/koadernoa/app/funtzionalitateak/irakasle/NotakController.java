@@ -32,6 +32,7 @@ import com.koadernoa.app.objektuak.audit.entitateak.AuditEkintza;
 import com.koadernoa.app.objektuak.audit.service.AuditService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.service.JardueraKalifikazioService;
+import com.koadernoa.app.objektuak.koadernoak.service.JardueraNotaIraulketaService;
 import com.koadernoa.app.objektuak.modulua.entitateak.Matrikula;
 import com.koadernoa.app.objektuak.modulua.entitateak.MatrikulaEgoera;
 import com.koadernoa.app.objektuak.modulua.repository.MatrikulaRepository;
@@ -53,6 +54,7 @@ public class NotakController {
     private final EbaluazioNotaService ebaluazioNotaService;
     private final AuditService auditService;
     private final JardueraKalifikazioService jardueraKalifikazioService;
+    private final JardueraNotaIraulketaService jardueraNotaIraulketaService;
 
     @GetMapping
     public String notakPantaila(@ModelAttribute("koadernoAktiboa") Koadernoa koadernoa,
@@ -222,6 +224,8 @@ public class NotakController {
         model.addAttribute("matrikulak", data.matrikulak());
         model.addAttribute("jardueraNotak", data.notak());
         model.addAttribute("guztirakoak", data.guztirakoak());
+        model.addAttribute("notaKalkulatuakIrauliDaitezke",
+                jardueraNotaIraulketaService.irauliDaiteke(koadernoa.getId(), data.hautatutakoEbaluaketaId()));
         model.addAttribute("fokukoJardueraId", data.fokukoJardueraId());
         model.addAttribute("jardueraKalifikagarriakBadira",
                 jardueraKalifikazioService.badagoJardueraKalifikagarririk(koadernoa.getId()));
@@ -241,6 +245,37 @@ public class NotakController {
         try {
             jardueraKalifikazioService.gorde(koadernoa.getId(), ebaluaketaId, request.getParameterMap());
             redirectAttributes.addFlashAttribute("success", "Jardueren kalifikazioak ondo gorde dira.");
+        } catch (IllegalArgumentException ex) {
+            redirectAttributes.addFlashAttribute("error", ex.getMessage());
+        }
+        return "redirect:/irakasle/notak/jarduerak?ebaluaketaId=" + ebaluaketaId;
+    }
+
+    @PostMapping("/jarduerak/irauli")
+    public String irauliJarduerenNotaKalkulatuak(
+            @ModelAttribute("koadernoAktiboa") Koadernoa koadernoa,
+            @RequestParam("ebaluaketaId") Long ebaluaketaId,
+            RedirectAttributes redirectAttributes) {
+        if (koadernoa == null || koadernoa.getId() == null) {
+            redirectAttributes.addFlashAttribute("error", "Ez dago koaderno aktiborik aukeratuta.");
+            return "redirect:/irakasle";
+        }
+        try {
+            int iraulitakoak = jardueraNotaIraulketaService.irauli(koadernoa, ebaluaketaId);
+            redirectAttributes.addFlashAttribute("success",
+                    iraulitakoak + " ikasleren nota kalkulatuak ebaluaketara irauli dira.");
+
+            var event = auditService.buildBaseEvent(
+                    null, null, null, null,
+                    "/irakasle/notak/jarduerak/irauli", "POST", null, null,
+                    "Ekintza=NOTA_KALKULATUAK_IRAULI; ebaluaketaId=" + ebaluaketaId
+                            + "; ikasleKopurua=" + iraulitakoak,
+                    AuditAtala.NOTAK, AuditEkintza.NOTA_KALKULATUAK_IRAULI);
+            event.setKoadernoId(koadernoa.getId());
+            event.setEntitateMota("Ebaluaketa");
+            event.setEntitateId(String.valueOf(ebaluaketaId));
+            event.setArrakastatsua(true);
+            auditService.recordAction(event);
         } catch (IllegalArgumentException ex) {
             redirectAttributes.addFlashAttribute("error", ex.getMessage());
         }

@@ -1,5 +1,6 @@
 package com.koadernoa.app.objektuak.koadernoak.service;
 
+import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -180,23 +181,29 @@ public class ProgramazioaService {
     }
 
     @Transactional
-    public void addJardueraPlanifikatua(Long udId, String izenburua, int orduak) {
+    public void addJardueraPlanifikatua(Long udId, String izenburua, int orduak, boolean kalifikagarria,
+                                        BigDecimal pisua) {
         var ud = udRepository.findById(udId).orElseThrow();
         balidatuJardueraOrduakEzDirelaGainditzen(udId, null, orduak);
         var jp = new JardueraPlanifikatua();
         jp.setUnitatea(ud);
         jp.setIzenburua(izenburua);
         jp.setOrduak(orduak);
+        jp.setKalifikagarria(kalifikagarria);
+        jp.setPisua(balidatuPisua(kalifikagarria, pisua));
         jp.setPosizioa(ud.getAzpiJarduerak().size());
         jpRepository.save(jp);
     }
 
     @Transactional
-    public void updateJardueraPlanifikatua(Long jpId, String izenburua, int orduak) {
+    public void updateJardueraPlanifikatua(Long jpId, String izenburua, int orduak, boolean kalifikagarria,
+                                           BigDecimal pisua) {
         var jp = jpRepository.findById(jpId).orElseThrow();
         balidatuJardueraOrduakEzDirelaGainditzen(jp.getUnitatea().getId(), jpId, orduak);
         jp.setIzenburua(izenburua);
         jp.setOrduak(orduak);
+        jp.setKalifikagarria(kalifikagarria);
+        jp.setPisua(balidatuPisua(kalifikagarria, pisua));
         jpRepository.save(jp);
     }
 
@@ -204,6 +211,15 @@ public class ProgramazioaService {
     public void deleteJardueraPlanifikatua(Long jpId) {
         var jp = jpRepository.findById(jpId).orElseThrow();
         jpRepository.delete(jp);
+    }
+
+    private BigDecimal balidatuPisua(boolean kalifikagarria, BigDecimal pisua) {
+        if (!kalifikagarria) return null;
+        if (pisua == null || pisua.compareTo(BigDecimal.ZERO) < 0
+                || pisua.compareTo(new BigDecimal("100")) > 0) {
+            throw new IllegalArgumentException("Ebaluaketako pisua 0 eta 100 artekoa izan behar da.");
+        }
+        return pisua.setScale(2, java.math.RoundingMode.HALF_UP);
     }
 
     // ========= Ordena =========
@@ -381,6 +397,8 @@ public class ProgramazioaService {
                     jpNew.setPosizioa(jpSrc.getPosizioa());
                     jpNew.setIzenburua(jpSrc.getIzenburua());
                     jpNew.setOrduak(jpSrc.getOrduak());
+                    jpNew.setKalifikagarria(jpSrc.isKalifikagarria());
+                    jpNew.setPisua(jpSrc.isKalifikagarria() ? jpSrc.getPisua() : null);
 
                     udNew.getAzpiJarduerak().add(jpNew);
                 }

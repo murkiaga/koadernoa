@@ -1,5 +1,7 @@
 package com.koadernoa.app.objektuak.koadernoak.entitateak;
 
+import java.math.BigDecimal;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -34,6 +36,12 @@ public class ProgramazioTxantiloiJarduera {
     private Integer iraupenaMin;
 
     private Integer ordena;
+
+    @Column(nullable = false)
+    private boolean kalifikagarria = false;
+
+    @Column(precision = 5, scale = 2)
+    private BigDecimal pisua;
 
     @Column(length = 500)
     private String oharrak;

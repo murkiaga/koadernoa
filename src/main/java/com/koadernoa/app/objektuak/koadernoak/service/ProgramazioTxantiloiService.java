@@ -72,6 +72,8 @@ public class ProgramazioTxantiloiService {
             tJ.setDeskribapena(j.getDeskribapena());
             tJ.setIraupenaMin(kalkulatuIraupenaMin(j));
             tJ.setOharrak(j.getMota());
+            tJ.setKalifikagarria(j.isKalifikagarria());
+            tJ.setPisua(j.isKalifikagarria() ? j.getPisua() : null);
             tJ.setEbaluaketaOrdena(ebaluaketaOrdena(j, ebaluaketak));
             UdInfo udInfo = parseUdInfo(j);
             tJ.setUdKodea(udInfo.kodea());
@@ -125,6 +127,8 @@ public class ProgramazioTxantiloiService {
             jp.setUnitatea(ud);
             jp.setIzenburua(j.getIzenburua());
             jp.setOrduak(bihurtuMinutuakOrduetara(j.getIraupenaMin()));
+            jp.setKalifikagarria(j.isKalifikagarria());
+            jp.setPisua(j.isKalifikagarria() ? j.getPisua() : null);
             jp.setPosizioa(ud.getAzpiJarduerak() == null ? 0 : ud.getAzpiJarduerak().size());
             jpRepository.save(jp);
             gehitutakoak++;

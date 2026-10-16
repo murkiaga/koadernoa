@@ -1,5 +1,7 @@
 package com.koadernoa.app.objektuak.koadernoak.entitateak;
 
+import java.math.BigDecimal;
+
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -34,6 +36,12 @@ public class JardueraPlanifikatua {
     @Column(nullable=false)
     private int posizioa = 0;
 
+    @Column(nullable = false)
+    private boolean kalifikagarria = false;
+
+    @Column(precision = 5, scale = 2)
+    private BigDecimal pisua;
+
     public JardueraPlanifikatua() {}
 
     public JardueraPlanifikatua(UnitateDidaktikoa unitatea, String izenburua, int orduak) {
@@ -42,4 +50,3 @@ public class JardueraPlanifikatua {
         this.orduak = orduak;
     }
 }
-

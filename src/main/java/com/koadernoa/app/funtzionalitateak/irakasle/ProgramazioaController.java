@@ -1,5 +1,6 @@
 package com.koadernoa.app.funtzionalitateak.irakasle;
 
+import java.math.BigDecimal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -282,9 +283,11 @@ public class ProgramazioaController {
         @PathVariable Long udId,
         @RequestParam String izenburua,
         @RequestParam(defaultValue = "0") int orduak,
+        @RequestParam(defaultValue = "false") boolean kalifikagarria,
+        @RequestParam(required = false) BigDecimal pisua,
         RedirectAttributes ra
     ) {
-        programazioaService.addJardueraPlanifikatua(udId, izenburua, orduak);
+        programazioaService.addJardueraPlanifikatua(udId, izenburua, orduak, kalifikagarria, pisua);
         auditAction(AuditEkintza.UDAN_JARDUERA_PLANIFIKATU, null, "JardueraPlanifikatua", null);
         ra.addFlashAttribute("ok", "Jarduera planifikatua sortuta.");
         return "redirect:/irakasle/programazioa";
@@ -295,9 +298,11 @@ public class ProgramazioaController {
         @PathVariable Long jpId,
         @RequestParam String izenburua,
         @RequestParam int orduak,
+        @RequestParam(defaultValue = "false") boolean kalifikagarria,
+        @RequestParam(required = false) BigDecimal pisua,
         RedirectAttributes ra
     ) {
-        programazioaService.updateJardueraPlanifikatua(jpId, izenburua, orduak);
+        programazioaService.updateJardueraPlanifikatua(jpId, izenburua, orduak, kalifikagarria, pisua);
         ra.addFlashAttribute("ok", "Jarduera planifikatua eguneratua.");
         return "redirect:/irakasle/programazioa";
     }

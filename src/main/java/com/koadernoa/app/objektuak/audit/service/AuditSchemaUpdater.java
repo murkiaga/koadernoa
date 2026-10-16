@@ -46,6 +46,7 @@ public class AuditSchemaUpdater {
                     'FALTAK_HEZKUNTZATIK_INPORTATU',
                     'FALTEN_JAKINARAZPENA_DESKARGATU',
                     'NOTAK_GORDE',
+                    'NOTA_KALKULATUAK_IRAULI',
                     'ESTATISTIKA_BERKALKULATU',
                     'KOADERNOA_SORTU',
                     'KOADERNOA_EZABATU',

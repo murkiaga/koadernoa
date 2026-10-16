@@ -1,5 +1,7 @@
 package com.koadernoa.app.funtzionalitateak.irakasle;
 
+import java.math.BigDecimal;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -77,6 +79,16 @@ public class ProgramazioaApiController {
         return number.intValue();
     }
 
+    private BigDecimal getDecimal(Map<String,Object> body, String key) {
+        Object value = body.get(key);
+        if (value == null || value.toString().isBlank()) return null;
+        try {
+            return new BigDecimal(value.toString().replace(',', '.'));
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("Ebaluaketako pisua ez da baliozkoa.");
+        }
+    }
+
     // ======== GET (modaletarako datuak) ========
     @GetMapping("/ud/{id}")
     public Map<String,Object> getUd(@PathVariable Long id,
@@ -103,7 +115,14 @@ public class ProgramazioaApiController {
         if (!programazioaService.jpDagokioKoadernoari(id, k.getId()))
             throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
         var jp = programazioaService.findJarduera(id);
-        return Map.of("id", jp.getId(), "udId", jp.getUnitatea().getId(), "izenburua", jp.getIzenburua(), "orduak", jp.getOrduak());
+        Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("id", jp.getId());
+        result.put("udId", jp.getUnitatea().getId());
+        result.put("izenburua", jp.getIzenburua());
+        result.put("orduak", jp.getOrduak());
+        result.put("kalifikagarria", jp.isKalifikagarria());
+        result.put("pisua", jp.getPisua());
+        return result;
     }
 
     // ======== EBALUAKETA: GET/CREATE/UPDATE/DELETE ========
@@ -263,7 +282,9 @@ public class ProgramazioaApiController {
             throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
         programazioaService.addJardueraPlanifikatua(udId,
                 (String) body.get("izenburua"),
-                ((Number) body.getOrDefault("orduak", 0)).intValue());
+                ((Number) body.getOrDefault("orduak", 0)).intValue(),
+                Boolean.TRUE.equals(body.get("kalifikagarria")),
+                getDecimal(body, "pisua"));
         auditAction(auth, AuditEkintza.UDAN_JARDUERA_PLANIFIKATU, k.getId(), "JardueraPlanifikatua", null);
         return ResponseEntity.ok(Map.of("ok", true));
     }
@@ -277,7 +298,9 @@ public class ProgramazioaApiController {
             throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
         programazioaService.updateJardueraPlanifikatua(id,
                 (String) body.get("izenburua"),
-                ((Number) body.getOrDefault("orduak", 0)).intValue());
+                ((Number) body.getOrDefault("orduak", 0)).intValue(),
+                Boolean.TRUE.equals(body.get("kalifikagarria")),
+                getDecimal(body, "pisua"));
         return ResponseEntity.ok(Map.of("ok", true));
     }
 
