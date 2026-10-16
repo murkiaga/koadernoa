@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Ikasleen emailen AD aurrebista</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" th:href="@{/css/navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
+</head>
+<body>
+<div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+<main class="page">
+  <p><a th:href="@{/kudeatzaile/moduloa(taldeaId=${aurrebista.taldea.id})}">← Modulura itzuli</a></p>
+  <h1 th:text="|${aurrebista.taldea.izena} — Ikasleen emailen aurrebista|">Emailen aurrebista</h1>
+  <p>
+    <strong th:text="|${aurrebista.ziurrak} ziur|">0 ziur</strong> ·
+    <strong th:text="|${aurrebista.zalantzak} zalantza|">0 zalantza</strong> ·
+    <strong th:text="|${aurrebista.ezAurkitua} aurkitu gabe|">0 aurkitu gabe</strong>
+  </p>
+  <p class="muted">Ziurrak lehenetsita daude. Lehendik emaila duten ikasleen ordezkapena berariaz baieztatu behar da.</p>
+  <form method="post" th:action="@{/kudeatzaile/moduloa/ikasle-emailak-ad/gorde}">
+    <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+    <input type="hidden" name="taldeaId" th:value="${aurrebista.taldea.id}">
+    <div class="table-wrap"><table>
+      <thead><tr><th>Hautatu</th><th>Ikaslea</th><th>Oraingo emaila</th><th>ADko emaila / hautagaia</th><th>Egoera</th><th>Ordezkatu</th></tr></thead>
+      <tbody>
+      <tr th:each="lerroa : ${aurrebista.lerroak}">
+        <td><input type="checkbox" name="hautatu" th:value="${lerroa.ikaslea.id}"
+                   th:checked="${lerroa.lehenetsita}" th:disabled="${lerroa.egoera.name() == 'EZ_AURKITUA'}"></td>
+        <td th:text="${lerroa.ikaslea.izenOsoa}">Ikaslea</td>
+        <td th:text="${lerroa.ikaslea.email != null ? lerroa.ikaslea.email : '—'}">—</td>
+        <td>
+          <input th:if="${lerroa.egoera.name() == 'ZIURRA'}" type="hidden"
+                 th:name="|email_${lerroa.ikaslea.id}|" th:value="${lerroa.proposatutakoEmaila}">
+          <span th:if="${lerroa.egoera.name() == 'ZIURRA'}" th:text="${lerroa.proposatutakoEmaila}">email</span>
+          <select th:if="${lerroa.egoera.name() == 'ZALANTZA'}" th:name="|email_${lerroa.ikaslea.id}|">
+            <option value="">Aukeratu hautagaia…</option>
+            <option th:each="h : ${lerroa.hautagaiak}" th:value="${h.emaila}"
+                    th:text="|${h.izenOsoa} — ${h.emaila}|">Hautagaia</option>
+          </select>
+          <span th:if="${lerroa.egoera.name() == 'EZ_AURKITUA'}">—</span>
+        </td>
+        <td th:text="${lerroa.egoera}">Egoera</td>
+        <td><label th:if="${lerroa.ikaslea.email != null}">
+          <input type="checkbox" th:name="|ordezkatu_${lerroa.ikaslea.id}|" value="true"> Bai
+        </label><span th:if="${lerroa.ikaslea.email == null}">—</span></td>
+      </tr>
+      </tbody>
+    </table></div>
+    <button type="submit" class="btn btn-primary" style="margin-top:1rem;">Hautatutako emailak gorde</button>
+  </form>
+</main>
+<script th:src="@{/js/kudeatzaile-nav.js}"></script>
+</body>
+</html>

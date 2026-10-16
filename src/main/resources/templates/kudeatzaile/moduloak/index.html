@@ -137,6 +137,14 @@
 		   style="display:inline-flex;align-items:center;gap:.4rem;padding:.4rem .7rem;border:1px solid #e5e7eb;border-radius:.5rem;text-decoration:none;">
 		   📸 Argazkiak gehitu
 		  </a>
+		  <a th:href="@{/kudeatzaile/moduloa/ikasle-emailak-ad(taldeaId=${taldeaId})}"
+		     th:if="${ldapAvailable}" class="btn btn-secondary" style="margin-left:.5rem;">
+		     Email helbideak ADtik hartu
+		  </a>
+		  <button th:if="${!ldapAvailable}" type="button" class="btn btn-secondary" disabled
+		          title="Active Directory integrazioa ez dago gaituta edo konfiguratuta" style="margin-left:.5rem;">
+		     Email helbideak ADtik hartu
+		  </button>
 		</div>
 		
 		<!-- IKASLE ZERRENDA: taldeaId badagoenean bakarrik -->
@@ -154,6 +162,7 @@
 		        <th>Abizena 1</th>
 		        <th>Abizena 2</th>
 		        <th>Izena</th>
+		        <th>Emaila</th>
 		      </tr>
 		    </thead>
 		    <tbody>
@@ -163,9 +172,10 @@
 		        <td th:text="${ik.abizena1 != null ? ik.abizena1 : '-'}">Abizena 1</td>
 		        <td th:text="${ik.abizena2 != null ? ik.abizena2 : '-'}">Abizena 2</td>
 		        <td th:text="${ik.izena != null ? ik.izena : '-'}">Izena</td>
+		        <td th:text="${ik.email != null and !#strings.isEmpty(ik.email) ? ik.email : '—'}">—</td>
 		      </tr>
 		      <tr th:if="${#lists.isEmpty(ikasleak)}">
-		        <td colspan="5" style="text-align:center; color:#6b7280;">Ez dago ikaslerik talde honetan oraindik.</td>
+		        <td colspan="6" style="text-align:center; color:#6b7280;">Ez dago ikaslerik talde honetan oraindik.</td>
 		      </tr>
 		    </tbody>
 		  </table>

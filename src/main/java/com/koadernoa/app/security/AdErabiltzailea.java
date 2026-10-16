@@ -7,5 +7,6 @@ public record AdErabiltzailea(
         String izena,
         String abizenak,
         String izenOsoa,
-        String emaila) {
+        String emaila,
+        String distinguishedName) {
 }

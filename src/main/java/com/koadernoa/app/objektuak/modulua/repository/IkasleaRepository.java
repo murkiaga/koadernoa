@@ -21,6 +21,7 @@ public interface IkasleaRepository extends JpaRepository<Ikaslea, Long> {
     long countByTaldea_Id(Long taldeaId);
     
     List<Ikaslea> findByTaldea_Id(Long taldeaId);
+    boolean existsByEmailIgnoreCaseAndIdNot(String email, Long id);
     
     interface TaldeKop {
         Long getTaldeaId();

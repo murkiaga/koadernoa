@@ -99,6 +99,20 @@
       <tr><th>Izena</th><td th:text="${ikaslea.izena != null ? ikaslea.izena : '-'}">-</td></tr>
       <tr><th>Abizena 1</th><td th:text="${ikaslea.abizena1 != null ? ikaslea.abizena1 : '-'}">-</td></tr>
       <tr><th>Abizena 2</th><td th:text="${ikaslea.abizena2 != null ? ikaslea.abizena2 : '-'}">-</td></tr>
+      <tr>
+        <th>Emaila</th>
+        <td>
+          <form class="nan-form" id="emailEditForm" method="post"
+                th:action="@{/kudeatzaile/ikaslea/{id}/emaila(id=${ikaslea.id})}">
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <input type="hidden" name="ikasturteaId" th:value="${hautatutakoIkasturteaId}">
+            <span id="emailValue" th:text="${ikaslea.email != null ? ikaslea.email : '-'}">-</span>
+            <input id="emailInput" type="email" name="email" maxlength="255" th:value="${ikaslea.email}"
+                   placeholder="ikaslea@eskola.eus" aria-label="Emaila" hidden disabled>
+            <button type="submit" class="btn btn-secondary" id="emailEditButton">Editatu</button>
+          </form>
+        </td>
+      </tr>
       <tr><th>HNA (DIE)</th><td th:text="${ikaslea.hna != null ? ikaslea.hna : '-'}">-</td></tr>
 
       <tr>
@@ -287,28 +301,32 @@
 <script th:src="@{/js/kudeatzaile-nav.js}"></script>
 <script>
 (() => {
-  const form = document.getElementById('nanEditForm');
-  const value = document.getElementById('nanValue');
-  const input = document.getElementById('nanInput');
-  const button = document.getElementById('nanEditButton');
-  let editatzen = false;
+  function prestatuEditorea(formId, valueId, inputId, buttonId) {
+    const form = document.getElementById(formId);
+    const value = document.getElementById(valueId);
+    const input = document.getElementById(inputId);
+    const button = document.getElementById(buttonId);
+    let editatzen = false;
 
-  button?.addEventListener('click', (event) => {
-    if (editatzen) return;
+    button?.addEventListener('click', (event) => {
+      if (editatzen) return;
+      event.preventDefault();
+      editatzen = true;
+      value.hidden = true;
+      input.hidden = false;
+      input.disabled = false;
+      button.textContent = 'Gorde';
+      input.focus();
+      input.select();
+    });
 
-    event.preventDefault();
-    editatzen = true;
-    value.hidden = true;
-    input.hidden = false;
-    input.disabled = false;
-    button.textContent = 'Gorde';
-    input.focus();
-    input.select();
-  });
+    form?.addEventListener('submit', (event) => {
+      if (!editatzen) event.preventDefault();
+    });
+  }
 
-  form?.addEventListener('submit', (event) => {
-    if (!editatzen) event.preventDefault();
-  });
+  prestatuEditorea('nanEditForm', 'nanValue', 'nanInput', 'nanEditButton');
+  prestatuEditorea('emailEditForm', 'emailValue', 'emailInput', 'emailEditButton');
 })();
 </script>
 <script>

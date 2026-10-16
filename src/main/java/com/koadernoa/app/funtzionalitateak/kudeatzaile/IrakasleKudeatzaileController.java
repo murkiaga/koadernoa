@@ -17,6 +17,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -249,6 +250,30 @@ public class IrakasleKudeatzaileController {
         ra.addFlashAttribute("success", "Irakaslearen datuak eguneratu dira.");
         String redirect = "redirect:/kudeatzaile/irakasleak/" + id;
         return ikasturteaId != null ? redirect + "?ikasturteaId=" + ikasturteaId : redirect;
+    }
+
+    @PostMapping("/{id}/emaila")
+    @Transactional
+    public String eguneratuEmaila(@PathVariable("id") Long id,
+                                  @RequestParam("emaila") String emaila,
+                                  @RequestParam(name = "ikasturteaId", required = false) Long ikasturteaId,
+                                  RedirectAttributes ra) {
+        String garbia = emaila == null ? "" : emaila.trim().toLowerCase(Locale.ROOT);
+        if (!StringUtils.hasText(garbia) || garbia.length() > 255
+                || !garbia.matches("^[^@\\s]{1,64}@[^@\\s.]+(?:\\.[^@\\s.]+)+$")) {
+            ra.addFlashAttribute("error", "Email helbidea ez da baliozkoa.");
+            return redirectIrakasleFitxara(id, ikasturteaId);
+        }
+        Optional<Irakaslea> gatazka = irakasleaRepository.findByEmailaIgnoreCase(garbia);
+        if (gatazka.isPresent() && !id.equals(gatazka.get().getId())) {
+            ra.addFlashAttribute("error", "Email helbide hori beste irakasle batek erabiltzen du.");
+            return redirectIrakasleFitxara(id, ikasturteaId);
+        }
+        Irakaslea irakaslea = irakasleaRepository.findById(id).orElseThrow();
+        irakaslea.setEmaila(garbia);
+        irakasleaRepository.save(irakaslea);
+        ra.addFlashAttribute("success", "Irakaslearen emaila eguneratu da.");
+        return redirectIrakasleFitxara(id, ikasturteaId);
     }
 
     @PostMapping("/{id}/baimenak")

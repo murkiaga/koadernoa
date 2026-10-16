@@ -5,6 +5,7 @@ import java.util.List;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Taldea;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Column;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -37,6 +38,9 @@ public class Ikaslea {
     private String abizena2;
     private String nan; // DNI 
     private String hna; // DIE (unique)
+
+    @Column(length = 255)
+    private String email;
     
     private String argazkiPath;
 

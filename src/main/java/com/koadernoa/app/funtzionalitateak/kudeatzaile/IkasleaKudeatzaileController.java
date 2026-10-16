@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.Locale;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -218,6 +219,28 @@ public class IkasleaKudeatzaileController {
         } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
+        return redirectIkasleFitxara(id, ikasturteaId);
+    }
+
+    @PostMapping("/kudeatzaile/ikaslea/{id}/emaila")
+    public String aldatuIkasleEmaila(@PathVariable Long id,
+                                     @RequestParam(name = "email", required = false) String email,
+                                     @RequestParam(name = "ikasturteaId", required = false) Long ikasturteaId,
+                                     RedirectAttributes redirectAttributes) {
+        String garbia = email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
+        if (!garbia.isEmpty() && (garbia.length() > 255
+                || !garbia.matches("^[^@\\s]{1,64}@[^@\\s.]+(?:\\.[^@\\s.]+)+$"))) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Email helbidea ez da baliozkoa.");
+            return redirectIkasleFitxara(id, ikasturteaId);
+        }
+        Ikaslea ikaslea = ikasleaRepository.findById(id).orElseThrow();
+        if (!garbia.isEmpty() && ikasleaRepository.existsByEmailIgnoreCaseAndIdNot(garbia, id)) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Email helbide hori beste ikasle batek erabiltzen du.");
+            return redirectIkasleFitxara(id, ikasturteaId);
+        }
+        ikaslea.setEmail(garbia.isEmpty() ? null : garbia);
+        ikasleaRepository.save(ikaslea);
+        redirectAttributes.addFlashAttribute("successMessage", "Emaila eguneratu da.");
         return redirectIkasleFitxara(id, ikasturteaId);
     }
 

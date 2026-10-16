@@ -42,6 +42,10 @@ import com.koadernoa.app.objektuak.modulua.entitateak.ModuloaFormDto;
 import com.koadernoa.app.objektuak.modulua.repository.IkasleaRepository;
 import com.koadernoa.app.objektuak.modulua.repository.MatrikulaRepository;
 import com.koadernoa.app.objektuak.modulua.service.ModuloaService;
+import com.koadernoa.app.objektuak.modulua.service.IkasleEmailAdService;
+import com.koadernoa.app.objektuak.audit.entitateak.AuditAtala;
+import com.koadernoa.app.objektuak.audit.service.AuditService;
+import com.koadernoa.app.security.AuthProviderStatusService;
 import com.koadernoa.app.objektuak.mezuak.service.MezuaService;
 import com.koadernoa.app.objektuak.zikloak.service.TaldeaService;
 import com.koadernoa.app.objektuak.zikloak.service.ZikloaService;
@@ -50,6 +54,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
 
 @Controller
 @RequestMapping("/kudeatzaile/moduloa")
@@ -67,6 +72,9 @@ public class ModuloKudeatzaileController {
     private final IrakasleaRepository irakasleaRepository;
     private final IrakasleaService irakasleaService;
     private final MezuaService mezuaService;
+    private final IkasleEmailAdService ikasleEmailAdService;
+    private final AuthProviderStatusService authProviderStatusService;
+    private final AuditService auditService;
 
     @ModelAttribute("ikasturteAktiboa")
     public com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea ikasturteAktiboa() {
@@ -113,8 +121,61 @@ public class ModuloKudeatzaileController {
         model.addAttribute("pageSize", tamaina);
         model.addAttribute("totalItems", moduluak.getTotalElements());
         model.addAttribute("pageSizes", List.of(20, 40, 60, 80, 100));
+        model.addAttribute("ldapAvailable", authProviderStatusService.isLdapEnabled()
+                && authProviderStatusService.isLdapConfigured());
 
         return "kudeatzaile/moduloak/index";
+    }
+
+    @GetMapping("/ikasle-emailak-ad")
+    public String ikasleEmailenAurrebista(@RequestParam("taldeaId") Long taldeaId,
+                                           Model model, RedirectAttributes ra) {
+        if (!authProviderStatusService.isLdapEnabled() || !authProviderStatusService.isLdapConfigured()) {
+            ra.addFlashAttribute("error", "Active Directory integrazioa ez dago gaituta edo konfiguratuta.");
+            return "redirect:/kudeatzaile/moduloa?taldeaId=" + taldeaId;
+        }
+        try {
+            model.addAttribute("aurrebista", ikasleEmailAdService.aurreikusi(taldeaId));
+            return "kudeatzaile/moduloak/ikasle-email-aurrebista";
+        } catch (RuntimeException ex) {
+            ra.addFlashAttribute("error", "Ezin izan dira Active Directoryko ikasleak irakurri: " + ex.getMessage());
+            return "redirect:/kudeatzaile/moduloa?taldeaId=" + taldeaId;
+        }
+    }
+
+    @PostMapping("/ikasle-emailak-ad/gorde")
+    public String gordeIkasleEmailak(@RequestParam("taldeaId") Long taldeaId,
+                                     @RequestParam(name = "hautatu", required = false) List<Long> hautatu,
+                                     @RequestParam Map<String, String> parametroak,
+                                     Authentication authentication,
+                                     HttpServletRequest request,
+                                     RedirectAttributes ra) {
+        Map<Long, IkasleEmailAdService.Hautapena> hautapenak = new java.util.LinkedHashMap<>();
+        if (hautatu != null) for (Long id : hautatu) {
+            hautapenak.put(id, new IkasleEmailAdService.Hautapena(parametroak.get("email_" + id),
+                    "true".equals(parametroak.get("ordezkatu_" + id))));
+        }
+        IkasleEmailAdService.GordeEmaitza emaitza;
+        try {
+            emaitza = ikasleEmailAdService.gorde(taldeaId, hautapenak);
+            ra.addFlashAttribute("success", emaitza.eguneratuak() + " email eguneratu dira; "
+                    + emaitza.parekatuGabe() + " ikasle parekatu gabe; " + emaitza.gatazkak() + " gatazka edo zalantza.");
+        } catch (RuntimeException ex) {
+            ra.addFlashAttribute("error", "Ez da emailik aldatu: " + ex.getMessage());
+            return "redirect:/kudeatzaile/moduloa?taldeaId=" + taldeaId;
+        }
+        try {
+            var event = auditService.buildBaseEvent(null, authentication != null ? authentication.getName() : null,
+                    authentication != null ? authentication.getName() : null, null, request.getRequestURI(), "POST",
+                    request.getRemoteAddr(), request.getHeader("User-Agent"),
+                    "IKASLE_EMAILAK_ADTIK_INPORTATU; taldea=" + taldeaId + ", eguneratuak=" + emaitza.eguneratuak(),
+                    AuditAtala.KUDEATZAILE, null);
+            event.setArrakastatsua(true);
+            auditService.recordAction(event);
+        } catch (RuntimeException ex) {
+            // Audit hutsegiteak ez du jada burututako inportazioaren feedbacka zapuztu behar.
+        }
+        return "redirect:/kudeatzaile/moduloa?taldeaId=" + taldeaId;
     }
 
     private int baliozkoTamaina(Integer size) {

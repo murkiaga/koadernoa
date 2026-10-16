@@ -16,4 +16,5 @@ public class LdapSettings {
     private boolean userSearchSubtree = true;
     private String groupSearchBase = "";
     private String groupSearchFilter;
+    private String studentSearchBase = "OU=Ikasleak";
 }

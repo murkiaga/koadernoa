@@ -5,6 +5,8 @@ import java.util.List;
 import javax.naming.directory.SearchControls;
 
 import org.springframework.ldap.core.AttributesMapper;
+import org.springframework.ldap.core.DirContextAdapter;
+import org.springframework.ldap.core.ContextMapper;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.ldap.filter.AndFilter;
 import org.springframework.ldap.filter.EqualsFilter;
@@ -21,7 +23,7 @@ public class ActiveDirectoryBilaketaService {
 
     private static final int GEHIENEKO_EMAITZAK = 20;
     private static final String[] ATRIBUTUAK = {
-            "sAMAccountName", "userPrincipalName", "displayName", "givenName", "sn", "mail"
+            "sAMAccountName", "userPrincipalName", "displayName", "givenName", "sn", "mail", "distinguishedName"
     };
 
     private final LdapTemplate ldapTemplate;
@@ -59,6 +61,28 @@ public class ActiveDirectoryBilaketaService {
         return emaitzak.size() == 1 ? emaitzak.get(0) : null;
     }
 
+    /** Taldearen OU/CN edukiontzia aurkitu eta bilaketa edukiontzi horretara mugatzen du. */
+    public List<AdErabiltzailea> bilatuTaldekoIkasleak(String taldeIzena) {
+        if (!StringUtils.hasText(taldeIzena)) throw new IllegalArgumentException("Taldearen izena beharrezkoa da.");
+        OrFilter izena = new OrFilter()
+                .or(new EqualsFilter("ou", taldeIzena.trim()))
+                .or(new EqualsFilter("cn", taldeIzena.trim()));
+        SearchControls containers = new SearchControls();
+        containers.setSearchScope(SearchControls.ONELEVEL_SCOPE);
+        containers.setCountLimit(2);
+        List<String> dnAk = ldapTemplate.search(settings.getStudentSearchBase(), izena.encode(), containers,
+                (ContextMapper<String>) ctx -> ((DirContextAdapter) ctx).getDn().toString());
+        if (dnAk.size() != 1) {
+            throw new IllegalStateException(dnAk.isEmpty()
+                    ? "Ez da taldearen Active Directoryko karpeta aurkitu."
+                    : "Taldearen Active Directoryko karpeta anbiguoa da.");
+        }
+        AndFilter users = new AndFilter()
+                .and(new EqualsFilter("objectCategory", "person"))
+                .and(new EqualsFilter("objectClass", "user"));
+        return search(dnAk.get(0), users.encode(), 0);
+    }
+
     private List<AdErabiltzailea> search(String filter) {
         SearchControls controls = new SearchControls();
         controls.setSearchScope(settings.isUserSearchSubtree()
@@ -73,8 +97,25 @@ public class ActiveDirectoryBilaketaService {
                     String abizenak = attr(attrs, "sn");
                     String osoa = firstNonBlank(attr(attrs, "displayName"), batu(izena, abizenak), upn, sam);
                     String emaila = firstNonBlank(attr(attrs, "mail"), upn);
-                    return new AdErabiltzailea(firstNonBlank(sam, upn), sam, upn, izena, abizenak, osoa, emaila);
+                    return new AdErabiltzailea(firstNonBlank(sam, upn), sam, upn, izena, abizenak, osoa, emaila,
+                            attr(attrs, "distinguishedName"));
                 });
+    }
+
+    private List<AdErabiltzailea> search(String base, String filter, long limit) {
+        SearchControls controls = new SearchControls();
+        controls.setSearchScope(SearchControls.SUBTREE_SCOPE);
+        controls.setCountLimit(limit);
+        controls.setReturningAttributes(ATRIBUTUAK);
+        return ldapTemplate.search(base, filter, controls, (AttributesMapper<AdErabiltzailea>) attrs -> {
+            String sam = attr(attrs, "sAMAccountName");
+            String upn = attr(attrs, "userPrincipalName");
+            String izena = attr(attrs, "givenName");
+            String abizenak = attr(attrs, "sn");
+            return new AdErabiltzailea(firstNonBlank(sam, upn), sam, upn, izena, abizenak,
+                    firstNonBlank(attr(attrs, "displayName"), batu(izena, abizenak), upn, sam),
+                    attr(attrs, "mail"), attr(attrs, "distinguishedName"));
+        });
     }
 
     private static String attr(javax.naming.directory.Attributes attrs, String name) throws javax.naming.NamingException {
