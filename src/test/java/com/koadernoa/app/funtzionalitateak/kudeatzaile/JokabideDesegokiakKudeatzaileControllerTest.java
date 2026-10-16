@@ -34,7 +34,7 @@ class JokabideDesegokiakKudeatzaileControllerTest {
         controller = new JokabideDesegokiakKudeatzaileController(
                 repository, mock(IrakasleaService.class), ikasturteaRepository);
         when(repository.bilatuKudeatzailearentzat(
-                nullable(LocalDate.class), nullable(LocalDate.class), nullable(String.class),
+                nullable(LocalDate.class), nullable(LocalDate.class), nullable(Long.class), nullable(String.class),
                 nullable(Long.class), nullable(Long.class), nullable(Boolean.class))).thenReturn(List.of());
         when(repository.findDistinctModuloakOrderByIzena()).thenReturn(List.of());
         when(repository.findDistinctTaldeakOrderByIzena()).thenReturn(List.of());
@@ -46,10 +46,10 @@ class JokabideDesegokiakKudeatzaileControllerTest {
         request.addParameter("dataHasiera", "");
         Model model = new ExtendedModelMap();
 
-        controller.index(null, null, "Braun Jon Pepito", null, null, null, request, model);
+        controller.index(null, null, null, "Braun Jon Pepito", null, null, null, request, model);
 
         verify(repository).bilatuKudeatzailearentzat(
-                isNull(), isNull(), org.mockito.ArgumentMatchers.eq("Braun Jon Pepito"),
+                isNull(), isNull(), isNull(), org.mockito.ArgumentMatchers.eq("Braun Jon Pepito"),
                 isNull(), isNull(), isNull());
         org.junit.jupiter.api.Assertions.assertNull(model.getAttribute("dataHasiera"));
     }
@@ -62,11 +62,11 @@ class JokabideDesegokiakKudeatzaileControllerTest {
         MockHttpServletRequest request = new MockHttpServletRequest();
         Model model = new ExtendedModelMap();
 
-        controller.index(null, null, null, null, null, null, request, model);
+        controller.index(null, null, null, null, null, null, null, request, model);
 
         LocalDate defektuzkoa = LocalDate.of(2025, 9, 1);
         verify(repository).bilatuKudeatzailearentzat(
-                org.mockito.ArgumentMatchers.eq(defektuzkoa), isNull(), isNull(), isNull(), isNull(), isNull());
+                org.mockito.ArgumentMatchers.eq(defektuzkoa), isNull(), isNull(), isNull(), isNull(), isNull(), isNull());
         org.junit.jupiter.api.Assertions.assertEquals(defektuzkoa, model.getAttribute("dataHasiera"));
     }
 }

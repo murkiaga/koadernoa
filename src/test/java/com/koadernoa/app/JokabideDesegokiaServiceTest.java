@@ -16,6 +16,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
+import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
+import com.koadernoa.app.objektuak.egutegia.repository.IkasturteaRepository;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Rola;
 import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
 import com.koadernoa.app.objektuak.jokabidea.entitateak.JokabideDesegokia;
@@ -34,9 +36,10 @@ class JokabideDesegokiaServiceTest {
     private final AplikazioAukeraService aukerak = mock(AplikazioAukeraService.class);
     private final IrakasleaRepository irakasleaRepository = mock(IrakasleaRepository.class);
     private final MezuaRepository mezuaRepository = mock(MezuaRepository.class);
+    private final IkasturteaRepository ikasturteaRepository = mock(IkasturteaRepository.class);
     private final MezuaService mezuaService = new MezuaService(mezuaRepository, irakasleaRepository);
     private final JokabideDesegokiaService service = new JokabideDesegokiaService(
-            jokabideRepository, aukerak, irakasleaRepository, mezuaService);
+            jokabideRepository, aukerak, irakasleaRepository, mezuaService, ikasturteaRepository);
 
     @BeforeEach
     void prestatuGordetzea() {
@@ -50,8 +53,13 @@ class JokabideDesegokiaServiceTest {
         Irakaslea arduraduna = irakaslea(20L, "Leire", Rola.KUDEATZAILEA);
         Irakaslea besteKudeatzailea = irakaslea(21L, "Jon", Rola.KUDEATZAILEA);
         JokabideDesegokia jokabidea = jokabidea(sortzailea);
+        Ikasturtea ikasturtea = new Ikasturtea();
+        ikasturtea.setId(7L);
+        ikasturtea.setIzena("2026-2027");
         when(aukerak.getJokabideDesegokienArduradunaId()).thenReturn(arduraduna.getId());
         when(irakasleaRepository.findById(arduraduna.getId())).thenReturn(Optional.of(arduraduna));
+        when(ikasturteaRepository.findFirstByAktiboaTrueOrderByIdDesc()).thenReturn(Optional.of(ikasturtea));
+        when(jokabideRepository.countByIkasleaIdAndIkasturteaId(40L, 7L)).thenReturn(3L);
 
         JokabideDesegokia gordeta = service.sortu(jokabidea);
 
@@ -68,7 +76,11 @@ class JokabideDesegokiaServiceTest {
                 "Taldea: 1SMA",
                 "Modulua: Sare lokalak",
                 "Data: 2026-10-08",
-                "Sortzailea: Mikel");
+                "Sortzailea: Mikel",
+                "Ane Agirre Etxebarria ikasleak aurten dituen jokabide desegoki kopurua: 3");
+        assertThat(mezua.getEstekaTestua()).isEqualTo("Ane Agirre Etxebarria");
+        assertThat(mezua.getEsteka()).isEqualTo(
+                "/kudeatzaile/jokabide-desegokiak?ikasleaId=40&ikaslea=Agirre%20Etxebarria%20Ane&dataHasiera=2026-09-01&dataAmaiera=2027-08-31");
     }
 
     @Test
@@ -85,6 +97,7 @@ class JokabideDesegokiaServiceTest {
 
     private JokabideDesegokia jokabidea(Irakaslea sortzailea) {
         Ikaslea ikaslea = new Ikaslea();
+        ikaslea.setId(40L);
         ikaslea.setIzena("Ane");
         ikaslea.setAbizena1("Agirre");
         ikaslea.setAbizena2("Etxebarria");

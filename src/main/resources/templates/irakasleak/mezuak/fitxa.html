@@ -13,7 +13,7 @@
   <h1>Mezua</h1>
   <p><b>Bidaltzailea:</b> <span th:text="${mezua.bidaltzailea != null ? mezua.bidaltzailea.izena : '-'}"></span></p>
   <p><b>Noiz:</b> <span th:text="${#temporals.format(mezua.bidalketaData, 'yyyy-MM-dd HH:mm')}"></span></p>
-  <article style="white-space:pre-wrap;border:1px solid var(--b);border-radius:12px;padding:16px;background:#fff;" th:text="${mezua.edukia}"></article>
+  <article style="white-space:pre-wrap;border:1px solid var(--b);border-radius:12px;padding:16px;background:#fff;"><th:block th:if="${mezua.esteka != null and mezua.estekaTestua != null and #strings.contains(mezua.edukia, mezua.estekaTestua)}"><span th:text="${#strings.substringBefore(mezua.edukia, mezua.estekaTestua)}"></span><a th:href="${mezua.esteka}" th:text="${mezua.estekaTestua}"></a><span th:text="${#strings.substringAfter(mezua.edukia, mezua.estekaTestua)}"></span></th:block><th:block th:unless="${mezua.esteka != null and mezua.estekaTestua != null and #strings.contains(mezua.edukia, mezua.estekaTestua)}" th:text="${mezua.edukia}"></th:block></article>
 </main>
 </body>
 </html>

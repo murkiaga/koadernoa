@@ -20,6 +20,15 @@ public interface JokabideDesegokiaRepository extends JpaRepository<JokabideDeseg
     boolean existsByIkasleaId(Long ikasleaId);
 
     @Query("""
+        select count(j) from JokabideDesegokia j
+        where j.ikaslea.id = :ikasleaId
+          and j.koadernoa.egutegia.ikasturtea.id = :ikasturteaId
+    """)
+    long countByIkasleaIdAndIkasturteaId(
+        @Param("ikasleaId") Long ikasleaId,
+        @Param("ikasturteaId") Long ikasturteaId);
+
+    @Query("""
         select j from JokabideDesegokia j
         join fetch j.ikaslea i
         join fetch j.moduloa m
@@ -43,6 +52,7 @@ public interface JokabideDesegokiaRepository extends JpaRepository<JokabideDeseg
         join fetch j.neurriZuzentzailea nz
         where (:dataHasiera is null or j.data >= :dataHasiera)
           and (:dataAmaiera is null or j.data <= :dataAmaiera)
+          and (:ikasleaId is null or i.id = :ikasleaId)
           and (:ikaslea is null or :ikaslea = '' or
                lower(concat(coalesce(i.abizena1, ''), ' ', coalesce(i.abizena2, ''), ' ', coalesce(i.izena, '')))
                like lower(concat('%', :ikaslea, '%')) or
@@ -56,6 +66,7 @@ public interface JokabideDesegokiaRepository extends JpaRepository<JokabideDeseg
     List<JokabideDesegokia> bilatuKudeatzailearentzat(
         @Param("dataHasiera") LocalDate dataHasiera,
         @Param("dataAmaiera") LocalDate dataAmaiera,
+        @Param("ikasleaId") Long ikasleaId,
         @Param("ikaslea") String ikaslea,
         @Param("moduloaId") Long moduloaId,
         @Param("taldeaId") Long taldeaId,

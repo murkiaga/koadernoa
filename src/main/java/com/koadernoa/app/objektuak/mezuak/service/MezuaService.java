@@ -33,7 +33,8 @@ public class MezuaService {
 
     @Transactional
     public Mezua bidaliJokabideDesegokiarenAbisua(
-            JokabideDesegokia jokabidea, Irakaslea hartzailea) {
+            JokabideDesegokia jokabidea, Irakaslea hartzailea,
+            long ikasturtekoJokabideKopurua, String ikaslearenEsteka) {
         if (jokabidea == null || jokabidea.getIrakaslea() == null || hartzailea == null) {
             throw new IllegalArgumentException("Jokabidea, bidaltzailea eta hartzailea beharrezkoak dira.");
         }
@@ -41,20 +42,17 @@ public class MezuaService {
         mezua.setBidaltzailea(jokabidea.getIrakaslea());
         mezua.setHartzailea(hartzailea);
         mezua.setEdukia(sortuJokabideDesegokiarenEdukia(jokabidea));
+        mezua.setEsteka(ikaslearenEsteka);
+        mezua.setEstekaTestua(ikaslearenIzena(jokabidea));
         mezua.setBidalketaData(LocalDateTime.now());
+        mezua.setEdukia(mezua.getEdukia()
+                + "\n" + mezua.getEstekaTestua() + " ikasleak aurten dituen jokabide desegoki kopurua: "
+                + ikasturtekoJokabideKopurua);
         return mezuaRepository.save(mezua);
     }
 
     private String sortuJokabideDesegokiarenEdukia(JokabideDesegokia jokabidea) {
-        String ikaslea = jokabidea.getIkaslea() == null
-                ? "-" : String.join(" ", java.util.stream.Stream.of(
-                                jokabidea.getIkaslea().getIzena(),
-                                jokabidea.getIkaslea().getAbizena1(),
-                                jokabidea.getIkaslea().getAbizena2())
-                        .filter(zatia -> zatia != null && !zatia.isBlank())
-                        .map(String::trim)
-                        .toList());
-        ikaslea = balioaEdoMarratxoa(ikaslea);
+        String ikaslea = ikaslearenIzena(jokabidea);
         String modulua = jokabidea.getModuloa() == null
                 ? "-" : balioaEdoMarratxoa(jokabidea.getModuloa().getIzena());
         String taldea = jokabidea.getModuloa() == null || jokabidea.getModuloa().getTaldea() == null
@@ -69,6 +67,17 @@ public class MezuaService {
                 + "Data: " + data + "\n"
                 + "Sortzailea: " + sortzailea + "\n\n"
                 + "Jokabide desegokien atalean kontsulta dezakezu.";
+    }
+
+    private String ikaslearenIzena(JokabideDesegokia jokabidea) {
+        if (jokabidea.getIkaslea() == null) return "-";
+        return balioaEdoMarratxoa(String.join(" ", java.util.stream.Stream.of(
+                        jokabidea.getIkaslea().getIzena(),
+                        jokabidea.getIkaslea().getAbizena1(),
+                        jokabidea.getIkaslea().getAbizena2())
+                .filter(zatia -> zatia != null && !zatia.isBlank())
+                .map(String::trim)
+                .toList()));
     }
 
     private String balioaEdoMarratxoa(String balioa) {

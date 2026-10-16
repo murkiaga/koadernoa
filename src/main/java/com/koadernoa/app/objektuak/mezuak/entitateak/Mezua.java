@@ -34,6 +34,13 @@ public class Mezua {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String edukia;
 
+    /** Aukerako esteka segurua, mezuaren testuko {@code estekaTestua} klikagarri egiteko. */
+    @Column(length = 1000)
+    private String esteka;
+
+    @Column(length = 255)
+    private String estekaTestua;
+
     @Column(nullable = false)
     private boolean irakurrita = false;
 

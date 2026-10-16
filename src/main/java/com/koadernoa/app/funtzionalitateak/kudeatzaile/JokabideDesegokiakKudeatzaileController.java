@@ -47,6 +47,7 @@ public class JokabideDesegokiakKudeatzaileController {
     public String index(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataHasiera,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dataAmaiera,
+            @RequestParam(required = false) Long ikasleaId,
             @RequestParam(required = false) String ikaslea,
             @RequestParam(required = false) Long moduloaId,
             @RequestParam(required = false) Long taldeaId,
@@ -62,7 +63,7 @@ public class JokabideDesegokiakKudeatzaileController {
         }
         String ikasleFiltroa = ikaslea == null ? null : ikaslea.trim();
         model.addAttribute("jokabideak", repository.bilatuKudeatzailearentzat(
-                dataHasiera, dataAmaiera, ikasleFiltroa, moduloaId, taldeaId, jasota));
+                dataHasiera, dataAmaiera, ikasleaId, ikasleFiltroa, moduloaId, taldeaId, jasota));
         model.addAttribute("moduloak", repository.findDistinctModuloakOrderByIzena());
         model.addAttribute("taldeak", repository.findDistinctTaldeakOrderByIzena());
         model.addAttribute("dataHasiera", dataHasiera);

@@ -62,7 +62,7 @@
           <td th:text="${m.bidaltzailea != null ? m.bidaltzailea.izena : '-'}"></td>
           <td th:text="${m.hartzailea != null ? m.hartzailea.izena : '-'}"></td>
           <td th:text="${m.irakurrita ? '📨 Irakurrita' : '✉️ Ez irakurrita'}"></td>
-          <td class="message-body" th:text="${m.edukia}"></td>
+          <td class="message-body"><th:block th:if="${m.esteka != null and m.estekaTestua != null and #strings.contains(m.edukia, m.estekaTestua)}"><span th:text="${#strings.substringBefore(m.edukia, m.estekaTestua)}"></span><a th:href="${m.esteka}" th:text="${m.estekaTestua}"></a><span th:text="${#strings.substringAfter(m.edukia, m.estekaTestua)}"></span></th:block><th:block th:unless="${m.esteka != null and m.estekaTestua != null and #strings.contains(m.edukia, m.estekaTestua)}" th:text="${m.edukia}"></th:block></td>
         </tr>
         </tbody>
       </table>
