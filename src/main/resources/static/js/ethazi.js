@@ -99,7 +99,7 @@ document.querySelectorAll('[data-transverse-grade]').forEach(select => {
     const average = select.parentElement.querySelector('[data-transverse-average]');
     const previous = select.dataset.savedValue;
     const payload = new URLSearchParams({
-      adierazleaId: select.dataset.indicatorId,
+      ebidentziaId: select.dataset.evidenceId,
       ikasleaId: select.dataset.studentId
     });
     if (select.value) payload.set('mailaId', select.value);
@@ -568,15 +568,25 @@ otherTestModal?.addEventListener('click', event => {
 
 const rubricWeightInputs = document.querySelectorAll('.evidence-weight-input');
 const rubricWeightTotal = document.querySelector('#rubric-weight-total');
+const rubricWeightTotalValues = document.querySelectorAll('.rubric-weight-total-value');
 const rubricWeightStatus = rubricWeightTotal?.closest('.rubric-weight-total');
+const rubricWeightHeading = document.querySelector('.evidence-heading-weight');
 function refreshRubricWeight() {
   if (!rubricWeightTotal) return;
   const total = Array.from(rubricWeightInputs).reduce((sum, input) => sum + (Number.parseFloat(input.value) || 0), 0);
-  rubricWeightTotal.textContent = new Intl.NumberFormat('eu', { maximumFractionDigits: 2 }).format(total);
-  rubricWeightStatus.classList.toggle('is-invalid', Math.abs(total - 100) > 0.00001 && rubricWeightInputs.length > 0);
+  const formattedTotal = new Intl.NumberFormat('eu', { maximumFractionDigits: 2 }).format(total);
+  const invalid = Math.abs(total - 100) > 0.00001 && rubricWeightInputs.length > 0;
+  rubricWeightTotalValues.forEach(value => { value.textContent = formattedTotal; });
+  rubricWeightStatus.classList.toggle('is-invalid', invalid);
+  rubricWeightHeading?.classList.toggle('is-invalid', invalid);
 }
 rubricWeightInputs.forEach(input => input.addEventListener('input', refreshRubricWeight));
 refreshRubricWeight();
+
+const focusedKinielaElement = document.querySelector('.kiniela-focus-target');
+if (focusedKinielaElement) {
+  requestAnimationFrame(() => focusedKinielaElement.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' }));
+}
 
 // Keep the edited/new column or cell in view after an ordinary form submission.
 if (/^#(maila|gelaxka)-[\d-]+$/.test(window.location.hash)) {

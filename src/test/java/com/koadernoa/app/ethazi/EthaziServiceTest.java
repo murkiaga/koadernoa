@@ -413,7 +413,7 @@ class EthaziServiceTest {
         em.flush(); em.clear();
         assertThat(kiniela.zeharkakoKiniela(cycle.getId(), null).get(0).emaitzak().get(0).loturak()).isEmpty();
     }
-    @Test void transversalGradesAreAveragedOnlyAcrossModulesThatAssessTheStudent() {
+    @Test void transversalGradesAreAveragedOnlyAcrossModulesThatAssessTheStudent() throws Exception {
         var firstModule = module(cycle, "TRANS-AVG-1");
         var secondModule = module(cycle, "TRANS-AVG-2"); secondModule.setMaila(firstModule.getMaila());
         var challengeForm = challenge(firstModule);
@@ -433,25 +433,44 @@ class EthaziServiceTest {
         Long competencyId = service.gordeGaitasuna(null, form);
         var competency = service.gaitasuna(competencyId);
         var firstLevel = competency.getEredua().getMailak().get(0);
-        var secondLevel = competency.getEredua().getMailak().get(1);
         service.gordeErrubrikaAdierazlea(competencyId, firstLevel.getId(), null, indicator());
         Long indicatorId = service.gaitasuna(competencyId).getMailak().get(0).getLorpenAdierazleak().get(0).getId();
         kiniela.gordeZeharkakoLoturak(cycle.getId(), competencyId, Set.of(indicatorId));
         kiniela.gordeZeharkakoErronkaLotura(cycle.getId(), competencyId, indicatorId, challengeId, true);
+        kiniela.zeharkakoErrubrika(challengeId, firstModule.getId());
+        Long firstRubricLevel = kiniela.gehituZeharkakoMaila(challengeId);
+        Long secondRubricLevel = kiniela.gehituZeharkakoMaila(challengeId);
+        Long evidenceId = kiniela.gehituZeharkakoEbidentzia(challengeId, indicatorId);
+        var transverseForm = kiniela.zeharkakoErrubrikaForm(challengeId);
+        transverseForm.getMailak().get(0).setBalioa(new java.math.BigDecimal("1"));
+        transverseForm.getMailak().get(1).setBalioa(new java.math.BigDecimal("2"));
+        transverseForm.getEbidentziak().get(0).setPisua(new java.math.BigDecimal("100"));
+        transverseForm.getEbidentziak().get(0).setMota(
+            com.koadernoa.app.ethazi.entitateak.errubrikak.ZeharkakoEbidentziaMota.IRAKASLE_AUTO_KOEBALUAZIOA);
+        kiniela.gordeZeharkakoErrubrika(challengeId, transverseForm);
 
         var auth = new UsernamePasswordAuthenticationToken("manager", "",
             AuthorityUtils.createAuthorityList("ROLE_KUDEATZAILEA"));
-        var one = kiniela.gordeZeharkakoNota(challengeId, firstModule.getId(), indicatorId,
-            student.getId(), firstLevel.getId(), auth);
+        SecurityContextHolder.getContext().setAuthentication(auth);
+        try {
+            mvc().perform(get("/ethazi/erronkak/" + challengeId + "/errubrikak")
+                    .param("moduloaId", firstModule.getId().toString()).param("gaitasunMota", "ZEHARKAKOA").principal(auth))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Ebidentzia berria")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("data-evidence-id=\"" + evidenceId + "\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Heteroebaluazioa")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Irakasle/Auto/koebaluazio")));
+        } finally { SecurityContextHolder.clearContext(); }
+        var one = kiniela.gordeZeharkakoNota(challengeId, firstModule.getId(), evidenceId,
+            student.getId(), firstRubricLevel, auth);
         assertThat((java.math.BigDecimal) one.get("average")).isEqualByComparingTo("1.00");
         assertThat(one.get("evaluatorCount")).isEqualTo(1);
-        var two = kiniela.gordeZeharkakoNota(challengeId, secondModule.getId(), indicatorId,
-            student.getId(), secondLevel.getId(), auth);
+        var two = kiniela.gordeZeharkakoNota(challengeId, secondModule.getId(), evidenceId,
+            student.getId(), secondRubricLevel, auth);
         assertThat((java.math.BigDecimal) two.get("average")).isEqualByComparingTo("1.50");
         assertThat(two.get("evaluatorCount")).isEqualTo(2);
-        kiniela.gordeZeharkakoNota(challengeId, firstModule.getId(), indicatorId, student.getId(), null, auth);
+        kiniela.gordeZeharkakoNota(challengeId, firstModule.getId(), evidenceId, student.getId(), null, auth);
         var view = kiniela.zeharkakoErrubrika(challengeId, secondModule.getId());
-        assertThat(view.get(0).adierazleak().get(0).ikasleNotak().get(0))
+        assertThat(view.adierazleak().get(0).ebidentziak().get(0).ikasleNotak().get(0))
             .satisfies(n -> { assertThat(n.batezbestekoa()).isEqualByComparingTo("2.00"); assertThat(n.ebaluatzaileak()).isEqualTo(1); });
     }
 
@@ -658,7 +677,10 @@ class EthaziServiceTest {
             form.getEbidentziak().get(0).getMailak().get(i).setDeskribapena("Maila " + names.get(i));
         }
         form.getEbidentziak().get(0).setDeskribapena("Konexio segurua erabiliz edukia eguneratzea");
-        form.getEbidentziak().get(0).setAdierazleaIds(Set.of(selectedIndicator));
+        Long selectedLink = kiniela.modulukoAdierazleak(challengeId, first.getId()).stream()
+            .filter(a -> a.deskribapena().equals(service.gaitasuna(competency).getMailak().get(0).getLorpenAdierazleak().get(0).getDeskribapena()))
+            .findFirst().orElseThrow().id();
+        form.getEbidentziak().get(0).setAdierazleaIds(Set.of(selectedLink));
         form.getEbidentziak().get(0).setPisua(new java.math.BigDecimal("10"));
         kiniela.gordeErrubrika(challengeId, first.getId(), form); em.flush(); em.clear();
 
@@ -723,6 +745,19 @@ class EthaziServiceTest {
         rubric.getEbidentziak().get(0).setPisua(new java.math.BigDecimal("100"));
         rubric.getEbidentziak().get(0).setAdierazleaIds(Set.of(linkId));
         kiniela.gordeErrubrika(challengeId, module.getId(), rubric);
+
+        em.flush(); em.clear();
+        var singleEvidenceModule = kiniela.kiniela(cycle.getId()).stream()
+            .filter(m -> m.id().equals(module.getId())).findFirst().orElseThrow();
+        var singleEvidenceLink = singleEvidenceModule.emaitzak().stream()
+            .filter(e -> e.id().equals(outcome.getId())).findFirst().orElseThrow().loturak().stream()
+            .filter(l -> l.id().equals(indicatorId)).findFirst().orElseThrow();
+        assertThat(singleEvidenceModule.ponderazioaErakutsi()).isTrue();
+        assertThat(singleEvidenceLink.ponderazioak()).singleElement().satisfies(p -> {
+            assertThat(p.mota()).isEqualTo("EBIDENTZIA");
+            assertThat(p.erronkaId()).isEqualTo(challengeId);
+            assertThat(p.pisua()).isEqualByComparingTo("100");
+        });
 
         kiniela.gehituBestelakoProba(challengeId, module.getId(), "Azterketa", LocalDate.now());
         var tests = kiniela.bestelakoProbakForm(challengeId, module.getId());
@@ -1163,7 +1198,7 @@ class EthaziServiceTest {
                 assertThat(html).contains("ETHAZI", "Erronkak", "Kinielak").doesNotContain("th:replace=");
                 if (path.startsWith("/ethazi/kiniela?")) {
                     assertThat(html.split("class=\"module-total\"", -1)).hasSize(2);
-                    assertThat(html).contains("rowspan=\"0\"", "IE2. Sarea konfiguratzen du", "100%");
+                    assertThat(html).contains("IE2. Sarea konfiguratzen du", "100%");
                     assertThat(html).contains("challenge-form", "indicator-note-dialog", "Sarearen erronka", "is-covered", "&lt;b&gt;Oharra&lt;/b&gt;");
                 }
                 if (System.getProperty("ethazi.previewDir") != null && path.contains("zikloaId=")) {

@@ -32,6 +32,19 @@ class ZikloaServiceTest {
     }
 
     @Test
+    void zeharkakoEbaluazioPisuakGordetzenDituBaturaEhunDenean() {
+        Zikloa zikloa = new Zikloa();
+        when(repository.findById(4L)).thenReturn(Optional.of(zikloa));
+
+        service.eguneratuEthaziPisuak(4L, new BigDecimal("70"), new BigDecimal("30"),
+            new BigDecimal("80"), new BigDecimal("15"), new BigDecimal("5"));
+
+        assertThat(zikloa.getEthaziHeteroebaluazioPisua()).isEqualByComparingTo("80.00");
+        assertThat(zikloa.getEthaziKoebaluazioPisua()).isEqualByComparingTo("15.00");
+        assertThat(zikloa.getEthaziAutoebaluazioPisua()).isEqualByComparingTo("5.00");
+    }
+
+    @Test
     void ethaziPisuakEzDituGordetzenBaturaEhunEzDenean() {
         assertThatThrownBy(() -> service.eguneratuEthaziPisuak(
                 4L, new BigDecimal("70"), new BigDecimal("20")))

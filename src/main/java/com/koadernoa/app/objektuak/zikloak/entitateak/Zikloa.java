@@ -30,6 +30,9 @@ import lombok.Setter;
 public class Zikloa {
     public static final BigDecimal DEFEKTUZKO_ETHAZI_TEKNIKOEN_PISUA = new BigDecimal("70.00");
     public static final BigDecimal DEFEKTUZKO_ETHAZI_ZEHARKAKOEN_PISUA = new BigDecimal("30.00");
+    public static final BigDecimal DEFEKTUZKO_HETEROEBALUAZIO_PISUA = new BigDecimal("85.00");
+    public static final BigDecimal DEFEKTUZKO_KOEBALUAZIO_PISUA = new BigDecimal("10.00");
+    public static final BigDecimal DEFEKTUZKO_AUTOEBALUAZIO_PISUA = new BigDecimal("5.00");
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -53,6 +56,13 @@ public class Zikloa {
     @Column(name = "ethazi_zeharkakoen_pisua", precision = 5, scale = 2)
     private BigDecimal ethaziZeharkakoenPisua;
 
+    @Column(name = "ethazi_heteroebaluazio_pisua", precision = 5, scale = 2)
+    private BigDecimal ethaziHeteroebaluazioPisua;
+    @Column(name = "ethazi_koebaluazio_pisua", precision = 5, scale = 2)
+    private BigDecimal ethaziKoebaluazioPisua;
+    @Column(name = "ethazi_autoebaluazio_pisua", precision = 5, scale = 2)
+    private BigDecimal ethaziAutoebaluazioPisua;
+
     @PrePersist
     void ezarriDefektuzkoEthaziPisuak() {
         if (ethaziTeknikoenPisua == null) {
@@ -61,5 +71,8 @@ public class Zikloa {
         if (ethaziZeharkakoenPisua == null) {
             ethaziZeharkakoenPisua = DEFEKTUZKO_ETHAZI_ZEHARKAKOEN_PISUA;
         }
+        if (ethaziHeteroebaluazioPisua == null) ethaziHeteroebaluazioPisua = DEFEKTUZKO_HETEROEBALUAZIO_PISUA;
+        if (ethaziKoebaluazioPisua == null) ethaziKoebaluazioPisua = DEFEKTUZKO_KOEBALUAZIO_PISUA;
+        if (ethaziAutoebaluazioPisua == null) ethaziAutoebaluazioPisua = DEFEKTUZKO_AUTOEBALUAZIO_PISUA;
     }
 }

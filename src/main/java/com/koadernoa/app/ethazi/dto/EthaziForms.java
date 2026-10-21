@@ -10,6 +10,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import com.koadernoa.app.ethazi.entitateak.gaitasunak.GaitasunMota;
 import com.koadernoa.app.ethazi.entitateak.errubrikak.EbidentziaEbaluazioMota;
+import com.koadernoa.app.ethazi.entitateak.errubrikak.ZeharkakoEbidentziaMota;
 import com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza;
 
 import lombok.Getter;
@@ -38,6 +39,38 @@ public final class EthaziForms {
         private BigDecimal bestelakoProbenPisua;
         private List<ErronkaMailaForm> mailak = new ArrayList<>();
         private List<ErronkaEbidentziaForm> ebidentziak = new ArrayList<>();
+    }
+
+    @Getter @Setter
+    public static class ZeharkakoErrubrikaForm {
+        private BigDecimal heteroebaluazioPisua;
+        private BigDecimal koebaluazioPisua;
+        private BigDecimal autoebaluazioPisua;
+        private List<ZeharkakoMailaForm> mailak = new ArrayList<>();
+        private List<ZeharkakoEbidentziaForm> ebidentziak = new ArrayList<>();
+    }
+
+    @Getter @Setter
+    public static class ZeharkakoMailaForm {
+        private Long id;
+        private String izena;
+        private BigDecimal balioa;
+    }
+
+    @Getter @Setter
+    public static class ZeharkakoEbidentziaForm {
+        private Long id;
+        private Long adierazleaId;
+        private String deskribapena;
+        private BigDecimal pisua;
+        private ZeharkakoEbidentziaMota mota = ZeharkakoEbidentziaMota.IRAKASLEAK_SOILIK;
+        private List<ZeharkakoEbidentziaMailaForm> mailak = new ArrayList<>();
+    }
+
+    @Getter @Setter
+    public static class ZeharkakoEbidentziaMailaForm {
+        private Long mailaId;
+        private String deskribapena;
     }
 
     @Getter @Setter

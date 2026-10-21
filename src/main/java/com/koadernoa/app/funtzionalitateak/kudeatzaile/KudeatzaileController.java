@@ -99,14 +99,21 @@ public class KudeatzaileController {
 	public String gordeEthaziPisuak(@PathVariable("id") Long id,
 	                               @RequestParam("teknikoenPisua") BigDecimal teknikoenPisua,
 	                               @RequestParam("zeharkakoenPisua") BigDecimal zeharkakoenPisua,
+	                               @RequestParam("heteroebaluazioPisua") BigDecimal heteroebaluazioPisua,
+	                               @RequestParam("koebaluazioPisua") BigDecimal koebaluazioPisua,
+	                               @RequestParam("autoebaluazioPisua") BigDecimal autoebaluazioPisua,
 	                               RedirectAttributes ra) {
 	    try {
-	        zikloaService.eguneratuEthaziPisuak(id, teknikoenPisua, zeharkakoenPisua);
+	        zikloaService.eguneratuEthaziPisuak(id, teknikoenPisua, zeharkakoenPisua,
+	                heteroebaluazioPisua, koebaluazioPisua, autoebaluazioPisua);
 	        ra.addFlashAttribute("success", "ETHAZI gaitasunen pisu orokorrak gorde dira.");
 	    } catch (IllegalArgumentException ex) {
 	        ra.addFlashAttribute("error", ex.getMessage());
 	        ra.addFlashAttribute("teknikoenPisua", teknikoenPisua);
 	        ra.addFlashAttribute("zeharkakoenPisua", zeharkakoenPisua);
+	        ra.addFlashAttribute("heteroebaluazioPisua", heteroebaluazioPisua);
+	        ra.addFlashAttribute("koebaluazioPisua", koebaluazioPisua);
+	        ra.addFlashAttribute("autoebaluazioPisua", autoebaluazioPisua);
 	    }
 	    return "redirect:/kudeatzaile/zikloak/editatu/" + id;
 	}

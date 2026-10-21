@@ -41,6 +41,9 @@ public class ZikloaService {
                 if (zikloa.getEthaziZeharkakoenPisua() == null) {
                     zikloa.setEthaziZeharkakoenPisua(aurrekoa.getEthaziZeharkakoenPisua());
                 }
+                if (zikloa.getEthaziHeteroebaluazioPisua() == null) zikloa.setEthaziHeteroebaluazioPisua(aurrekoa.getEthaziHeteroebaluazioPisua());
+                if (zikloa.getEthaziKoebaluazioPisua() == null) zikloa.setEthaziKoebaluazioPisua(aurrekoa.getEthaziKoebaluazioPisua());
+                if (zikloa.getEthaziAutoebaluazioPisua() == null) zikloa.setEthaziAutoebaluazioPisua(aurrekoa.getEthaziAutoebaluazioPisua());
             });
         }
         zikloaRepository.save(zikloa);
@@ -48,16 +51,32 @@ public class ZikloaService {
 
     @Transactional
     public void eguneratuEthaziPisuak(Long id, BigDecimal teknikoenPisua, BigDecimal zeharkakoenPisua) {
+        eguneratuEthaziPisuak(id, teknikoenPisua, zeharkakoenPisua,
+            Zikloa.DEFEKTUZKO_HETEROEBALUAZIO_PISUA, Zikloa.DEFEKTUZKO_KOEBALUAZIO_PISUA,
+            Zikloa.DEFEKTUZKO_AUTOEBALUAZIO_PISUA);
+    }
+
+    @Transactional
+    public void eguneratuEthaziPisuak(Long id, BigDecimal teknikoenPisua, BigDecimal zeharkakoenPisua,
+            BigDecimal heteroebaluazioPisua, BigDecimal koebaluazioPisua, BigDecimal autoebaluazioPisua) {
         BigDecimal teknikoak = normalizatuPisua(teknikoenPisua, "Teknikoen pisua");
         BigDecimal zeharkakoak = normalizatuPisua(zeharkakoenPisua, "Zeharkakoen pisua");
         if (teknikoak.add(zeharkakoak).compareTo(new BigDecimal("100.00")) != 0) {
             throw new IllegalArgumentException("Teknikoen eta zeharkakoen pisuen baturak %100 izan behar du.");
         }
+        BigDecimal hetero = normalizatuPisua(heteroebaluazioPisua, "Heteroebaluazioaren pisua");
+        BigDecimal ko = normalizatuPisua(koebaluazioPisua, "Koebaluazioaren pisua");
+        BigDecimal auto = normalizatuPisua(autoebaluazioPisua, "Autoebaluazioaren pisua");
+        if (hetero.add(ko).add(auto).compareTo(new BigDecimal("100.00")) != 0)
+            throw new IllegalArgumentException("Heteroebaluazioaren, koebaluazioaren eta autoebaluazioaren pisuen baturak %100 izan behar du.");
 
         Zikloa zikloa = zikloaRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Ez da aurkitu zikloa id: " + id));
         zikloa.setEthaziTeknikoenPisua(teknikoak);
         zikloa.setEthaziZeharkakoenPisua(zeharkakoak);
+        zikloa.setEthaziHeteroebaluazioPisua(hetero);
+        zikloa.setEthaziKoebaluazioPisua(ko);
+        zikloa.setEthaziAutoebaluazioPisua(auto);
         zikloaRepository.save(zikloa);
     }
 
