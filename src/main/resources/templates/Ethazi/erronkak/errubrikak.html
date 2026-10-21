@@ -5,13 +5,40 @@
 <main class="page ethazi-page ethazi-rubric-page"><div class="rubric-toolbar" th:replace="~{Ethazi/fragments/common :: messages}"></div>
 <header class="page-header rubric-toolbar"><div><h1>Errubrikak · <span th:text="${erronka.izena}"></span></h1><p class="muted">Modulu bakoitzak bere mailakatzea, balioak eta ebidentziak ditu.</p></div><a class="btn" th:href="@{/ethazi/erronkak(zikloaId=${erronka.zikloa.id},ikasturteaId=${erronka.ikasturtea != null ? erronka.ikasturtea.id : null})}">← Erronketara</a></header>
 <nav class="module-tabs rubric-toolbar" aria-label="Errubrikaren moduluak">
-  <a th:each="m : ${moduluak}" th:href="@{/ethazi/erronkak/{id}/errubrikak(id=${erronka.id},moduloaId=${m.id})}"
+  <a th:each="m : ${moduluak}" th:href="@{/ethazi/erronkak/{id}/errubrikak(id=${erronka.id},moduloaId=${m.id},gaitasunMota=${gaitasunMota})}"
      th:classappend="${m.id == moduloaId} ? 'active'"
      th:attr="aria-current=${m.id == moduloaId ? 'page' : null},title=${m.izena},aria-label=${m.kodea + ' · ' + m.izena}"
      th:text="${m.kodea}"></a>
 </nav>
 <p class="empty-state rubric-toolbar" th:if="${#lists.isEmpty(moduluak)}">Erronkak ez du parte hartzen duen modulurik.</p>
-<section class="rubric-section challenge-rubric" data-editable="false" data-grade-view="TALDEKAKOA" th:if="${moduloaId != null}"
+<nav class="competency-type-tabs rubric-toolbar" aria-label="Gaitasun mota" th:if="${moduloaId != null}">
+  <a class="btn" th:classappend="${gaitasunMota.name() == 'TEKNIKOA'} ? 'active'" th:href="@{/ethazi/erronkak/{id}/errubrikak(id=${erronka.id},moduloaId=${moduloaId},gaitasunMota='TEKNIKOA')}">Teknikoak</a>
+  <a class="btn" th:classappend="${gaitasunMota.name() == 'ZEHARKAKOA'} ? 'active'" th:href="@{/ethazi/erronkak/{id}/errubrikak(id=${erronka.id},moduloaId=${moduloaId},gaitasunMota='ZEHARKAKOA')}">Zeharkakoak</a>
+</nav>
+<section class="rubric-section transverse-rubric" th:if="${moduloaId != null and gaitasunMota.name() == 'ZEHARKAKOA'}">
+  <input type="hidden" id="team-grade-csrf" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+  <header class="page-header rubric-toolbar"><div><h2>Zeharkako gaitasunak</h2><p class="muted">Erronka honetarako Kinielan hautatutako lorpen-adierazleak. Batezbestekoa nota jarri duten moduluen artean kalkulatzen da.</p></div></header>
+  <p class="empty-state" th:if="${#lists.isEmpty(zeharkakoErrubrikak)}">Ez da zeharkako lorpen-adierazlerik hautatu erronka honetarako.</p>
+  <section class="transverse-competency" th:each="g : ${zeharkakoErrubrikak}">
+    <h3><span th:text="${g.kodea}"></span> · <span th:text="${g.deskribapena}"></span></h3>
+    <div class="rubric-scroll" tabindex="0" role="region" th:attr="aria-label=${g.kodea + ' · zeharkako errubrika'}"><table class="rubric challenge-rubric-table transverse-rubric-table">
+      <thead><tr><th class="evidence-column">Lorpen-adierazlea</th>
+        <th class="level-column" th:each="level : ${g.adierazleak[0].mailak}"><strong th:text="${level.izena}"></strong></th>
+        <th class="student-grade-column" th:each="student : ${ikasleak}" th:title="${student.izena}"><span th:text="${student.izena}"></span></th>
+      </tr></thead>
+      <tbody><tr th:each="indicator : ${g.adierazleak}"><th class="evidence-column"><strong th:text="${indicator.kodea}"></strong><p class="preserve" th:text="${indicator.deskribapena}"></p></th>
+        <td class="level-column" th:each="level : ${indicator.mailak}"><p class="preserve" th:text="${level.deskribapena}"></p></td>
+        <td class="student-grade-column" th:each="grade : ${indicator.ikasleNotak}">
+          <select class="team-grade-input" data-transverse-grade th:attr="data-action=@{/ethazi/erronkak/{id}/errubrikak/{mid}/zeharkako-notak(id=${erronka.id},mid=${moduloaId})},data-indicator-id=${indicator.id},data-student-id=${grade.ikasleaId}">
+            <option value="" th:selected="${grade.mailaId == null}">---</option><option th:each="level : ${indicator.mailak}" th:value="${level.id}" th:text="${level.izena}" th:selected="${level.id == grade.mailaId}"></option>
+          </select><small class="team-grade-status" aria-live="polite"></small>
+          <small class="transverse-average" data-transverse-average th:text="${grade.batezbestekoa == null ? 'Batezbestekoa: —' : 'Batezbestekoa: ' + #numbers.formatDecimal(grade.batezbestekoa, 1, 2) + ' (' + grade.ebaluatzaileak + ')'}"></small>
+        </td>
+      </tr></tbody>
+    </table></div>
+  </section>
+</section>
+<section class="rubric-section challenge-rubric" data-editable="false" th:if="${moduloaId != null and gaitasunMota.name() == 'TEKNIKOA'}"
          th:attr="data-rubric-key=${'erronka-' + erronka.id + '-modulua-' + moduloaId}">
   <input type="hidden" id="team-grade-csrf" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
   <header class="page-header rubric-toolbar"><div><h2 th:text="${errubrika.moduloa.kodea + ' · ' + errubrika.moduloa.izena}"></h2></div><div class="rubric-actions">
@@ -49,9 +76,7 @@
       <span class="muted" th:if="${#lists.isEmpty(adierazleak)}">Kinielan ez da lorpen-adierazlerik markatu erronka eta modulu honetarako.</span></div>
   </aside>
   <form id="challenge-rubric-form" data-dirty-warning method="post" th:object="${form}" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/gorde(id=${erronka.id},mid=${moduloaId})}">
-  <div class="evaluation-view-tabs rubric-toolbar rubric-grading-only" role="group" aria-label="Ebaluazio ikuspegia">
-    <button type="button" class="btn active" data-evaluation-view="TALDEKAKOA" aria-pressed="true">Taldekakoak</button>
-    <button type="button" class="btn" data-evaluation-view="PERTSONALA" aria-pressed="false">Pertsonalak</button>
+  <div class="evaluation-view-tabs rubric-toolbar rubric-grading-only">
     <div class="overall-weight-editor" th:if="${!#lists.isEmpty(bestelakoProbakForm.probak)}" th:attr="data-action=@{/ethazi/erronkak/{id}/errubrikak/{mid}/ebaluazio-pisuak(id=${erronka.id},mid=${moduloaId})}">
       <label>Errubrika teknikoa <input type="number" min="0" max="100" step="0.01" th:field="*{errubrikaPisua}" data-overall-weight="rubric">%</label>
       <label>Bestelako probak <input type="number" min="0" max="100" step="0.01" th:field="*{bestelakoProbenPisua}" data-overall-weight="tests">%</label>
@@ -67,10 +92,7 @@
         <div class="rubric-edit-only level-fields"><label>Izena<input required maxlength="100" th:field="*{mailak[__${ms.index}__].izena}"></label><label>Balioa<input required type="number" min="0" max="10" step="0.01" th:field="*{mailak[__${ms.index}__].balioa}"></label>
           <button type="submit" class="btn btn-danger" th:form="${'delete-level-' + m.id}">Ezabatu</button></div>
       </th>
-      <th class="team-grade-column rubric-grading-only group-evaluation-column" th:each="t : ${taldeak}" th:title="${t.kideenIzenak}"><span th:text="${t.izena}"></span>
-        <div class="general-feedback" data-participant-kind="team" th:attr="data-action=@{/ethazi/erronkak/{id}/errubrikak/{mid}/ohar-orokorra(id=${erronka.id},mid=${moduloaId})},data-participant-id=${t.id}"><button type="button" class="btn general-feedback-toggle" title="Ohar orokorra" aria-label="Ohar orokorra" aria-expanded="false">📝<span class="feedback-present" th:classappend="${#strings.isEmpty(taldeOrokorOharrak[t.id])} ? ' is-empty'">●</span></button><div class="team-feedback-popover team-feedback-general" hidden><label>Ohar orokorra<textarea data-general-feedback rows="5" maxlength="60000" th:text="${taldeOrokorOharrak[t.id]}"></textarea></label><div class="team-feedback-popover-actions"><button type="button" class="btn btn-primary" data-general-feedback-save>Gorde</button><button type="button" class="btn" data-general-feedback-close>Itxi</button></div><small class="team-feedback-status" aria-live="polite"></small></div></div>
-      </th>
-      <th class="team-grade-column student-grade-column rubric-grading-only personal-evaluation-column" th:each="i : ${ikasleak}"><span th:text="${i.izena}"></span>
+      <th class="team-grade-column student-grade-column rubric-grading-only" th:each="i : ${ikasleak}"><span th:text="${i.izena}"></span>
         <div class="general-feedback" data-participant-kind="student" th:attr="data-action=@{/ethazi/erronkak/{id}/errubrikak/{mid}/ohar-orokorra(id=${erronka.id},mid=${moduloaId})},data-participant-id=${i.id}"><button type="button" class="btn general-feedback-toggle" title="Ohar orokorra" aria-label="Ohar orokorra" aria-expanded="false">📝<span class="feedback-present" th:classappend="${#strings.isEmpty(ikasleOrokorOharrak[i.id])} ? ' is-empty'">●</span></button><div class="team-feedback-popover team-feedback-general" hidden><label>Ohar orokorra<textarea data-general-feedback rows="5" maxlength="60000" th:text="${ikasleOrokorOharrak[i.id]}"></textarea></label><div class="team-feedback-popover-actions"><button type="button" class="btn btn-primary" data-general-feedback-save>Gorde</button><button type="button" class="btn" data-general-feedback-close>Itxi</button></div><small class="team-feedback-status" aria-live="polite"></small></div></div>
       </th>
     </tr></thead>
@@ -92,27 +114,7 @@
       <button type="submit" class="btn btn-danger rubric-edit-only" th:form="${'delete-evidence-' + eb.id}">Ebidentzia ezabatu</button></th>
       <td class="level-column" th:each="cell, cs : ${eb.mailak}" th:classappend="${cs.last} ? ' frozen-edge'" th:style="${'left:' + (280 + cs.index * 260) + 'px'}"><input type="hidden" th:field="*{ebidentziak[__${es.index}__].mailak[__${cs.index}__].mailaId}">
         <p class="preserve rubric-read-only" th:text="${cell.deskribapena}"></p><textarea class="rubric-edit-only" rows="7" th:field="*{ebidentziak[__${es.index}__].mailak[__${cs.index}__].deskribapena}" placeholder="Maila hau lortzeko zer egin behar den…"></textarea></td>
-      <td class="team-grade-column rubric-grading-only group-evaluation-column" th:each="tn, ts : ${eb.taldeNotak}">
-        <select class="team-grade-input" data-rubric-grade data-team-grade data-participant-kind="team" th:attr="data-action=@{/ethazi/erronkak/{id}/errubrikak/{mid}/notak(id=${erronka.id},mid=${moduloaId})},data-evidence-id=${eb.id},data-participant-id=${tn.taldeaId},data-team-id=${tn.taldeaId}">
-          <option value="" data-level-value="0" th:selected="${tn.mailaId == null}">---</option><option th:each="level : ${form.mailak}" th:value="${level.id}" th:text="${level.izena}" th:selected="${level.id == tn.mailaId}" th:attr="data-level-value=${level.balioa}"></option>
-        </select><small class="team-grade-status" aria-live="polite"></small>
-        <div class="team-feedback" data-participant-kind="team" th:attr="data-action=@{/ethazi/erronkak/{id}/errubrikak/{mid}/oharrak(id=${erronka.id},mid=${moduloaId})},data-evidence-id=${eb.id},data-participant-id=${tn.taldeaId},data-team-id=${tn.taldeaId}">
-          <div class="team-feedback-buttons">
-            <button type="button" class="btn team-feedback-toggle team-feedback-strengths-toggle" data-team-feedback-toggle="strengths" title="Ondo egindakoak" aria-label="Ondo egindakoak" aria-expanded="false">👍🏽<span class="feedback-present" th:classappend="${#strings.isEmpty(tn.ondoEgindakoak)} ? ' is-empty'">●</span></button>
-            <button type="button" class="btn team-feedback-toggle team-feedback-improvements-toggle" data-team-feedback-toggle="improvements" title="Hobetu beharrekoak" aria-label="Hobetu beharrekoak" aria-expanded="false">👎🏽<span class="feedback-present" th:classappend="${#strings.isEmpty(tn.hobetuBeharrekoak)} ? ' is-empty'">●</span></button>
-          </div>
-          <div class="team-feedback-popover team-feedback-strengths" data-team-feedback-panel="strengths" hidden>
-            <label>Ondo egindakoak<textarea data-team-feedback data-feedback-kind="strengths" rows="5" maxlength="60000" th:text="${tn.ondoEgindakoak}"></textarea></label>
-            <div class="team-feedback-popover-actions"><button type="button" class="btn btn-primary" data-team-feedback-save>Gorde</button><button type="button" class="btn" data-team-feedback-close>Itxi</button></div>
-            <small class="team-feedback-status" aria-live="polite"></small>
-          </div>
-          <div class="team-feedback-popover team-feedback-improvements" data-team-feedback-panel="improvements" hidden>
-            <label>Hobetu beharrekoak<textarea data-team-feedback data-feedback-kind="improvements" rows="5" maxlength="60000" th:text="${tn.hobetuBeharrekoak}"></textarea></label>
-            <div class="team-feedback-popover-actions"><button type="button" class="btn btn-primary" data-team-feedback-save>Gorde</button><button type="button" class="btn" data-team-feedback-close>Itxi</button></div>
-            <small class="team-feedback-status" aria-live="polite"></small>
-          </div>
-        </div></td>
-      <td class="team-grade-column student-grade-column rubric-grading-only personal-evaluation-column" th:each="sn, ss : ${eb.ikasleNotak}">
+      <td class="team-grade-column student-grade-column rubric-grading-only" th:each="sn, ss : ${eb.ikasleNotak}">
         <select class="team-grade-input" data-rubric-grade data-participant-kind="student" th:attr="data-action=@{/ethazi/erronkak/{id}/errubrikak/{mid}/ikasle-notak(id=${erronka.id},mid=${moduloaId})},data-evidence-id=${eb.id},data-participant-id=${sn.ikasleaId}">
           <option value="" data-level-value="0" th:selected="${sn.mailaId == null}">---</option><option th:each="level : ${form.mailak}" th:value="${level.id}" th:text="${level.izena}" th:selected="${level.id == sn.mailaId}" th:attr="data-level-value=${level.balioa}"></option>
         </select><small class="team-grade-status" aria-live="polite"></small>
@@ -125,11 +127,10 @@
           <div class="team-feedback-popover team-feedback-improvements" data-team-feedback-panel="improvements" hidden><label>Hobetu beharrekoak<textarea data-team-feedback data-feedback-kind="improvements" rows="5" maxlength="60000" th:text="${sn.hobetuBeharrekoak}"></textarea></label><div class="team-feedback-popover-actions"><button type="button" class="btn btn-primary" data-team-feedback-save>Gorde</button><button type="button" class="btn" data-team-feedback-close>Itxi</button></div><small class="team-feedback-status" aria-live="polite"></small></div>
         </div>
       </td>
-    </tr><tr th:if="*{#lists.isEmpty(ebidentziak)}"><td th:colspan="${#lists.size(form.mailak) + #lists.size(taldeak) + #lists.size(ikasleak) + 1}" class="empty-state">Oraindik ez dago ebidentziarik.</td></tr>
+    </tr><tr th:if="*{#lists.isEmpty(ebidentziak)}"><td th:colspan="${#lists.size(form.mailak) + #lists.size(ikasleak) + 1}" class="empty-state">Oraindik ez dago ebidentziarik.</td></tr>
     <tr class="rubric-total-row rubric-grading-only"><th class="evidence-column">GUZTIRA</th>
       <td class="level-column rubric-total-spacer" th:each="m, ms : *{mailak}" th:classappend="${ms.last} ? ' frozen-edge'" th:style="${'left:' + (280 + ms.index * 260) + 'px'}" aria-hidden="true"></td>
-      <td class="team-grade-column group-evaluation-column" th:each="t : ${taldeak}"><output data-grade-total data-team-total data-participant-kind="team" th:attr="data-participant-id=${t.id},data-team-id=${t.id}">0,00</output></td>
-      <td class="team-grade-column student-grade-column personal-evaluation-column" th:each="i : ${ikasleak}"><output data-grade-total data-participant-kind="student" th:attr="data-participant-id=${i.id}">0,00</output></td>
+      <td class="team-grade-column student-grade-column" th:each="i : ${ikasleak}"><output data-grade-total data-participant-kind="student" th:attr="data-participant-id=${i.id}">0,00</output></td>
     </tr></tbody>
   </table></div><div class="form-actions rubric-toolbar rubric-edit-only"><button class="btn btn-primary">Errubrika gorde</button></div></form>
   <section class="other-tests-section rubric-toolbar">
@@ -147,15 +148,18 @@
     </dialog>
     <p class="empty-state" th:if="${#lists.isEmpty(bestelakoProbakForm.probak)}">Ez dago bestelako probarik. Errubrika teknikoak ebaluazioaren %100 hartzen du.</p>
     <form th:if="${!#lists.isEmpty(bestelakoProbakForm.probak)}" class="other-tests-form" method="post" th:object="${bestelakoProbakForm}" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/bestelako-probak/gorde(id=${erronka.id},mid=${moduloaId})}">
-      <div class="other-test-card" th:each="p, ps : *{probak}"><input type="hidden" th:field="*{probak[__${ps.index}__].id}">
-        <div class="other-test-fields"><label>Izena<input required maxlength="200" th:field="*{probak[__${ps.index}__].izena}"></label><label>Data<input required type="text" inputmode="numeric" placeholder="yyyy/mm/dd" pattern="\d{4}/\d{2}/\d{2}" th:field="*{probak[__${ps.index}__].data}"></label><label>Proben barruko pisua (%)<input required type="number" min="0" max="100" step="0.01" th:field="*{probak[__${ps.index}__].pisua}"></label>
+      <details class="other-test-card" th:each="p, ps : *{probak}">
+        <summary class="other-test-summary"><strong data-other-test-summary-name th:text="${p.izena}"></strong><span><span data-other-test-summary-date th:text="${#temporals.format(p.data, 'yyyy/MM/dd')}"></span><span aria-hidden="true"> · </span><span data-other-test-summary-weight th:text="${p.pisua + '%'}"></span></span></summary>
+        <div class="other-test-card-body"><input type="hidden" th:field="*{probak[__${ps.index}__].id}">
+        <div class="other-test-fields"><label>Izena<input required maxlength="200" data-other-test-field="name" th:field="*{probak[__${ps.index}__].izena}"></label><label>Data<input required type="text" inputmode="numeric" placeholder="yyyy/mm/dd" pattern="\d{4}/\d{2}/\d{2}" data-other-test-field="date" th:field="*{probak[__${ps.index}__].data}"></label><label>Proben barruko pisua (%)<input required type="number" min="0" max="100" step="0.01" data-other-test-field="weight" th:field="*{probak[__${ps.index}__].pisua}"></label>
           <button th:if="${#lists.isEmpty(p.notak.?[nota != null])}" type="submit" class="btn btn-danger" th:form="${'delete-other-test-' + p.id}">Ezabatu</button></div>
         <div class="other-test-indicators"><strong>Lorpen-adierazleak</strong><div class="indicator-picker"><label class="indicator-badge indicator-choice" th:each="a : ${adierazleak}" th:title="${a.deskribapena + (#strings.isEmpty(a.oharra) ? '' : ' · Oharra: ' + a.oharra)}"><input type="checkbox" th:field="*{probak[__${ps.index}__].adierazleaIds}" th:value="${a.id}"><span th:text="${(#strings.isEmpty(a.emaitzaKodea) ? '' : a.emaitzaKodea + ' · ') + a.kodea}"></span><span class="badge-remove" aria-hidden="true">×</span><span class="badge-add" aria-hidden="true">+</span></label></div></div>
         <div class="other-test-grades"><h3>Ikasleen kalifikazioak</h3><div class="other-test-grade-scroll" role="region" th:attr="aria-label=${p.izena + ' · ikasleen kalifikazioak'}" tabindex="0">
           <table class="rubric other-test-grade-table"><thead><tr><th class="other-test-grade-label">Kalifikazioa</th><th class="student-grade-column" th:each="n : ${p.notak}" th:title="${n.ikasleaIzena}"><span th:text="${n.ikasleaIzena}"></span></th></tr></thead>
             <tbody><tr><th class="other-test-grade-label">Nota</th><td class="student-grade-column" th:each="n : ${p.notak}"><input type="number" min="0" max="10" step="0.01" placeholder="—" data-other-test-grade th:attr="aria-label=${n.ikasleaIzena + ' · nota'},data-action=@{/ethazi/erronkak/{id}/errubrikak/{mid}/bestelako-probak/{pid}/notak(id=${erronka.id},mid=${moduloaId},pid=${p.id})},data-student-id=${n.ikasleaId}" th:value="${n.nota}"><small class="team-grade-status" aria-live="polite"></small></td></tr></tbody>
           </table></div></div>
-      </div>
+        </div>
+      </details>
       <div class="form-actions"><button class="btn btn-primary">Proben datuak gorde</button></div>
     </form>
   </section>

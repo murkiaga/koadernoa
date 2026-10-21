@@ -399,12 +399,62 @@ class EthaziServiceTest {
             assertThat(transversal).contains("Taldean lan egiten du", "Zeharkako gaitasuna",
                 "/ethazi/kiniela/zeharkakoak/IE_ID/loturak", "kiniela-transverse-board")
                 .doesNotContain("TRANS-KIN · TRANS-KIN", "<details class=\"ethazi-card kiniela-module\"");
+            mvc().perform(get("/ethazi/erronkak/" + challenge + "/errubrikak").principal(auth)
+                    .param("moduloaId", m.getId().toString()).param("gaitasunMota", "ZEHARKAKOA"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Teknikoak")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Zeharkakoak")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Taldean lan egiten du")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("transverse-rubric-table")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Bestelako probak"))));
         } finally { SecurityContextHolder.clearContext(); }
 
         kiniela.gordeZeharkakoLoturak(cycle.getId(), g, Set.of());
         em.flush(); em.clear();
         assertThat(kiniela.zeharkakoKiniela(cycle.getId(), null).get(0).emaitzak().get(0).loturak()).isEmpty();
     }
+    @Test void transversalGradesAreAveragedOnlyAcrossModulesThatAssessTheStudent() {
+        var firstModule = module(cycle, "TRANS-AVG-1");
+        var secondModule = module(cycle, "TRANS-AVG-2"); secondModule.setMaila(firstModule.getMaila());
+        var challengeForm = challenge(firstModule);
+        challengeForm.setModuloIds(new java.util.LinkedHashSet<>(List.of(firstModule.getId(), secondModule.getId())));
+        kiniela.gordeErronka(null, challengeForm);
+        Long challengeId = kiniela.erronkak(cycle.getId()).get(0).getId();
+
+        var student = new Ikaslea(); student.setIzena("Ane"); student.setAbizena1("Aranburu");
+        student.setHna("TRANS-AVG-STUDENT"); em.persist(student);
+        var member = new com.koadernoa.app.ethazi.entitateak.ErronkaTaldeKidea();
+        member.setErronka(kiniela.erronka(challengeId)); member.setIkaslea(student);
+        var teamId = kiniela.gehituTaldea(challengeId);
+        member.setTaldea(em.find(com.koadernoa.app.ethazi.entitateak.ErronkaTaldea.class, teamId)); em.persist(member);
+
+        var form = new GaitasunaForm(); form.setMota(GaitasunMota.ZEHARKAKOA);
+        form.setKodea("ZK-AVG"); form.setIzena("Autonomia"); form.setDeskribapena("Autonomiaz jarduten du");
+        Long competencyId = service.gordeGaitasuna(null, form);
+        var competency = service.gaitasuna(competencyId);
+        var firstLevel = competency.getEredua().getMailak().get(0);
+        var secondLevel = competency.getEredua().getMailak().get(1);
+        service.gordeErrubrikaAdierazlea(competencyId, firstLevel.getId(), null, indicator());
+        Long indicatorId = service.gaitasuna(competencyId).getMailak().get(0).getLorpenAdierazleak().get(0).getId();
+        kiniela.gordeZeharkakoLoturak(cycle.getId(), competencyId, Set.of(indicatorId));
+        kiniela.gordeZeharkakoErronkaLotura(cycle.getId(), competencyId, indicatorId, challengeId, true);
+
+        var auth = new UsernamePasswordAuthenticationToken("manager", "",
+            AuthorityUtils.createAuthorityList("ROLE_KUDEATZAILEA"));
+        var one = kiniela.gordeZeharkakoNota(challengeId, firstModule.getId(), indicatorId,
+            student.getId(), firstLevel.getId(), auth);
+        assertThat((java.math.BigDecimal) one.get("average")).isEqualByComparingTo("1.00");
+        assertThat(one.get("evaluatorCount")).isEqualTo(1);
+        var two = kiniela.gordeZeharkakoNota(challengeId, secondModule.getId(), indicatorId,
+            student.getId(), secondLevel.getId(), auth);
+        assertThat((java.math.BigDecimal) two.get("average")).isEqualByComparingTo("1.50");
+        assertThat(two.get("evaluatorCount")).isEqualTo(2);
+        kiniela.gordeZeharkakoNota(challengeId, firstModule.getId(), indicatorId, student.getId(), null, auth);
+        var view = kiniela.zeharkakoErrubrika(challengeId, secondModule.getId());
+        assertThat(view.get(0).adierazleak().get(0).ikasleNotak().get(0))
+            .satisfies(n -> { assertThat(n.batezbestekoa()).isEqualByComparingTo("2.00"); assertThat(n.ebaluatzaileak()).isEqualTo(1); });
+    }
+
     @Test void weightsArePerOutcomeAndTotalsSumAcrossTheModule() {
         var m = module(cycle, "SUM"); var ie = outcome(m); Long g = createCompetency();
         var next = new EmaitzaForm(); next.setZikloaId(cycle.getId()); next.setModuloaId(m.getId());
@@ -847,14 +897,14 @@ class EthaziServiceTest {
                     + "&amp;mailaId=" + m.getMaila().getId() + "&amp;hizkuntza=EUSKARA&amp;ikasturteaId=" + year.getId() + "\"")));
             mvc().perform(get("/ethazi/erronkak/" + challengeId + "/errubrikak").principal(auth)
                     .param("moduloaId", m.getId().toString()))
-                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Taldea 1")))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Taldea 1"))))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Aranburu, Ane")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Eginda")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("<option value=\"\" data-level-value=\"0\"")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("data-team-grade")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("data-participant-kind=\"student\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("data-level-value=\"10.00\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("data-evidence-weight=\"100.00\"")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("data-team-total")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("data-team-total"))))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString(">GUZTIRA</th>")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("frozen-edge\" style=\"left:280px\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("class=\"indicators-column\""))))
@@ -863,7 +913,7 @@ class EthaziServiceTest {
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("data-team-feedback-toggle=\"strengths\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("data-team-feedback-panel=\"improvements\" hidden")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("data-team-feedback-save")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("data-evaluation-view=\"PERTSONALA\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("data-evaluation-view"))))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("title=\"Ohar orokorra\"")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("👍🏽")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("👎🏽")))
@@ -873,6 +923,16 @@ class EthaziServiceTest {
             var savedRubric = kiniela.errubrika(challengeId, m.getId());
             var evidenceId = savedRubric.getEbidentziak().get(0).getId();
             var levelId = savedRubric.getMailak().get(0).getId();
+            mvc().perform(post("/ethazi/erronkak/" + challengeId + "/errubrikak/" + m.getId() + "/ikasle-notak")
+                    .principal(auth).param("ebidentziaId", evidenceId.toString())
+                    .param("ikasleaId", first.getId().toString()).param("mailaId", levelId.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.affectedStudentIds[0]").value(first.getId()));
+            mvc().perform(post("/ethazi/erronkak/" + challengeId + "/errubrikak/" + m.getId() + "/ikasle-oharrak")
+                    .principal(auth).param("ebidentziaId", evidenceId.toString())
+                    .param("ikasleaId", first.getId().toString()).param("ondoEgindakoak", "Taldearen lana"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.affectedStudentIds[0]").value(first.getId()));
             mvc().perform(post("/ethazi/erronkak/" + challengeId + "/errubrikak/" + m.getId() + "/notak")
                     .principal(auth)
                     .param("ebidentziaId", evidenceId.toString()).param("taldeaId", team2.toString())

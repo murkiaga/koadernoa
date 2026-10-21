@@ -17,6 +17,7 @@ import com.koadernoa.app.ethazi.dto.EthaziForms.ErronkaTaldeEsleipenForm;
 import com.koadernoa.app.ethazi.dto.EthaziForms.BestelakoProbakForm;
 import com.koadernoa.app.ethazi.service.EthaziService;
 import com.koadernoa.app.ethazi.service.KinielaService;
+import com.koadernoa.app.ethazi.entitateak.gaitasunak.GaitasunMota;
 import com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza;
 import lombok.RequiredArgsConstructor;
 
@@ -175,6 +176,7 @@ public class ErronkaController {
 
     @GetMapping("/{id}/errubrikak")
     String errubrikak(@PathVariable Long id, @RequestParam(required = false) Long moduloaId,
+            @RequestParam(defaultValue = "TEKNIKOA") GaitasunMota gaitasunMota,
             Authentication auth, Model model) {
         var erronka = service.erronka(id);
         var moduluak = erronka.getModuluak().stream()
@@ -187,22 +189,41 @@ public class ErronkaController {
             throw new AccessDeniedException("Ez duzu modulu hau ikusteko baimenik.");
         }
         model.addAttribute("erronka", erronka); model.addAttribute("moduluak", moduluak); model.addAttribute("moduloaId", moduloaId);
+        model.addAttribute("gaitasunMota", gaitasunMota);
         model.addAttribute("errubrikaEditatuDezake", service.errubrikaEditatuDezake(auth));
         if (moduloaId != null) {
-            var errubrika = service.errubrika(id, moduloaId);
-            model.addAttribute("errubrika", errubrika);
-            model.addAttribute("form", service.errubrikaForm(id, moduloaId));
-            model.addAttribute("adierazleak", service.modulukoAdierazleak(id, moduloaId));
-            model.addAttribute("taldeak", service.taldeak(id));
             model.addAttribute("ikasleak", service.errubrikaIkasleak(id));
-            model.addAttribute("taldeOrokorOharrak", service.taldeOrokorOharrak(id, moduloaId));
-            model.addAttribute("ikasleOrokorOharrak", service.ikasleOrokorOharrak(id, moduloaId));
-            model.addAttribute("bestelakoProbakForm", service.bestelakoProbakForm(id, moduloaId));
-            model.addAttribute("errubrikaIturriak", service.errubrikaEditatuDezake(auth)
-                && errubrika.getMailak().isEmpty() && errubrika.getEbidentziak().isEmpty()
-                    ? service.errubrikaIturriak(id, moduloaId) : java.util.List.of());
+            if (gaitasunMota == GaitasunMota.ZEHARKAKOA) {
+                model.addAttribute("zeharkakoErrubrikak", service.zeharkakoErrubrika(id, moduloaId));
+            } else {
+                var errubrika = service.errubrika(id, moduloaId);
+                model.addAttribute("errubrika", errubrika);
+                model.addAttribute("form", service.errubrikaForm(id, moduloaId));
+                model.addAttribute("adierazleak", service.modulukoAdierazleak(id, moduloaId));
+                model.addAttribute("taldeak", service.taldeak(id));
+                model.addAttribute("taldeOrokorOharrak", service.taldeOrokorOharrak(id, moduloaId));
+                model.addAttribute("ikasleOrokorOharrak", service.ikasleOrokorOharrak(id, moduloaId));
+                model.addAttribute("bestelakoProbakForm", service.bestelakoProbakForm(id, moduloaId));
+                model.addAttribute("errubrikaIturriak", service.errubrikaEditatuDezake(auth)
+                    && errubrika.getMailak().isEmpty() && errubrika.getEbidentziak().isEmpty()
+                        ? service.errubrikaIturriak(id, moduloaId) : java.util.List.of());
+            }
         }
         return "Ethazi/erronkak/errubrikak";
+    }
+
+    @PostMapping("/{id}/errubrikak/{moduloaId}/zeharkako-notak")
+    @ResponseBody
+    ResponseEntity<java.util.Map<String, Object>> gordeZeharkakoNota(@PathVariable Long id,
+            @PathVariable Long moduloaId, @RequestParam Long adierazleaId,
+            @RequestParam Long ikasleaId, @RequestParam(required = false) Long mailaId, Authentication auth) {
+        try {
+            return ResponseEntity.ok(service.gordeZeharkakoNota(id, moduloaId, adierazleaId, ikasleaId, mailaId, auth));
+        } catch (AccessDeniedException ex) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(java.util.Map.of("message", ex.getMessage()));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", ex.getMessage()));
+        }
     }
 
     @PostMapping("/{id}/errubrikak/{moduloaId}/ebaluazio-pisuak")
@@ -313,12 +334,12 @@ public class ErronkaController {
 
     @PostMapping("/{id}/errubrikak/{moduloaId}/ikasle-notak")
     @ResponseBody
-    ResponseEntity<java.util.Map<String, String>> gordeIkasleNota(@PathVariable Long id, @PathVariable Long moduloaId,
+    ResponseEntity<java.util.Map<String, Object>> gordeIkasleNota(@PathVariable Long id, @PathVariable Long moduloaId,
             @RequestParam Long ebidentziaId, @RequestParam Long ikasleaId,
             @RequestParam(required = false) Long mailaId, Authentication auth) {
         try {
-            service.gordeIkasleNota(id, moduloaId, ebidentziaId, ikasleaId, mailaId, auth);
-            return ResponseEntity.ok(java.util.Map.of("message", "Gordeta"));
+            var affectedStudentIds = service.gordeIkasleNota(id, moduloaId, ebidentziaId, ikasleaId, mailaId, auth);
+            return ResponseEntity.ok(java.util.Map.of("message", "Gordeta", "affectedStudentIds", affectedStudentIds));
         } catch (AccessDeniedException ex) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(java.util.Map.of("message", ex.getMessage()));
         } catch (IllegalArgumentException ex) {
@@ -328,14 +349,15 @@ public class ErronkaController {
 
     @PostMapping("/{id}/errubrikak/{moduloaId}/ikasle-oharrak")
     @ResponseBody
-    ResponseEntity<java.util.Map<String, String>> gordeIkasleOharrak(@PathVariable Long id, @PathVariable Long moduloaId,
+    ResponseEntity<java.util.Map<String, Object>> gordeIkasleOharrak(@PathVariable Long id, @PathVariable Long moduloaId,
             @RequestParam Long ebidentziaId, @RequestParam Long ikasleaId,
             @RequestParam(required = false) String ondoEgindakoak,
             @RequestParam(required = false) String hobetuBeharrekoak, Authentication auth) {
         try {
-            service.gordeIkasleOharrak(id, moduloaId, ebidentziaId, ikasleaId,
+            var affectedStudentIds = service.gordeIkasleOharrak(id, moduloaId, ebidentziaId, ikasleaId,
                 ondoEgindakoak, hobetuBeharrekoak, auth);
-            return ResponseEntity.ok(java.util.Map.of("message", "Oharrak gordeta"));
+            return ResponseEntity.ok(java.util.Map.of("message", "Oharrak gordeta",
+                "affectedStudentIds", affectedStudentIds));
         } catch (AccessDeniedException ex) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(java.util.Map.of("message", ex.getMessage()));
         } catch (IllegalArgumentException ex) {

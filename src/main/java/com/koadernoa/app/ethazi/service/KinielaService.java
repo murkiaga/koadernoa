@@ -37,6 +37,7 @@ public class KinielaService {
     private final GaitasunaRepository gaitasunak;
     private final LorpenAdierazleaRepository adierazleak;
     private final ErronkaErrubrikaRepository errubrikak;
+    private final ZeharkakoEbaluazioaRepository zeharkakoEbaluazioak;
     private final ErronkaTaldeaRepository erronkaTaldeak;
     private final ErronkaTaldeKideaRepository erronkaTaldeKideak;
     private final MatrikulaRepository matrikulak;
@@ -183,6 +184,8 @@ public class KinielaService {
         zeharkakoAdierazleak().forEach(a -> a.getZeharkakoKinielaLoturak().forEach(l ->
             l.getErronkak().removeIf(item -> item.getId().equals(id))));
         adierazleak.flush();
+        zeharkakoEbaluazioak.deleteAll(zeharkakoEbaluazioak.findByErronkaId(id));
+        zeharkakoEbaluazioak.flush();
         errubrikak.deleteAll(errubrikak.findByErronkaId(id));
         errubrikak.flush();
         erronkaTaldeKideak.deleteByErronkaId(id);
@@ -209,12 +212,99 @@ public class KinielaService {
 
     public record ErrubrikaIkaslea(Long id, String izena) {}
 
+    public record ZeharkakoMaila(Long id, String izena, String deskribapena, int ordena) {}
+    public record ZeharkakoIkasleNota(Long ikasleaId, Long mailaId, BigDecimal batezbestekoa, int ebaluatzaileak) {}
+    public record ZeharkakoAdierazleErrubrika(Long id, String kodea, String deskribapena,
+            List<ZeharkakoMaila> mailak, List<ZeharkakoIkasleNota> ikasleNotak) {}
+    public record ZeharkakoGaitasunErrubrika(String kodea, String deskribapena,
+            List<ZeharkakoAdierazleErrubrika> adierazleak) {}
+
     public List<ErrubrikaIkaslea> errubrikaIkasleak(Long erronkaId) {
         erronka(erronkaId);
         return erronkaTaldeKideak.findByErronkaId(erronkaId).stream()
             .map(ErronkaTaldeKidea::getIkaslea)
             .map(i -> new ErrubrikaIkaslea(i.getId(), i.getIzenOsoa()))
             .distinct().sorted(Comparator.comparing(ErrubrikaIkaslea::izena, String.CASE_INSENSITIVE_ORDER)).toList();
+    }
+
+    public List<ZeharkakoGaitasunErrubrika> zeharkakoErrubrika(Long erronkaId, Long moduloaId) {
+        var challenge = erronka(erronkaId);
+        var module = challenge.getModuluak().stream().filter(m -> m.getId().equals(moduloaId)).findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Modulua ez da erronka honetakoa."));
+        var language = module.getHizkuntza() == Hizkuntza.ZEHAZTU_GABE ? Hizkuntza.EUSKARA : module.getHizkuntza();
+        var students = errubrikaIkasleak(erronkaId);
+        var evaluations = zeharkakoEbaluazioak.findByErronkaId(erronkaId);
+        return gaitasunak.findByZikloaIsNullAndMotaOrderByKodeaAsc(GaitasunMota.ZEHARKAKOA).stream()
+            .filter(g -> g.getEredua() != null)
+            .map(g -> {
+                var selected = g.getMailak().stream().flatMap(gm -> gm.getLorpenAdierazleak().stream())
+                    .filter(a -> a.getZeharkakoKinielaLoturak().stream().anyMatch(l ->
+                        l.getZikloa().getId().equals(challenge.getZikloa().getId())
+                        && l.getErronkak().stream().anyMatch(e -> e.getId().equals(erronkaId))))
+                    .map(a -> {
+                        var levels = g.getEredua().getMailak().stream().map(level -> {
+                            String description = g.getMailak().stream()
+                                .filter(gm -> gm.getMaila().getId().equals(level.getId())).findFirst()
+                                .map(gm -> gm.deskribapena(language)).orElse("");
+                            return new ZeharkakoMaila(level.getId(), level.izena(language), description, level.getOrdena());
+                        }).toList();
+                        var grades = students.stream().map(student -> {
+                            var all = evaluations.stream().filter(n -> n.getAdierazlea().getId().equals(a.getId())
+                                && n.getIkaslea().getId().equals(student.id())).toList();
+                            Long ownLevel = all.stream().filter(n -> n.getModuloa().getId().equals(moduloaId))
+                                .map(n -> n.getMaila().getId()).findFirst().orElse(null);
+                            BigDecimal average = all.isEmpty() ? null : all.stream().map(ZeharkakoEbaluazioa::getNota)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                                .divide(BigDecimal.valueOf(all.size()), 2, java.math.RoundingMode.HALF_UP);
+                            return new ZeharkakoIkasleNota(student.id(), ownLevel, average, all.size());
+                        }).toList();
+                        return new ZeharkakoAdierazleErrubrika(a.getId(), adierazleKodea(a),
+                            a.deskribapena(language), levels, grades);
+                    }).toList();
+                return new ZeharkakoGaitasunErrubrika(g.getKodea(), g.deskribapena(language), selected);
+            }).filter(g -> !g.adierazleak().isEmpty()).toList();
+    }
+
+    @Transactional public Map<String, Object> gordeZeharkakoNota(Long erronkaId, Long moduloaId,
+            Long adierazleaId, Long ikasleaId, Long mailaId, Authentication auth) {
+        if (!erronkaKalifikatuDezake(auth, erronkaId, moduloaId))
+            throw new AccessDeniedException("Ez duzu modulu honetako kalifikazioak aldatzeko baimenik.");
+        var challenge = erronka(erronkaId);
+        var module = challenge.getModuluak().stream().filter(m -> m.getId().equals(moduloaId)).findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Modulua ez da erronka honetakoa."));
+        var student = erronkaTaldeKideak.findByErronkaId(erronkaId).stream()
+            .filter(k -> k.getIkaslea().getId().equals(ikasleaId)).map(ErronkaTaldeKidea::getIkaslea).findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Ikaslea ez da erronka honetakoa."));
+        var indicator = adierazleak.findById(adierazleaId)
+            .orElseThrow(() -> new IllegalArgumentException("Lorpen-adierazlea ez da aurkitu."));
+        require(indicator.getZeharkakoKinielaLoturak().stream().anyMatch(l ->
+            l.getZikloa().getId().equals(challenge.getZikloa().getId())
+            && l.getErronkak().stream().anyMatch(e -> e.getId().equals(erronkaId))),
+            "Lorpen-adierazlea ez da erronka honetarako hautatu.");
+        var all = zeharkakoEbaluazioak.findByErronkaId(erronkaId);
+        var existing = all.stream().filter(n -> n.getModuloa().getId().equals(moduloaId)
+            && n.getAdierazlea().getId().equals(adierazleaId) && n.getIkaslea().getId().equals(ikasleaId)).findFirst();
+        if (mailaId == null) existing.ifPresent(zeharkakoEbaluazioak::delete);
+        else {
+            var level = indicator.getGaitasunMaila().getGaitasuna().getEredua().getMailak().stream()
+                .filter(m -> m.getId().equals(mailaId)).findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Maila ez da zeharkako errubrika honetakoa."));
+            var grade = existing.orElseGet(() -> {
+                var n = new ZeharkakoEbaluazioa(); n.setErronka(challenge); n.setModuloa(module);
+                n.setAdierazlea(indicator); n.setIkaslea(student); return n;
+            });
+            grade.setMaila(level); grade.setNota(BigDecimal.valueOf(level.getOrdena()));
+            zeharkakoEbaluazioak.save(grade);
+        }
+        zeharkakoEbaluazioak.flush();
+        var current = zeharkakoEbaluazioak.findByErronkaId(erronkaId).stream()
+            .filter(n -> n.getAdierazlea().getId().equals(adierazleaId)
+                && n.getIkaslea().getId().equals(ikasleaId)).toList();
+        BigDecimal average = current.isEmpty() ? null : current.stream().map(ZeharkakoEbaluazioa::getNota)
+            .reduce(BigDecimal.ZERO, BigDecimal::add)
+            .divide(BigDecimal.valueOf(current.size()), 2, java.math.RoundingMode.HALF_UP);
+        var result = new LinkedHashMap<String, Object>(); result.put("message", "Gordeta");
+        result.put("average", average); result.put("evaluatorCount", current.size()); return result;
     }
 
     public List<Ikaslea> taldeHautagaiak(Long erronkaId) {
@@ -434,6 +524,7 @@ public class KinielaService {
         var r = errubrika(erronkaId, moduloaId); var f = new ErronkaErrubrikaForm();
         f.setErrubrikaPisua(r.getErrubrikaPisua()); f.setBestelakoProbenPisua(r.getBestelakoProbenPisua());
         var teams = taldeak(erronkaId);
+        var members = erronkaTaldeKideak.findByErronkaId(erronkaId);
         var students = errubrikaIkasleak(erronkaId);
         for (var m : r.getMailak()) {
             var mf = new com.koadernoa.app.ethazi.dto.EthaziForms.ErronkaMailaForm();
@@ -468,7 +559,17 @@ public class KinielaService {
             }
             for (var student : students) {
                 var sf = new com.koadernoa.app.ethazi.dto.EthaziForms.ErronkaIkasleNotaForm(); sf.setIkasleaId(student.id());
-                eb.getIkasleNotak().stream().filter(n -> n.getIkaslea().getId().equals(student.id())).findFirst()
+                if (eb.getEbaluazioMota() == EbidentziaEbaluazioMota.TALDEKAKOA) {
+                    members.stream()
+                        .filter(k -> k.getIkaslea().getId().equals(student.id())).findFirst()
+                        .flatMap(k -> eb.getTaldeNotak().stream()
+                            .filter(n -> n.getTaldea().getId().equals(k.getTaldea().getId())).findFirst())
+                        .ifPresent(n -> {
+                            if (n.getMaila() != null) { sf.setMailaId(n.getMaila().getId()); sf.setMailaIzena(n.getMaila().getIzena()); }
+                            sf.setOndoEgindakoak(n.getOndoEgindakoak());
+                            sf.setHobetuBeharrekoak(n.getHobetuBeharrekoak());
+                        });
+                } else eb.getIkasleNotak().stream().filter(n -> n.getIkaslea().getId().equals(student.id())).findFirst()
                     .ifPresent(n -> {
                         if (n.getMaila() != null) { sf.setMailaId(n.getMaila().getId()); sf.setMailaIzena(n.getMaila().getIzena()); }
                         sf.setOndoEgindakoak(n.getOndoEgindakoak());
@@ -776,18 +877,21 @@ public class KinielaService {
         errubrikak.flush();
     }
 
-    @Transactional public void gordeIkasleNota(Long erronkaId, Long moduloaId, Long ebidentziaId,
+    @Transactional public List<Long> gordeIkasleNota(Long erronkaId, Long moduloaId, Long ebidentziaId,
             Long ikasleaId, Long mailaId, Authentication auth) {
         if (!erronkaKalifikatuDezake(auth, erronkaId, moduloaId))
             throw new AccessDeniedException("Ez duzu modulu honetako kalifikazioak aldatzeko baimenik.");
         var r = errubrika(erronkaId, moduloaId);
         var eb = r.getEbidentziak().stream().filter(x -> x.getId().equals(ebidentziaId)).findFirst()
             .orElseThrow(() -> new IllegalArgumentException("Ebidentzia ez da errubrika honetakoa."));
-        require(eb.getEbaluazioMota() == EbidentziaEbaluazioMota.PERTSONALA,
-            "Ebidentzia hau taldeka kalifikatzen da.");
         var member = erronkaTaldeKideak.findByErronkaId(erronkaId).stream()
             .filter(k -> k.getIkaslea().getId().equals(ikasleaId)).findFirst()
             .orElseThrow(() -> new IllegalArgumentException("Ikaslea ez da erronka honetakoa."));
+        if (eb.getEbaluazioMota() == EbidentziaEbaluazioMota.TALDEKAKOA) {
+            gordeTaldeNotaBalioa(r, eb, member.getTaldea(), mailaId);
+            errubrikak.flush();
+            return member.getTaldea().getKideak().stream().map(k -> k.getIkaslea().getId()).toList();
+        }
         var existing = eb.getIkasleNotak().stream().filter(n -> n.getIkaslea().getId().equals(ikasleaId)).findFirst();
         if (mailaId == null) {
             existing.ifPresent(note -> { note.setMaila(null); note.setNota(null); if (feedbackHutsik(note)) eb.getIkasleNotak().remove(note); });
@@ -801,20 +905,43 @@ public class KinielaService {
             note.setMaila(level); note.setNota(level.getBalioa());
         }
         errubrikak.flush();
+        return List.of(ikasleaId);
     }
 
-    @Transactional public void gordeIkasleOharrak(Long erronkaId, Long moduloaId, Long ebidentziaId,
+    private void gordeTaldeNotaBalioa(ErronkaErrubrika r, ErronkaEbidentzia eb, ErronkaTaldea team, Long mailaId) {
+        var existing = eb.getTaldeNotak().stream().filter(n -> n.getTaldea().getId().equals(team.getId())).findFirst();
+        if (mailaId == null) {
+            existing.ifPresent(note -> {
+                note.setMaila(null); note.setNota(null);
+                if (feedbackHutsik(note)) eb.getTaldeNotak().remove(note);
+            });
+            return;
+        }
+        var level = r.getMailak().stream().filter(m -> m.getId().equals(mailaId)).findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Hautatutako maila ez da errubrika honetakoa."));
+        var note = existing.orElseGet(() -> {
+            var n = new ErronkaEbidentziaTaldeNota(); n.setEbidentzia(eb); n.setTaldea(team);
+            eb.getTaldeNotak().add(n); return n;
+        });
+        note.setMaila(level); note.setNota(level.getBalioa());
+    }
+
+    @Transactional public List<Long> gordeIkasleOharrak(Long erronkaId, Long moduloaId, Long ebidentziaId,
             Long ikasleaId, String ondoEgindakoak, String hobetuBeharrekoak, Authentication auth) {
         if (!erronkaKalifikatuDezake(auth, erronkaId, moduloaId))
             throw new AccessDeniedException("Ez duzu modulu honetako kalifikazioak aldatzeko baimenik.");
         var r = errubrika(erronkaId, moduloaId);
         var eb = r.getEbidentziak().stream().filter(x -> x.getId().equals(ebidentziaId)).findFirst()
             .orElseThrow(() -> new IllegalArgumentException("Ebidentzia ez da errubrika honetakoa."));
-        require(eb.getEbaluazioMota() == EbidentziaEbaluazioMota.PERTSONALA,
-            "Ebidentzia hau taldeka kalifikatzen da.");
-        var student = erronkaTaldeKideak.findByErronkaId(erronkaId).stream()
-            .filter(k -> k.getIkaslea().getId().equals(ikasleaId)).map(ErronkaTaldeKidea::getIkaslea).findFirst()
+        var member = erronkaTaldeKideak.findByErronkaId(erronkaId).stream()
+            .filter(k -> k.getIkaslea().getId().equals(ikasleaId)).findFirst()
             .orElseThrow(() -> new IllegalArgumentException("Ikaslea ez da erronka honetakoa."));
+        if (eb.getEbaluazioMota() == EbidentziaEbaluazioMota.TALDEKAKOA) {
+            gordeTaldeOharrakBalioa(eb, member.getTaldea(), ondoEgindakoak, hobetuBeharrekoak);
+            errubrikak.flush();
+            return member.getTaldea().getKideak().stream().map(k -> k.getIkaslea().getId()).toList();
+        }
+        var student = member.getIkaslea();
         String strengths = aukerakoTestua(ondoEgindakoak, 60000), improvements = aukerakoTestua(hobetuBeharrekoak, 60000);
         var existing = eb.getIkasleNotak().stream().filter(n -> n.getIkaslea().getId().equals(ikasleaId)).findFirst();
         if (strengths.isEmpty() && improvements.isEmpty() && existing.isPresent()
@@ -827,6 +954,24 @@ public class KinielaService {
             note.setOndoEgindakoak(strengths); note.setHobetuBeharrekoak(improvements);
         }
         errubrikak.flush();
+        return List.of(ikasleaId);
+    }
+
+    private void gordeTaldeOharrakBalioa(ErronkaEbidentzia eb, ErronkaTaldea team,
+            String ondoEgindakoak, String hobetuBeharrekoak) {
+        String strengths = aukerakoTestua(ondoEgindakoak, 60000);
+        String improvements = aukerakoTestua(hobetuBeharrekoak, 60000);
+        var existing = eb.getTaldeNotak().stream().filter(n -> n.getTaldea().getId().equals(team.getId())).findFirst();
+        if (strengths.isEmpty() && improvements.isEmpty() && existing.isPresent()
+                && existing.get().getMaila() == null && existing.get().getNota() == null) {
+            eb.getTaldeNotak().remove(existing.get());
+        } else if (!strengths.isEmpty() || !improvements.isEmpty() || existing.isPresent()) {
+            var note = existing.orElseGet(() -> {
+                var n = new ErronkaEbidentziaTaldeNota(); n.setEbidentzia(eb); n.setTaldea(team);
+                eb.getTaldeNotak().add(n); return n;
+            });
+            note.setOndoEgindakoak(strengths); note.setHobetuBeharrekoak(improvements);
+        }
     }
 
     @Transactional public void gordeOharOrokorra(Long erronkaId, Long moduloaId, Long taldeaId,
