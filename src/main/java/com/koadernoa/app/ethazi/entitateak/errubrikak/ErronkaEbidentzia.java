@@ -22,6 +22,8 @@ public class ErronkaEbidentzia {
     @Column(nullable = false, columnDefinition = "TEXT") private String deskribapena;
     @Column(nullable = false, precision = 5, scale = 2, columnDefinition = "decimal(5,2) default 0.00")
     private BigDecimal pisua = BigDecimal.ZERO;
+    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "gutxieneko_maila_id")
+    private ErronkaErrubrikaMaila gutxienekoMaila;
     @Enumerated(EnumType.STRING)
     @Column(name = "ebaluazio_mota", nullable = false, length = 20,
         columnDefinition = "varchar(20) default 'TALDEKAKOA'")

@@ -37,6 +37,7 @@ public final class EthaziForms {
     public static class ErronkaErrubrikaForm {
         private BigDecimal errubrikaPisua;
         private BigDecimal bestelakoProbenPisua;
+        private BigDecimal gutxienekoNota;
         private List<ErronkaMailaForm> mailak = new ArrayList<>();
         private List<ErronkaEbidentziaForm> ebidentziak = new ArrayList<>();
     }
@@ -46,6 +47,7 @@ public final class EthaziForms {
         private BigDecimal heteroebaluazioPisua;
         private BigDecimal koebaluazioPisua;
         private BigDecimal autoebaluazioPisua;
+        private BigDecimal gutxienekoNota;
         private List<ZeharkakoMailaForm> mailak = new ArrayList<>();
         private List<ZeharkakoEbidentziaForm> ebidentziak = new ArrayList<>();
     }
@@ -64,6 +66,8 @@ public final class EthaziForms {
         private String deskribapena;
         private BigDecimal pisua;
         private ZeharkakoEbidentziaMota mota = ZeharkakoEbidentziaMota.IRAKASLEAK_SOILIK;
+        private Long gutxienekoMailaId;
+        private String gutxienekoMailaIzena;
         private List<ZeharkakoEbidentziaMailaForm> mailak = new ArrayList<>();
     }
 
@@ -85,6 +89,7 @@ public final class EthaziForms {
         @DateTimeFormat(pattern="yyyy/MM/dd")
         private java.time.LocalDate data;
         private BigDecimal pisua;
+        private BigDecimal gutxienekoNota;
         private Set<Long> adierazleaIds = new LinkedHashSet<>();
         private List<BestelakoProbaNotaForm> notak = new ArrayList<>();
     }
@@ -109,6 +114,8 @@ public final class EthaziForms {
         private String deskribapena;
         private BigDecimal pisua;
         private EbidentziaEbaluazioMota ebaluazioMota = EbidentziaEbaluazioMota.TALDEKAKOA;
+        private Long gutxienekoMailaId;
+        private String gutxienekoMailaIzena;
         private Set<Long> adierazleaIds = new LinkedHashSet<>();
         private List<ErronkaEbidentziaMailaForm> mailak = new ArrayList<>();
         private List<ErronkaTaldeNotaForm> taldeNotak = new ArrayList<>();

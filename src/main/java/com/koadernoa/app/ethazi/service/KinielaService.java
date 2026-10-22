@@ -23,6 +23,7 @@ import com.koadernoa.app.objektuak.modulua.repository.MatrikulaRepository;
 import com.koadernoa.app.objektuak.irakasleak.repository.IrakasleaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.security.SecurityUtils;
+import com.koadernoa.app.objektuak.zikloak.entitateak.Zikloa;
 import com.koadernoa.app.objektuak.zikloak.repository.ZikloaRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -219,13 +220,52 @@ public class KinielaService {
     public record ZeharkakoMaila(Long id, String izena, BigDecimal balioa) {}
     public record ZeharkakoIkasleNota(Long ikasleaId, Long mailaId, BigDecimal batezbestekoa, int ebaluatzaileak) {}
     public record ZeharkakoEbidentziaIkuspegia(Long id, int formIndex, String deskribapena,
-            BigDecimal pisua, ZeharkakoEbidentziaMota mota,
+            BigDecimal pisua, ZeharkakoEbidentziaMota mota, Long gutxienekoMailaId, String gutxienekoMailaIzena,
             List<String> mailaAzalpenak, List<ZeharkakoIkasleNota> ikasleNotak) {}
     public record ZeharkakoAdierazleErrubrika(Long id, String kodea, String deskribapena,
             List<ZeharkakoEbidentziaIkuspegia> ebidentziak) {}
     public record ZeharkakoErrubrikaIkuspegia(Long id, BigDecimal heteroebaluazioPisua,
-            BigDecimal koebaluazioPisua, BigDecimal autoebaluazioPisua, boolean ebaluazioAnitza,
+            BigDecimal koebaluazioPisua, BigDecimal autoebaluazioPisua, BigDecimal gutxienekoNota,
+            boolean ebaluazioAnitza,
             List<ZeharkakoMaila> mailak, List<ZeharkakoAdierazleErrubrika> adierazleak) {}
+
+    public record LaburpenEbidentzia(Long id, String izena, BigDecimal pisua, boolean ebaluazioAnitza) {
+        public String pisuaEtiketa() { return ehunekoEtiketa(pisua); }
+    }
+    public record LaburpenModuloa(Long id, String kodea, String izena) {}
+    public record LaburpenEbidentziaNota(BigDecimal irakaslea, BigDecimal koebaluazioa,
+            BigDecimal autoebaluazioa, BigDecimal guztira, boolean minimoaUrratuta,
+            int irakasleKopurua, String minimoa, String irakasleenEragiketa, String eragiketa) {}
+    public record LaburpenZeharkakoKalkulua(BigDecimal kalkulatutakoNota, BigDecimal guztira,
+            BigDecimal errubrikaMinimoa, String eragiketa, List<String> minimoUrraketak) {}
+    public record LaburpenKalkuluOsagaia(String izena, BigDecimal nota, BigDecimal pisua, String minimoa) {}
+    public record LaburpenTeknikoKalkulua(boolean konfiguratuta, BigDecimal guztira,
+            BigDecimal kalkulatutakoNota,
+            BigDecimal errubrikaNota, BigDecimal errubrikaPisua, boolean errubrikaOsatua,
+            List<LaburpenKalkuluOsagaia> ebidentziak, String errubrikaEragiketa,
+            BigDecimal probakNota, BigDecimal probakPisua, List<LaburpenKalkuluOsagaia> probak,
+            String probenEragiketa, String guztizkoEragiketa, List<String> minimoUrraketak) {
+        public boolean badagoProbaNotarik() { return probak.stream().anyMatch(p -> p.nota() != null); }
+        public boolean probaNotarenBatFaltaDa() {
+            return badagoProbaNotarik() && probak.stream().anyMatch(p -> p.nota() == null);
+        }
+    }
+    public record LaburpenIkaslea(Long id, String izena, List<LaburpenEbidentziaNota> zeharkakoNotak,
+            BigDecimal zeharkakoa, boolean zeharkakoMinimoaUrratuta,
+            LaburpenZeharkakoKalkulua kalkuluZeharkakoa, List<BigDecimal> teknikoak,
+            List<LaburpenTeknikoKalkulua> kalkuluTeknikoak,
+            List<BigDecimal> totalak) {}
+    public record EbaluazioLaburpena(Erronka erronka, boolean ebaluazioAnitza,
+            BigDecimal heteroebaluazioPisua, BigDecimal koebaluazioPisua, BigDecimal autoebaluazioPisua,
+            BigDecimal zeharkakoenPisua, BigDecimal teknikoenPisua, List<LaburpenEbidentzia> ebidentziak,
+            List<LaburpenModuloa> moduluak, List<LaburpenIkaslea> ikasleak) {
+        public String zeharkakoenPisuaEtiketa() { return ehunekoEtiketa(zeharkakoenPisua); }
+        public String teknikoenPisuaEtiketa() { return ehunekoEtiketa(teknikoenPisua); }
+    }
+
+    private static String ehunekoEtiketa(BigDecimal pisua) {
+        return pisua == null ? "%0" : "%" + pisua.stripTrailingZeros().toPlainString();
+    }
 
     public List<ErrubrikaIkaslea> errubrikaIkasleak(Long erronkaId) {
         erronka(erronkaId);
@@ -263,13 +303,15 @@ public class KinielaService {
                             && n.getIkaslea().getId().equals(student.id())).toList();
                         Long own = all.stream().filter(n -> n.getModuloa().getId().equals(moduloaId))
                             .map(n -> n.getMaila().getId()).findFirst().orElse(null);
-                        BigDecimal average = all.isEmpty() ? null : all.stream().map(ZeharkakoEbaluazioa::getNota)
+                        BigDecimal average = all.isEmpty() ? null : all.stream().map(this::zeharkakoNota)
                             .reduce(BigDecimal.ZERO, BigDecimal::add).divide(BigDecimal.valueOf(all.size()), 2,
                                 java.math.RoundingMode.HALF_UP);
                         return new ZeharkakoIkasleNota(student.id(), own, average, all.size());
                     }).toList();
                     return new ZeharkakoEbidentziaIkuspegia(e.getId(), rubric.getEbidentziak().indexOf(e),
-                        e.getDeskribapena(), e.getPisua(), e.getMota(), descriptions, grades);
+                        e.getDeskribapena(), e.getPisua(), e.getMota(),
+                        e.getGutxienekoMaila() == null ? null : e.getGutxienekoMaila().getId(),
+                        e.getGutxienekoMaila() == null ? null : e.getGutxienekoMaila().getIzena(), descriptions, grades);
                 }).toList();
             var gaitasuna = a.getGaitasunMaila().getGaitasuna();
             String description = gaitasuna.deskribapena(language);
@@ -278,7 +320,8 @@ public class KinielaService {
         }).toList();
         boolean multiple = rubric.getEbidentziak().stream().anyMatch(e -> e.getMota() == ZeharkakoEbidentziaMota.IRAKASLE_AUTO_KOEBALUAZIOA);
         return new ZeharkakoErrubrikaIkuspegia(rubric.getId(), rubric.getHeteroebaluazioPisua(),
-            rubric.getKoebaluazioPisua(), rubric.getAutoebaluazioPisua(), multiple, levels, indicators);
+            rubric.getKoebaluazioPisua(), rubric.getAutoebaluazioPisua(), rubric.getGutxienekoNota(),
+            multiple, levels, indicators);
     }
 
     private List<LorpenAdierazlea> hautatutakoZeharkakoAdierazleak(Erronka challenge) {
@@ -287,6 +330,239 @@ public class KinielaService {
             .filter(a -> a.getZeharkakoKinielaLoturak().stream().anyMatch(l ->
                 l.getZikloa().getId().equals(challenge.getZikloa().getId())
                 && l.getErronkak().stream().anyMatch(e -> e.getId().equals(challenge.getId())))).toList();
+    }
+
+    public EbaluazioLaburpena ebaluazioLaburpena(Long erronkaId) {
+        var challenge = erronka(erronkaId);
+        var rubric = zeharkakoErrubrikak.findByErronkaId(erronkaId).orElse(null);
+        var transverseEvidence = rubric == null ? List.<ZeharkakoEbidentzia>of() : rubric.getEbidentziak();
+        var evaluations = zeharkakoEbaluazioak.findByErronkaId(erronkaId);
+        var modules = challenge.getModuluak().stream()
+            .sorted(Comparator.comparing((Moduloa m) -> m.getKodea() == null ? "" : m.getKodea(), String.CASE_INSENSITIVE_ORDER)
+                .thenComparing(m -> m.getIzena() == null ? "" : m.getIzena(), String.CASE_INSENSITIVE_ORDER))
+            .toList();
+        var technicalRubrics = errubrikak.findByErronkaId(erronkaId).stream()
+            .collect(java.util.stream.Collectors.toMap(r -> r.getModuloa().getId(), java.util.function.Function.identity()));
+        var members = erronkaTaldeKideak.findByErronkaId(erronkaId);
+        var students = errubrikaIkasleak(erronkaId);
+
+        BigDecimal heteroWeight = rubric == null ? challenge.getZikloa().getEthaziHeteroebaluazioPisua() : rubric.getHeteroebaluazioPisua();
+        BigDecimal peerWeight = rubric == null ? challenge.getZikloa().getEthaziKoebaluazioPisua() : rubric.getKoebaluazioPisua();
+        BigDecimal selfWeight = rubric == null ? challenge.getZikloa().getEthaziAutoebaluazioPisua() : rubric.getAutoebaluazioPisua();
+        heteroWeight = pisuaEdoDefektuzkoa(heteroWeight, Zikloa.DEFEKTUZKO_HETEROEBALUAZIO_PISUA);
+        peerWeight = pisuaEdoDefektuzkoa(peerWeight, Zikloa.DEFEKTUZKO_KOEBALUAZIO_PISUA);
+        selfWeight = pisuaEdoDefektuzkoa(selfWeight, Zikloa.DEFEKTUZKO_AUTOEBALUAZIO_PISUA);
+        BigDecimal transverseWeight = pisuaEdoDefektuzkoa(challenge.getZikloa().getEthaziZeharkakoenPisua(),
+            Zikloa.DEFEKTUZKO_ETHAZI_ZEHARKAKOEN_PISUA);
+        BigDecimal technicalWeight = pisuaEdoDefektuzkoa(challenge.getZikloa().getEthaziTeknikoenPisua(),
+            Zikloa.DEFEKTUZKO_ETHAZI_TEKNIKOEN_PISUA);
+        final BigDecimal finalHeteroWeight = heteroWeight;
+        final BigDecimal finalPeerWeight = peerWeight;
+        final BigDecimal finalSelfWeight = selfWeight;
+        final BigDecimal finalTransverseWeight = transverseWeight;
+        final BigDecimal finalTechnicalWeight = technicalWeight;
+
+        boolean multiple = transverseEvidence.stream()
+            .anyMatch(e -> e.getMota() == ZeharkakoEbidentziaMota.IRAKASLE_AUTO_KOEBALUAZIOA);
+        var evidenceHeaders = transverseEvidence.stream().map(e -> new LaburpenEbidentzia(e.getId(),
+            e.getDeskribapena(), e.getPisua(), e.getMota() == ZeharkakoEbidentziaMota.IRAKASLE_AUTO_KOEBALUAZIOA)).toList();
+        var moduleHeaders = modules.stream().map(m -> new LaburpenModuloa(m.getId(), m.getKodea(), m.getIzena())).toList();
+        var rows = students.stream().map(student -> {
+            var evidenceGrades = transverseEvidence.stream().map(evidence -> {
+                var teacherGrades = evaluations.stream()
+                    .filter(n -> n.getEbidentzia().getId().equals(evidence.getId())
+                        && n.getIkaslea().getId().equals(student.id()))
+                    .map(this::zeharkakoNota).toList();
+                BigDecimal teacher = batezbestekoa(teacherGrades);
+                String minimum = evidence.getGutxienekoMaila() == null ? null
+                    : evidence.getGutxienekoMaila().getIzena() + " (" + notaEtiketa(evidence.getGutxienekoMaila().getBalioa()) + ")";
+                if (evidence.getMota() == ZeharkakoEbidentziaMota.IRAKASLEAK_SOILIK)
+                    return new LaburpenEbidentziaNota(null, null, null, teacher,
+                        gutxienekoaUrratuta(teacher, evidence.getGutxienekoMaila()), teacherGrades.size(), minimum,
+                        batezbestekoEragiketa(teacherGrades, teacher),
+                        batezbestekoEragiketa(teacherGrades, teacher));
+                // Egungo datu-ereduak irakasleen notak baino ez ditu gordetzen. Kalkulua prest dago
+                // koebaluazio/autoebaluazio balioak gehitzean haien pisuak aplikatzeko.
+                BigDecimal total = batezbestekoHaztatua(List.of(
+                    new NotaHaztatua(teacher, finalHeteroWeight),
+                    new NotaHaztatua(null, finalPeerWeight),
+                    new NotaHaztatua(null, finalSelfWeight)));
+                return new LaburpenEbidentziaNota(teacher, null, null, total,
+                    gutxienekoaUrratuta(total, evidence.getGutxienekoMaila()), teacherGrades.size(), minimum,
+                    batezbestekoEragiketa(teacherGrades, teacher),
+                    kalkuluEragiketa(List.of(new NotaHaztatua(teacher, finalHeteroWeight),
+                        new NotaHaztatua(null, finalPeerWeight), new NotaHaztatua(null, finalSelfWeight)), total));
+            }).toList();
+            BigDecimal calculatedTransverse = denakKalifikatuta(evidenceGrades.stream().map(LaburpenEbidentziaNota::guztira).toList(),
+                    transverseEvidence.stream().map(ZeharkakoEbidentzia::getPisua).toList())
+                ? batezbestekoHaztatua(indizezHaztatu(evidenceGrades.stream().map(LaburpenEbidentziaNota::guztira).toList(),
+                    transverseEvidence.stream().map(ZeharkakoEbidentzia::getPisua).toList())) : null;
+            BigDecimal transverse = calculatedTransverse;
+            boolean transverseMinimumFailed = false;
+            var transverseMinimumBreaches = new ArrayList<String>();
+            for (int i = 0; i < transverseEvidence.size(); i++) {
+                var minimumLevel = transverseEvidence.get(i).getGutxienekoMaila();
+                BigDecimal grade = evidenceGrades.get(i).guztira();
+                if (minimumLevel != null && grade != null && grade.compareTo(minimumLevel.getBalioa()) < 0) {
+                    transverseMinimumFailed = true;
+                    transverseMinimumBreaches.add("Ebidentzia: " + transverseEvidence.get(i).getDeskribapena()
+                        + " (gutxienekoa: " + minimumLevel.getIzena() + ", " + notaEtiketa(minimumLevel.getBalioa()) + ")");
+                }
+            }
+            if (rubric != null && rubric.getGutxienekoNota() != null && transverse != null
+                    && transverse.compareTo(rubric.getGutxienekoNota()) < 0) {
+                transverseMinimumFailed = true;
+                transverseMinimumBreaches.add("Zeharkako errubrika (gutxieneko nota: "
+                    + notaEtiketa(rubric.getGutxienekoNota()) + ")");
+            }
+            if (transverseMinimumFailed && transverse != null) transverse = transverse.min(new BigDecimal("4.00"));
+            final BigDecimal finalTransverse = transverse;
+            final boolean finalTransverseMinimumFailed = transverseMinimumFailed;
+            var transverseCalculation = new LaburpenZeharkakoKalkulua(calculatedTransverse, finalTransverse,
+                rubric == null ? null : rubric.getGutxienekoNota(),
+                kalkuluEragiketa(indizezHaztatu(evidenceGrades.stream().map(LaburpenEbidentziaNota::guztira).toList(),
+                    transverseEvidence.stream().map(ZeharkakoEbidentzia::getPisua).toList()), calculatedTransverse),
+                transverseMinimumBreaches);
+            List<LaburpenTeknikoKalkulua> technicalCalculations = modules.stream()
+                .map(module -> kalkuluTeknikoa(technicalRubrics.get(module.getId()), student.id(), members)).toList();
+            var technical = technicalCalculations.stream().map(LaburpenTeknikoKalkulua::guztira).toList();
+            var totals = java.util.stream.IntStream.range(0, technical.size()).mapToObj(i -> {
+                BigDecimal grade = technical.get(i);
+                if (grade == null || finalTransverse == null) return null;
+                BigDecimal total = batezbestekoHaztatua(List.of(new NotaHaztatua(finalTransverse, finalTransverseWeight),
+                    new NotaHaztatua(grade, finalTechnicalWeight)));
+                boolean technicalMinimumFailed = !technicalCalculations.get(i).minimoUrraketak().isEmpty();
+                return (finalTransverseMinimumFailed || technicalMinimumFailed) && total != null
+                    ? total.min(new BigDecimal("4.00")) : total;
+            }).toList();
+            return new LaburpenIkaslea(student.id(), student.izena(), evidenceGrades, finalTransverse,
+                finalTransverseMinimumFailed, transverseCalculation, technical, technicalCalculations, totals);
+        }).toList();
+        return new EbaluazioLaburpena(challenge, multiple, heteroWeight, peerWeight, selfWeight,
+            transverseWeight, technicalWeight, evidenceHeaders, moduleHeaders, rows);
+    }
+
+    private boolean gutxienekoaUrratuta(BigDecimal grade, ZeharkakoErrubrikaMaila minimumLevel) {
+        return grade != null && minimumLevel != null && grade.compareTo(minimumLevel.getBalioa()) < 0;
+    }
+
+    private LaburpenTeknikoKalkulua kalkuluTeknikoa(ErronkaErrubrika rubric, Long studentId,
+            List<ErronkaTaldeKidea> members) {
+        if (rubric == null) return new LaburpenTeknikoKalkulua(false, null, null, null, null, false,
+            List.of(), null, null, null, List.of(), null, null, List.of());
+        var evidenceGrades = rubric.getEbidentziak().stream().map(evidence -> {
+            if (evidence.getEbaluazioMota() == EbidentziaEbaluazioMota.PERTSONALA)
+                return evidence.getIkasleNotak().stream().filter(n -> n.getIkaslea().getId().equals(studentId))
+                    .map(ErronkaEbidentziaIkasleNota::getNota).filter(Objects::nonNull).findFirst().orElse(null);
+            Long teamId = members.stream().filter(k -> k.getIkaslea().getId().equals(studentId))
+                .map(k -> k.getTaldea().getId()).findFirst().orElse(null);
+            return teamId == null ? null : evidence.getTaldeNotak().stream()
+                .filter(n -> n.getTaldea().getId().equals(teamId)).map(ErronkaEbidentziaTaldeNota::getNota)
+                .filter(Objects::nonNull).findFirst().orElse(null);
+        }).toList();
+        var evidenceWeights = rubric.getEbidentziak().stream().map(ErronkaEbidentzia::getPisua).toList();
+        boolean completeRubric = denakKalifikatuta(evidenceGrades, evidenceWeights);
+        BigDecimal rubricGrade = completeRubric
+            ? batezbestekoHaztatua(indizezHaztatu(evidenceGrades, evidenceWeights)) : null;
+        var testGrades = rubric.getBestelakoProbak().stream().map(test -> test.getNotak().stream()
+            .filter(n -> n.getIkaslea().getId().equals(studentId)).map(ErronkaBestelakoProbaNota::getNota)
+            .filter(Objects::nonNull).findFirst().orElse(null)).toList();
+        var testWeights = rubric.getBestelakoProbak().stream().map(ErronkaBestelakoProba::getPisua).toList();
+        // Ikasleak egin ez duen proba ez da zero bat: nota duten probak bakarrik
+        // normalizatzen dira beren barne-pisuen arabera.
+        BigDecimal testsGrade = batezbestekoHaztatua(indizezHaztatu(testGrades, testWeights));
+        // Era berean, errubrika edo bestelako proben multzoa falta bada, dagoen
+        // osagaiak hartzen du %100; biak badaude, konfiguratutako pisuak aplikatzen dira.
+        var finalParts = List.of(new NotaHaztatua(rubricGrade, rubric.getErrubrikaPisua()),
+            new NotaHaztatua(testsGrade, rubric.getBestelakoProbenPisua()));
+        BigDecimal calculatedTotal = batezbestekoHaztatua(finalParts);
+        var minimumBreaches = new ArrayList<String>();
+        for (int i = 0; i < rubric.getEbidentziak().size(); i++) {
+            var minimumLevel = rubric.getEbidentziak().get(i).getGutxienekoMaila();
+            if (minimumLevel != null && evidenceGrades.get(i) != null
+                    && evidenceGrades.get(i).compareTo(minimumLevel.getBalioa()) < 0)
+                minimumBreaches.add("Ebidentzia: " + rubric.getEbidentziak().get(i).getDeskribapena()
+                    + " (gutxienekoa: " + minimumLevel.getIzena() + ", " + notaEtiketa(minimumLevel.getBalioa()) + ")");
+        }
+        if (rubric.getGutxienekoNota() != null && rubricGrade != null
+                && rubricGrade.compareTo(rubric.getGutxienekoNota()) < 0)
+            minimumBreaches.add("Errubrika teknikoa (gutxieneko nota: " + notaEtiketa(rubric.getGutxienekoNota()) + ")");
+        for (int i = 0; i < rubric.getBestelakoProbak().size(); i++) {
+            var test = rubric.getBestelakoProbak().get(i);
+            if (test.getGutxienekoNota() != null && testGrades.get(i) != null
+                    && testGrades.get(i).compareTo(test.getGutxienekoNota()) < 0)
+                minimumBreaches.add("Bestelako proba: " + test.getIzena()
+                    + " (gutxieneko nota: " + notaEtiketa(test.getGutxienekoNota()) + ")");
+        }
+        BigDecimal total = calculatedTotal != null && !minimumBreaches.isEmpty()
+            ? calculatedTotal.min(new BigDecimal("4.00")) : calculatedTotal;
+        var evidenceParts = new ArrayList<LaburpenKalkuluOsagaia>();
+        for (int i = 0; i < rubric.getEbidentziak().size(); i++) {
+            var minimum = rubric.getEbidentziak().get(i).getGutxienekoMaila();
+            evidenceParts.add(new LaburpenKalkuluOsagaia(rubric.getEbidentziak().get(i).getDeskribapena(),
+                evidenceGrades.get(i), evidenceWeights.get(i), minimum == null ? null
+                    : minimum.getIzena() + " (" + notaEtiketa(minimum.getBalioa()) + ")"));
+        }
+        var testParts = new ArrayList<LaburpenKalkuluOsagaia>();
+        for (int i = 0; i < rubric.getBestelakoProbak().size(); i++) testParts.add(new LaburpenKalkuluOsagaia(
+            rubric.getBestelakoProbak().get(i).getIzena(), testGrades.get(i), testWeights.get(i),
+            rubric.getBestelakoProbak().get(i).getGutxienekoNota() == null ? null
+                : notaEtiketa(rubric.getBestelakoProbak().get(i).getGutxienekoNota())));
+        return new LaburpenTeknikoKalkulua(true, total, calculatedTotal, rubricGrade, rubric.getErrubrikaPisua(), completeRubric,
+            evidenceParts, completeRubric ? kalkuluEragiketa(indizezHaztatu(evidenceGrades, evidenceWeights), rubricGrade) : null,
+            testsGrade, rubric.getBestelakoProbenPisua(), testParts,
+            kalkuluEragiketa(indizezHaztatu(testGrades, testWeights), testsGrade),
+            kalkuluEragiketa(finalParts, calculatedTotal), minimumBreaches);
+    }
+
+    private record NotaHaztatua(BigDecimal nota, BigDecimal pisua) {}
+    private List<NotaHaztatua> indizezHaztatu(List<BigDecimal> grades, List<BigDecimal> weights) {
+        var result = new ArrayList<NotaHaztatua>();
+        for (int i = 0; i < grades.size(); i++) result.add(new NotaHaztatua(grades.get(i), weights.get(i)));
+        return result;
+    }
+    private boolean denakKalifikatuta(List<BigDecimal> grades, List<BigDecimal> weights) {
+        if (grades.isEmpty()) return false;
+        for (int i = 0; i < grades.size(); i++)
+            if (weights.get(i) != null && weights.get(i).signum() > 0 && grades.get(i) == null) return false;
+        return weights.stream().filter(Objects::nonNull).anyMatch(w -> w.signum() > 0);
+    }
+    private BigDecimal batezbestekoa(List<BigDecimal> grades) {
+        var present = grades.stream().filter(Objects::nonNull).toList();
+        return present.isEmpty() ? null : present.stream().reduce(BigDecimal.ZERO, BigDecimal::add)
+            .divide(BigDecimal.valueOf(present.size()), 2, java.math.RoundingMode.HALF_UP);
+    }
+    private BigDecimal zeharkakoNota(ZeharkakoEbaluazioa evaluation) {
+        return evaluation.getMaila() == null ? evaluation.getNota() : evaluation.getMaila().getBalioa();
+    }
+    private BigDecimal batezbestekoHaztatua(List<NotaHaztatua> values) {
+        BigDecimal totalWeight = values.stream().filter(v -> v.nota() != null && v.pisua() != null && v.pisua().signum() > 0)
+            .map(NotaHaztatua::pisua).reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (totalWeight.signum() == 0) return null;
+        return values.stream().filter(v -> v.nota() != null && v.pisua() != null && v.pisua().signum() > 0)
+            .map(v -> v.nota().multiply(v.pisua())).reduce(BigDecimal.ZERO, BigDecimal::add)
+            .divide(totalWeight, 2, java.math.RoundingMode.HALF_UP);
+    }
+    private String kalkuluEragiketa(List<NotaHaztatua> values, BigDecimal result) {
+        var present = values.stream()
+            .filter(v -> v.nota() != null && v.pisua() != null && v.pisua().signum() > 0).toList();
+        if (result == null || present.isEmpty()) return null;
+        BigDecimal totalWeight = present.stream().map(NotaHaztatua::pisua).reduce(BigDecimal.ZERO, BigDecimal::add);
+        String numerator = present.stream().map(v -> notaEtiketa(v.nota()) + " × " + notaEtiketa(v.pisua()))
+            .collect(java.util.stream.Collectors.joining(" + "));
+        return "(" + numerator + ") / " + notaEtiketa(totalWeight) + " = " + notaEtiketa(result);
+    }
+    private String batezbestekoEragiketa(List<BigDecimal> values, BigDecimal result) {
+        var present = values.stream().filter(Objects::nonNull).toList();
+        if (result == null || present.isEmpty()) return null;
+        return "(" + present.stream().map(this::notaEtiketa).collect(java.util.stream.Collectors.joining(" + "))
+            + ") / " + present.size() + " = " + notaEtiketa(result);
+    }
+    private String notaEtiketa(BigDecimal value) {
+        return value == null ? "—" : value.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
+    }
+    private BigDecimal pisuaEdoDefektuzkoa(BigDecimal value, BigDecimal defaultValue) {
+        return value == null ? defaultValue : value;
     }
 
     @Transactional public Map<String, Object> gordeZeharkakoNota(Long erronkaId, Long moduloaId,
@@ -322,7 +598,7 @@ public class KinielaService {
         var current = zeharkakoEbaluazioak.findByErronkaId(erronkaId).stream()
             .filter(n -> n.getEbidentzia().getId().equals(ebidentziaId)
                 && n.getIkaslea().getId().equals(ikasleaId)).toList();
-        BigDecimal average = current.isEmpty() ? null : current.stream().map(ZeharkakoEbaluazioa::getNota)
+        BigDecimal average = current.isEmpty() ? null : current.stream().map(this::zeharkakoNota)
             .reduce(BigDecimal.ZERO, BigDecimal::add)
             .divide(BigDecimal.valueOf(current.size()), 2, java.math.RoundingMode.HALF_UP);
         var result = new LinkedHashMap<String, Object>(); result.put("message", "Gordeta");
@@ -335,6 +611,7 @@ public class KinielaService {
         form.setHeteroebaluazioPisua(r.getHeteroebaluazioPisua());
         form.setKoebaluazioPisua(r.getKoebaluazioPisua());
         form.setAutoebaluazioPisua(r.getAutoebaluazioPisua());
+        form.setGutxienekoNota(r.getGutxienekoNota());
         for (var m : r.getMailak()) {
             var mf = new com.koadernoa.app.ethazi.dto.EthaziForms.ZeharkakoMailaForm();
             mf.setId(m.getId()); mf.setIzena(m.getIzena()); mf.setBalioa(m.getBalioa()); form.getMailak().add(mf);
@@ -343,6 +620,8 @@ public class KinielaService {
             var ef = new com.koadernoa.app.ethazi.dto.EthaziForms.ZeharkakoEbidentziaForm();
             ef.setId(e.getId()); ef.setAdierazleaId(e.getAdierazlea().getId()); ef.setDeskribapena(e.getDeskribapena());
             ef.setPisua(e.getPisua()); ef.setMota(e.getMota());
+            ef.setGutxienekoMailaId(e.getGutxienekoMaila() == null ? null : e.getGutxienekoMaila().getId());
+            ef.setGutxienekoMailaIzena(e.getGutxienekoMaila() == null ? null : e.getGutxienekoMaila().getIzena());
             for (var m : r.getMailak()) {
                 var cf = new com.koadernoa.app.ethazi.dto.EthaziForms.ZeharkakoEbidentziaMailaForm(); cf.setMailaId(m.getId());
                 cf.setDeskribapena(e.getMailak().stream().filter(c -> c.getMaila().getId().equals(m.getId()))
@@ -361,6 +640,7 @@ public class KinielaService {
         r.setHeteroebaluazioPisua(ebaluazioPisua(form.getHeteroebaluazioPisua(), "Heteroebaluazioaren pisua"));
         r.setKoebaluazioPisua(ebaluazioPisua(form.getKoebaluazioPisua(), "Koebaluazioaren pisua"));
         r.setAutoebaluazioPisua(ebaluazioPisua(form.getAutoebaluazioPisua(), "Autoebaluazioaren pisua"));
+        r.setGutxienekoNota(aukerakoNota(form.getGutxienekoNota(), "Zeharkako errubrikaren minimoa"));
         require(r.getHeteroebaluazioPisua().add(r.getKoebaluazioPisua()).add(r.getAutoebaluazioPisua()).compareTo(new BigDecimal("100.00")) == 0,
             "Heteroebaluazioaren, koebaluazioaren eta autoebaluazioaren pisuen baturak %100 izan behar du.");
         for (var mf : form.getMailak()) {
@@ -379,6 +659,9 @@ public class KinielaService {
             e.setDeskribapena(testua(ef.getDeskribapena(), 60000));
             e.setPisua(ebaluazioPisua(ef.getPisua(), "Ebidentziaren pisua"));
             require(ef.getMota() != null, "Ebidentziaren ebaluazio mota aukeratu behar da."); e.setMota(ef.getMota());
+            e.setGutxienekoMaila(ef.getGutxienekoMailaId() == null ? null : r.getMailak().stream()
+                .filter(m -> m.getId().equals(ef.getGutxienekoMailaId())).findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Ebidentziaren gutxieneko maila ez da errubrika honetakoa.")));
             require(ef.getMailak().size() == r.getMailak().size(), "Ebidentziaren mailakatzeak aldatu dira.");
             for (var cf : ef.getMailak()) {
                 var c = e.getMailak().stream().filter(x -> x.getMaila().getId().equals(cf.getMailaId())).findFirst()
@@ -389,12 +672,26 @@ public class KinielaService {
         if (!r.getEbidentziak().isEmpty()) require(r.getEbidentziak().stream().map(ZeharkakoEbidentzia::getPisua)
             .reduce(BigDecimal.ZERO, BigDecimal::add).compareTo(new BigDecimal("100.00")) == 0,
             "Ebidentzien pisuen baturak %100 izan behar du.");
+        // Mailaren balioa da egia-iturri bakarra. Aurretik gordetako nota-kopiak
+        // sinkronizatzen ditugu mailaren balioa aldatu bada ere.
+        zeharkakoEbaluazioak.findByErronkaId(erronkaId).stream()
+            .filter(n -> n.getMaila() != null)
+            .forEach(n -> n.setNota(n.getMaila().getBalioa()));
         zeharkakoErrubrikak.flush();
+        zeharkakoEbaluazioak.flush();
     }
 
     private BigDecimal ebaluazioPisua(BigDecimal value, String name) {
         require(value != null && value.compareTo(BigDecimal.ZERO) >= 0 && value.compareTo(new BigDecimal("100")) <= 0
             && value.stripTrailingZeros().scale() <= 2, name + " 0 eta 100 artekoa izan behar da, gehienez bi hamartarrekin.");
+        return value;
+    }
+
+    private BigDecimal aukerakoNota(BigDecimal value, String name) {
+        if (value == null) return null;
+        require(value.compareTo(BigDecimal.ZERO) >= 0 && value.compareTo(BigDecimal.TEN) <= 0
+            && value.stripTrailingZeros().scale() <= 2,
+            name + " 0 eta 10 artekoa izan behar da, gehienez bi hamartarrekin.");
         return value;
     }
 
@@ -416,7 +713,10 @@ public class KinielaService {
             .orElseThrow(() -> new IllegalArgumentException("Mailakatzea ez da errubrika honetakoa."));
         boolean idatzita = m.getEbidentziaMailak().stream().anyMatch(c -> c.getDeskribapena() != null && !c.getDeskribapena().isBlank());
         boolean kalifikatuta = zeharkakoEbaluazioak.findByErronkaId(erronkaId).stream().anyMatch(n -> n.getMaila().getId().equals(mailaId));
-        require(!idatzita && !kalifikatuta, idatzita
+        boolean minimoan = r.getEbidentziak().stream().anyMatch(e -> e.getGutxienekoMaila() != null
+            && e.getGutxienekoMaila().getId().equals(mailaId));
+        require(!idatzita && !kalifikatuta && !minimoan, minimoan
+            ? "Mailakatzea ebidentzia baten gutxieneko maila da. Kendu minimoa ezabatu aurretik." : idatzita
             ? "Mailakatzeak edukia du. Hustu azalpenak ezabatu aurretik."
             : "Mailakatzea kalifikazioetan erabiltzen ari da.");
         r.getEbidentziak().forEach(e -> e.getMailak().removeIf(c -> c.getMaila().getId().equals(mailaId)));
@@ -554,6 +854,7 @@ public class KinielaService {
 
     private void kopiatuErrubrika(ErronkaErrubrika source, ErronkaErrubrika target) {
         source.getMailak().size(); source.getEbidentziak().forEach(e -> { e.getMailak().size(); e.getLorpenAdierazleak().size(); e.getKinielaLoturak().size(); });
+        target.setGutxienekoNota(source.getGutxienekoNota());
         Map<Long, ErronkaErrubrikaMaila> levelMap = new HashMap<>();
         for (var old : source.getMailak()) {
             var copy = new ErronkaErrubrikaMaila(); copy.setErrubrika(target); copy.setOrdena(old.getOrdena());
@@ -567,6 +868,7 @@ public class KinielaService {
             var copy = new ErronkaEbidentzia(); copy.setErrubrika(target); copy.setOrdena(old.getOrdena());
             copy.setDeskribapena(old.getDeskribapena()); copy.setPisua(old.getPisua());
             copy.setEbaluazioMota(old.getEbaluazioMota());
+            copy.setGutxienekoMaila(old.getGutxienekoMaila() == null ? null : levelMap.get(old.getGutxienekoMaila().getId()));
             old.getLorpenAdierazleak().stream().filter(a -> available.contains(a.getId())).forEach(copy.getLorpenAdierazleak()::add);
             old.getKinielaLoturak().forEach(oldLink -> targetLinks.stream()
                 .filter(link -> link.getAdierazlea().getId().equals(oldLink.getAdierazlea().getId())
@@ -660,6 +962,7 @@ public class KinielaService {
     public ErronkaErrubrikaForm errubrikaForm(Long erronkaId, Long moduloaId) {
         var r = errubrika(erronkaId, moduloaId); var f = new ErronkaErrubrikaForm();
         f.setErrubrikaPisua(r.getErrubrikaPisua()); f.setBestelakoProbenPisua(r.getBestelakoProbenPisua());
+        f.setGutxienekoNota(r.getGutxienekoNota());
         var teams = taldeak(erronkaId);
         var members = erronkaTaldeKideak.findByErronkaId(erronkaId);
         var students = errubrikaIkasleak(erronkaId);
@@ -670,6 +973,8 @@ public class KinielaService {
         for (var eb : r.getEbidentziak()) {
             var ef = new com.koadernoa.app.ethazi.dto.EthaziForms.ErronkaEbidentziaForm();
             ef.setId(eb.getId()); ef.setDeskribapena(eb.getDeskribapena()); ef.setPisua(eb.getPisua());
+            ef.setGutxienekoMailaId(eb.getGutxienekoMaila() == null ? null : eb.getGutxienekoMaila().getId());
+            ef.setGutxienekoMailaIzena(eb.getGutxienekoMaila() == null ? null : eb.getGutxienekoMaila().getIzena());
             ef.setEbaluazioMota(eb.getEbaluazioMota() == null ? EbidentziaEbaluazioMota.TALDEKAKOA : eb.getEbaluazioMota());
             eb.getKinielaLoturak().forEach(l -> ef.getAdierazleaIds().add(l.getId()));
             eb.getLorpenAdierazleak().stream()
@@ -725,6 +1030,7 @@ public class KinielaService {
         if (f.getBestelakoProbenPisua() == null) f.setBestelakoProbenPisua(r.getBestelakoProbenPisua());
         egiaztatuEbaluazioPisuak(r, f.getErrubrikaPisua(), f.getBestelakoProbenPisua());
         r.setErrubrikaPisua(f.getErrubrikaPisua()); r.setBestelakoProbenPisua(f.getBestelakoProbenPisua());
+        r.setGutxienekoNota(aukerakoNota(f.getGutxienekoNota(), "Errubrika teknikoaren minimoa"));
         var availableIndicators = modulukoAdierazleak(r).stream().map(ErrubrikaAdierazlea::id).collect(java.util.stream.Collectors.toSet());
         var levelIds = r.getMailak().stream().map(ErronkaErrubrikaMaila::getId).collect(java.util.stream.Collectors.toSet());
         var evidenceIds = r.getEbidentziak().stream().map(ErronkaEbidentzia::getId).collect(java.util.stream.Collectors.toSet());
@@ -747,6 +1053,9 @@ public class KinielaService {
                 && ef.getPisua().compareTo(new BigDecimal("100")) <= 0 && ef.getPisua().stripTrailingZeros().scale() <= 2,
                 "Ebidentziaren pisua 0 eta 100 artekoa izan behar da, gehienez bi hamartarrekin.");
             eb.setPisua(ef.getPisua());
+            eb.setGutxienekoMaila(ef.getGutxienekoMailaId() == null ? null : r.getMailak().stream()
+                .filter(m -> m.getId().equals(ef.getGutxienekoMailaId())).findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Ebidentziaren gutxieneko maila ez da errubrika honetakoa.")));
             require(ef.getEbaluazioMota() != null, "Ebidentziaren ebaluazio mota aukeratu behar da.");
             eb.setEbaluazioMota(ef.getEbaluazioMota());
             // Bertsio zaharreko bezero/probetan adierazlearen IDa bidaltzen zen.
@@ -820,6 +1129,7 @@ public class KinielaService {
         for (var p : r.getBestelakoProbak()) {
             var pf = new com.koadernoa.app.ethazi.dto.EthaziForms.BestelakoProbaForm();
             pf.setId(p.getId()); pf.setIzena(p.getIzena()); pf.setData(p.getData()); pf.setPisua(p.getPisua());
+            pf.setGutxienekoNota(p.getGutxienekoNota());
             p.getKinielaLoturak().forEach(l -> pf.getAdierazleaIds().add(l.getId()));
             p.getLorpenAdierazleak().stream()
                 .filter(a -> p.getKinielaLoturak().stream().noneMatch(l -> l.getAdierazlea().getId().equals(a.getId())))
@@ -886,6 +1196,7 @@ public class KinielaService {
             var p = r.getBestelakoProbak().stream().filter(x -> x.getId().equals(row.getId())).findFirst().orElseThrow();
             p.setIzena(testua(row.getIzena(), 200)); require(row.getData() != null, "Probaren data derrigorrezkoa da.");
             p.setData(row.getData()); p.setPisua(row.getPisua());
+            p.setGutxienekoNota(aukerakoNota(row.getGutxienekoNota(), "Bestelako probaren minimoa"));
             var requested = row.getAdierazleaIds() == null ? java.util.Set.<Long>of() : new java.util.LinkedHashSet<>(row.getAdierazleaIds());
             var resolved = new java.util.LinkedHashSet<Long>();
             for (Long id : requested) {
@@ -1174,7 +1485,10 @@ public class KinielaService {
             .anyMatch(n -> n.getMaila() != null && n.getMaila().getId().equals(mailaId));
         kalifikazioetan = kalifikazioetan || r.getEbidentziak().stream().flatMap(eb -> eb.getIkasleNotak().stream())
             .anyMatch(n -> n.getMaila() != null && n.getMaila().getId().equals(mailaId));
-        require(!erabilita && !kalifikazioetan, kalifikazioetan
+        boolean minimoan = r.getEbidentziak().stream().anyMatch(eb -> eb.getGutxienekoMaila() != null
+            && eb.getGutxienekoMaila().getId().equals(mailaId));
+        require(!erabilita && !kalifikazioetan && !minimoan, minimoan
+            ? "Mailakatzea ebidentzia baten gutxieneko maila da. Kendu minimoa ezabatu aurretik." : kalifikazioetan
             ? "Mailakatzea talde baten kalifikazioan erabiltzen ari da. Kendu hautaketa ezabatu aurretik."
             : "Mailakatzea ebidentzia batean erabiltzen ari da. Hustu maila horretako azalpenak ezabatu aurretik.");
         r.getEbidentziak().forEach(eb -> eb.getMailak().removeIf(c -> c.getMaila().getId().equals(mailaId)));

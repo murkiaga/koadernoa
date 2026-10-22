@@ -22,6 +22,7 @@ public class ZeharkakoErrubrika {
     private BigDecimal koebaluazioPisua = new BigDecimal("10.00");
     @Column(nullable = false, precision = 5, scale = 2, columnDefinition = "decimal(5,2) default 5.00")
     private BigDecimal autoebaluazioPisua = new BigDecimal("5.00");
+    @Column(name = "gutxieneko_nota", precision = 4, scale = 2) private BigDecimal gutxienekoNota;
     @OneToMany(mappedBy = "errubrika", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("ordena ASC") private List<ZeharkakoErrubrikaMaila> mailak = new ArrayList<>();
     @OneToMany(mappedBy = "errubrika", cascade = CascadeType.ALL, orphanRemoval = true)

@@ -21,6 +21,7 @@ public class ErronkaErrubrika {
         columnDefinition = "decimal(5,2) default 100.00") private BigDecimal errubrikaPisua = new BigDecimal("100.00");
     @Column(name = "bestelako_proben_pisua", nullable = false, precision = 5, scale = 2,
         columnDefinition = "decimal(5,2) default 0.00") private BigDecimal bestelakoProbenPisua = BigDecimal.ZERO;
+    @Column(name = "gutxieneko_nota", precision = 4, scale = 2) private BigDecimal gutxienekoNota;
     @OneToMany(mappedBy = "errubrika", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("ordena ASC") private List<ErronkaErrubrikaMaila> mailak = new ArrayList<>();
     @OneToMany(mappedBy = "errubrika", cascade = CascadeType.ALL, orphanRemoval = true)

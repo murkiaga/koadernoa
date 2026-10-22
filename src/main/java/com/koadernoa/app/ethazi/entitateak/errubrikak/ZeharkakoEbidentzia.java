@@ -20,6 +20,8 @@ public class ZeharkakoEbidentzia {
     @Column(nullable = false, columnDefinition = "TEXT") private String deskribapena;
     @Column(nullable = false, precision = 5, scale = 2, columnDefinition = "decimal(5,2) default 0.00")
     private BigDecimal pisua = BigDecimal.ZERO;
+    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "gutxieneko_maila_id")
+    private ZeharkakoErrubrikaMaila gutxienekoMaila;
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 40, columnDefinition = "varchar(40) default 'IRAKASLEAK_SOILIK'")
     private ZeharkakoEbidentziaMota mota = ZeharkakoEbidentziaMota.IRAKASLEAK_SOILIK;

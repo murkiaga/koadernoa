@@ -22,6 +22,7 @@ public class ErronkaBestelakoProba {
     @Column(nullable = false, length = 200) private String izena;
     @Column(nullable = false) private LocalDate data;
     @Column(nullable = false, precision = 5, scale = 2) private BigDecimal pisua;
+    @Column(name = "gutxieneko_nota", precision = 4, scale = 2) private BigDecimal gutxienekoNota;
     @ManyToMany
     @JoinTable(name = "ethazi_erronka_bestelako_proba_adierazlea",
         joinColumns = @JoinColumn(name = "proba_id"), inverseJoinColumns = @JoinColumn(name = "adierazlea_id"),

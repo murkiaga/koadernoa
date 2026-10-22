@@ -588,6 +588,21 @@ if (focusedKinielaElement) {
   requestAnimationFrame(() => focusedKinielaElement.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' }));
 }
 
+const technicalCalculationDialog = document.querySelector('#technical-calculation-dialog');
+const technicalCalculationContent = document.querySelector('#technical-calculation-content');
+const closeTechnicalCalculation = () => technicalCalculationDialog?.close();
+document.querySelectorAll('.technical-calculation-open').forEach(button => button.addEventListener('click', () => {
+  const template = document.getElementById(button.dataset.calculationId);
+  if (!technicalCalculationDialog || !technicalCalculationContent || !template) return;
+  technicalCalculationContent.replaceChildren(template.content.cloneNode(true));
+  technicalCalculationDialog.showModal();
+  document.querySelector('#technical-calculation-close')?.focus();
+}));
+document.querySelector('#technical-calculation-close')?.addEventListener('click', closeTechnicalCalculation);
+technicalCalculationDialog?.addEventListener('click', event => {
+  if (event.target === technicalCalculationDialog) closeTechnicalCalculation();
+});
+
 // Keep the edited/new column or cell in view after an ordinary form submission.
 if (/^#(maila|gelaxka)-[\d-]+$/.test(window.location.hash)) {
   const target = document.getElementById(window.location.hash.slice(1));

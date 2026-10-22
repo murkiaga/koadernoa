@@ -174,6 +174,16 @@ public class ErronkaController {
         return url.toString().replaceAll("[&?]$", "");
     }
 
+    @GetMapping("/{id}/ebaluazio-laburpena")
+    String ebaluazioLaburpena(@PathVariable Long id, @RequestParam(required = false) Long zikloaId,
+            @RequestParam(required = false) Long mailaId, @RequestParam(required = false) Hizkuntza hizkuntza,
+            @RequestParam(required = false) Long ikasturteaId, Model model) {
+        model.addAttribute("laburpena", service.ebaluazioLaburpena(id));
+        model.addAttribute("itzuliZikloaId", zikloaId); model.addAttribute("itzuliMailaId", mailaId);
+        model.addAttribute("itzuliHizkuntza", hizkuntza); model.addAttribute("itzuliIkasturteaId", ikasturteaId);
+        return "Ethazi/erronkak/ebaluazio-laburpena";
+    }
+
     @GetMapping("/{id}/errubrikak")
     String errubrikak(@PathVariable Long id, @RequestParam(required = false) Long moduloaId,
             @RequestParam(defaultValue = "TEKNIKOA") GaitasunMota gaitasunMota,
