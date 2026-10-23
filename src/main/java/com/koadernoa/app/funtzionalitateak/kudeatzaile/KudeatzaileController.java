@@ -1,5 +1,6 @@
 package com.koadernoa.app.funtzionalitateak.kudeatzaile;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,14 +71,6 @@ public class KudeatzaileController {
         return "kudeatzaile/zikloak/index";
     }
 	
-	@GetMapping("/zikloak/{id}")
-	public String zikloarenFitxa(@PathVariable("id") Long id, Model model) {
-	    Zikloa zikloa = zikloaService.getById(id).orElseThrow();
-	    model.addAttribute("zikloa", zikloa);
-	    model.addAttribute("taldeak", zikloa.getTaldeak());
-	    return "kudeatzaile/zikloak/ziklo-fitxa";
-	}
-	
 	@GetMapping("/zikloak/sortu")
     public String sortuZikloaForm(Model model) {
         model.addAttribute("zikloa", new Zikloa());
@@ -100,6 +93,29 @@ public class KudeatzaileController {
 	public String gordeZikloa(@ModelAttribute Zikloa zikloa) {
 	    zikloaService.save(zikloa);
 	    return "redirect:/kudeatzaile/zikloak";
+	}
+
+	@PostMapping("/zikloak/{id}/ethazi-pisuak")
+	public String gordeEthaziPisuak(@PathVariable("id") Long id,
+	                               @RequestParam("teknikoenPisua") BigDecimal teknikoenPisua,
+	                               @RequestParam("zeharkakoenPisua") BigDecimal zeharkakoenPisua,
+	                               @RequestParam("heteroebaluazioPisua") BigDecimal heteroebaluazioPisua,
+	                               @RequestParam("koebaluazioPisua") BigDecimal koebaluazioPisua,
+	                               @RequestParam("autoebaluazioPisua") BigDecimal autoebaluazioPisua,
+	                               RedirectAttributes ra) {
+	    try {
+	        zikloaService.eguneratuEthaziPisuak(id, teknikoenPisua, zeharkakoenPisua,
+	                heteroebaluazioPisua, koebaluazioPisua, autoebaluazioPisua);
+	        ra.addFlashAttribute("success", "ETHAZI gaitasunen pisu orokorrak gorde dira.");
+	    } catch (IllegalArgumentException ex) {
+	        ra.addFlashAttribute("error", ex.getMessage());
+	        ra.addFlashAttribute("teknikoenPisua", teknikoenPisua);
+	        ra.addFlashAttribute("zeharkakoenPisua", zeharkakoenPisua);
+	        ra.addFlashAttribute("heteroebaluazioPisua", heteroebaluazioPisua);
+	        ra.addFlashAttribute("koebaluazioPisua", koebaluazioPisua);
+	        ra.addFlashAttribute("autoebaluazioPisua", autoebaluazioPisua);
+	    }
+	    return "redirect:/kudeatzaile/zikloak/editatu/" + id;
 	}
 	
 //----TALDEAK

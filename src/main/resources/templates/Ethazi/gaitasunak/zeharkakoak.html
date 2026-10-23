@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head th:replace="~{Ethazi/fragments/common :: head('Zeharkako gaitasunak')}"></head>
+<body class="ethazi-body">
+<div th:replace="~{kudeatzaile/fragments/navbar :: kudeatzaile-navbar}"></div>
+<nav th:replace="~{Ethazi/fragments/navbar :: navbar('gaitasun-zeharkakoak')}"></nav>
+<main class="page ethazi-page transversal-page">
+  <div th:replace="~{Ethazi/fragments/common :: messages}"></div>
+  <header class="page-header transversal-header">
+    <div><h1>Zeharkako gaitasunak</h1><p class="muted">Ikastetxe-mailako gaitasunak dira: errubrika berberak ziklo guztietan erabiltzen dira.</p></div>
+    <div class="transversal-actions">
+      <label for="hizkuntza">Hizkuntza</label>
+      <select id="hizkuntza" onchange="location.search='hizkuntza='+this.value"><option th:each="h : ${itzulpenHizkuntzak}" th:value="${h}" th:text="${h.etiketa}" th:selected="${h == hizkuntza}"></option></select>
+      <a class="btn btn-primary" th:href="@{/ethazi/gaitasunak/zeharkakoak/berria}">+ Zeharkako gaitasuna</a>
+    </div>
+  </header>
+  <p class="empty-state" th:if="${#lists.isEmpty(errubrikak)}">Oraindik ez dago zeharkako gaitasunik. Sortu lehen gaitasuna eta haren errubrika.</p>
+  <article class="transversal-rubric" th:each="r : ${errubrikak}" th:with="row=${r.lerroak[0]},g=${row.gaitasuna}">
+    <header class="transversal-rubric-title"><h2><span th:text="${g.kodea}"></span> · <span th:text="${g.legacyIzena}"></span></h2><a class="btn" th:href="@{/ethazi/gaitasunak/{id}/editatu(id=${g.id})}">Errubrika editatu</a></header>
+    <div class="transversal-rubric-scroll" role="region" th:attr="aria-label=${g.kodea + ' gaitasunaren errubrika'}" tabindex="0">
+      <table class="transversal-rubric-table">
+        <caption class="sr-only" th:text="${g.kodea + ' zeharkako gaitasunaren errubrika'}"></caption>
+        <thead><tr><th class="transversal-description" th:colspan="${#lists.size(r.eredua.mailak)}" th:text="${g.deskribapena(hizkuntza)}"></th></tr><tr><th th:each="cell : ${row.gelaxkak}" th:text="${cell != null ? cell.deskribapena(hizkuntza) : ''}"></th></tr></thead>
+        <tbody><tr><td th:each="cell : ${row.gelaxkak}"><p th:if="${cell == null or #lists.isEmpty(cell.lorpenAdierazleak)}" class="muted">—</p><p th:each="a : ${cell != null ? cell.lorpenAdierazleak : {}}" th:text="${a.deskribapena(hizkuntza)}"></p></td></tr></tbody>
+      </table>
+    </div>
+  </article>
+</main>
+<script th:src="@{/js/ethazi.js}" defer></script>
+</body></html>

@@ -7,6 +7,8 @@ import lombok.Data;
 @Data
 public class ModuloaFormDto {
     private Long id;
+    @NotNull
+    private Hizkuntza hizkuntza = Hizkuntza.ZEHAZTU_GABE;
 
     @NotBlank
     private String izena;

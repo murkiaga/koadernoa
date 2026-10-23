@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
+import com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Familia;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Taldea;
@@ -17,10 +18,13 @@ import com.koadernoa.app.objektuak.zikloak.entitateak.Zikloa;
 
 public interface ModuloaRepository extends JpaRepository<Moduloa, Long>{
 
+    List<Moduloa> findByTaldea_Zikloa_IdOrderByIzenaAsc(Long zikloaId);
+
 
 	Optional<Moduloa> findByKodeaIgnoreCaseAndEeiKodeaIgnoreCaseAndTaldeaAndMaila(String kodea, String eeiKodea, Taldea taldea, Maila maila);
 
 	List<Moduloa> findByTaldeaId(Long taldeaId);
+	List<Moduloa> findByEeiKodeaIgnoreCaseOrderByIdAsc(String eeiKodea);
 	Page<Moduloa> findByTaldeaId(Long taldeaId, Pageable pageable);
 	Page<Moduloa> findAll(Pageable pageable);
 	List<Moduloa> findByMaila_Id(Long mailaId);
@@ -37,11 +41,13 @@ public interface ModuloaRepository extends JpaRepository<Moduloa, Long>{
 		  and (:zikloaId is null or z.id = :zikloaId)
 		  and (:hautazkoa is null or m.hautazkoa = :hautazkoa)
 		  and (:aktibo is null or m.aktibo = :aktibo)
+		  and (:hizkuntza is null or m.hizkuntza = :hizkuntza)
 	""")
 	Page<Moduloa> bilatuFiltroekin(@Param("taldeaId") Long taldeaId,
 	                                @Param("zikloaId") Long zikloaId,
 	                                @Param("hautazkoa") Boolean hautazkoa,
 	                                @Param("aktibo") Boolean aktibo,
+	                                @Param("hizkuntza") Hizkuntza hizkuntza,
 	                                Pageable pageable);
 
 	@Query("""

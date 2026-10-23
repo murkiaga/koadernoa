@@ -1,0 +1,186 @@
+# ETHAZI kudeaketa
+
+Aldaketak `feature/ethazi` branchean egin dira. Sarrera kudeatzailearen navbarreko **ETHAZI** esteka da; `/ethazi/gaitasunak` helbidera doa. ADMIN eta KUDEATZAILEA rolek dute sarbidea, gainerako kudeaketa-pantailekin bat etorriz.
+
+## Erabilera
+
+1. **Mailakatzeak**: sortu ziklo + mota bakoitzeko eredua; ondoren gehitu nahi adina maila. Geziekin aldatu ordena, eta gorde izenen aldaketak.
+2. **Gaitasunak**: hautatu zikloa eta mota. Errubrikak ereduko mailak erabiltzen ditu. Gaitasun berrian, aukeratu testuingurua eta sakatu **Mailak kargatu**. Bete kodea, izena, deskribapena eta maila bakoitzeko deskribapena.
+3. Gaitasuna gordetakoan, haren edizio-pantailan gehitu/editatu/ezabatu lorpen-adierazleak. Adierazle bakoitzeko **Ikaskuntza Emaitzen loturak** atalak gaitasunaren zikloko IEak erakusten ditu, moduluka. Atal bakoitzak bere gordetze-botoia du.
+4. **Ikaskuntza Emaitzak**: hautatu zikloa, ondoren modulua. Kudeatu kodea, ordena, deskribapena eta modulua.
+
+Gaitasuna sortutakoan zikloa eta mota finkatuta geratzen dira, mailen eta curriculumeko loturen koherentzia mantentzeko. Ereduari maila berria gehituz gero, errubrikak zutabe berria berehala erakusten du; gaitasuna berriro gordetzeak falta den `GaitasunMaila` sortzen du. Gorde gabeko gaitasunaren aldaketen aurrean nabigazio-oharra dago.
+
+## Fluxua eta errubrika dinamikoa
+
+`EthaziController` → `EthaziService` → JPA repository-ak.
+
+- Controller-ak DTOak lotu, binding-erroreak tratatu, bistak hautatu eta aplikazioaren `success` / `error` mezuak prestatzen ditu. Ez du JPA entitaterik zuzenean formulario gisa lotzen.
+- Service-ak transakzioak, testu eta ordenen balidazioa, guraso/seme identifikatzaileen egiaztapena, zikloaren koherentzia, loturak eta ezabaketen dependentziak kudeatzen ditu.
+- Repository-ek JPA bilaketak eta iraunkortasuna egiten dituzte; curriculumeko repository-ak `objektuak.modulua` paketearen barruan daude.
+- `errubrika(zikloaId, mota)` metodoak dagokion eredua bilatzen du. Mailak `ordena`ren arabera ordenatzen ditu eta gaitasun bakoitzaren gelaxkak maila-IDen arabera lerrokatzen ditu. Mailarik sortu gabe badago, gelaxka hutsa itzultzen du.
+- Thymeleaf-ek prestaturiko goiburuak eta gelaxkak iteratzen ditu; ez dago lau zutaberen mugarik. Gelaxketan deskribapena, lorpen-adierazleak eta `modulu-kodea · IE-kodea` badge-ak erakusten dira.
+- Errubrikak scroll horizontala eta goiburu finkoa ditu. Pantaila handietan kodea eta deskribapena finkatuta daude; mugikorrean kodea bakarrik, irakurtzeko leku erabilgarria uzteko.
+
+## Datuen babesa
+
+- Erabiltzen ari den eredua edo maila ezabatzea blokeatzen da, mezu argiarekin.
+- Mailen ordena trukatzean tarteko ordena libre bat eta flush bereiziak erabiltzen dira, `(eredua_id, ordena)` murrizketa bakarra errespetatzeko.
+- Gaitasunaren ezabaketak bere mailak, lorpen-adierazleak eta IE lotura-errenkadak ezabatzen ditu, dagoen cascade/orphanRemoval ereduaren bidez. IEak mantentzen dira.
+- IE bati lorpen-adierazleek erreferentzia egiten badiote, IEa ezabatzea eta beste modulu batera mugitzea blokeatzen dira.
+- Beste ziklo bateko IEak lotzea eta beste gaitasun edo eredu bateko seme-IDak erabiltzea zerbitzuan baztertzen dira.
+- Aldaketak POST bidez egiten dira, aplikazioaren CSRF babesarekin. Ezabatzeko formularioek baieztapena eskatzen dute.
+- Balidazio-erroreetan formularioa berriro erakusten da, sartutako datuak mantenduz. Ez da ebidentzia edo pisuen logikarik gehitu, ezta IEekiko cascade berririk ere.
+
+## Endpoint berriak
+
+Ondoko guztiak `/ethazi` aurrizkiaren azpian daude:
+
+| Metodoa | Bidea | Erabilera |
+|---|---|---|
+| GET | `/`, edo hutsik | Errubrikara birbideratu |
+| GET | `/gaitasunak` | Errubrika (`zikloaId`, `mota`) |
+| GET, POST | `/gaitasunak/berria` | Sortzeko formularioa / gorde |
+| GET, POST | `/gaitasunak/{id}/editatu` | Editatzeko formularioa / gorde |
+| POST | `/gaitasunak/{id}/ezabatu` | Ezabatu |
+| POST | `/gaitasunak/{id}/mailak/{mailaId}/adierazleak/berria` | Lorpen-adierazlea sortu |
+| POST | `/gaitasunak/{id}/mailak/{mailaId}/adierazleak/{adierazleaId}/editatu` | Adierazlea eta IE loturak gorde |
+| POST | `/gaitasunak/{id}/mailak/{mailaId}/adierazleak/{adierazleaId}/ezabatu` | Adierazlea ezabatu |
+| GET | `/mailakatzeak` | Ereduen zerrenda |
+| GET, POST | `/mailakatzeak/berria` | Eredua sortu |
+| GET, POST | `/mailakatzeak/{id}/editatu` | Eredua editatu |
+| POST | `/mailakatzeak/{id}/ezabatu` | Eredua ezabatu |
+| POST | `/mailakatzeak/{id}/mailak/berria` | Maila gehitu |
+| POST | `/mailakatzeak/{id}/mailak/{mailaId}/editatu` | Mailaren izena gorde |
+| POST | `/mailakatzeak/{id}/mailak/{mailaId}/ezabatu` | Maila ezabatu |
+| POST | `/mailakatzeak/{id}/mailak/{mailaId}/mugitu` | Ordena aldatu (`norabidea`: -1 edo 1) |
+| GET | `/ikaskuntza-emaitzak` | IE zerrenda (`zikloaId`, `moduloaId`) |
+| POST | `/ikaskuntza-emaitzak/inportatu` | IEak CSV bidez sortu edo eguneratu (`eeiKodea` + `ordena`); IE kodea DBko `Moduloa.kodea + ordena` gisa sortzen da |
+| GET, POST | `/ikaskuntza-emaitzak/berria` | IE sortu |
+| GET, POST | `/ikaskuntza-emaitzak/{id}/editatu` | IE editatu |
+| POST | `/ikaskuntza-emaitzak/{id}/ezabatu` | IE ezabatu |
+
+## Fitxategiak
+
+Sortuak:
+
+- `src/main/java/com/koadernoa/app/ethazi/controller/EthaziController.java`
+- `src/main/java/com/koadernoa/app/ethazi/service/EthaziService.java`
+- `src/main/java/com/koadernoa/app/ethazi/dto/EthaziForms.java`
+- `src/main/java/com/koadernoa/app/ethazi/repository/GaitasunaRepository.java`
+- `src/main/java/com/koadernoa/app/ethazi/repository/GaitasunMailaRepository.java`
+- `src/main/java/com/koadernoa/app/ethazi/repository/MailakatzeEreduaRepository.java`
+- `src/main/java/com/koadernoa/app/ethazi/repository/MailakatzeMailaRepository.java`
+- `src/main/java/com/koadernoa/app/ethazi/repository/LorpenAdierazleaRepository.java`
+- `src/main/java/com/koadernoa/app/objektuak/modulua/repository/IkaskuntzaEmaitzaRepository.java`
+- `src/main/resources/templates/Ethazi/fragments/navbar.html`
+- `src/main/resources/templates/Ethazi/fragments/common.html`
+- `src/main/resources/templates/Ethazi/fragments/adierazlea.html`
+- `src/main/resources/templates/Ethazi/gaitasunak/index.html`
+- `src/main/resources/templates/Ethazi/gaitasunak/form.html`
+- `src/main/resources/templates/Ethazi/mailakatzeak/index.html`
+- `src/main/resources/templates/Ethazi/mailakatzeak/form.html`
+- `src/main/resources/templates/Ethazi/ikaskuntza-emaitzak/index.html`
+- `src/main/resources/templates/Ethazi/ikaskuntza-emaitzak/form.html`
+- `src/main/resources/static/css/ethazi.css`
+- `src/main/resources/static/js/ethazi.js`
+- `src/test/java/com/koadernoa/app/ethazi/EthaziServiceTest.java`
+- `docs/ethazi-kudeaketa.md`
+
+Aldatuak:
+
+- `src/main/java/com/koadernoa/app/objektuak/modulua/repository/ModuloaRepository.java`: zikloko moduluen bilaketa.
+- `src/main/java/com/koadernoa/app/security/SecurityConfig.java`: ETHAZIren sarbide-rolak.
+- `src/main/resources/templates/kudeatzaile/fragments/navbar.html`: ETHAZI esteka mahaigaineko eta mugikorreko menuetan.
+- `pom.xml`: H2, test scope-an soilik; ez da produkzioko datu-basea aldatzen.
+
+## Egiaztapenak
+
+`mvn -q -DskipTests compile`
+
+`mvn -q -Dtest=EthaziServiceTest test`
+
+ETHAZIren integrazio-probek H2 memoriazko datu-base isolatua erabiltzen dute. Maila kopuru aldakorra, ordena-trukeak, ezabaketen dependentziak, IEak mantentzea, beste zikloko loturen bazterketa, formulario zaharkituak, eredu bikoiztuak eta Thymeleaf pantaila guztien errendaketa egiaztatzen dituzte.
+
+Azken egiaztapenaren emaitzak:
+
+- Konpilazioa zuzena da, eta ETHAZIren 12 integrazio-probak gainditu dira.
+- Proba zabalagoan (`mvn -q '-Dtest=*Test,!ApplicationTests' test`), orduko 61 probetatik 60 gainditu ziren. `IkasleaMatrikulaSyncTest`-eko inportazio-probak `NullPointerException` du `InportazioZerbitzua.kalkulatuArgazkiPath` metodoan. Errore bera berretsi da aldatu gabeko `HEAD`-en kopia isolatuan; ETHAZItik kanpoko aurretiazko akatsa da.
+- `ApplicationTests` ez da exekutatu: aplikazio osoaren kanpoko zerbitzuen konfigurazioa behar du.
+- Errubrikaren mahaigaineko eta 390 px-ko mugikorreko bistak nabigatzailean egiaztatu dira, baita lorpen-adierazlearen IE aukeratzailea ere. Egiaztapen bisualak probek sortutako HTML eta datu sintetikoak erabili ditu.
+
+## Erronkak eta Kinielak
+
+- Moduluaren fitxan hizkuntza aukeratu daiteke: hutsik, `Euskara`, `Gaztelera` edo `Ingelera`. Lehendik dauden moduluek hizkuntza zehaztu gabe hartzen dute, Hibernate-ren eskema-eguneratzean gehitutako zutabearen balio lehenetsiaren bidez.
+- Erronkak ziklo, konfigurazioko maila aktibo, hizkuntza, izen, deskribapen eta data tarte batekin sortzen dira. Gutxienez modulu bat aukeratu behar da. Zikloa eta maila bat etorri behar dira; hizkuntza zehaztuta badago, hizkuntza bereko edo hizkuntza hutsik duten moduluak bakarrik onartzen dira. Hizkuntza-talde bakoitzak bere erronka du, izen bera erabiltzeko aukerarekin.
+- Erronka bakoitzeko **Errubrikak** botoiak parte hartzen duen modulu bakoitzarentzako erlaitz independentea irekitzen du. Modulu bakoitzak nahi adina maila izan ditzake; maila bakoitzak 0 eta 10 arteko balio hamartarra du. Errubrika ebidentzien lerroek eta maila bakoitza lortzeko azalpenek osatzen dute, eta kontsulta/edizio modua giltzarrapoarekin aldatzen da.
+- Ebidentzia bakoitzak 0 eta 100 arteko pisua dauka, gehienez bi hamartarrekin. Pantailak batura eta %100era iritsi den ala ez erakusten du, baina osatzen ari den errubrika edozein baturarekin gorde daiteke.
+- Errubrikaren gainean Kinielan erronka eta modulu horretarako checkbox bidez markatutako lorpen-adierazleak bakarrik erakusten dira. Kodearen tooltip-ak deskribapena dauka eta oraindik ebidentzia batean erabili gabe daudenak lodiz nabarmentzen dira. Ebidentzia bakoitzaren barruan, izenaren eta pisuaren ostean, N:M loturak badgeko `+` edo `×` bidez gehitu edo kentzen dira; ebidentzia berriak loturarik gabe sortzen dira.
+- Erronka edo haren hizkuntza-bertsio baten moduluak aldatzean, parte-hartzaile berrien errubrika hutsa automatikoki sortzen da eta jada parte hartzen ez duten moduluen errubrika ezabatzen da. Aurretik sortutako erronkentzat errubrika lehen aldiz irekitzean sortzen da.
+- Modulu baten errubrika hutsik dagoenean, `Inportatu` botoia agertzen da blokeatu/desblokeatu kontrolaren ondoan; botoia sakatzean EEI kode bera duten moduluetako aurreko errubrikak aurrebistan ikusi eta inporta daitezke. Inportazioak mailakatzeen, balioen, ebidentzien, pisuen eta azalpenen kopia independentea sortzen du; lorpen-adierazleen loturetatik uneko erronka/moduluan erabilgarri jarraitzen dutenak soilik kopiatzen dira, eta talde-notak ez dira kopiatzen.
+- Datu-ereduak ebidentzia eta lorpen-adierazleen arteko N:M lotura gordetzeko join-taula dauka. Ebidentzia, maila-gelaxka eta talde-nota bakoitza entitate bereizi batean gordetzen da.
+- Erronka bakoitza ikasturte bati lotuta dago. Erronken zerrendako ikasturte-iragazkiak aurreko erronkak, errubrikak, taldeak eta notak kontsultatzeko aukera ematen du; erronka berriak beti une horretan aktibo dagoen ikasturtean sortzen dira.
+- Aurreko ikasturteko erronka bat **Uneko ikasturtera inportatu** daiteke. Kopiak datak ikasturteen hasierako urteen arteko diferentziaz egokitzen ditu, moduluak, Kinielako erronka-hautaketak eta errubrika osoa kopiatzen ditu, eta indarrean ez dauden lorpen-adierazle loturak baztertzen ditu. Taldeak, ikasleak eta notak ez dira kopiatzen.
+- Erronka bakoitzeko **Taldeak** pantailak erronkan parte hartzen duen moduluren batean erronkaren ikasturtean `MATRIKULATUA` dagoen ikasle bakoitza erakusten du. Ikasle guztiak erronkako talde bakarrean esleitu behar dira; datu-baseko unique murrizketak ere ikaslea erronka bereko bi taldetan egotea eragozten du.
+- Ebidentzia bakoitza `Taldekakoa` edo `Pertsonala` da. Errubrika blokeatuta dagoenean ikasleen zutabeak agertzen dira; izenak zutabe estu bertikaletan daude eta zutabe horien goiko zatiko goiburu bateratuak (`Taldea 1`, `Taldea 2`...) talde bakoitzeko ikasleak multzokatzen ditu, bai errubrika teknikoan bai zeharkakoan. Mailakatzeen goiburuek altuera osoa hartzen dute, talde/ikasle goiburuak scroll horizontalean haien atzetik igaro daitezen, eta talde bakoitzaren azken zutabeak bereizle iluna du. Ebidentzia bakoitzean `---` edo errubrikako maila bat hautatzen da eta aldaketa berehala gordetzen da bi nota-sistema bereizietan. Zutabe bakoitzaren goiburuko `📝` botoiak taldearen edo ikaslearen ohar orokor bakarra gordetzen du; ebidentzia bakoitzeko gelaxkan `👍🏽` (Ondo egindakoak) eta `👎🏽` (Hobetu beharrekoak) mantentzen dira. Ohar guztiak notarik gabe ere gorde daitezke. Beheko `GUZTIRA` lerroak aktibo dagoen ikuspegiko parte-hartzaile bakoitzarentzat `mailaren balioa × ebidentziaren pisua / 100` kalkulatzen du. Errubrika desblokeatzean konfigurazioa editatzen da eta kalifikazio-zutabeak ezkutatzen dira. Kalifikazioak eta oharrak `ADMIN`/`KUDEATZAILEA` rolek edo ikasturte aktiboko erronkaren modulu horretako koadernoan dagoen irakasleak soilik alda ditzakete; zerbitzariak errubrika, ebidentzia, ebaluazio mota, parte-hartzailea eta maila testuinguru berari dagozkiola egiaztatzen du.
+- Moduluaren errubrikaren azpian **Bestelako probak** gehi daitezke. Lehen proba sortzean errubrika teknikoaren eta proben blokeen pisu orokorrak 50/50 ezartzen dira; bi eremuetako bat aldatzeak bestea automatikoki osatzen du eta bien baturak beti %100 izan behar du. Proba berriak gehitzean proben barruko %100 pisua berdin banatzen da (biribiltzearen hondarra azken probak hartzen du), eta gero izena, data, pisua eta moduluko lorpen-adierazleak editatu daitezke. Proba bakoitzean erronkako ikasle bakoitzari 0–10 nota aukerakoa eman dakioke; hutsik uzteak ikasleak proba egin behar ez duela adieraz dezake.
+- Kiniela zikloaren curriculumari dagokio. `Gaitasun mota` iragazkiak ikuspegi teknikoa (lehenetsia) eta zeharkakoa bereizten ditu. Teknikoetan IE bakoitzean klikatzean errubrika teknikoa soilik irekitzen da. Zeharkakoetan gaitasun global bakoitzaren deskribapena IE baten formatuan agertzen da eta klikatzean gaitasun horren errubrika propioa irekitzen da.
+- Zeharkako Kiniela ziklo-mailako taula bakarra da, modulurik gabe. Lorpen-adierazleen hautaketa, pisua, oharra eta landuko diren erronkak zikloaren testuinguruan gordetzen dira.
+- Erronka bakoitzak zeharkako errubrika bakarra du, moduluetatik independentea. Kinielan erronkarako hautatutako lorpenak bertikalean multzokatzen dira; lorpen bakoitzak ebidentzia bat edo gehiago izan ditzake eta guztiek errubrikako mailakatze komunak erabiltzen dituzte. Mailakatzeek 0–10 kalifikazioa dute eta ebidentzien pisuen baturak %100 izan behar du. Ebidentzia `Irakasleak soilik` edo `Irakasle/Auto/koebaluazio` motakoa da. Bigarren motako ebidentziarik badago, errubrikak hetero/ko/auto pisuak erakusten ditu; zikloko 85/10/5 balioetatik abiatzen dira, baina erronkan alda daitezke. Edizio-moduan ebidentziak eta mailakatzeak gehitu, editatu eta ezabatu daitezke; edukia edo kalifikazioak dituen mailakatzea ezin da ezabatu. Modulu bakoitzeko irakasleek errubrika bera erabiltzen dute ebaluatzeko eta emaitza modulu ebaluatzaileen artean batezbestekatzen da.
+- Adierazle bakoitzak IE bakoitzerako pisu independentea dauka (0–100, bi hamartar gehienez). Fokua kentzean edo Enter sakatzean pisua automatikoki gordetzen da; baturak berehala eguneratzen dira eta gordetzeko dagoen aldaketa adierazten da. IE eta moduluaren baturak ezin dira eskuz editatu. %100era iritsi ez diren zirriborroak gorde daitezke; batura kolorez adierazten da.
+- Moduluak tolestu/zabaldu daitezke eta nabigatzaileak hautaketa gogoratzen du. Lotura kentzean haren pisua ere ezabatzen da, bai Kinielatik bai Gaitasunak pantailatik.
+
+Datu berriak `ethazi_erronka`, `ethazi_erronka_moduloa` eta `ethazi_kiniela_pisua` tauletan gordetzen dira; `moduloa.hizkuntza` zutabea gehitzen da. Proiektuaren `ddl-auto=update` konfigurazioak eskema eguneratzen du aplikazioa abiatzean.
+
+### Helbideak eta tokiko txantiloiak
+
+`KinielaController` kontroladorearen oinarria `/ethazi/kiniela` da, eta `ErronkaController` kontroladorearena `/ethazi/erronkak`. Navbarra eta formularioak helbide horietara doaz. `/ethazi/kinielak` helbide zaharrak berrira birbideratzen du, hautatutako zikloa mantenduz.
+
+STSn kanpotik sortutako fitxategiak gehitzean, proiektua freskatu (`Refresh` / F5) eta aplikazioa berrabiarazi. `Error resolving template` agertuz gero, egiaztatu txantiloiak `target/classes/templates/Ethazi/` karpetan daudela; `./mvnw resources:resources` komandoak `src/main/resources` baliabideak exekuzioaren classpath-era kopiatzen ditu. Kontroladoreek `@RequestMapping` oinarri bera edukitzeak ez du berez txantiloi-errore hori eragiten.
+
+Hizkuntzaren Java konstantea `GAZTELERA` da. `HizkuntzaConverter` bihurgailuak lehendik gordetako `ERDERA` balioak ere irakurtzen ditu moduluetan eta erronketan; idazketa berriek `GAZTELERA` erabiltzen dute.
+
+## Hiru hizkuntza eta partekatutako IEak (2026-09-29)
+
+- IEaren identitatea `eeiKodea + ordena` da. Modulu beraren euskarazko, gaztelerazko eta ingelesezko eskaintzek IE-ID bera erabiltzen dute. IEaren formularioan hautatutako moduluak EEI kodea zehazten du; moduluak EEI kodea hutsik badu, lehenengo bete haren fitxan. Beste ziklo batean ere EEI kode hori erabiltzen bada, IE bera ikusiko da.
+- `deskribapena` zutabea euskararako mantentzen da; `deskribapenaEs` eta `deskribapenaEn` itzulpenak dira. IEek, lorpen-adierazleek, gaitasunek eta gaitasun-mailen deskribapenek hiru testuak dituzte. Mailakatze-ereduek eta mailek `izena`, `izenaEs`, `izenaEn` dituzte.
+- Formularioetako hizkuntza-hautatzaile bakoitzak testu bat erakusten du aldi bakoitzean. Hautatzailea aldatzean idatzitako zirriborroak mantentzen dira, eta formularioa gordetzean hirurak gordetzen dira. Gutxienez hizkuntza bat bete behar da; gaitasun-mailako azalpenak aukerakoak dira. Ez da itzulpen automatikorik egiten.
+- Gaitasunen mapan eta mailakatzeen zerrendan `hizkuntza=EUSKARA|GAZTELERA|INGELERA` iragazkia dago. Kinielako eta IE-zerrendako testuak moduluaren hizkuntzan erakusten dira. Itzulpenik ez badago, `[Itzulpena falta da]` agertzen da; hizkuntza zehaztu gabeko moduluetan euskara erabiltzen da.
+- Lorpen-adierazle/IE loturak eta pisuak partekatuak dira. Oharrak eta erronka-hautaketak, ordea, `(adierazlea, IE, modulua)` testuinguruan gordetzen dira. Etorkizuneko ebidentziak `KinielaLotura.id` horri lotu ahal izango zaizkio, hizkuntzetako irakasleen datuak nahastu gabe. Ez da ebidentzia-kudeatzaile berririk sortu.
+- Kinielako moduluak kodearen arabera ordenatzen dira eta hizkuntzaren arabera iragaz daitezke. Pisu partekatu bat aldatzean pantailako hizkuntza guztietan eguneratzen da; erronka baten hizkuntza-bertsioetako "landuta" hautaketak ere batera markatu edo desmarkatzen dira.
+- Erronkaren edizioan beste hizkuntzetako bertsioak sortzeko botoiak daude. Bertsio berriaren izena/deskribapena jatorrizkotik kopiatzen dira, ondoren eskuz itzultzeko. Bertsioa lehendik badago, haren ediziora joaten da, bikoiztu gabe.
+- Erronken bertsioek `bertsioTaldea` partekatzen dute. Edozein bertsiotan datak, zikloa, maila edo moduluen parte-hartzea gordetzean, beste bertsioetan ere eguneratzen dira transakzio berean. Izenak/deskribapenak hizkuntza bakoitzekoak dira. Lotutako bertsioaren hizkuntza ezin da aldatu.
+- Pareko modulua EEI kodearen, zikloaren, mailaren eta helburuko hizkuntzaren arabera aurkitzen da. Lehenik hizkuntza zehatza bilatzen da; halakorik ez badago, hizkuntza zehaztu gabeko modulua erabil daiteke. Bat bera ere ez badago edo bat baino gehiago badaude, aldaketa osoa baztertzen da, mezua erakutsiz. Ez da hautaketa isilik galtzen. Parte-hartzea kentzean dagokion erronka-hautaketa garbitzen da; oharrak mantentzen dira.
+- Bertsio bat ezabatzeak ez ditu besteak ezabatzen, eta gainerakoek lotuta jarraitzen dute.
+
+### Lehendik dagoen datu-basea eguneratzea
+
+**Aplikazio berria lehen aldiz abiatu aurretik**, erabili `docs/migrations/20260929-ethazi-hizkuntzak.sql`. `ddl-auto=update` ez da nahikoa: ez ditu datuak bateratzen, ezta kinielaren bi zutabeko murrizketa zaharra kentzen ere.
+
+Zeharkako Kiniela gaitzeko, exekutatu ondoren `docs/migrations/20261015-kiniela-zeharkakoak.sql`.
+
+1. Gelditu aplikazioa eta egin egiaztatutako datu-basearen babeskopia osoa. Probatu migrazioa kopia batean lehenengo.
+2. Exekutatu scriptaren hasierako SELECTa bereizita eta berrikusi baliokidetasunak. Scriptak **EEI kode bera eta ordena bera** duten IEak baliokidetzat hartzen ditu, kodeak `IE1`, `RA1` edo `LO1` izan arren. Esanahia ez badator bat, zuzendu ordenak/EEI kodeak migrazioaren aurretik. IEak dituzten moduluek hizkuntza esplizitua behar dute.
+3. Exekutatu script osoa behin, MySQL 8 bezeroarekin, `--force` gabe. Aurretiko egiaztapenek itzulpen gatazkatsuak, pisu desberdinak edo testuinguru bikoiztuak aurkitzen badituzte, scriptak aldaketak hasi aurretik huts egiten du. Zuzendu mezuko datuak; aurretiko prozedura geratu bada, kendu `ethazi_translation_preflight` berriz saiatu aurretik.
+4. Talde bakoitzeko ID txikiena mantentzen da; IE–adierazle loturak eta pisuak ID horretara birbideratzen dira. Kinielako oharren eta erronka-hautaketen lotura-IDak mantentzen dira, jatorrizko modulua gehituta. Jatorrizko IE testuak eta IDen mapa `ethazi_ie_migration_*` tauletan uzten dira auditatzeko.
+5. Abiarazi aplikazio berria; erronken bertsioetarako gehikuntza hutsak Hibernatek sortzen ditu. Egiaztatu modulu bakoitzeko IEak, oharrak eta erronkak. DDLak MySQLen commit inplizitua egiten duenez, migrazioaren erdiko akatsa edo atzera egitea babeskopia osoaren bidez berreskuratu behar da; ez exekutatu script osoa itsu-itsuan bigarren aldiz.
+
+Migrazio osoa egin arren `ethazi_kiniela_lotura` taulan bi zutabeko unique zaharra geratu bada (adibidez, Hibernatek ausazko izena eman ziolako), aplikazioak abioan automatikoki ordezkatzen du hiru zutabeko `(adierazlea_id, emaitza_id, moduloa_id)` uniquearekin. Eskuz konpontzeko script idempotentea ere badago: `docs/migrations/20260930-kiniela-lotura-unique-konponketa.sql`.
+
+Errubrikako ebidentzia eta lorpen-adierazleen lotura-taula aurreko garapen-bertsio batekin sortu bazen, bi zutabe-izendapen batera gera daitezke eta gordetzean `Field 'ebidentzia_id' doesn't have a default value` errorea eman. Aplikazioak abioan lehengo loturak izendapen kanonikora kopiatzen ditu eta ordezko zutabeak nullable bihurtzen ditu. Eskuzko script idempotentea: `docs/migrations/20261007-errubrika-adierazle-zutabeak.sql`.
+
+Ikasturte-lotura gehitu aurretik sortutako erronkei aplikazioak abioan daten eta `2026-2027` gisako ikasturte-izenen arabera dagokien ikasturtea esleitzen die. Datarekin parekatu ezin direnak ikasturte aktiboari lotzen zaizkio; ondoren `ikasturtea_id` derrigorrezko bihurtzen da. Horretarako ikasturte aktibo bat egon behar da geratzen diren kasuetarako. Eskuzko migrazioa: `docs/migrations/20261007-erronka-ikasturtea.sql`.
+
+Lehendik zeuden gaitasun eta lorpen-adierazleek ez zuten jatorrizko hizkuntza-eremurik. Haien testua lehengo `deskribapena` eremuan mantentzen da; dagokion itzulpen-eremura zuzendu behar da gazteleraz/ingelesez idatzita zegoen kasuetan. Lorpen-adierazle desberdinak ez dira automatikoki fusionatzen, ez baitago haien baliokidetasuna frogatzen duen gakorik.
+
+### Egiaztapen berriak
+
+`EthaziServiceTest` probek hiru hizkuntzen iraunkortasuna, euskararik gabeko sarrera, hizkuntza-iragazkiaren HTMLa, partekatutako IEak, modulu bakoitzeko oharren isolamendua eta erronken bertsioen bi noranzkoetako eguneraketak egiaztatzen dituzte. Thymeleaf bidez sortutako formularioak eta kiniela ere errendatzen dira.
+
+MySQL 8ko migrazio-proba errepikatzeko, erabili zerbitzari isolatua eta datu sintetiko hauek, ordenan:
+
+1. `src/test/resources/ethazi/hizkuntzak-before.sql` (probetako `ethazi_migration_test` datu-basea sortzen du).
+2. `docs/migrations/20260929-ethazi-hizkuntzak.sql`, datu-base horretan.
+3. `src/test/resources/ethazi/hizkuntzak-assert.sql`, datu-base horretan.
+
+Proba horrek hiru IE zaharrak ID bakarrean bateratzen direla eta hiru moduluetako oharrak eta erronka-hautaketak bereizita mantentzen direla egiaztatzen du. Ez erabili fixture-a benetako aplikazioaren datu-basean.

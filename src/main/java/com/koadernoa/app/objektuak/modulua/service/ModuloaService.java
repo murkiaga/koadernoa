@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
 import com.koadernoa.app.objektuak.egutegia.repository.MailaRepository;
+import com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 import com.koadernoa.app.objektuak.modulua.entitateak.ModuloaFormDto;
 import com.koadernoa.app.objektuak.modulua.repository.ModuloaRepository;
@@ -46,6 +47,16 @@ public class ModuloaService {
     public void delete(Long id) {
         moduloaRepository.deleteById(id);
     }
+
+    @Transactional
+    public Hizkuntza eguneratuHizkuntza(Long id, Hizkuntza hizkuntza) {
+        if (hizkuntza == null) throw new IllegalArgumentException("Hizkuntza aukeratu behar da.");
+        Moduloa moduloa = moduloaRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Moduloa ez da existitzen: " + id));
+        moduloa.setHizkuntza(hizkuntza);
+        moduloaRepository.save(moduloa);
+        return moduloa.getHizkuntza();
+    }
     
     public List<Moduloa> getByTaldeaId(Long taldeaId) {
         return moduloaRepository.findByTaldeaId(taldeaId);
@@ -55,8 +66,9 @@ public class ModuloaService {
         return moduloaRepository.findByTaldeaId(taldeaId, pageable);
     }
 
-    public Page<Moduloa> bilatuFiltroekin(Long taldeaId, Long zikloaId, Boolean hautazkoa, Boolean aktibo, Pageable pageable) {
-        return moduloaRepository.bilatuFiltroekin(taldeaId, zikloaId, hautazkoa, aktibo, pageable);
+    public Page<Moduloa> bilatuFiltroekin(Long taldeaId, Long zikloaId, Boolean hautazkoa, Boolean aktibo,
+                                          Hizkuntza hizkuntza, Pageable pageable) {
+        return moduloaRepository.bilatuFiltroekin(taldeaId, zikloaId, hautazkoa, aktibo, hizkuntza, pageable);
     }
     
     @Transactional
@@ -74,6 +86,7 @@ public class ModuloaService {
             : new Moduloa();
 
         // Set eremuak
+        target.setHizkuntza(dto.getHizkuntza());
         target.setIzena(dto.getIzena().trim());
         target.setKodea(dto.getKodea().trim());
         target.setEeiKodea(dto.getEeiKodea().trim());

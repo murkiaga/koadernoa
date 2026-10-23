@@ -1,0 +1,215 @@
+package com.koadernoa.app.ethazi.dto;
+
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.math.BigDecimal;
+
+import org.springframework.format.annotation.DateTimeFormat;
+
+import com.koadernoa.app.ethazi.entitateak.gaitasunak.GaitasunMota;
+import com.koadernoa.app.ethazi.entitateak.errubrikak.EbidentziaEbaluazioMota;
+import com.koadernoa.app.ethazi.entitateak.errubrikak.ZeharkakoEbidentziaMota;
+import com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza;
+
+import lombok.Getter;
+import lombok.Setter;
+
+/** Web forms deliberately contain identifiers, never bindable JPA relationships. */
+public final class EthaziForms {
+    private EthaziForms() {}
+    @Getter @Setter
+    public static class ErronkaForm {
+        private Long zikloaId;
+        private Long mailaId;
+        private String izena;
+        private String deskribapena;
+        private Hizkuntza hizkuntza = Hizkuntza.ZEHAZTU_GABE;
+        @DateTimeFormat(iso=DateTimeFormat.ISO.DATE)
+        private java.time.LocalDate hasieraData;
+        @DateTimeFormat(iso=DateTimeFormat.ISO.DATE)
+        private java.time.LocalDate bukaeraData;
+        private Set<Long> moduloIds = new LinkedHashSet<>();
+    }
+
+    @Getter @Setter
+    public static class ErronkaErrubrikaForm {
+        private BigDecimal errubrikaPisua;
+        private BigDecimal bestelakoProbenPisua;
+        private BigDecimal gutxienekoNota;
+        private List<ErronkaMailaForm> mailak = new ArrayList<>();
+        private List<ErronkaEbidentziaForm> ebidentziak = new ArrayList<>();
+    }
+
+    @Getter @Setter
+    public static class ZeharkakoErrubrikaForm {
+        private BigDecimal heteroebaluazioPisua;
+        private BigDecimal koebaluazioPisua;
+        private BigDecimal autoebaluazioPisua;
+        private BigDecimal gutxienekoNota;
+        private List<ZeharkakoMailaForm> mailak = new ArrayList<>();
+        private List<ZeharkakoEbidentziaForm> ebidentziak = new ArrayList<>();
+    }
+
+    @Getter @Setter
+    public static class ZeharkakoMailaForm {
+        private Long id;
+        private String izena;
+        private BigDecimal balioa;
+    }
+
+    @Getter @Setter
+    public static class ZeharkakoEbidentziaForm {
+        private Long id;
+        private Long adierazleaId;
+        private String deskribapena;
+        private BigDecimal pisua;
+        private ZeharkakoEbidentziaMota mota = ZeharkakoEbidentziaMota.IRAKASLEAK_SOILIK;
+        private Long gutxienekoMailaId;
+        private String gutxienekoMailaIzena;
+        private List<ZeharkakoEbidentziaMailaForm> mailak = new ArrayList<>();
+    }
+
+    @Getter @Setter
+    public static class ZeharkakoEbidentziaMailaForm {
+        private Long mailaId;
+        private String deskribapena;
+    }
+
+    @Getter @Setter
+    public static class BestelakoProbakForm {
+        private List<BestelakoProbaForm> probak = new ArrayList<>();
+    }
+
+    @Getter @Setter
+    public static class BestelakoProbaForm {
+        private Long id;
+        private String izena;
+        @DateTimeFormat(pattern="yyyy/MM/dd")
+        private java.time.LocalDate data;
+        private BigDecimal pisua;
+        private BigDecimal gutxienekoNota;
+        private Set<Long> adierazleaIds = new LinkedHashSet<>();
+        private List<BestelakoProbaNotaForm> notak = new ArrayList<>();
+    }
+
+    @Getter @Setter
+    public static class BestelakoProbaNotaForm {
+        private Long ikasleaId;
+        private String ikasleaIzena;
+        private BigDecimal nota;
+    }
+
+    @Getter @Setter
+    public static class ErronkaMailaForm {
+        private Long id;
+        private String izena;
+        private BigDecimal balioa;
+    }
+
+    @Getter @Setter
+    public static class ErronkaEbidentziaForm {
+        private Long id;
+        private String deskribapena;
+        private BigDecimal pisua;
+        private EbidentziaEbaluazioMota ebaluazioMota = EbidentziaEbaluazioMota.TALDEKAKOA;
+        private Long gutxienekoMailaId;
+        private String gutxienekoMailaIzena;
+        private Set<Long> adierazleaIds = new LinkedHashSet<>();
+        private List<ErronkaEbidentziaMailaForm> mailak = new ArrayList<>();
+        private List<ErronkaTaldeNotaForm> taldeNotak = new ArrayList<>();
+        private List<ErronkaIkasleNotaForm> ikasleNotak = new ArrayList<>();
+    }
+
+    @Getter @Setter
+    public static class ErronkaEbidentziaMailaForm {
+        private Long mailaId;
+        private String deskribapena;
+    }
+
+    @Getter @Setter
+    public static class ErronkaTaldeNotaForm {
+        private Long taldeaId;
+        private Long mailaId;
+        private String mailaIzena;
+        private String ondoEgindakoak;
+        private String hobetuBeharrekoak;
+    }
+
+    @Getter @Setter
+    public static class ErronkaIkasleNotaForm {
+        private Long ikasleaId;
+        private Long mailaId;
+        private String mailaIzena;
+        private String ondoEgindakoak;
+        private String hobetuBeharrekoak;
+    }
+
+    @Getter @Setter
+    public static class ErronkaTaldeEsleipenForm {
+        private List<ErronkaIkasleTaldeForm> ikasleak = new ArrayList<>();
+    }
+
+    @Getter @Setter
+    public static class ErronkaIkasleTaldeForm {
+        private Long ikasleaId;
+        private Long taldeaId;
+    }
+
+
+    @Getter @Setter
+    public static class EreduaForm {
+        private Long zikloaId;
+        private GaitasunMota mota = GaitasunMota.TEKNIKOA;
+        private String izena;
+        private String izenaEs;
+        private String izenaEn;
+    }
+
+    @Getter @Setter
+    public static class MailaForm {
+        private String izena;
+        private String izenaEs;
+        private String izenaEn;
+    }
+
+    @Getter @Setter
+    public static class GaitasunaForm {
+        private Long zikloaId;
+        private GaitasunMota mota = GaitasunMota.TEKNIKOA;
+        private String kodea;
+        private String izena;
+        private String deskribapena;
+        private String deskribapenaEs;
+        private String deskribapenaEn;
+        private List<GaitasunMailaForm> mailak = new ArrayList<>();
+    }
+
+    @Getter @Setter
+    public static class GaitasunMailaForm {
+        private Long mailaId;
+        private String deskribapena;
+        private String deskribapenaEs;
+        private String deskribapenaEn;
+    }
+
+    @Getter @Setter
+    public static class AdierazleaForm {
+        private String deskribapena;
+        private String deskribapenaEs;
+        private String deskribapenaEn;
+        private Set<Long> emaitzaIds = new LinkedHashSet<>();
+    }
+
+    @Getter @Setter
+    public static class EmaitzaForm {
+        private Long zikloaId;
+        private Long moduloaId;
+        private String kodea;
+        private Integer ordena;
+        private String deskribapena;
+        private String deskribapenaEs;
+        private String deskribapenaEn;
+    }
+}
