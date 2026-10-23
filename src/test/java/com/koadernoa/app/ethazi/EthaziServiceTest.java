@@ -457,6 +457,8 @@ class EthaziServiceTest {
                     .param("moduloaId", firstModule.getId().toString()).param("gaitasunMota", "ZEHARKAKOA").principal(auth))
                 .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("Ebidentzia berria")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("data-evidence-id=\"" + evidenceId + "\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("colspan=\"1\">Taldea 1</th>")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("rowspan=\"2\">Zeharkako lorpena</th>")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Heteroebaluazioa")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Irakasle/Auto/koebaluazio")));
         } finally { SecurityContextHolder.clearContext(); }
@@ -900,15 +902,17 @@ class EthaziServiceTest {
         outsider.setRola(com.koadernoa.app.objektuak.irakasleak.entitateak.Rola.IRAKASLEA); em.persist(outsider);
         var first = new Ikaslea(); first.setIzena("Ane"); first.setAbizena1("Aranburu"); first.setHna("TEAM-1"); em.persist(first);
         var second = new Ikaslea(); second.setIzena("Beñat"); second.setAbizena1("Bengoetxea"); second.setHna("TEAM-2"); em.persist(second);
-        for (var student : List.of(first, second)) {
+        var third = new Ikaslea(); third.setIzena("June"); third.setAbizena1("Etxeberria"); third.setHna("TEAM-3"); em.persist(third);
+        for (var student : List.of(first, second, third)) {
             var enrollment = new Matrikula(); enrollment.setIkaslea(student); enrollment.setKoadernoa(notebook);
             enrollment.setEgoera(MatrikulaEgoera.MATRIKULATUA); em.persist(enrollment);
         }
         Long team1 = kiniela.gehituTaldea(challengeId); Long team2 = kiniela.gehituTaldea(challengeId);
         var assignment = kiniela.taldeEsleipenForm(challengeId);
-        assignment.getIkasleak().get(0).setTaldeaId(team1); assignment.getIkasleak().get(1).setTaldeaId(team2);
+        assignment.getIkasleak().get(0).setTaldeaId(team1); assignment.getIkasleak().get(1).setTaldeaId(team1);
+        assignment.getIkasleak().get(2).setTaldeaId(team2);
         kiniela.gordeTaldeEsleipenak(challengeId, assignment);
-        assertThat(kiniela.taldeak(challengeId)).extracting(t -> t.getKideak().size()).containsExactly(1, 1);
+        assertThat(kiniela.taldeak(challengeId)).extracting(t -> t.getKideak().size()).containsExactly(2, 1);
 
         kiniela.gehituErrubrikaMaila(challengeId, m.getId()); kiniela.gehituEbidentzia(challengeId, m.getId());
         var rubric = kiniela.errubrikaForm(challengeId, m.getId());
@@ -932,7 +936,11 @@ class EthaziServiceTest {
                     + "&amp;mailaId=" + m.getMaila().getId() + "&amp;hizkuntza=EUSKARA&amp;ikasturteaId=" + year.getId() + "\"")));
             mvc().perform(get("/ethazi/erronkak/" + challengeId + "/errubrikak").principal(auth)
                     .param("moduloaId", m.getId().toString()))
-                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Taldea 1"))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("colspan=\"2\">Taldea 1</th>")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("colspan=\"1\">Taldea 2</th>")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"evidence-column\" rowspan=\"2\">Ebidentzia</th>")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("student-group-end")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Aranburu, Ane")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Eginda")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("<option value=\"\" data-level-value=\"0\"")))

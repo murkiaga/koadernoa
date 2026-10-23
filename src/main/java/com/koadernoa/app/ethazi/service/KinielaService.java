@@ -215,7 +215,8 @@ public class KinielaService {
         return result;
     }
 
-    public record ErrubrikaIkaslea(Long id, String izena) {}
+    public record ErrubrikaIkaslea(Long id, String izena, boolean taldekoAzkena) {}
+    public record ErrubrikaIkasleTaldea(Long id, String izena, List<ErrubrikaIkaslea> ikasleak) {}
 
     public record ZeharkakoMaila(Long id, String izena, BigDecimal balioa) {}
     public record ZeharkakoIkasleNota(Long ikasleaId, Long mailaId, BigDecimal batezbestekoa, int ebaluatzaileak) {}
@@ -268,11 +269,22 @@ public class KinielaService {
     }
 
     public List<ErrubrikaIkaslea> errubrikaIkasleak(Long erronkaId) {
-        erronka(erronkaId);
-        return erronkaTaldeKideak.findByErronkaId(erronkaId).stream()
-            .map(ErronkaTaldeKidea::getIkaslea)
-            .map(i -> new ErrubrikaIkaslea(i.getId(), i.getIzenOsoa()))
-            .distinct().sorted(Comparator.comparing(ErrubrikaIkaslea::izena, String.CASE_INSENSITIVE_ORDER)).toList();
+        return errubrikaIkasleTaldeak(erronkaId).stream()
+            .flatMap(t -> t.ikasleak().stream()).toList();
+    }
+
+    public List<ErrubrikaIkasleTaldea> errubrikaIkasleTaldeak(Long erronkaId) {
+        var kideak = erronkaTaldeKideak.findByErronkaId(erronkaId);
+        return taldeak(erronkaId).stream().map(t -> {
+            var ikasleak = kideak.stream().filter(k -> k.getTaldea().getId().equals(t.getId()))
+                .map(ErronkaTaldeKidea::getIkaslea)
+                .sorted(Comparator.comparing(i -> i.getIzenOsoa(), String.CASE_INSENSITIVE_ORDER)).toList();
+            var rubricStudents = java.util.stream.IntStream.range(0, ikasleak.size())
+                .mapToObj(i -> new ErrubrikaIkaslea(ikasleak.get(i).getId(), ikasleak.get(i).getIzenOsoa(),
+                    i == ikasleak.size() - 1)).toList();
+            return new ErrubrikaIkasleTaldea(t.getId(), t.getIzena(), rubricStudents);
+        })
+            .filter(t -> !t.ikasleak().isEmpty()).toList();
     }
 
     @Transactional

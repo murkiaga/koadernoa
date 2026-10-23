@@ -208,7 +208,9 @@ public class ErronkaController {
         model.addAttribute("fokukoBestelakoProbaId", bestelakoProbaId);
         model.addAttribute("errubrikaEditatuDezake", service.errubrikaEditatuDezake(auth));
         if (moduloaId != null) {
-            model.addAttribute("ikasleak", service.errubrikaIkasleak(id));
+            var ikasleTaldeak = service.errubrikaIkasleTaldeak(id);
+            model.addAttribute("ikasleTaldeak", ikasleTaldeak);
+            model.addAttribute("ikasleak", ikasleTaldeak.stream().flatMap(t -> t.ikasleak().stream()).toList());
             if (gaitasunMota == GaitasunMota.ZEHARKAKOA) {
                 model.addAttribute("zeharkakoErrubrikak", service.zeharkakoErrubrika(id, moduloaId));
                 model.addAttribute("zeharkakoForm", service.zeharkakoErrubrikaForm(id));
