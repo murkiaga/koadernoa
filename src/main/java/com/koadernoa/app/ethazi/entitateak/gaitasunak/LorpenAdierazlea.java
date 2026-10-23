@@ -1,0 +1,106 @@
+package com.koadernoa.app.ethazi.entitateak.gaitasunak;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+import com.koadernoa.app.objektuak.modulua.entitateak.IkaskuntzaEmaitza;
+
+@Entity
+@Table(name = "ethazi_lorpen_adierazlea")
+@Getter
+@Setter
+@NoArgsConstructor
+public class LorpenAdierazlea {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "gaitasun_maila_id", nullable = false)
+    private GaitasunMaila gaitasunMaila;
+
+    @Column(nullable = false)
+    private Integer ordena;
+
+    @Column(nullable = false, columnDefinition = "TEXT")
+    private String deskribapena;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "ethazi_lorpen_adierazlea_ikaskuntza_emaitza",
+        joinColumns = @JoinColumn(
+            name = "lorpen_adierazlea_id",
+            nullable = false,
+            foreignKey = @ForeignKey(
+                name = "fk_lorpen_adierazlea_ie_lorpen"
+            )
+        ),
+        inverseJoinColumns = @JoinColumn(
+            name = "ikaskuntza_emaitza_id",
+            nullable = false,
+            foreignKey = @ForeignKey(
+                name = "fk_lorpen_adierazlea_ie_ie"
+            )
+        ),
+        uniqueConstraints = @UniqueConstraint(
+            name = "uk_lorpen_adierazlea_ikaskuntza_emaitza",
+            columnNames = {
+                "lorpen_adierazlea_id",
+                "ikaskuntza_emaitza_id"
+            }
+        )
+    )
+    private Set<IkaskuntzaEmaitza> ikaskuntzaEmaitzak = new LinkedHashSet<>();
+
+    @ElementCollection
+    @CollectionTable(name="ethazi_kiniela_pisua", joinColumns=@JoinColumn(name="adierazlea_id"))
+    @MapKeyJoinColumn(name="emaitza_id")
+    @Column(name="pisua", nullable=false, precision=5, scale=2)
+    private java.util.Map<IkaskuntzaEmaitza, java.math.BigDecimal> pisuak = new java.util.HashMap<>();
+
+    @OneToMany(mappedBy="adierazlea", cascade=CascadeType.ALL, orphanRemoval=true)
+    private Set<KinielaLotura> kinielaLoturak = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy="adierazlea", cascade=CascadeType.ALL, orphanRemoval=true)
+    private Set<ZeharkakoKinielaLotura> zeharkakoKinielaLoturak = new LinkedHashSet<>();
+
+    // Legacy global data retained for manual recovery: its original IE cannot be inferred.
+    // Active Kiniela reads and writes only kinielaLoturak.
+    @ManyToMany
+    @JoinTable(name="ethazi_kiniela_erronka",
+        joinColumns=@JoinColumn(name="adierazlea_id"),
+        inverseJoinColumns=@JoinColumn(name="erronka_id"),
+        uniqueConstraints=@UniqueConstraint(columnNames={"adierazlea_id", "erronka_id"}))
+    private Set<com.koadernoa.app.ethazi.entitateak.Erronka> erronkak = new LinkedHashSet<>();
+
+    @Column(columnDefinition="TEXT")
+    private String oharra;
+
+    @Column(columnDefinition = "TEXT")
+    private String deskribapenaEs;
+    @Column(columnDefinition = "TEXT")
+    private String deskribapenaEn;
+
+    public String deskribapena(com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza hizkuntza) {
+        return com.koadernoa.app.ethazi.service.HizkuntzaTestua.erakutsi(hizkuntza, deskribapena, deskribapenaEs, deskribapenaEn);
+    }
+}

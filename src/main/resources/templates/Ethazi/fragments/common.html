@@ -1,0 +1,9 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" lang="eu"><head th:fragment="head(title)">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title th:text="${title} + ' · ETHAZI'">ETHAZI</title>
+<link rel="stylesheet" th:href="@{/css/navbar.css}"><link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
+<link rel="stylesheet" th:href="@{/css/ethazi.css}">
+</head><body><div th:fragment="messages">
+<div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
+<div th:if="${error}" class="alert alert-error" role="alert" th:text="${error}"></div>
+</div></body></html>

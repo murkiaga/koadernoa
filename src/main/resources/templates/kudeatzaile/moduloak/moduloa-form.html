@@ -16,9 +16,13 @@
 	<form class="form" th:action="@{/kudeatzaile/moduloa/gorde}" th:object="${moduloaForm}" method="post">
 	  <input type="hidden" th:field="*{id}"/>
 	
+
 	  <label>Izena:</label>
 	  <input type="text" th:field="*{izena}" required/>
 	  <div th:if="${#fields.hasErrors('izena')}" th:errors="*{izena}"></div>
+
+      <label for="hizkuntza">Hizkuntza:</label>
+      <select th:field="*{hizkuntza}" required><option th:each="h : ${T(com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza).values()}" th:value="${h}" th:text="${h.etiketa}"></option></select>
 
 	
 	  <label>Kodea:</label>

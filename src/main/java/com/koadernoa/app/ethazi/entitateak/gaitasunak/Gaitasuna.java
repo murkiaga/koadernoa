@@ -1,0 +1,90 @@
+package com.koadernoa.app.ethazi.entitateak.gaitasunak;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import com.koadernoa.app.objektuak.zikloak.entitateak.Zikloa;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+/*
+	GT01
+	Sistema informatikoak instalatu eta konfiguratzeko gaitasuna
+	TEKNIKOA
+	SMR
+ */
+
+@Entity
+@Table(name = "ethazi_gaitasuna")
+@Getter
+@Setter
+@NoArgsConstructor
+public class Gaitasuna {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "zikloa_id")
+    private Zikloa zikloa;
+
+    /**
+     * Zeharkako gaitasun bakoitzak bere errubrika du eta ez dago ziklo bati
+     * lotuta. Gaitasun teknikoek, bateragarritasunagatik, ziklo/mota eredua
+     * erabiltzen jarraitzen dute eta eremu hau hutsik dute.
+     */
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "eredua_id", unique = true)
+    private MailakatzeEredua eredua;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private GaitasunMota mota;
+
+    @Column(length = 30)
+    private String kodea;
+
+    /**
+     * Existing installations have a non-null {@code izena} column. Keep it as
+     * storage compatibility while the competency is represented by code and
+     * description everywhere in the application.
+     */
+    @Column(name = "izena", nullable = false, length = 200)
+    private String legacyIzena;
+
+    @Column(columnDefinition = "TEXT")
+    private String deskribapena;
+
+    @OneToMany(
+        mappedBy = "gaitasuna",
+        cascade = CascadeType.ALL,
+        orphanRemoval = true
+    )
+    private List<GaitasunMaila> mailak = new ArrayList<>();
+
+    @Column(columnDefinition = "TEXT")
+    private String deskribapenaEs;
+    @Column(columnDefinition = "TEXT")
+    private String deskribapenaEn;
+
+    public String deskribapena(com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza hizkuntza) {
+        return com.koadernoa.app.ethazi.service.HizkuntzaTestua.erakutsi(hizkuntza, deskribapena, deskribapenaEs, deskribapenaEn);
+    }
+}

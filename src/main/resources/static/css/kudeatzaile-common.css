@@ -160,6 +160,7 @@ select{
   background:#fff;
 }
 input[type="checkbox"]{ transform:translateY(1px); }
+.module-language-select{min-width:130px;width:auto}.module-language-status{display:block;min-height:1rem;margin-top:3px;color:#166534;font-size:.72rem}.module-language-status.is-error{color:#b91c1c}
 
 .form-actions{
   display:flex;
