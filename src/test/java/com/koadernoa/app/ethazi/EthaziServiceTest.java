@@ -448,6 +448,8 @@ class EthaziServiceTest {
         transverseForm.getEbidentziak().get(0).setMota(
             com.koadernoa.app.ethazi.entitateak.errubrikak.ZeharkakoEbidentziaMota.IRAKASLE_AUTO_KOEBALUAZIOA);
         kiniela.gordeZeharkakoErrubrika(challengeId, transverseForm);
+        assertThat(kiniela.zeharkakoErrubrika(challengeId, m.getId()).adierazleak().get(0).deskribapena())
+            .isEqualTo("Osagaiak identifikatzen ditu");
 
         var auth = new UsernamePasswordAuthenticationToken("manager", "",
             AuthorityUtils.createAuthorityList("ROLE_KUDEATZAILEA"));
@@ -1540,15 +1542,21 @@ class EthaziServiceTest {
         assertThat(limitedCalculation.kalkulatutakoNota()).isEqualByComparingTo("8.00");
         assertThat(limitedCalculation.guztira()).isEqualByComparingTo("4.00");
         assertThat(limitedCalculation.minimoUrraketak()).singleElement().asString().contains("Azterketa", "7.00");
+        assertThat(limitedCalculation.probak()).singleElement()
+            .extracting(KinielaService.LaburpenKalkuluOsagaia::minimoaUrratuta).isEqualTo(true);
         assertThat(limitedRow.totalak()).singleElement().satisfies(n -> assertThat(n).isEqualByComparingTo("4.00"));
 
         SecurityContextHolder.getContext().setAuthentication(auth);
         try {
             String html = mvc().perform(get("/ethazi/erronkak/" + challengeId + "/ebaluazio-laburpena").principal(auth))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-            assertThat(html).contains("Irakasle", "Koeb.", "Autoeb.", "Zehar ebidentzia", "%100", "Zeharkakoa", "%30",
+            assertThat(html).contains("Irakasle", "Koeb.", "Autoeb.", "Orokorra", "%100", "Zeharkakoa", "%30",
                 "Teknikoak", "(%70)", ">SUMMARY</th>", "SUMMARY TOTALA", "Nola kalkulatu da?",
                 "Errubrika teknikoa", "Bestelako probak", "Azken kalifikazio teknikoa");
+            assertThat(html).doesNotContain("Zehar ebidentzia</th>");
+            assertThat(html).contains("data-summary-toggle=\"evidence-0\"", "data-summary-transverse-toggle",
+                "data-summary-evidence-group=\"evidence-0\"");
+            assertThat(html).contains("calculation-grade-minimum-failed");
             String list = mvc().perform(get("/ethazi/erronkak").principal(auth)
                 .param("zikloaId", cycle.getId().toString()).param("ikasturteaId", kiniela.ikasturteAktiboaId().toString()))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();

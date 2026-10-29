@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head th:replace="~{Ethazi/fragments/common :: head('Erronkaren kronograma')}"></head>
+<body class="ethazi-body kronograma-body">
+<div th:replace="~{kudeatzaile/fragments/navbar :: kudeatzaile-navbar}"></div>
+<nav th:replace="~{Ethazi/fragments/navbar :: navbar('erronkak')}"></nav>
+<main class="page kronograma-page" th:with="e=${kronograma.erronka}">
+  <div th:replace="~{Ethazi/fragments/common :: messages}"></div>
+
+  <header class="kronograma-header">
+    <div>
+      <a class="kronograma-back" th:href="${itzuliUrl}">← Erronketara itzuli</a>
+      <p class="kronograma-eyebrow">Erronkaren kronograma</p>
+      <h1 th:text="${e.izena}"></h1>
+      <p class="kronograma-meta">
+        <time th:text="${#temporals.format(e.hasieraData, 'yyyy/MM/dd')}"></time>
+        <span aria-hidden="true">—</span>
+        <time th:text="${#temporals.format(e.bukaeraData, 'yyyy/MM/dd')}"></time>
+        <span aria-hidden="true">·</span>
+        <span th:text="${#lists.size(kronograma.moduluak) + ' modulu'}"></span>
+        <span aria-hidden="true">·</span>
+        <span th:text="${kronograma.egunKopurua + ' egun'}"></span>
+      </p>
+      <div class="kronograma-module-pills" aria-label="Parte hartzen duten moduluak">
+        <span th:each="m : ${kronograma.moduluak}" th:text="${m.kodea != null && !m.kodea.isBlank() ? m.kodea : m.izena}"></span>
+      </div>
+    </div>
+    <button th:if="${kronograma.koordinatzailea or !#sets.isEmpty(kronograma.editaDaitezkeenModuloak)}"
+            type="button" class="btn kronograma-add" data-kronograma-new>＋ Jarduera</button>
+  </header>
+
+  <section class="kronograma-toolbar" aria-label="Kronogramaren kontrolak">
+    <div class="kronograma-week-nav">
+      <button type="button" class="btn" data-week-previous aria-label="Aurreko astea">←</button>
+      <button type="button" class="btn" data-week-start>Hasierara</button>
+      <button type="button" class="btn" data-week-today>Gaur</button>
+      <button type="button" class="btn" data-week-next aria-label="Hurrengo astea">→</button>
+      <strong data-week-label aria-live="polite"></strong>
+    </div>
+    <div class="kronograma-filters">
+      <label class="kronograma-check"><input type="checkbox" checked data-module-visibility> Moduluetako jarduerak erakutsi</label>
+      <label>Modulua
+        <select data-module-filter>
+          <option value="">Modulu guztiak</option>
+          <option th:each="m : ${kronograma.moduluak}" th:value="${m.id}"
+                  th:text="${(m.kodea != null ? m.kodea + ' · ' : '') + m.izena}"></option>
+        </select>
+      </label>
+    </div>
+  </section>
+
+  <nav class="kronograma-week-tabs" aria-label="Asteak">
+    <button th:each="astea : ${kronograma.asteak}" type="button" data-week-tab
+            th:attr="data-week-index=${astea.zenbakia - 1}"
+            th:text="${astea.zenbakia + '. astea'}"></button>
+  </nav>
+
+  <section class="kronograma-board" aria-label="Erronkaren jardueren denbora-lerroa">
+    <article th:each="astea : ${kronograma.asteak}" class="kronograma-week" data-week-panel hidden
+             th:attr="data-week-index=${astea.zenbakia - 1},data-week-start=${astea.hasiera},data-week-end=${astea.bukaera}">
+      <div class="kronograma-scroll" tabindex="0" role="region" th:attr="aria-label=${astea.zenbakia + '. asteko kronograma'}">
+        <div class="kronograma-grid" th:style="${'--kronograma-egunak:' + #lists.size(astea.egunak)}">
+          <div class="kronograma-corner">Moduloa</div>
+          <div class="kronograma-days">
+            <div th:each="eguna : ${astea.egunak}" class="kronograma-day"
+                 th:classappend="${eguna.dayOfWeek.name() == 'SATURDAY' or eguna.dayOfWeek.name() == 'SUNDAY'} ? ' is-weekend'"
+                 th:attr="data-date=${eguna}">
+              <strong th:text="${#temporals.format(eguna, 'dd') + ' ' + #strings.toLowerCase(#temporals.format(eguna, 'EEE'))}"></strong>
+              <span th:text="${#temporals.format(eguna, 'MM/yyyy')}"></span>
+            </div>
+          </div>
+
+          <th:block th:each="lerroa : ${astea.lerroak}">
+            <div class="kronograma-row-label" th:classappend="${lerroa.komuna} ? ' is-common' : ''"
+                 th:attr="data-module-row=${lerroa.moduloaId}">
+              <strong th:text="${lerroa.etiketa}"></strong>
+              <span th:if="${lerroa.orduLaburpena != null}" class="kronograma-hours-summary">
+                <span th:text="${lerroa.orduLaburpena.astekoOrduak + ' ordu astean'}"></span>
+                <small th:text="${lerroa.orduLaburpena.erronkakoOrduak + ' ordu erronkan'}"></small>
+              </span>
+              <small th:text="${lerroa.azpititulua}"></small>
+            </div>
+            <div class="kronograma-track" th:classappend="${lerroa.komuna} ? ' is-common' : ''"
+                 th:attr="data-module-row=${lerroa.moduloaId}"
+                 th:style="${'--lanes:' + lerroa.lerroKopurua + ';--add-lane:' + (#lists.isEmpty(lerroa.blokeak) ? '0px' : '38px')}">
+              <span th:each="eguna, egunaStat : ${astea.egunak}" class="kronograma-cell"
+                    th:classappend="${(!lerroa.komuna and !lerroa.klaseEgunak.contains(eguna) ? ' is-no-class' : '')
+                                      + (lerroa.editagarria and lerroa.klaseEgunak.contains(eguna) ? ' is-clickable' : '')}"
+                    th:style="${'grid-column:' + (egunaStat.index + 1) + ';grid-row:1 / -1'}"
+                    th:attr="data-kronograma-cell=${lerroa.editagarria and lerroa.klaseEgunak.contains(eguna) ? 'true' : null},
+                             data-date=${eguna},data-module-id=${lerroa.moduloaId},
+                             data-activity-type=${lerroa.komuna ? 'KOMUNA' : 'MODULUA'}"></span>
+              <button th:each="blokea : ${lerroa.blokeak}" type="button" class="kronograma-activity"
+                      th:classappend="${blokea.jarduera.mota.name() == 'KOMUNA'
+                                        ? ' timeline-activity-common'
+                                        : ' timeline-activity-module timeline-color-' + lerroa.koloreIndizea}"
+                      th:style="${'grid-column:' + blokea.start + ' / span ' + blokea.span + ';grid-row:' + blokea.lane}"
+                      th:attr="data-activity-id=${blokea.jarduera.id},
+                               data-title=${blokea.jarduera.izenburua},
+                               data-description=${blokea.jarduera.deskribapena},
+                               data-start=${blokea.jarduera.hasieraData},
+                               data-hours=${blokea.jarduera.iraupenOrduak},
+                               data-type=${blokea.jarduera.mota},
+                               data-module-id=${blokea.jarduera.moduloa != null ? blokea.jarduera.moduloa.id : ''},
+                               data-planned-module-id=${blokea.jarduera.aurreikusitakoModuloa != null ? blokea.jarduera.aurreikusitakoModuloa.id : ''},
+                               data-editable=${blokea.editagarria},
+                               aria-label=${blokea.jarduera.izenburua + ', ' + blokea.jarduera.iraupenOrduak + ' ordu'}">
+                <span class="kronograma-activity-kind"
+                      th:text="${blokea.jarduera.mota.name() == 'KOMUNA' ? '◆ Komuna' : '● ' + lerroa.etiketa}"></span>
+                <strong class="kronograma-activity-title">
+                  <span th:text="${blokea.jarduera.izenburua}"></span>
+                  <span th:if="${blokea.jarduera.mota.name() == 'KOMUNA' and blokea.jarduera.aurreikusitakoModuloa != null}"
+                        class="kronograma-planned-module"
+                        th:text="${'(' + (blokea.jarduera.aurreikusitakoModuloa.kodea != null and !blokea.jarduera.aurreikusitakoModuloa.kodea.isBlank()
+                                  ? blokea.jarduera.aurreikusitakoModuloa.kodea : blokea.jarduera.aurreikusitakoModuloa.izena) + ')'}"></span>
+                </strong>
+                <small th:text="${blokea.orduak + ' h'}"></small>
+              </button>
+            </div>
+          </th:block>
+        </div>
+      </div>
+    </article>
+  </section>
+
+  <footer class="kronograma-legend">
+    <span><i class="legend-common"></i> ◆ Jarduera komuna</span>
+    <span><i class="legend-module"></i> ● Moduluko jarduera</span>
+    <small>Jarduera batean klik egin xehetasunak ikusteko.</small>
+  </footer>
+
+  <dialog id="kronograma-dialog" class="kronograma-dialog">
+    <form method="post" th:action="@{/ethazi/erronkak/{id}/kronograma/jarduerak/gorde(id=${e.id})}" data-kronograma-form>
+      <input type="hidden" name="id">
+      <input type="hidden" name="zikloaId" th:value="${zikloaId}">
+      <input type="hidden" name="mailaId" th:value="${mailaId}">
+      <input type="hidden" name="hizkuntza" th:value="${hizkuntza}">
+      <input type="hidden" name="ikasturteaId" th:value="${ikasturteaId}">
+      <header><div><p class="kronograma-eyebrow">Kronograma</p><h2 data-dialog-title>Jarduera berria</h2></div><button type="button" class="kronograma-dialog-close" data-dialog-close aria-label="Itxi">×</button></header>
+      <div class="kronograma-dialog-content">
+        <label class="field">Izenburua<input name="izenburua" required maxlength="200"></label>
+        <label class="field">Deskribapena edo oharrak<textarea name="deskribapena" rows="4" maxlength="60000"></textarea></label>
+        <div class="kronograma-form-grid">
+          <label class="field">Hasiera<input type="date" name="hasieraData" required th:min="${e.hasieraData}" th:max="${e.bukaeraData}"></label>
+          <label class="field">Iraupena (orduak)<input type="number" name="iraupenOrduak" required min="0.01" max="999.99" step="0.01"></label>
+        </div>
+        <div class="kronograma-form-grid">
+          <label class="field">Jarduera mota
+            <select name="mota" required data-activity-type>
+              <option value="KOMUNA" th:disabled="${!kronograma.koordinatzailea}">Erronkako jarduera komuna</option>
+              <option value="MODULUA" th:selected="${!kronograma.koordinatzailea}">Moduluko jarduera</option>
+            </select>
+          </label>
+          <label class="field" data-module-field>Modulua
+            <select name="moduloaId">
+              <option value="">— Aukeratu —</option>
+              <option th:each="m : ${kronograma.moduluak}"
+                      th:disabled="${!kronograma.koordinatzailea and !kronograma.editaDaitezkeenModuloak.contains(m.id)}"
+                      th:value="${m.id}" th:text="${(m.kodea != null ? m.kodea + ' · ' : '') + m.izena}"></option>
+            </select>
+          </label>
+          <label class="field" data-planned-module-field>Aurreikusitako modulua
+            <select name="aurreikusitakoModuloaId">
+              <option value="">Zehaztu gabe</option>
+              <option th:each="m : ${kronograma.moduluak}" th:value="${m.id}"
+                      th:text="${(m.kodea != null ? m.kodea + ' · ' : '') + m.izena}"></option>
+            </select>
+          </label>
+        </div>
+        <p class="kronograma-permission-note" data-readonly-note hidden>Jarduera hau ikus dezakezu, baina ez duzu editatzeko baimenik.</p>
+      </div>
+      <footer>
+        <button type="button" class="btn" data-dialog-close>Utzi</button>
+        <button type="button" class="btn btn-danger" data-activity-delete hidden>Ezabatu</button>
+        <button type="submit" class="btn btn-primary" data-activity-save>Gorde</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <form method="post" data-delete-form th:action="@{/ethazi/erronkak/{id}/kronograma/jarduerak(id=${e.id})}"
+        th:attr="data-delete-base=@{/ethazi/erronkak/{id}/kronograma/jarduerak(id=${e.id})}" hidden>
+    <input type="hidden" name="zikloaId" th:value="${zikloaId}"><input type="hidden" name="mailaId" th:value="${mailaId}">
+    <input type="hidden" name="hizkuntza" th:value="${hizkuntza}"><input type="hidden" name="ikasturteaId" th:value="${ikasturteaId}">
+  </form>
+</main>
+<script th:src="@{/js/ethazi.js}" defer></script>
+<script th:src="@{/js/kronograma.js}" defer></script>
+</body>
+</html>

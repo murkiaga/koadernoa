@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -24,6 +25,16 @@ public interface ModuloaRepository extends JpaRepository<Moduloa, Long>{
 	Optional<Moduloa> findByKodeaIgnoreCaseAndEeiKodeaIgnoreCaseAndTaldeaAndMaila(String kodea, String eeiKodea, Taldea taldea, Maila maila);
 
 	List<Moduloa> findByTaldeaId(Long taldeaId);
+
+	@EntityGraph(attributePaths = "irakasleak")
+	@Query("select distinct m from Moduloa m where m.taldea.id = :taldeaId order by m.izena asc")
+	List<Moduloa> findWithIrakasleakByTaldeaId(@Param("taldeaId") Long taldeaId);
+
+	@EntityGraph(attributePaths = "irakasleak")
+	@Query("select m from Moduloa m where m.id = :id")
+	Optional<Moduloa> findWithIrakasleakById(@Param("id") Long id);
+
+	boolean existsByIdAndIrakasleak_Id(Long moduloaId, Long irakasleaId);
 	List<Moduloa> findByEeiKodeaIgnoreCaseOrderByIdAsc(String eeiKodea);
 	Page<Moduloa> findByTaldeaId(Long taldeaId, Pageable pageable);
 	Page<Moduloa> findAll(Pageable pageable);

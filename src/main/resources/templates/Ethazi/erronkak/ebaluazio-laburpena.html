@@ -10,24 +10,24 @@
   <div th:unless="${#lists.isEmpty(laburpena.ikasleak)}" class="evaluation-summary-scroll" tabindex="0" role="region" aria-label="Ebaluazio laburpenaren taula">
     <table class="evaluation-summary-table"><thead>
       <tr><th rowspan="2" class="summary-student">Ikaslea</th>
-        <th th:each="eb : ${laburpena.ebidentziak}" th:colspan="${eb.ebaluazioAnitza ? 4 : 1}" class="summary-evidence-group"><span th:text="${eb.izena}"></span><small class="summary-header-weight" th:text="${eb.pisuaEtiketa}"></small></th>
-        <th rowspan="2" class="summary-transverse-total"><span>Zeharkakoa</span><small class="summary-header-weight" th:text="${laburpena.zeharkakoenPisuaEtiketa}"></small></th>
+        <th th:each="eb, es : ${laburpena.ebidentziak}" th:colspan="${eb.ebaluazioAnitza ? 4 : 1}" class="summary-evidence-group" data-summary-transverse-column th:attr="data-summary-evidence-group=${'evidence-' + es.index}"><span th:text="${eb.izena}"></span><small class="summary-header-weight" th:text="${eb.pisuaEtiketa}"></small></th>
+        <th rowspan="2" class="summary-transverse-total"><span class="summary-heading-with-toggle"><span>Zeharkakoa</span><button type="button" class="summary-column-toggle" data-summary-transverse-toggle aria-expanded="true" aria-label="Zeharkako zutabeak ezkutatu" title="Zeharkako zutabeak ezkutatu"><span aria-hidden="true">−</span></button></span><small class="summary-header-weight" th:text="${laburpena.zeharkakoenPisuaEtiketa}"></small></th>
         <th th:colspan="${#lists.size(laburpena.moduluak)}" class="summary-technical-group"><span>Teknikoak</span> <span th:text="${'(' + laburpena.teknikoenPisuaEtiketa + ')'}"></span></th>
         <th rowspan="2" class="summary-spacer" aria-label=""></th>
         <th th:each="m : ${laburpena.moduluak}" rowspan="2" th:title="${m.izena}" th:text="${m.kodea + ' TOTALA'}"></th>
       </tr><tr>
-        <th:block th:each="eb : ${laburpena.ebidentziak}">
-          <th th:if="${eb.ebaluazioAnitza}" class="summary-evidence-column">Irakasle</th><th th:if="${eb.ebaluazioAnitza}" class="summary-evidence-column">Koeb.</th><th th:if="${eb.ebaluazioAnitza}" class="summary-evidence-column">Autoeb.</th>
-          <th class="summary-evidence-column">Zehar ebidentzia</th>
+        <th:block th:each="eb, es : ${laburpena.ebidentziak}">
+          <th th:if="${eb.ebaluazioAnitza}" class="summary-evidence-column summary-evaluator-heading" data-summary-transverse-column th:attr="data-summary-detail-group=${'evidence-' + es.index}">Irakasle</th><th th:if="${eb.ebaluazioAnitza}" class="summary-evidence-column summary-evaluator-heading" data-summary-transverse-column th:attr="data-summary-detail-group=${'evidence-' + es.index}">Koeb.</th><th th:if="${eb.ebaluazioAnitza}" class="summary-evidence-column summary-evaluator-heading" data-summary-transverse-column th:attr="data-summary-detail-group=${'evidence-' + es.index}">Autoeb.</th>
+          <th class="summary-evidence-column" data-summary-transverse-column><span th:if="${eb.ebaluazioAnitza}" class="summary-heading-with-toggle"><span>Orokorra</span><button type="button" class="summary-column-toggle" th:attr="data-summary-toggle=${'evidence-' + es.index},aria-label=${eb.izena + ' ebaluatzaileen zutabeak ezkutatu'}" aria-expanded="true" title="Ebaluatzaileen zutabeak ezkutatu"><span aria-hidden="true">−</span></button></span></th>
         </th:block>
         <th th:each="m : ${laburpena.moduluak}" th:title="${m.izena}" th:text="${m.kodea}"></th>
       </tr></thead><tbody>
       <tr th:each="ikaslea : ${laburpena.ikasleak}"><th class="summary-student" th:text="${ikaslea.izena}"></th>
         <th:block th:each="nota, ns : ${ikaslea.zeharkakoNotak}">
-          <td th:if="${laburpena.ebidentziak[ns.index].ebaluazioAnitza}" class="summary-evidence-column" th:text="${nota.irakaslea != null ? #numbers.formatDecimal(nota.irakaslea,1,2) : '—'}"></td>
-          <td th:if="${laburpena.ebidentziak[ns.index].ebaluazioAnitza}" class="summary-evidence-column" th:text="${nota.koebaluazioa != null ? #numbers.formatDecimal(nota.koebaluazioa,1,2) : '—'}"></td>
-          <td th:if="${laburpena.ebidentziak[ns.index].ebaluazioAnitza}" class="summary-evidence-column" th:text="${nota.autoebaluazioa != null ? #numbers.formatDecimal(nota.autoebaluazioa,1,2) : '—'}"></td>
-          <td class="summary-evidence-column summary-evidence-total" th:classappend="${nota.minimoaUrratuta} ? ' minimum-failed'" th:text="${nota.guztira != null ? #numbers.formatDecimal(nota.guztira,1,2) : '—'}"></td>
+          <td th:if="${laburpena.ebidentziak[ns.index].ebaluazioAnitza}" class="summary-evidence-column" data-summary-transverse-column th:attr="data-summary-detail-group=${'evidence-' + ns.index}" th:text="${nota.irakaslea != null ? #numbers.formatDecimal(nota.irakaslea,1,2) : '—'}"></td>
+          <td th:if="${laburpena.ebidentziak[ns.index].ebaluazioAnitza}" class="summary-evidence-column" data-summary-transverse-column th:attr="data-summary-detail-group=${'evidence-' + ns.index}" th:text="${nota.koebaluazioa != null ? #numbers.formatDecimal(nota.koebaluazioa,1,2) : '—'}"></td>
+          <td th:if="${laburpena.ebidentziak[ns.index].ebaluazioAnitza}" class="summary-evidence-column" data-summary-transverse-column th:attr="data-summary-detail-group=${'evidence-' + ns.index}" th:text="${nota.autoebaluazioa != null ? #numbers.formatDecimal(nota.autoebaluazioa,1,2) : '—'}"></td>
+          <td class="summary-evidence-column summary-evidence-total" data-summary-transverse-column th:classappend="${nota.minimoaUrratuta} ? ' minimum-failed'" th:text="${nota.guztira != null ? #numbers.formatDecimal(nota.guztira,1,2) : '—'}"></td>
         </th:block>
         <td class="summary-transverse-total" th:classappend="${ikaslea.zeharkakoMinimoaUrratuta} ? ' minimum-failed'">
           <button type="button" class="technical-calculation-open" th:classappend="${ikaslea.zeharkakoMinimoaUrratuta} ? ' minimum-failed'"
@@ -66,7 +66,7 @@
               <th:block th:if="${kalkulua.konfiguratuta}">
                 <section class="calculation-section"><h3>1. Errubrika teknikoa <span th:text="${kalkulua.errubrikaPisua != null ? '(%' + #numbers.formatDecimal(kalkulua.errubrikaPisua,1,2) + ')' : '(%0)'}"></span></h3>
                   <table class="calculation-components"><thead><tr><th>Ebidentzia</th><th>Pisua</th><th>Minimoa</th><th>Kalifikazioa</th><th>Erabilera</th></tr></thead><tbody>
-                    <tr th:each="osagaia : ${kalkulua.ebidentziak}"><td th:text="${osagaia.izena}"></td><td th:text="${'%' + #numbers.formatDecimal(osagaia.pisua,1,2)}"></td><td th:text="${osagaia.minimoa != null ? osagaia.minimoa : '—'}"></td><td th:text="${osagaia.nota != null ? #numbers.formatDecimal(osagaia.nota,1,2) : '—'}"></td><td th:text="${osagaia.nota != null ? 'Kontuan hartuta' : (osagaia.pisua != null and osagaia.pisua.signum() > 0 ? 'Falta da' : 'Pisurik gabe')}"></td></tr>
+                    <tr th:each="osagaia : ${kalkulua.ebidentziak}"><td th:text="${osagaia.izena}"></td><td th:text="${'%' + #numbers.formatDecimal(osagaia.pisua,1,2)}"></td><td th:text="${osagaia.minimoa != null ? osagaia.minimoa : '—'}"></td><td th:classappend="${osagaia.minimoaUrratuta} ? ' calculation-grade-minimum-failed'" th:text="${osagaia.nota != null ? #numbers.formatDecimal(osagaia.nota,1,2) : '—'}"></td><td th:text="${osagaia.nota != null ? 'Kontuan hartuta' : (osagaia.pisua != null and osagaia.pisua.signum() > 0 ? 'Falta da' : 'Pisurik gabe')}"></td></tr>
                   </tbody></table>
                   <p th:if="${kalkulua.errubrikaOsatua}" class="calculation-formula"><span th:text="${kalkulua.errubrikaEragiketa}"></span><strong th:text="${'Errubrikaren nota: ' + #numbers.formatDecimal(kalkulua.errubrikaNota,1,2)}"></strong></p>
                   <p th:unless="${kalkulua.errubrikaOsatua}" class="calculation-notice">Pisua duen ebidentzia bat gutxienez kalifikatu gabe dago; horregatik errubrikaren blokea ez da azken kalkuluan erabili.</p>
@@ -74,7 +74,7 @@
                 <section class="calculation-section"><h3>2. Bestelako probak <span th:text="${kalkulua.probakPisua != null ? '(%' + #numbers.formatDecimal(kalkulua.probakPisua,1,2) + ')' : '(%0)'}"></span></h3>
                   <p th:if="${#lists.isEmpty(kalkulua.probak)}" class="calculation-notice">Ez dago bestelako probarik konfiguratuta.</p>
                   <table th:unless="${#lists.isEmpty(kalkulua.probak)}" class="calculation-components"><thead><tr><th>Proba</th><th>Pisua</th><th>Minimoa</th><th>Kalifikazioa</th><th>Erabilera</th></tr></thead><tbody>
-                    <tr th:each="osagaia : ${kalkulua.probak}"><td th:text="${osagaia.izena}"></td><td th:text="${'%' + #numbers.formatDecimal(osagaia.pisua,1,2)}"></td><td th:text="${osagaia.minimoa != null ? osagaia.minimoa : '—'}"></td><td th:text="${osagaia.nota != null ? #numbers.formatDecimal(osagaia.nota,1,2) : '—'}"></td><td th:text="${osagaia.nota != null ? 'Kontuan hartuta' : 'Baztertuta: notarik ez'}"></td></tr>
+                    <tr th:each="osagaia : ${kalkulua.probak}"><td th:text="${osagaia.izena}"></td><td th:text="${'%' + #numbers.formatDecimal(osagaia.pisua,1,2)}"></td><td th:text="${osagaia.minimoa != null ? osagaia.minimoa : '—'}"></td><td th:classappend="${osagaia.minimoaUrratuta} ? ' calculation-grade-minimum-failed'" th:text="${osagaia.nota != null ? #numbers.formatDecimal(osagaia.nota,1,2) : '—'}"></td><td th:text="${osagaia.nota != null ? 'Kontuan hartuta' : 'Baztertuta: notarik ez'}"></td></tr>
                   </tbody></table>
                   <p th:unless="${kalkulua.badagoProbaNotarik}" class="calculation-notice">Ikasleak ez du bestelako probetan kalifikaziorik; proben blokea ez da azken kalkuluan kontuan hartu.</p>
                   <p th:if="${kalkulua.probaNotarenBatFaltaDa}" class="calculation-notice">Notarik gabeko probak baztertu dira, eta nota duten proben pisuak %100 bezala normalizatu dira.</p>

@@ -43,6 +43,7 @@ import com.koadernoa.app.objektuak.ordutegiak.repository.IrakasleOrdutegiaReposi
 import com.koadernoa.app.objektuak.ordutegiak.service.OrdezkoOrdutegiService;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Familia;
 import com.koadernoa.app.objektuak.zikloak.repository.FamiliaRepository;
+import com.koadernoa.app.objektuak.zikloak.repository.TaldeaRepository;
 import com.koadernoa.app.security.AuthProviderStatusService;
 
 import lombok.RequiredArgsConstructor;
@@ -54,6 +55,7 @@ public class IrakasleKudeatzaileController {
 	
 	private final IrakasleaRepository irakasleaRepository;
 	private final FamiliaRepository familiaRepository;
+    private final TaldeaRepository taldeaRepository;
     private final IkasturteaService ikasturteaService;
     private final IrakasleOrdutegiaRepository irakasleOrdutegiaRepository;
     private final IrakasleOrdutegiLerroaRepository irakasleOrdutegiLerroaRepository;
@@ -206,7 +208,7 @@ public class IrakasleKudeatzaileController {
         lerroa.setOrduZenbakia(orduZenbakia);
         lerroa.setSaioKopurua(1);
         lerroa.setModuluKodea(normalizatuTestua(moduluKodea));
-        lerroa.setTaldeKodea(normalizatuTestua(taldeKodea));
+        esleituTaldea(lerroa, taldeKodea);
         lerroa.setGelaKodea(normalizatuTestua(gelaKodea));
         irakasleOrdutegiLerroaRepository.save(lerroa);
         ra.addFlashAttribute("success", "Ordutegi gelaxka sortu da.");
@@ -223,7 +225,7 @@ public class IrakasleKudeatzaileController {
                                           RedirectAttributes ra) {
         IrakasleOrdutegiLerroa lerroa = bilatuEtaEgiaztatuOrdutegiLerroa(id, lerroaId);
         lerroa.setModuluKodea(normalizatuTestua(moduluKodea));
-        lerroa.setTaldeKodea(normalizatuTestua(taldeKodea));
+        esleituTaldea(lerroa, taldeKodea);
         lerroa.setGelaKodea(normalizatuTestua(gelaKodea));
         irakasleOrdutegiLerroaRepository.save(lerroa);
         ra.addFlashAttribute("success", "Ordutegi gelaxka eguneratu da.");
@@ -408,6 +410,12 @@ public class IrakasleKudeatzaileController {
 
     private String normalizatuTestua(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private void esleituTaldea(IrakasleOrdutegiLerroa lerroa, String taldeKodea) {
+        String kodea = normalizatuTestua(taldeKodea);
+        lerroa.setTaldeKodea(kodea);
+        lerroa.setTaldea(kodea == null ? null : taldeaRepository.findByIzenaIgnoreCase(kodea).orElse(null));
     }
 
     private List<OrdutegiGridRow> sortuOrdutegiGridRows(Map<String, List<OrdutegiGridEntry>> ordutegiGelaxkak, int azkenOrdua) {

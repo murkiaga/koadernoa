@@ -3,9 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <title>Moduloa Gorde</title>
+  <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}">
+  <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : 'X-CSRF-TOKEN'}">
   <link rel="stylesheet" th:href="@{/css/navbar.css}">
   <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    .modulo-edit-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,.8fr);gap:1.5rem;align-items:start}
+    .teacher-panel{border:1px solid #d1d5db;border-radius:.65rem;padding:1rem;background:#fff}
+    .teacher-search-wrap{position:relative;margin-bottom:1rem}
+    .teacher-suggestions{position:absolute;z-index:20;left:0;right:0;background:#fff;border:1px solid #cbd5e1;border-radius:.45rem;box-shadow:0 8px 20px rgba(0,0,0,.1);max-height:260px;overflow:auto}
+    .teacher-suggestion{display:block;width:100%;text-align:left;border:0;border-bottom:1px solid #f1f5f9;background:#fff;padding:.6rem .7rem;cursor:pointer}
+    .teacher-suggestion:hover{background:#f8fafc}
+    .teacher-list{list-style:none;margin:0;padding:0}
+    .teacher-list li{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.6rem 0;border-bottom:1px solid #e5e7eb}
+    .teacher-remove{border:0;background:#fee2e2;color:#991b1b;border-radius:999px;width:1.8rem;height:1.8rem;cursor:pointer;font-weight:700}
+    @media(max-width:850px){.modulo-edit-grid{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
 
@@ -13,6 +27,7 @@
 <main class="page">
 	<h1 th:text="${moduloaForm.id != null} ? 'Editatu Moduloa' : 'Modulo Berria Sortu'">Moduloa</h1>
 	
+	<div th:classappend="${moduloaForm.id != null} ? 'modulo-edit-grid' : ''">
 	<form class="form" th:action="@{/kudeatzaile/moduloa/gorde}" th:object="${moduloaForm}" method="post">
 	  <input type="hidden" th:field="*{id}"/>
 	
@@ -80,9 +95,27 @@
 	  	<a class="btn btn-secondary" th:href="@{/kudeatzaile/moduloa}">Itzuli moduluen zerrendara</a>
 	  </td>
 	</form>
-	
+
+	<section th:if="${moduloaForm.id != null}" class="teacher-panel" th:attr="data-modulo-id=${moduloaForm.id}" id="teacherPanel">
+	  <h2 style="margin-top:0;">Moduloko irakasleak</h2>
+	  <div class="teacher-search-wrap">
+	    <label for="teacherSearch">Irakaslea gehitu</label>
+	    <input id="teacherSearch" type="search" autocomplete="off" placeholder="Gutxienez 3 karaktere (izena edo emaila)">
+	    <div id="teacherSuggestions" class="teacher-suggestions" hidden></div>
+	  </div>
+	  <ul id="teacherList" class="teacher-list">
+	    <li th:each="i : ${modulokoIrakasleak}" th:attr="data-teacher-id=${i.id}">
+	      <span><strong th:text="${i.izena}">Irakaslea</strong><br><small th:text="${i.emaila}">emaila</small></span>
+	      <button type="button" class="teacher-remove" title="Irakaslea modulutik kendu" aria-label="Irakaslea modulutik kendu">×</button>
+	    </li>
+	  </ul>
+	  <p id="teacherEmpty" th:hidden="${!#lists.isEmpty(modulokoIrakasleak)}" style="color:#6b7280;">Ez dago irakaslerik esleituta.</p>
+	  <p id="teacherStatus" aria-live="polite"></p>
+	</section>
+	</div>
 	
 </main>
 <script th:src="@{/js/kudeatzaile-nav.js}"></script>
+<script th:if="${moduloaForm.id != null}" th:src="@{/js/moduloa-irakasleak.js}"></script>
 </body>
 </html>

@@ -239,7 +239,8 @@ public class KinielaService {
             int irakasleKopurua, String minimoa, String irakasleenEragiketa, String eragiketa) {}
     public record LaburpenZeharkakoKalkulua(BigDecimal kalkulatutakoNota, BigDecimal guztira,
             BigDecimal errubrikaMinimoa, String eragiketa, List<String> minimoUrraketak) {}
-    public record LaburpenKalkuluOsagaia(String izena, BigDecimal nota, BigDecimal pisua, String minimoa) {}
+    public record LaburpenKalkuluOsagaia(String izena, BigDecimal nota, BigDecimal pisua, String minimoa,
+            boolean minimoaUrratuta) {}
     public record LaburpenTeknikoKalkulua(boolean konfiguratuta, BigDecimal guztira,
             BigDecimal kalkulatutakoNota,
             BigDecimal errubrikaNota, BigDecimal errubrikaPisua, boolean errubrikaOsatua,
@@ -325,10 +326,8 @@ public class KinielaService {
                         e.getGutxienekoMaila() == null ? null : e.getGutxienekoMaila().getId(),
                         e.getGutxienekoMaila() == null ? null : e.getGutxienekoMaila().getIzena(), descriptions, grades);
                 }).toList();
-            var gaitasuna = a.getGaitasunMaila().getGaitasuna();
-            String description = gaitasuna.deskribapena(language);
-            if (!a.deskribapena(language).isBlank()) description += " · " + a.deskribapena(language);
-            return new ZeharkakoAdierazleErrubrika(a.getId(), adierazleKodea(a), description, evidenceViews);
+            return new ZeharkakoAdierazleErrubrika(a.getId(), adierazleKodea(a),
+                a.deskribapena(language), evidenceViews);
         }).toList();
         boolean multiple = rubric.getEbidentziak().stream().anyMatch(e -> e.getMota() == ZeharkakoEbidentziaMota.IRAKASLE_AUTO_KOEBALUAZIOA);
         return new ZeharkakoErrubrikaIkuspegia(rubric.getId(), rubric.getHeteroebaluazioPisua(),
@@ -511,15 +510,20 @@ public class KinielaService {
         var evidenceParts = new ArrayList<LaburpenKalkuluOsagaia>();
         for (int i = 0; i < rubric.getEbidentziak().size(); i++) {
             var minimum = rubric.getEbidentziak().get(i).getGutxienekoMaila();
+            var grade = evidenceGrades.get(i);
             evidenceParts.add(new LaburpenKalkuluOsagaia(rubric.getEbidentziak().get(i).getDeskribapena(),
-                evidenceGrades.get(i), evidenceWeights.get(i), minimum == null ? null
-                    : minimum.getIzena() + " (" + notaEtiketa(minimum.getBalioa()) + ")"));
+                grade, evidenceWeights.get(i), minimum == null ? null
+                    : minimum.getIzena() + " (" + notaEtiketa(minimum.getBalioa()) + ")",
+                minimum != null && grade != null && grade.compareTo(minimum.getBalioa()) < 0));
         }
         var testParts = new ArrayList<LaburpenKalkuluOsagaia>();
-        for (int i = 0; i < rubric.getBestelakoProbak().size(); i++) testParts.add(new LaburpenKalkuluOsagaia(
-            rubric.getBestelakoProbak().get(i).getIzena(), testGrades.get(i), testWeights.get(i),
-            rubric.getBestelakoProbak().get(i).getGutxienekoNota() == null ? null
-                : notaEtiketa(rubric.getBestelakoProbak().get(i).getGutxienekoNota())));
+        for (int i = 0; i < rubric.getBestelakoProbak().size(); i++) {
+            var test = rubric.getBestelakoProbak().get(i);
+            var grade = testGrades.get(i);
+            testParts.add(new LaburpenKalkuluOsagaia(test.getIzena(), grade, testWeights.get(i),
+                test.getGutxienekoNota() == null ? null : notaEtiketa(test.getGutxienekoNota()),
+                test.getGutxienekoNota() != null && grade != null && grade.compareTo(test.getGutxienekoNota()) < 0));
+        }
         return new LaburpenTeknikoKalkulua(true, total, calculatedTotal, rubricGrade, rubric.getErrubrikaPisua(), completeRubric,
             evidenceParts, completeRubric ? kalkuluEragiketa(indizezHaztatu(evidenceGrades, evidenceWeights), rubricGrade) : null,
             testsGrade, rubric.getBestelakoProbenPisua(), testParts,

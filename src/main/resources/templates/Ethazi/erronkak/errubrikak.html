@@ -54,7 +54,6 @@
           <select class="team-grade-input" data-transverse-grade th:attr="data-action=@{/ethazi/erronkak/{id}/errubrikak/{mid}/zeharkako-notak(id=${erronka.id},mid=${moduloaId})},data-evidence-id=${evidence.id},data-student-id=${grade.ikasleaId}">
             <option value="" th:selected="${grade.mailaId == null}">---</option><option th:each="level : ${zeharkakoErrubrikak.mailak}" th:value="${level.id}" th:text="${level.izena}" th:selected="${level.id == grade.mailaId}"></option>
           </select><small class="team-grade-status" aria-live="polite"></small>
-          <small class="transverse-average" data-transverse-average th:text="${grade.batezbestekoa == null ? 'Batezbestekoa: —' : 'Batezbestekoa: ' + #numbers.formatDecimal(grade.batezbestekoa, 1, 2) + ' (' + grade.ebaluatzaileak + ')'}"></small>
         </td>
       </tr><tr th:if="${#lists.isEmpty(indicator.ebidentziak)}"><th class="transverse-indicator-column"><strong th:text="${indicator.kodea}"></strong><p class="preserve" th:text="${indicator.deskribapena}"></p></th><td class="empty-state" th:colspan="${#lists.size(zeharkakoErrubrikak.mailak) + #lists.size(ikasleak) + 1}">Oraindik ez dago ebidentziarik.</td></tr>
       <tr class="rubric-edit-only transverse-add-evidence-row"><td th:colspan="${#lists.size(zeharkakoErrubrikak.mailak) + #lists.size(ikasleak) + 2}"><button type="submit" class="btn" th:form="${'add-transverse-evidence-' + indicator.id}">+ Ebidentzia</button></td></tr>

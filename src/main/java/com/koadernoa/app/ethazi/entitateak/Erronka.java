@@ -2,6 +2,8 @@ package com.koadernoa.app.ethazi.entitateak;
 import java.time.LocalDate;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -9,6 +11,7 @@ import com.koadernoa.app.objektuak.modulua.entitateak.*;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Zikloa;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
+import com.koadernoa.app.ethazi.entitateak.kronograma.ErronkaKronogramaJarduera;
 @Entity @Table(name="ethazi_erronka", uniqueConstraints=@UniqueConstraint(name="uk_erronka_bertsioa", columnNames={"bertsio_taldea", "hizkuntza"})) @Getter @Setter
 public class Erronka {
     @Id @GeneratedValue(strategy=GenerationType.IDENTITY) private Long id;
@@ -25,4 +28,6 @@ public class Erronka {
     @Column(nullable=false) private LocalDate bukaeraData;
     @ManyToMany @JoinTable(name="ethazi_erronka_moduloa")
     private Set<Moduloa> moduluak = new LinkedHashSet<>();
+    @OneToMany(mappedBy="erronka", cascade=CascadeType.ALL, orphanRemoval=true)
+    private List<ErronkaKronogramaJarduera> kronogramaJarduerak = new ArrayList<>();
 }

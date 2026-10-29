@@ -59,7 +59,7 @@ class IrakasleKudeatzaileControllerTest {
                 koadernoaRepository, taldeaRepository, irakasleaRepository,
                 txantiloiRepository, jokabideRepository, oharraRepository);
         controller = new IrakasleKudeatzaileController(irakasleaRepository,
-                mock(FamiliaRepository.class), mock(IkasturteaService.class),
+                mock(FamiliaRepository.class), taldeaRepository, mock(IkasturteaService.class),
                 mock(IrakasleOrdutegiaRepository.class), mock(IrakasleOrdutegiLerroaRepository.class),
                 koadernoaRepository, ezabatzeService, egiaztapenService, mock(OrdezkoOrdutegiService.class),
                 mock(AuthProviderStatusService.class));
