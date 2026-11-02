@@ -601,6 +601,12 @@
       .jokabide-konfig-taula td { vertical-align:middle; }
       .jokabide-konfig-taula input[type="text"],
       .jokabide-konfig-taula input[type="number"] { width:100%; box-sizing:border-box; }
+      .jokabide-konfig-taula textarea {
+        width:100%;
+        min-height:72px;
+        box-sizing:border-box;
+        resize:vertical;
+      }
       .jokabide-konfig-taula .erdian { text-align:center; }
       .jokabide-konfig-ekintzak { display:flex; gap:6px; justify-content:flex-end; }
       .jokabide-sortu-taula { margin-top:10px; }
@@ -662,7 +668,7 @@
         <tbody>
           <tr th:each="n : ${neurriZuzentzaileak}">
             <td><input type="text" name="kodea" th:value="${n.kodea}" required th:form="|neurria-${n.id}|"/></td>
-            <td><input type="text" name="testua" th:value="${n.testua}" required th:form="|neurria-${n.id}|"/></td>
+            <td><textarea name="testua" rows="3" required th:form="|neurria-${n.id}|" th:text="${n.testua}"></textarea></td>
             <td><input type="number" name="ordena" th:value="${n.ordena}" th:form="|neurria-${n.id}|"/></td>
             <td class="erdian"><input type="checkbox" name="aktibo" value="true" th:checked="${n.aktibo}" th:form="|neurria-${n.id}|"/></td>
             <td class="erdian"><input type="checkbox" name="defektuzkoa" value="true" th:checked="${n.defektuzkoa}" th:form="|neurria-${n.id}|"/></td>
@@ -676,7 +682,7 @@
         <colgroup><col class="kodea"/><col class="testua"/><col class="ordena"/><col class="aktibo"/><col class="defektuzkoa"/><col class="ekintzak"/></colgroup>
         <tbody><tr>
           <td><input type="text" name="kodea" placeholder="34.a" required form="neurria-sortu"/></td>
-          <td><input type="text" name="testua" placeholder="Neurri zuzentzaile berria" required form="neurria-sortu"/></td>
+          <td><textarea name="testua" rows="3" placeholder="Neurri zuzentzaile berria" required form="neurria-sortu"></textarea></td>
           <td><input type="number" name="ordena" value="10" form="neurria-sortu"/></td>
           <td class="erdian sortu-etiketa">Berria</td>
           <td class="erdian"><input type="checkbox" name="defektuzkoa" value="true" form="neurria-sortu" title="Defektuzkoa"/></td>

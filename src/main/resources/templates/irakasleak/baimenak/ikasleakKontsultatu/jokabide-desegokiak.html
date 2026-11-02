@@ -24,7 +24,7 @@
         <td th:text="${j.moduloa != null ? j.moduloa.izena : '-'}">-</td>
         <td th:text="${j.irakaslea != null ? j.irakaslea.izena : '-'}">-</td>
         <td><strong th:text="${j.portaeraArrazoia.kodea}">-</strong><br><span th:text="${j.portaeraArrazoia.testua}">-</span></td>
-        <td><strong th:text="${j.neurriZuzentzailea.kodea}">-</strong><br><span th:text="${j.neurriZuzentzailea.testua}">-</span></td>
+        <td><strong th:text="${j.neurriZuzentzailea.kodea}">-</strong><br><span th:text="${j.neurriZuzentzailea.testua}">-</span><div th:if="${j.aplikatutakoNeurria != null and !#strings.isEmpty(j.aplikatutakoNeurria)}" th:text="${j.aplikatutakoNeurria}"></div></td>
         <td th:text="${j.deskribapenZehatza}">-</td>
         <td th:text="${j.jasota ? 'Bai' : 'Ez'}">Ez</td>
       </tr>

@@ -99,6 +99,7 @@
     portaeraArrazoia: '30.d - Irakasleek edo agintari akademikoek agindutakoa ez betetzea.',
     deskribapenZehatza: '2026-05-12an gelan gertatutakoaren deskribapen zehatza.',
     neurriZuzentzailea: '34.a - Izandako jokabide desegokiari buruzko hausnarketa.',
+    aplikatutakoNeurria: 'Ikasleak gertatutakoari buruzko idatzizko hausnarketa egin du.',
     herria: 'Bilbo',
     dataTestua: '2026(e)ko maiatzaren 12(e)(a)n',
     herriaEtaData: 'Bilbo(e)n, 2026(e)ko maiatzaren 12(e)(a)n',
@@ -144,9 +145,9 @@
       const inlineToken = '[' + '[' + literalToken + ']' + ']';
       const thTextPattern = new RegExp("(<[^>]+)th:text=[\"']\\$\\{" + key + "\\}[\"']([^>]*>)(.*?)(</[^>]+>)", 'gs');
       html = html
+        .replace(thTextPattern, '$1$2' + value + '$4')
         .replaceAll(inlineToken, value)
         .replaceAll(literalToken, value)
-        .replace(thTextPattern, '$1$2' + value + '$4')
         .replaceAll(new RegExp("th:text=\"\\$\\{" + key + "\\}\"", 'g'), '')
         .replaceAll(new RegExp("th:text='\\$\\{" + key + "\\}'", 'g'), '');
     });

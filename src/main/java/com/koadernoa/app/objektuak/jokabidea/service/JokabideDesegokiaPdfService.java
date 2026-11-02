@@ -34,6 +34,7 @@ public class JokabideDesegokiaPdfService {
         c.setVariable("portaeraArrazoia", j.getPortaeraArrazoia().getKodea() + " - " + j.getPortaeraArrazoia().getTestua());
         c.setVariable("deskribapenZehatza", j.getDeskribapenZehatza());
         c.setVariable("neurriZuzentzailea", j.getNeurriZuzentzailea().getKodea() + " - " + j.getNeurriZuzentzailea().getTestua());
+        c.setVariable("aplikatutakoNeurria", j.getAplikatutakoNeurria() == null ? "" : j.getAplikatutakoNeurria());
         c.setVariable("herria", herria);
         c.setVariable("dataTestua", dataTestua(j));
         c.setVariable("herriaEtaData", herriaEtaData(j, herria));
@@ -52,11 +53,16 @@ public class JokabideDesegokiaPdfService {
         return ordezkatuPlaceholderak(txantiloiService.irakurriPertsonalizatua(), context);
     }
 
-    private String ordezkatuPlaceholderak(String html, Context context) {
+    String ordezkatuPlaceholderak(String html, Context context) {
         String emaitza = html;
         for (String izena : context.getVariableNames()) {
             Object balioa = context.getVariable(izena);
             String balioEscaped = escapeHtml(balioa == null ? "" : balioa.toString());
+            if (lerroJauziakMantendu(izena)) {
+                balioEscaped = balioEscaped.replace("\r\n", "\n")
+                        .replace('\r', '\n')
+                        .replace("\n", "<br/>");
+            }
             String quotedValue = java.util.regex.Matcher.quoteReplacement(balioEscaped);
             String quotedName = java.util.regex.Pattern.quote(izena);
 
@@ -70,6 +76,13 @@ public class JokabideDesegokiaPdfService {
         return emaitza;
     }
 
+    private boolean lerroJauziakMantendu(String izena) {
+        return "portaeraArrazoia".equals(izena)
+                || "neurriZuzentzailea".equals(izena)
+                || "deskribapenZehatza".equals(izena)
+                || "aplikatutakoNeurria".equals(izena);
+    }
+
     private String escapeHtml(String value) {
         return value.replace("&", "&amp;")
                 .replace("<", "&lt;")
@@ -80,7 +93,18 @@ public class JokabideDesegokiaPdfService {
 
     public void ezabatuIsilean(String path) { if (path != null) try { Files.deleteIfExists(Paths.get(path)); } catch (IOException ignored) {} }
     private String ikasleIzena(JokabideDesegokia j) { var i=j.getIkaslea(); return ((i.getIzena()==null?"":i.getIzena())+" "+(i.getAbizena1()==null?"":i.getAbizena1())+" "+(i.getAbizena2()==null?"":i.getAbizena2())).trim(); }
-    private String maila(JokabideDesegokia j) { var m=j.getModuloa().getMaila(); var t=j.getModuloa().getTaldea(); String base=m==null?"":(m.getIzena()==null?m.getKodea():m.getIzena()); return t!=null&&t.getIzena()!=null?base+" - "+t.getIzena():base; }
+    private String maila(JokabideDesegokia j) {
+        var modulua = j.getModuloa() != null ? j.getModuloa()
+                : j.getKoadernoa() != null ? j.getKoadernoa().getModuloa() : null;
+        var maila = modulua != null ? modulua.getMaila() : null;
+        var taldea = j.getIkaslea() != null && j.getIkaslea().getTaldea() != null
+                ? j.getIkaslea().getTaldea()
+                : modulua != null ? modulua.getTaldea() : null;
+        String base = maila == null ? "" : (maila.getIzena() == null ? maila.getKodea() : maila.getIzena());
+        return taldea != null && taldea.getIzena() != null
+                ? (base.isBlank() ? taldea.getIzena() : base + " - " + taldea.getIzena())
+                : base;
+    }
     private String herriaEtaData(JokabideDesegokia j, String herria) {
         return herria + "(e)n, " + dataTestua(j);
     }

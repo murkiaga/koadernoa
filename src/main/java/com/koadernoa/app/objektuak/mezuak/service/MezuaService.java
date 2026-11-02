@@ -51,12 +51,32 @@ public class MezuaService {
         return mezuaRepository.save(mezua);
     }
 
+    @Transactional
+    public Mezua bidaliKudeatzaileakSortutakoJokabidearenAbisua(
+            JokabideDesegokia jokabidea, Irakaslea bidaltzailea, Irakaslea hartzailea, String pdfEsteka) {
+        if (jokabidea == null || jokabidea.getId() == null || bidaltzailea == null || hartzailea == null) {
+            throw new IllegalArgumentException("Jokabidea, bidaltzailea eta hartzailea beharrezkoak dira.");
+        }
+        String ikaslea = ikaslearenIzena(jokabidea);
+        Mezua mezua = new Mezua();
+        mezua.setBidaltzailea(bidaltzailea);
+        mezua.setHartzailea(hartzailea);
+        mezua.setEsteka(pdfEsteka);
+        mezua.setEstekaTestua("ikusi hemen");
+        mezua.setEdukia("Jokabide desegoki bat erregistratu da zure izenean, "
+                + ikaslea + " ikasleari jarritakoa; ikusi hemen.");
+        mezua.setBidalketaData(LocalDateTime.now());
+        return mezuaRepository.save(mezua);
+    }
+
     private String sortuJokabideDesegokiarenEdukia(JokabideDesegokia jokabidea) {
         String ikaslea = ikaslearenIzena(jokabidea);
         String modulua = jokabidea.getModuloa() == null
                 ? "-" : balioaEdoMarratxoa(jokabidea.getModuloa().getIzena());
-        String taldea = jokabidea.getModuloa() == null || jokabidea.getModuloa().getTaldea() == null
-                ? "-" : balioaEdoMarratxoa(jokabidea.getModuloa().getTaldea().getIzena());
+        String taldea = jokabidea.getModuloa() != null && jokabidea.getModuloa().getTaldea() != null
+                ? balioaEdoMarratxoa(jokabidea.getModuloa().getTaldea().getIzena())
+                : jokabidea.getIkaslea() != null && jokabidea.getIkaslea().getTaldea() != null
+                    ? balioaEdoMarratxoa(jokabidea.getIkaslea().getTaldea().getIzena()) : "-";
         String data = jokabidea.getData() == null ? "-" : jokabidea.getData().toString();
         String sortzailea = balioaEdoMarratxoa(jokabidea.getIrakaslea().getIzena());
         return "Jokabide desegoki berria\n\n"

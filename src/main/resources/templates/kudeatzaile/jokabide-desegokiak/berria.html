@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jokabide desegoki berria</title>
+  <link rel="stylesheet" th:href="@{/css/navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
+  <style>
+    .jok-form { max-width:850px; display:grid; gap:16px; }
+    .jok-form label { display:grid; gap:6px; color:#334155; font-weight:600; }
+    .jok-form select,.jok-form input,.jok-form textarea { width:100%; box-sizing:border-box; padding:9px 10px; border:1px solid #cbd5e1; border-radius:7px; background:#fff; font:inherit; }
+    .jok-form textarea { resize:vertical; }
+    .jok-form .aukerakoa { color:#64748b; font-size:.86rem; font-weight:400; }
+    .jok-form-ekintzak { display:flex; justify-content:flex-end; gap:8px; }
+    .autocomplete-wrap { position:relative; }
+    .autocomplete-emaitzak { display:none; position:absolute; z-index:20; left:0; right:0; top:100%; margin-top:3px; max-height:280px; overflow:auto; background:#fff; border:1px solid #cbd5e1; border-radius:7px; box-shadow:0 10px 24px rgba(15,23,42,.12); }
+    .autocomplete-emaitzak.open { display:block; }
+    .autocomplete-aukera { width:100%; padding:9px 10px; border:0; border-bottom:1px solid #f1f5f9; background:#fff; text-align:left; cursor:pointer; }
+    .autocomplete-aukera:hover,.autocomplete-aukera:focus { background:#eff6ff; outline:none; }
+    .autocomplete-meta { display:block; margin-top:2px; color:#64748b; font-size:.84rem; }
+  </style>
+</head>
+<body>
+<div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
+<main class="page">
+  <div class="page-header">
+    <div><h1>Jokabide desegoki berria</h1><p class="muted">Sortu ohartarazpena jokabidea ikusi duen irakaslearen izenean.</p></div>
+  </div>
+  <div class="alert alert-error" th:if="${errorea}" th:text="${errorea}"></div>
+  <form class="jok-form" method="post" th:action="@{/kudeatzaile/jokabide-desegokiak/berria}">
+    <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+    <label>Ikaslea
+      <span class="autocomplete-wrap">
+        <input id="ikasleaBilaketa" name="ikasleaBilaketa" type="text" autocomplete="off" placeholder="Gutxienez 3 karaktere (izena edo abizena)" th:value="${ikasleaBilaketa}">
+        <input id="ikasleaId" name="ikasleaId" type="hidden" th:value="${ikasleaId}">
+        <span id="ikasleaEmaitzak" class="autocomplete-emaitzak" role="listbox"></span>
+      </span>
+    </label>
+    <label>Irakaslea
+      <span class="autocomplete-wrap">
+        <input id="irakasleaBilaketa" name="irakasleaBilaketa" type="text" autocomplete="off" placeholder="Gutxienez 3 karaktere (izena edo emaila)" th:value="${irakasleaBilaketa}">
+        <input id="irakasleaId" name="irakasleaId" type="hidden" th:value="${irakasleaId}">
+        <span id="irakasleaEmaitzak" class="autocomplete-emaitzak" role="listbox"></span>
+      </span>
+    </label>
+    <label>Data<input type="date" name="data" required th:value="${data}"></label>
+    <label>Portaera arrazoia
+      <select name="portaeraArrazoiaId" required><option th:each="a : ${portaeraArrazoiak}" th:value="${a.id}" th:selected="${a.id == portaeraArrazoiaId or (portaeraArrazoiaId == null and a.id == portaeraArrazoiaDefektuzkoaId)}" th:text="${a.kodea + ' - ' + a.testua}"></option></select>
+    </label>
+    <label>Deskribapen zehatza<textarea name="deskribapenZehatza" rows="7" maxlength="10000" required placeholder="Eguna, ordua, lekua eta gertatutakoa..." th:text="${deskribapenZehatza}"></textarea></label>
+    <label>Neurri zuzentzailea
+      <select name="neurriZuzentzaileaId" required><option th:each="n : ${neurriZuzentzaileak}" th:value="${n.id}" th:selected="${n.id == neurriZuzentzaileaId or (neurriZuzentzaileaId == null and n.id == neurriZuzentzaileaDefektuzkoaId)}" th:text="${n.kodea + ' - ' + n.testua}"></option></select>
+    </label>
+    <label>Aplikatutako neurria <span class="aukerakoa">Aukerakoa</span><textarea name="aplikatutakoNeurria" rows="5" maxlength="10000" placeholder="Zehaztu ikasleari aplikatuko zaion neurria..." th:text="${aplikatutakoNeurria}"></textarea></label>
+    <div class="jok-form-ekintzak"><a class="btn btn-secondary" th:href="@{/kudeatzaile/jokabide-desegokiak}">Utzi</a><button class="btn btn-primary" type="submit">Sortu eta PDFa prestatu</button></div>
+  </form>
+</main>
+<script th:src="@{/js/kudeatzaile-nav.js}"></script>
+<script>
+(function () {
+  function prestatuAutocomplete({ inputId, hiddenId, emaitzakId, endpoint, etiketa, meta }) {
+    const input = document.getElementById(inputId);
+    const hidden = document.getElementById(hiddenId);
+    const emaitzak = document.getElementById(emaitzakId);
+    let timer = null;
+    let azkenKontsulta = '';
+
+    function itxi() {
+      emaitzak.classList.remove('open');
+      emaitzak.replaceChildren();
+    }
+
+    function erakutsi(elementuak) {
+      emaitzak.replaceChildren();
+      if (!elementuak.length) { itxi(); return; }
+      elementuak.forEach(elementua => {
+        const botoia = document.createElement('button');
+        botoia.type = 'button';
+        botoia.className = 'autocomplete-aukera';
+        botoia.setAttribute('role', 'option');
+        const izena = document.createElement('strong');
+        izena.textContent = etiketa(elementua);
+        botoia.appendChild(izena);
+        const xehetasuna = meta(elementua);
+        if (xehetasuna) {
+          const bigarrenLerroa = document.createElement('span');
+          bigarrenLerroa.className = 'autocomplete-meta';
+          bigarrenLerroa.textContent = xehetasuna;
+          botoia.appendChild(bigarrenLerroa);
+        }
+        botoia.addEventListener('click', () => {
+          input.value = etiketa(elementua);
+          hidden.value = elementua.id;
+          itxi();
+          input.focus();
+        });
+        emaitzak.appendChild(botoia);
+      });
+      emaitzak.classList.add('open');
+    }
+
+    async function bilatu(q) {
+      azkenKontsulta = q;
+      try {
+        const erantzuna = await fetch(`${endpoint}?q=${encodeURIComponent(q)}`);
+        const datuak = erantzuna.ok ? await erantzuna.json() : [];
+        if (azkenKontsulta === q && input.value.trim() === q) erakutsi(Array.isArray(datuak) ? datuak : []);
+      } catch (_) { itxi(); }
+    }
+
+    input.addEventListener('input', () => {
+      hidden.value = '';
+      clearTimeout(timer);
+      const q = input.value.trim();
+      if (q.length < 3) { azkenKontsulta = ''; itxi(); return; }
+      timer = setTimeout(() => bilatu(q), 200);
+    });
+    document.addEventListener('click', event => {
+      if (!emaitzak.contains(event.target) && event.target !== input) itxi();
+    });
+  }
+
+  prestatuAutocomplete({
+    inputId: 'ikasleaBilaketa', hiddenId: 'ikasleaId', emaitzakId: 'ikasleaEmaitzak',
+    endpoint: '/kudeatzaile/ikasleak/bilatu', etiketa: i => i.izena,
+    meta: i => [i.hna, i.taldea].filter(Boolean).join(' · ')
+  });
+  prestatuAutocomplete({
+    inputId: 'irakasleaBilaketa', hiddenId: 'irakasleaId', emaitzakId: 'irakasleaEmaitzak',
+    endpoint: '/kudeatzaile/jokabide-desegokiak/irakasleak/bilatu', etiketa: i => i.izena,
+    meta: i => i.emaila || ''
+  });
+
+  document.querySelector('.jok-form').addEventListener('submit', event => {
+    const ikasleaId = document.getElementById('ikasleaId');
+    const irakasleaId = document.getElementById('irakasleaId');
+    if (!ikasleaId.value || !irakasleaId.value) {
+      event.preventDefault();
+      alert(!ikasleaId.value ? 'Aukeratu ikasle bat bilaketako emaitzetatik.' : 'Aukeratu irakasle bat bilaketako emaitzetatik.');
+    }
+  });
+})();
+</script>
+</body>
+</html>

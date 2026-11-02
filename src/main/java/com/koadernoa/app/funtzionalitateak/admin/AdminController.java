@@ -256,6 +256,7 @@ public class AdminController {
                 "portaeraArrazoia",
                 "deskribapenZehatza",
                 "neurriZuzentzailea",
+                "aplikatutakoNeurria",
                 "herria",
                 "dataTestua",
                 "herriaEtaData",

@@ -31,7 +31,8 @@ public interface JokabideDesegokiaRepository extends JpaRepository<JokabideDeseg
     @Query("""
         select j from JokabideDesegokia j
         join fetch j.ikaslea i
-        join fetch j.moduloa m
+        left join fetch i.taldea it
+        left join fetch j.moduloa m
         left join fetch m.taldea t
         join fetch j.irakaslea ir
         join fetch j.portaeraArrazoia pa
@@ -44,7 +45,8 @@ public interface JokabideDesegokiaRepository extends JpaRepository<JokabideDeseg
     @Query("""
         select j from JokabideDesegokia j
         join fetch j.ikaslea i
-        join fetch j.moduloa m
+        left join fetch i.taldea it
+        left join fetch j.moduloa m
         left join fetch m.taldea t
         join fetch j.irakaslea ir
         left join fetch j.jasotaNork jn
@@ -59,7 +61,7 @@ public interface JokabideDesegokiaRepository extends JpaRepository<JokabideDeseg
                lower(concat(coalesce(i.abizena1, ''), ' ', coalesce(i.izena, ''), ' ', coalesce(i.abizena2, '')))
                like lower(concat('%', :ikaslea, '%')))
           and (:moduloaId is null or m.id = :moduloaId)
-          and (:taldeaId is null or t.id = :taldeaId)
+          and (:taldeaId is null or t.id = :taldeaId or (m is null and it.id = :taldeaId))
           and (:jasota is null or j.jasota = :jasota)
         order by j.createdAt desc, j.id desc
     """)

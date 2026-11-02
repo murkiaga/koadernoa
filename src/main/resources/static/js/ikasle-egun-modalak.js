@@ -118,6 +118,7 @@
       beteSelect('portaeraArrazoia', formData.portaeraArrazoiak, jokabidea?.portaeraArrazoiaId || formData.portaeraArrazoiaDefektuzkoaId);
       beteSelect('neurriZuzentzailea', formData.neurriZuzentzaileak, jokabidea?.neurriZuzentzaileaId || formData.neurriZuzentzaileaDefektuzkoaId);
       document.getElementById('deskribapenZehatza').value = jokabidea?.deskribapenZehatza || '';
+      document.getElementById('aplikatutakoNeurria').value = jokabidea?.aplikatutakoNeurria || '';
       document.getElementById('jokabideModalIzenburua').textContent = jokabidea ? 'Jokabide desegokia editatu' : 'Jokabide desegokiagatiko idatzizko ohartarazpena';
       document.getElementById('jokabideGordeBtn').textContent = jokabidea ? 'Aldaketak gorde eta PDFa berritu' : 'Sortu eta PDFa prestatu';
       document.getElementById('jokabideEzabatuBtn').style.display = jokabidea?.ezabatuDaiteke ? 'inline-flex' : 'none';
@@ -148,7 +149,8 @@
       data: unekoa.data,
       portaeraArrazoiaId: document.getElementById('portaeraArrazoia').value,
       neurriZuzentzaileaId: document.getElementById('neurriZuzentzailea').value,
-      deskribapenZehatza: document.getElementById('deskribapenZehatza').value
+      deskribapenZehatza: document.getElementById('deskribapenZehatza').value,
+      aplikatutakoNeurria: document.getElementById('aplikatutakoNeurria').value
     });
     const editatzen = Boolean(unekoJokabidea?.id);
     const url = editatzen ? `/irakasle/jokabide-desegokia/${unekoJokabidea.id}` : '/irakasle/jokabide-desegokia';
@@ -156,7 +158,8 @@
       unekoJokabidea = { ...unekoJokabidea, ...json, badago: true,
         portaeraArrazoiaId: Number(parametroak.get('portaeraArrazoiaId')),
         neurriZuzentzaileaId: Number(parametroak.get('neurriZuzentzaileaId')),
-        deskribapenZehatza: parametroak.get('deskribapenZehatza') };
+        deskribapenZehatza: parametroak.get('deskribapenZehatza'),
+        aplikatutakoNeurria: parametroak.get('aplikatutakoNeurria') };
       eguneratuPopupJokabidea(unekoJokabidea);
       markatuAktibo('jokabidea', json.pdfUrl);
       itxiDenak();

@@ -29,6 +29,7 @@
       margin: 2px 0 8px;
       font-size: 12pt;
       font-weight: bold;
+      white-space: pre-wrap;
     }
     .deskribapena {
       min-height: 58px;
@@ -80,6 +81,7 @@
 
   <p>Horregatik, <strong>neurri zuzentzaile</strong> hau aplikatu zaio:</p>
   <p class="aukera" th:text="${neurriZuzentzailea}">34.a - Izandako jokabide desegokiari eta haren ondorioei buruzko hausnarketa</p>
+  <div class="deskribapena" th:if="${aplikatutakoNeurria != null and !#strings.isEmpty(aplikatutakoNeurria)}" th:text="${aplikatutakoNeurria}"></div>
 
   <p class="amaierako-testua">Zuen seme/alabarentzat eta Ikastetxearen jarduera onarentzat kaltegarria den jokabide hau berriro gerta ez dadin laguntza eskatu nahi dizuet, eta gogorarazten dizuet horrelako portaerak errepikatzea ikastetxeko <strong>bizikidetzaren kontrako jokabide</strong> gisa har daitekeela, 31.1.m artikuluaren arabera).</p>
   <p>Adeitasunez agurtzen zaituzte,</p>

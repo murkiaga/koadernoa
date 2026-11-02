@@ -95,6 +95,25 @@ class JokabideDesegokiaServiceTest {
         verify(mezuaRepository, never()).save(any());
     }
 
+    @Test
+    void kudeatzaileakBesteIrakaslearenIzeneanSortzeanPdfEstekadunMezuaBidaltzenDu() {
+        Irakaslea kudeatzailea = irakaslea(20L, "Leire", Rola.KUDEATZAILEA);
+        Irakaslea irakaslea = irakaslea(10L, "Mikel", Rola.IRAKASLEA);
+        JokabideDesegokia jokabidea = jokabidea(irakaslea);
+        when(mezuaRepository.save(any(Mezua.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        Mezua mezua = mezuaService.bidaliKudeatzaileakSortutakoJokabidearenAbisua(
+                jokabidea, kudeatzailea, irakaslea,
+                "/irakasle/jokabide-desegokia/30/nire-pdf");
+
+        assertThat(mezua.getBidaltzailea()).isSameAs(kudeatzailea);
+        assertThat(mezua.getHartzailea()).isSameAs(irakaslea);
+        assertThat(mezua.getEdukia()).isEqualTo(
+                "Jokabide desegoki bat erregistratu da zure izenean, Ane Agirre Etxebarria ikasleari jarritakoa; ikusi hemen.");
+        assertThat(mezua.getEstekaTestua()).isEqualTo("ikusi hemen");
+        assertThat(mezua.getEsteka()).isEqualTo("/irakasle/jokabide-desegokia/30/nire-pdf");
+    }
+
     private JokabideDesegokia jokabidea(Irakaslea sortzailea) {
         Ikaslea ikaslea = new Ikaslea();
         ikaslea.setId(40L);

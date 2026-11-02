@@ -26,7 +26,7 @@ public class JokabideDesegokia {
     private Koadernoa koadernoa;
     @ManyToOne(optional = false) @JoinColumn(name = "irakaslea_id", nullable = false)
     private Irakaslea irakaslea;
-    @ManyToOne(optional = false) @JoinColumn(name = "moduloa_id", nullable = false)
+    @ManyToOne @JoinColumn(name = "moduloa_id")
     private Moduloa moduloa;
     @Column(nullable = false)
     private LocalDate data;
@@ -36,6 +36,8 @@ public class JokabideDesegokia {
     private NeurriZuzentzailea neurriZuzentzailea;
     @Column(nullable = false, length = 10000)
     private String deskribapenZehatza;
+    @Column(columnDefinition = "TEXT")
+    private String aplikatutakoNeurria;
     @Column(length = 2000)
     private String pdfPath;
     @Column(length = 255)
