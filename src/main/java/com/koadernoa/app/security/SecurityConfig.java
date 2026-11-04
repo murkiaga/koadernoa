@@ -51,6 +51,8 @@ public class SecurityConfig {
     	        )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/admin/**").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/ethazi/erronkak/*/kronograma").hasAnyRole("ADMIN", "KUDEATZAILEA", "IRAKASLEA")
+                .requestMatchers(HttpMethod.POST, "/ethazi/erronkak/*/kronograma/**").hasAnyRole("ADMIN", "KUDEATZAILEA", "IRAKASLEA")
                 .requestMatchers(HttpMethod.GET, "/ethazi/erronkak/*/errubrikak").hasAnyRole("ADMIN", "KUDEATZAILEA", "IRAKASLEA")
                 .requestMatchers(HttpMethod.POST, "/ethazi/erronkak/*/errubrikak/*/notak").hasAnyRole("ADMIN", "KUDEATZAILEA", "IRAKASLEA")
                 .requestMatchers("/ethazi", "/ethazi/**").hasAnyRole("ADMIN", "KUDEATZAILEA")

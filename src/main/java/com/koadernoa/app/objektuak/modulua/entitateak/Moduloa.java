@@ -4,15 +4,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
+import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Taldea;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
@@ -52,5 +55,14 @@ public class Moduloa {
 
     @OneToMany(mappedBy = "moduloa")
     private List<Koadernoa> koadernoak;
+
+    @ManyToMany
+    @JoinTable(
+        name = "moduloa_irakaslea",
+        joinColumns = @JoinColumn(name = "moduloa_id"),
+        inverseJoinColumns = @JoinColumn(name = "irakaslea_id")
+    )
+    @OrderBy("izena ASC")
+    private List<Irakaslea> irakasleak = new ArrayList<>();
     
 }

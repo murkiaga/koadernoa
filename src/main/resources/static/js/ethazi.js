@@ -96,7 +96,6 @@ document.querySelectorAll('[data-transverse-grade]').forEach(select => {
   select.dataset.savedValue = select.value;
   select.addEventListener('change', async () => {
     const status = select.parentElement.querySelector('.team-grade-status');
-    const average = select.parentElement.querySelector('[data-transverse-average]');
     const previous = select.dataset.savedValue;
     const payload = new URLSearchParams({
       ebidentziaId: select.dataset.evidenceId,
@@ -113,8 +112,6 @@ document.querySelectorAll('[data-transverse-grade]').forEach(select => {
       const result = response.headers.get('content-type')?.includes('application/json') ? await response.json() : null;
       if (!response.ok || !result) throw new Error(result?.message || 'Ezin izan da kalifikazioa gorde.');
       select.dataset.savedValue = select.value; status.textContent = result.message || 'Gordeta';
-      average.textContent = result.average == null ? 'Batezbestekoa: —'
-        : `Batezbestekoa: ${teamGradeFormatter.format(result.average)} (${result.evaluatorCount})`;
     } catch (error) {
       select.value = previous; status.classList.add('is-error');
       status.textContent = error.message || 'Ezin izan da kalifikazioa gorde.';
@@ -587,6 +584,34 @@ const focusedKinielaElement = document.querySelector('.kiniela-focus-target');
 if (focusedKinielaElement) {
   requestAnimationFrame(() => focusedKinielaElement.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' }));
 }
+
+document.querySelectorAll('[data-summary-toggle]').forEach(button => button.addEventListener('click', () => {
+  const table = button.closest('.evaluation-summary-table');
+  const group = button.dataset.summaryToggle;
+  if (!table || !group) return;
+  const columns = table.querySelectorAll(`[data-summary-detail-group="${group}"]`);
+  const heading = table.querySelector(`[data-summary-evidence-group="${group}"]`);
+  const collapsed = button.getAttribute('aria-expanded') === 'true';
+  columns.forEach(column => column.classList.toggle('summary-detail-hidden', collapsed));
+  if (heading) heading.colSpan = collapsed ? 1 : 4;
+  button.setAttribute('aria-expanded', String(!collapsed));
+  const label = collapsed ? 'Ebaluatzaileen zutabeak erakutsi' : 'Ebaluatzaileen zutabeak ezkutatu';
+  button.title = label;
+  button.setAttribute('aria-label', label);
+  button.querySelector('[aria-hidden="true"]').textContent = collapsed ? '+' : '−';
+}));
+
+document.querySelectorAll('[data-summary-transverse-toggle]').forEach(button => button.addEventListener('click', () => {
+  const table = button.closest('.evaluation-summary-table');
+  if (!table) return;
+  const collapsed = button.getAttribute('aria-expanded') === 'true';
+  table.classList.toggle('transverse-columns-hidden', collapsed);
+  button.setAttribute('aria-expanded', String(!collapsed));
+  const label = collapsed ? 'Zeharkako zutabeak erakutsi' : 'Zeharkako zutabeak ezkutatu';
+  button.title = label;
+  button.setAttribute('aria-label', label);
+  button.querySelector('[aria-hidden="true"]').textContent = collapsed ? '+' : '−';
+}));
 
 const technicalCalculationDialog = document.querySelector('#technical-calculation-dialog');
 const technicalCalculationContent = document.querySelector('#technical-calculation-content');

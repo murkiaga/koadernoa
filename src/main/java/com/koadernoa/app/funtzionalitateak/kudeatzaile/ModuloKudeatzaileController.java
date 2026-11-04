@@ -43,11 +43,14 @@ import com.koadernoa.app.objektuak.modulua.entitateak.ModuloaFormDto;
 import com.koadernoa.app.objektuak.modulua.repository.IkasleaRepository;
 import com.koadernoa.app.objektuak.modulua.repository.MatrikulaRepository;
 import com.koadernoa.app.objektuak.modulua.service.ModuloaService;
+import com.koadernoa.app.objektuak.modulua.service.ModuloIrakasleService;
 import com.koadernoa.app.objektuak.modulua.service.IkasleEmailAdService;
 import com.koadernoa.app.objektuak.audit.entitateak.AuditAtala;
 import com.koadernoa.app.objektuak.audit.service.AuditService;
 import com.koadernoa.app.security.AuthProviderStatusService;
 import com.koadernoa.app.objektuak.mezuak.service.MezuaService;
+import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
+import com.koadernoa.app.objektuak.ordutegiak.service.TaldeOrdutegiService;
 import com.koadernoa.app.objektuak.zikloak.service.TaldeaService;
 import com.koadernoa.app.objektuak.zikloak.service.ZikloaService;
 
@@ -76,6 +79,8 @@ public class ModuloKudeatzaileController {
     private final IkasleEmailAdService ikasleEmailAdService;
     private final AuthProviderStatusService authProviderStatusService;
     private final AuditService auditService;
+    private final ModuloIrakasleService moduloIrakasleService;
+    private final TaldeOrdutegiService taldeOrdutegiService;
 
     @ModelAttribute("ikasturteAktiboa")
     public com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea ikasturteAktiboa() {
@@ -88,6 +93,7 @@ public class ModuloKudeatzaileController {
                                  @RequestParam(name = "hautazkoa", required = false) Boolean hautazkoa,
                                  @RequestParam(name = "aktibo", required = false) Boolean aktibo,
                                  @RequestParam(name = "hizkuntza", required = false) Hizkuntza hizkuntza,
+                                 @RequestParam(name = "ordutegiaId", required = false) Long ordutegiaId,
                                  @RequestParam(name = "page", defaultValue = "0") int page,
                                  @RequestParam(name = "size", required = false) Integer size,
                                  @CookieValue(name = "moduloakPageSize", required = false) Integer gordetakoTamaina,
@@ -110,6 +116,7 @@ public class ModuloKudeatzaileController {
         if (taldeaId != null) {
             model.addAttribute("ikasleak",
                 ikasleaRepository.findByTaldea_IdOrderByAbizena1AscAbizena2AscIzenaAsc(taldeaId));
+            model.addAttribute("taldeOrdutegia", taldeOrdutegiService.ikuspegia(taldeaId, ordutegiaId));
         }
         model.addAttribute("taldeak", zikloaId != null ? taldeaService.getByZikloaId(zikloaId) : taldeaService.getAll());
         model.addAttribute("taldeaId", taldeaId);
@@ -194,6 +201,10 @@ public class ModuloKudeatzaileController {
         if (br.hasErrors()) {
             model.addAttribute("taldeak", taldeaService.getAll());
             model.addAttribute("mailak", mailaRepository.findAllByAktiboTrueOrderByOrdenaAscIzenaAsc());
+            if (form.getId() != null) {
+                model.addAttribute("modulokoIrakasleak",
+                        moduloIrakasleService.moduluaIrakasleekin(form.getId()).getIrakasleak());
+            }
             return "kudeatzaile/moduloak/moduloa-form";
         }
         moduloaService.saveFromDto(form);
@@ -230,7 +241,7 @@ public class ModuloKudeatzaileController {
 
     @GetMapping("/editatu/{id}")
     public String editatuModuloa(@PathVariable Long id, Model model) {
-        Moduloa m = moduloaService.getById(id).orElseThrow();
+        Moduloa m = moduloIrakasleService.moduluaIrakasleekin(id);
         ModuloaFormDto form = new ModuloaFormDto();
         form.setId(m.getId());
         form.setHizkuntza(m.getHizkuntza());
@@ -247,7 +258,114 @@ public class ModuloKudeatzaileController {
         model.addAttribute("moduloaForm", form);
         model.addAttribute("taldeak", taldeaService.getAll());
         model.addAttribute("mailak", mailaRepository.findAllByAktiboTrueOrderByOrdenaAscIzenaAsc());
+        model.addAttribute("modulokoIrakasleak", m.getIrakasleak());
         return "kudeatzaile/moduloak/moduloa-form";
+    }
+
+    @PostMapping("/irakasleak-ordutegietatik")
+    public String esleituIrakasleakOrdutegietatik(
+            @RequestParam(name = "taldeaId", required = false) Long taldeaId,
+            RedirectAttributes ra) {
+        var emaitza = moduloIrakasleService.esleituOrdutegietatik();
+        ra.addFlashAttribute("success", "Ordutegietatik " + emaitza.gehituak()
+                + " irakasle-modulu lotura gehitu dira; " + emaitza.lehendikZeudenak()
+                + " lehendik zeuden, " + emaitza.lotuGabeak() + " lotu gabe geratu dira eta "
+                + emaitza.anbiguoak() + " anbiguo dira.");
+        return taldeaId == null ? "redirect:/kudeatzaile/moduloa"
+                : "redirect:/kudeatzaile/moduloa?taldeaId=" + taldeaId;
+    }
+
+    @PostMapping("/taldea/{taldeaId}/ordutegia/berria")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> sortuTaldeOrdutegia(@PathVariable Long taldeaId,
+                                                                    @RequestParam LocalDate hasieraData) {
+        try {
+            var o = taldeOrdutegiService.sortu(taldeaId, hasieraData);
+            return ResponseEntity.ok(Map.of("ok", true, "id", o.getId(), "hasieraData", o.getHasieraData().toString()));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("ok", false, "mezua", ex.getMessage()));
+        }
+    }
+
+    @PostMapping("/taldea/{taldeaId}/ordutegia/irakasleetatik")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> eguneratuTaldeOrdutegiaIrakasleetatik(
+            @PathVariable Long taldeaId,
+            @RequestParam(name = "ordutegiaId", required = false) Long ordutegiaId,
+            @RequestParam(name = "hasieraData", required = false) LocalDate hasieraData) {
+        try {
+            var e = taldeOrdutegiService.eguneratuIrakasleetatik(taldeaId, ordutegiaId, hasieraData);
+            return ResponseEntity.ok(Map.of("ok", true, "ordutegiaId", e.ordutegiaId(),
+                    "gelaxkaKopurua", e.gelaxkaKopurua(), "gatazkaKopurua", e.gatazkaKopurua()));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("ok", false, "mezua", ex.getMessage()));
+        }
+    }
+
+    @PostMapping("/taldea/{taldeaId}/ordutegia/gelaxka")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> gordeTaldeOrdutegiGelaxka(
+            @PathVariable Long taldeaId, @RequestParam Long ordutegiaId,
+            @RequestParam Astegunak asteguna, @RequestParam Integer ordua,
+            @RequestParam(name = "moduloaId", required = false) Long moduloaId) {
+        try {
+            taldeOrdutegiService.gordeGelaxka(taldeaId, ordutegiaId, asteguna, ordua, moduloaId);
+            return ResponseEntity.ok(Map.of("ok", true));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("ok", false, "mezua", ex.getMessage()));
+        }
+    }
+
+    @PostMapping("/taldea/{taldeaId}/ordutegia/{ordutegiaId}/ezabatu")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> ezabatuTaldeOrdutegia(@PathVariable Long taldeaId,
+                                                                      @PathVariable Long ordutegiaId) {
+        try {
+            taldeOrdutegiService.ezabatu(taldeaId, ordutegiaId);
+            return ResponseEntity.ok(Map.of("ok", true));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("ok", false, "mezua", ex.getMessage()));
+        }
+    }
+
+    @GetMapping("/{id}/irakasleak-bilatu")
+    @ResponseBody
+    public List<Map<String, Object>> bilatuIrakasleak(@PathVariable Long id,
+                                                       @RequestParam(name = "q", required = false) String q) {
+        return moduloIrakasleService.bilatuGehitzeko(id, q).stream()
+                .map(i -> Map.<String, Object>of(
+                        "id", i.getId(),
+                        "izena", i.getIzena() != null ? i.getIzena() : "",
+                        "emaila", i.getEmaila() != null ? i.getEmaila() : ""))
+                .toList();
+    }
+
+    @PostMapping("/{id}/irakasleak")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> gehituIrakaslea(@PathVariable Long id,
+                                                                @RequestParam Long irakasleaId) {
+        try {
+            Irakaslea i = moduloIrakasleService.gehitu(id, irakasleaId);
+            return ResponseEntity.ok(Map.of(
+                    "ok", true,
+                    "id", i.getId(),
+                    "izena", i.getIzena() != null ? i.getIzena() : "",
+                    "emaila", i.getEmaila() != null ? i.getEmaila() : ""));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("ok", false, "mezua", ex.getMessage()));
+        }
+    }
+
+    @PostMapping("/{id}/irakasleak/{irakasleaId}/kendu")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> kenduIrakaslea(@PathVariable Long id,
+                                                               @PathVariable Long irakasleaId) {
+        try {
+            moduloIrakasleService.kendu(id, irakasleaId);
+            return ResponseEntity.ok(Map.of("ok", true));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("ok", false, "mezua", ex.getMessage()));
+        }
     }
 
     @GetMapping("/{id}/matrikulak")

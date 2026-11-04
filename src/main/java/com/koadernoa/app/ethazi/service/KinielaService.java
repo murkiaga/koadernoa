@@ -239,7 +239,8 @@ public class KinielaService {
             int irakasleKopurua, String minimoa, String irakasleenEragiketa, String eragiketa) {}
     public record LaburpenZeharkakoKalkulua(BigDecimal kalkulatutakoNota, BigDecimal guztira,
             BigDecimal errubrikaMinimoa, String eragiketa, List<String> minimoUrraketak) {}
-    public record LaburpenKalkuluOsagaia(String izena, BigDecimal nota, BigDecimal pisua, String minimoa) {}
+    public record LaburpenKalkuluOsagaia(String izena, BigDecimal nota, BigDecimal pisua, String minimoa,
+            boolean minimoaUrratuta) {}
     public record LaburpenTeknikoKalkulua(boolean konfiguratuta, BigDecimal guztira,
             BigDecimal kalkulatutakoNota,
             BigDecimal errubrikaNota, BigDecimal errubrikaPisua, boolean errubrikaOsatua,
@@ -262,6 +263,24 @@ public class KinielaService {
             List<LaburpenModuloa> moduluak, List<LaburpenIkaslea> ikasleak) {
         public String zeharkakoenPisuaEtiketa() { return ehunekoEtiketa(zeharkakoenPisua); }
         public String teknikoenPisuaEtiketa() { return ehunekoEtiketa(teknikoenPisua); }
+    }
+    public record TeknikoLaburpenZutabe(Long id, String izena, BigDecimal pisua, boolean bestelakoProba) {
+        public String pisuaEtiketa() { return ehunekoEtiketa(pisua); }
+    }
+    public record TeknikoLaburpenIkaslea(Long id, String izena,
+            List<LaburpenKalkuluOsagaia> ebidentziak, List<LaburpenKalkuluOsagaia> probak,
+            BigDecimal guztira, List<String> minimoUrraketak,
+            List<LaburpenEbidentziaNota> zeharkakoNotak, BigDecimal zeharkakoa,
+            boolean zeharkakoMinimoaUrratuta, BigDecimal totala) {}
+    public record TeknikoEbaluazioLaburpena(Erronka erronka, LaburpenModuloa moduloa,
+            boolean konfiguratuta, BigDecimal errubrikaPisua, BigDecimal bestelakoProbenPisua,
+            List<TeknikoLaburpenZutabe> ebidentziak, List<TeknikoLaburpenZutabe> probak,
+            List<LaburpenEbidentzia> zeharkakoEbidentziak, BigDecimal teknikoenPisua,
+            BigDecimal zeharkakoenPisua, List<TeknikoLaburpenIkaslea> ikasleak) {
+        public String errubrikaPisuaEtiketa() { return ehunekoEtiketa(errubrikaPisua); }
+        public String bestelakoProbenPisuaEtiketa() { return ehunekoEtiketa(bestelakoProbenPisua); }
+        public String teknikoenPisuaEtiketa() { return ehunekoEtiketa(teknikoenPisua); }
+        public String zeharkakoenPisuaEtiketa() { return ehunekoEtiketa(zeharkakoenPisua); }
     }
 
     private static String ehunekoEtiketa(BigDecimal pisua) {
@@ -325,10 +344,8 @@ public class KinielaService {
                         e.getGutxienekoMaila() == null ? null : e.getGutxienekoMaila().getId(),
                         e.getGutxienekoMaila() == null ? null : e.getGutxienekoMaila().getIzena(), descriptions, grades);
                 }).toList();
-            var gaitasuna = a.getGaitasunMaila().getGaitasuna();
-            String description = gaitasuna.deskribapena(language);
-            if (!a.deskribapena(language).isBlank()) description += " · " + a.deskribapena(language);
-            return new ZeharkakoAdierazleErrubrika(a.getId(), adierazleKodea(a), description, evidenceViews);
+            return new ZeharkakoAdierazleErrubrika(a.getId(), adierazleKodea(a),
+                a.deskribapena(language), evidenceViews);
         }).toList();
         boolean multiple = rubric.getEbidentziak().stream().anyMatch(e -> e.getMota() == ZeharkakoEbidentziaMota.IRAKASLE_AUTO_KOEBALUAZIOA);
         return new ZeharkakoErrubrikaIkuspegia(rubric.getId(), rubric.getHeteroebaluazioPisua(),
@@ -454,6 +471,32 @@ public class KinielaService {
             transverseWeight, technicalWeight, evidenceHeaders, moduleHeaders, rows);
     }
 
+    public TeknikoEbaluazioLaburpena teknikoEbaluazioLaburpena(Long erronkaId, Long moduloaId) {
+        var summary = ebaluazioLaburpena(erronkaId);
+        int moduleIndex = java.util.stream.IntStream.range(0, summary.moduluak().size())
+            .filter(i -> summary.moduluak().get(i).id().equals(moduloaId)).findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Modulua ez da erronka honetakoa."));
+        var module = summary.moduluak().get(moduleIndex);
+        var rubric = errubrikak.findByErronkaId(erronkaId).stream()
+            .filter(r -> r.getModuloa().getId().equals(moduloaId)).findFirst().orElse(null);
+        var evidenceHeaders = rubric == null ? List.<TeknikoLaburpenZutabe>of() : rubric.getEbidentziak().stream()
+            .map(e -> new TeknikoLaburpenZutabe(e.getId(), e.getDeskribapena(), e.getPisua(), false)).toList();
+        var testHeaders = rubric == null ? List.<TeknikoLaburpenZutabe>of() : rubric.getBestelakoProbak().stream()
+            .map(p -> new TeknikoLaburpenZutabe(p.getId(), p.getIzena(), p.getPisua(), true)).toList();
+        final int selectedModuleIndex = moduleIndex;
+        var rows = summary.ikasleak().stream().map(student -> {
+            var calculation = student.kalkuluTeknikoak().get(selectedModuleIndex);
+            return new TeknikoLaburpenIkaslea(student.id(), student.izena(), calculation.ebidentziak(),
+                calculation.probak(), calculation.guztira(), calculation.minimoUrraketak(),
+                student.zeharkakoNotak(), student.zeharkakoa(), student.zeharkakoMinimoaUrratuta(),
+                student.totalak().get(selectedModuleIndex));
+        }).toList();
+        return new TeknikoEbaluazioLaburpena(summary.erronka(), module, rubric != null,
+            rubric == null ? null : rubric.getErrubrikaPisua(),
+            rubric == null ? null : rubric.getBestelakoProbenPisua(), evidenceHeaders, testHeaders,
+            summary.ebidentziak(), summary.teknikoenPisua(), summary.zeharkakoenPisua(), rows);
+    }
+
     private boolean gutxienekoaUrratuta(BigDecimal grade, ZeharkakoErrubrikaMaila minimumLevel) {
         return grade != null && minimumLevel != null && grade.compareTo(minimumLevel.getBalioa()) < 0;
     }
@@ -511,15 +554,20 @@ public class KinielaService {
         var evidenceParts = new ArrayList<LaburpenKalkuluOsagaia>();
         for (int i = 0; i < rubric.getEbidentziak().size(); i++) {
             var minimum = rubric.getEbidentziak().get(i).getGutxienekoMaila();
+            var grade = evidenceGrades.get(i);
             evidenceParts.add(new LaburpenKalkuluOsagaia(rubric.getEbidentziak().get(i).getDeskribapena(),
-                evidenceGrades.get(i), evidenceWeights.get(i), minimum == null ? null
-                    : minimum.getIzena() + " (" + notaEtiketa(minimum.getBalioa()) + ")"));
+                grade, evidenceWeights.get(i), minimum == null ? null
+                    : minimum.getIzena() + " (" + notaEtiketa(minimum.getBalioa()) + ")",
+                minimum != null && grade != null && grade.compareTo(minimum.getBalioa()) < 0));
         }
         var testParts = new ArrayList<LaburpenKalkuluOsagaia>();
-        for (int i = 0; i < rubric.getBestelakoProbak().size(); i++) testParts.add(new LaburpenKalkuluOsagaia(
-            rubric.getBestelakoProbak().get(i).getIzena(), testGrades.get(i), testWeights.get(i),
-            rubric.getBestelakoProbak().get(i).getGutxienekoNota() == null ? null
-                : notaEtiketa(rubric.getBestelakoProbak().get(i).getGutxienekoNota())));
+        for (int i = 0; i < rubric.getBestelakoProbak().size(); i++) {
+            var test = rubric.getBestelakoProbak().get(i);
+            var grade = testGrades.get(i);
+            testParts.add(new LaburpenKalkuluOsagaia(test.getIzena(), grade, testWeights.get(i),
+                test.getGutxienekoNota() == null ? null : notaEtiketa(test.getGutxienekoNota()),
+                test.getGutxienekoNota() != null && grade != null && grade.compareTo(test.getGutxienekoNota()) < 0));
+        }
         return new LaburpenTeknikoKalkulua(true, total, calculatedTotal, rubricGrade, rubric.getErrubrikaPisua(), completeRubric,
             evidenceParts, completeRubric ? kalkuluEragiketa(indizezHaztatu(evidenceGrades, evidenceWeights), rubricGrade) : null,
             testsGrade, rubric.getBestelakoProbenPisua(), testParts,

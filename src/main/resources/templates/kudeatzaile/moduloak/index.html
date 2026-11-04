@@ -8,6 +8,18 @@
     <link rel="stylesheet" th:href="@{/css/navbar.css}">
     <link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+      .talde-ordutegi-grid{width:100%;border-collapse:collapse;table-layout:fixed;font-size:.88rem}
+      .talde-ordutegi-grid th,.talde-ordutegi-grid td{border:1px solid #d1d5db;padding:.35rem;text-align:center;vertical-align:top}
+      .talde-ordutegi-grid thead th,.talde-ordutegi-grid tbody th{background:#f8fafc}
+      .talde-ordutegi-grid tbody th{width:42px;color:#475569}
+      .talde-ordutegi-grid td{height:50px}
+      .talde-ordutegi-entry{padding:.3rem;border-radius:.4rem;background:#dbeafe;color:#0f172a;line-height:1.25}
+      .talde-ordutegi-entry+.talde-ordutegi-entry{margin-top:.3rem}
+      .talde-ordutegi-grid td{cursor:pointer}.talde-ordutegi-grid td:hover{background:#f1f5f9}
+      .talde-ordutegi-tabs{display:flex;gap:.45rem;align-items:center;flex-wrap:wrap;margin:.7rem 0}
+      .talde-ordutegi-tab.active{background:#111827;color:#fff}.talde-ordutegi-cell-label{font-weight:700;color:#17457d;white-space:pre-line}
+    </style>
 </head>
 <body>
 	<div th:replace="kudeatzaile/fragments/navbar :: kudeatzaile-navbar"></div>
@@ -85,7 +97,13 @@
 			    </div>
 			</form>
 
-			<a class="btn btn-primary" th:href="@{/kudeatzaile/moduloa/sortu(taldeaId=${taldeaId})}">Sortu Modulo Berria</a>
+			<div style="display:flex;gap:.5rem;align-items:center;">
+			  <form method="post" th:action="@{/kudeatzaile/moduloa/irakasleak-ordutegietatik}" style="margin:0;">
+			    <input type="hidden" name="taldeaId" th:if="${taldeaId != null}" th:value="${taldeaId}">
+			    <button type="submit" class="btn btn-secondary">Ordutegietatik irakasleak esleitu</button>
+			  </form>
+			  <a class="btn btn-primary" th:href="@{/kudeatzaile/moduloa/sortu(taldeaId=${taldeaId})}">Sortu Modulo Berria</a>
+			</div>
 		</div>
 		
 		<div class="table-wrap">
@@ -206,10 +224,81 @@
 		  </table>
 		 </div>
 		</div>
+
+		<section th:if="${taldeaId != null}" style="margin-top:2rem;">
+		  <h2>Taldeko ordutegia</h2>
+		  <p style="color:#64748b;">Ikasturtean zehar indarrean jartzen diren ordutegiak. Hautatutako ordutegia eskuz edita daiteke.</p>
+		  <div id="taldeOrdutegiApp" th:attr="data-taldea-id=${taldeaId}">
+		    <div class="talde-ordutegi-tabs" id="taldeOrdutegiTabs">
+		      <button th:each="o : ${taldeOrdutegia.ordutegiak}" type="button" class="btn btn-secondary talde-ordutegi-tab"
+		              th:classappend="${o.id == taldeOrdutegia.hautatutakoaId} ? ' active'"
+		              th:attr="data-id=${o.id}"
+		              th:text="${#temporals.format(o.hasiera, 'yyyy/MM/dd') + ' — '
+		                        + (o.bukaera != null ? #temporals.format(o.bukaera, 'yyyy/MM/dd') : 'ikasturte amaiera')
+		                        + (o.aktiboa ? ' (aktibo)' : '')}">Ordutegia</button>
+		    </div>
+		    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.8rem;">
+		      <button type="button" class="btn btn-primary" id="taldeOrdutegiaEguneratu">Irakasleen ordutegiarekin eguneratu</button>
+		      <button type="button" class="btn btn-secondary" id="taldeOrdutegiaBerria">Ordutegi berria</button>
+		      <button type="button" class="btn btn-danger" id="taldeOrdutegiaEzabatu">Ordutegia ezabatu</button>
+		    </div>
+		    <p id="taldeOrdutegiStatus" aria-live="polite"></p>
+		  <div class="table-wrap">
+		    <table class="talde-ordutegi-grid" id="taldeOrdutegiGrid">
+		      <thead><tr><th>Ordua</th><th th:each="eguna : ${taldeOrdutegia.egunak}" th:text="${#strings.capitalize(eguna.name().toLowerCase())}">Astelehena</th></tr></thead>
+		      <tbody>
+		        <tr th:each="ordua : ${taldeOrdutegia.orduak}">
+		          <th th:text="${ordua}">1</th>
+		          <td th:each="eguna : ${taldeOrdutegia.egunak}" th:attr="data-eguna=${eguna},data-ordua=${ordua}">
+		            <span class="talde-ordutegi-cell-label"></span>
+		          </td>
+		        </tr>
+		      </tbody>
+		    </table>
+		  </div>
+		  </div>
+		  <dialog id="taldeOrdutegiCellDialog">
+		    <form method="dialog" style="min-width:300px;">
+		      <h3>Gelaxkako modulua</h3>
+		      <select id="taldeOrdutegiModuloa"><option value="">— Hutsik —</option><option th:each="m : ${taldeOrdutegia.moduluak}" th:value="${m.id}" th:text="${(m.kodea != null ? m.kodea + ' · ' : '') + m.izena}"></option></select>
+		      <div style="display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem;"><button value="cancel" class="btn btn-secondary">Utzi</button><button value="default" id="taldeOrdutegiCellGorde" class="btn btn-primary">Gorde</button></div>
+		    </form>
+		  </dialog>
+		  <dialog id="taldeOrdutegiBerriaDialog"><form method="dialog"><h3>Ordutegi berria</h3><label>Indarrean noiztik <input type="date" id="taldeOrdutegiHasiera"></label><div style="display:flex;justify-content:flex-end;gap:.5rem;margin-top:1rem;"><button value="cancel" class="btn btn-secondary">Utzi</button><button value="default" id="taldeOrdutegiBerriaSortu" class="btn btn-primary">Sortu</button></div></form></dialog>
+		</section>
 		
 		<a class="btn btn-secondary" th:href="@{/kudeatzaile}">Itzuli Hasierara</a>
 	</main>
 <script th:src="@{/js/kudeatzaile-nav.js}"></script>
 <script th:src="@{/js/moduloak-index.js}"></script>
+<script th:if="${taldeaId != null}" th:inline="javascript">
+(() => {
+  const taldeId = /*[[${taldeaId}]]*/ null;
+  const scheduleList = /*[[${taldeOrdutegia.ordutegiak}]]*/ [];
+  const moduleLabels = /*[[${taldeOrdutegia.moduluEtiketak}]]*/ {};
+  const csrf = document.querySelector('meta[name="_csrf"]')?.content || '';
+  const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
+  const status = document.getElementById('taldeOrdutegiStatus');
+  const grid = document.getElementById('taldeOrdutegiGrid');
+  const cellDialog = document.getElementById('taldeOrdutegiCellDialog');
+  const moduleSelect = document.getElementById('taldeOrdutegiModuloa');
+  let selectedId = /*[[${taldeOrdutegia.hautatutakoaId}]]*/ null;
+  let selectedCell = null;
+  const moduleById = new Map(Object.entries(moduleLabels));
+  const scheduleById = new Map(scheduleList.map(o => [String(o.id), o]));
+  const headers = {'Content-Type':'application/x-www-form-urlencoded;charset=UTF-8',Accept:'application/json',[csrfHeader]:csrf};
+  const post = async (url, params={}) => { const r=await fetch(url,{method:'POST',headers,credentials:'same-origin',body:new URLSearchParams(params)}); const j=await r.json(); if(!r.ok||!j.ok) throw new Error(j.mezua||'Errorea'); return j; };
+  const reloadSelected = id => { const url=new URL(location.href); if(id)url.searchParams.set('ordutegiaId',id);else url.searchParams.delete('ordutegiaId'); location.href=url.toString(); };
+  function render(){ const s=scheduleById.get(String(selectedId)); grid.querySelectorAll('td[data-eguna]').forEach(td=>{ const id=s?.gelaxkak?.[`${td.dataset.eguna}:${td.dataset.ordua}`]; td.querySelector('span').textContent=moduleById.get(String(id))||''; }); document.querySelectorAll('.talde-ordutegi-tab').forEach(b=>b.classList.toggle('active',String(b.dataset.id)===String(selectedId))); }
+  document.querySelectorAll('.talde-ordutegi-tab').forEach(b=>b.addEventListener('click',()=>{selectedId=Number(b.dataset.id);render();}));
+  grid.addEventListener('click',e=>{const td=e.target.closest('td[data-eguna]');if(!td||!selectedId){status.textContent='Sortu edo aukeratu ordutegi bat lehenengo.';return;}selectedCell=td;const s=scheduleById.get(String(selectedId));moduleSelect.value=s?.gelaxkak?.[`${td.dataset.eguna}:${td.dataset.ordua}`]||'';cellDialog.showModal();});
+  document.getElementById('taldeOrdutegiCellGorde').addEventListener('click',async e=>{e.preventDefault();try{await post(`/kudeatzaile/moduloa/taldea/${taldeId}/ordutegia/gelaxka`,{ordutegiaId:selectedId,asteguna:selectedCell.dataset.eguna,ordua:selectedCell.dataset.ordua,moduloaId:moduleSelect.value});reloadSelected(selectedId);}catch(x){status.textContent=x.message;}});
+  document.getElementById('taldeOrdutegiaBerria').addEventListener('click',()=>document.getElementById('taldeOrdutegiBerriaDialog').showModal());
+  document.getElementById('taldeOrdutegiBerriaSortu').addEventListener('click',async e=>{e.preventDefault();const d=document.getElementById('taldeOrdutegiHasiera').value;if(!d)return;try{const j=await post(`/kudeatzaile/moduloa/taldea/${taldeId}/ordutegia/berria`,{hasieraData:d});reloadSelected(j.id);}catch(x){status.textContent=x.message;}});
+  document.getElementById('taldeOrdutegiaEguneratu').addEventListener('click',async()=>{try{const p=selectedId?{ordutegiaId:selectedId}:{};const j=await post(`/kudeatzaile/moduloa/taldea/${taldeId}/ordutegia/irakasleetatik`,p);status.textContent=`${j.gelaxkaKopurua} gelaxka eguneratu dira${j.gatazkaKopurua?' · '+j.gatazkaKopurua+' gatazka':''}.`;reloadSelected(j.ordutegiaId);}catch(x){status.textContent=x.message;}});
+  document.getElementById('taldeOrdutegiaEzabatu').addEventListener('click',async()=>{if(!selectedId||!confirm('Ordutegi hau ezabatu?'))return;try{await post(`/kudeatzaile/moduloa/taldea/${taldeId}/ordutegia/${selectedId}/ezabatu`);reloadSelected(null);}catch(x){status.textContent=x.message;}});
+  render();
+})();
+</script>
 </body>
 </html>
