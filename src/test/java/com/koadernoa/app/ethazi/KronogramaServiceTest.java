@@ -224,6 +224,32 @@ class KronogramaServiceTest {
                 .satisfies(b -> assertThat(b.orduak()).isEqualByComparingTo("1.00"));
     }
 
+    @Test
+    void irakasleakBereModulukoJarduerakBerrordenatzeanDatakBirkalkulatzenDira() {
+        TaldeOrdutegia ordutegia = taldeOrdutegia(LocalDate.of(2026, 9, 1), sareak,
+                Astegunak.ASTEAZKENA, 1);
+        when(taldeOrdutegiak.findByTaldea_IdAndIkasturtea_IdOrderByHasieraDataAsc(13L, 4L))
+                .thenReturn(List.of(ordutegia));
+        Irakaslea teacher = irakaslea();
+        when(irakasleak.findByEmailaIgnoreCase("ane@example.com")).thenReturn(Optional.of(teacher));
+        when(moduloak.existsByIdAndIrakasleak_Id(10L, 30L)).thenReturn(true);
+        ErronkaKronogramaJarduera lehenengoa = modulukoJarduera(
+                81L, "Lehenengoa", 1, LocalDate.of(2026, 10, 7));
+        ErronkaKronogramaJarduera bigarrena = modulukoJarduera(
+                82L, "Bigarrena", 2, LocalDate.of(2026, 10, 14));
+        when(jarduerak.findByErronkaIdOrderByHasieraDataAscBukaeraDataAscIdAsc(7L))
+                .thenReturn(List.of(lehenengoa, bigarrena));
+
+        service.berrordenatu(7L, 10L, List.of(82L, 81L),
+                auth("ane@example.com", "ROLE_IRAKASLEA"));
+
+        assertThat(bigarrena.getOrdena()).isEqualTo(1);
+        assertThat(bigarrena.getHasieraData()).isEqualTo(LocalDate.of(2026, 10, 7));
+        assertThat(lehenengoa.getOrdena()).isEqualTo(2);
+        assertThat(lehenengoa.getHasieraData()).isEqualTo(LocalDate.of(2026, 10, 14));
+        verify(jarduerak).saveAll(any());
+    }
+
     private KronogramaJardueraForm form(KronogramaJardueraMota mota, Long moduloaId) {
         var form = new KronogramaJardueraForm();
         form.setIzenburua("Jarduera"); form.setMota(mota); form.setModuloaId(moduloaId);
@@ -238,6 +264,16 @@ class KronogramaServiceTest {
 
     private Irakaslea irakaslea() {
         var i = new Irakaslea(); i.setId(30L); i.setIzena("Ane"); i.setEmaila("ane@example.com"); return i;
+    }
+
+    private ErronkaKronogramaJarduera modulukoJarduera(Long id, String izenburua, int ordena,
+            LocalDate data) {
+        ErronkaKronogramaJarduera jarduera = new ErronkaKronogramaJarduera();
+        jarduera.setId(id); jarduera.setErronka(erronka); jarduera.setMota(KronogramaJardueraMota.MODULUA);
+        jarduera.setModuloa(sareak); jarduera.setIzenburua(izenburua); jarduera.setOrdena(ordena);
+        jarduera.setHasieraData(data); jarduera.setBukaeraData(data);
+        jarduera.setIraupenOrduak(BigDecimal.ONE);
+        return jarduera;
     }
 
     private void ordutegiaLehenetsia() {

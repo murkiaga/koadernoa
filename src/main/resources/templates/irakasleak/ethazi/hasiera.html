@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="${ethaziKoadernoAktiboa.izena}">Ethazi koadernoa</title>
+  <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/irakasle-common.css}">
+  <link rel="stylesheet" th:href="@{/css/ethazi-koadernoa.css}">
+</head>
+<body>
+<div th:replace="~{irakasleak/fragments/ethazi-navbar :: navbar(${ethaziKoadernoAktiboa}, ${irakasleKoadernoAktiboak}, ${irakasleEthaziKoadernoAktiboak})}"></div>
+
+<main class="ethazi-hasiera">
+  <header class="ethazi-goiburua">
+    <div>
+      <h1 th:text="${ethaziKoadernoAktiboa.izena}">Ethazi koadernoa 1MS2D</h1>
+      <p th:text="${ikuspegia.ikasturtea}">2026-2027</p>
+    </div>
+    <span th:if="${ikuspegia.ordutegiHasiera != null}"
+          th:text="${'Ordutegia: ' + #temporals.format(ikuspegia.ordutegiHasiera, 'yyyy-MM-dd') + 'tik'}"></span>
+  </header>
+
+  <section class="ethazi-panela" aria-labelledby="ordutegia-izenburua">
+    <div class="ethazi-panel-goiburua">
+      <div>
+        <h2 id="ordutegia-izenburua">Taldeko ordutegia</h2>
+        <p>Erronketan parte hartzen duten moduluak kolorez bereizita daude.</p>
+      </div>
+      <div class="ethazi-legenda" th:if="${!ikuspegia.legenda.isEmpty()}">
+        <span th:each="item : ${ikuspegia.legenda}">
+          <i th:style="${'background:' + item.kolorea}"></i><span th:text="${item.modulua}">MOD</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="ethazi-ordutegi-wrap" th:if="${ikuspegia.ordutegiHasiera != null}">
+      <table class="ethazi-ordutegia">
+        <thead><tr><th>Ordua</th><th th:each="eguna : ${ikuspegia.egunak}"
+          th:text="${#strings.capitalize(#strings.toLowerCase(eguna.name()))}">Astelehena</th></tr></thead>
+        <tbody>
+          <tr th:each="ordua : ${ikuspegia.orduak}">
+            <th th:text="${ordua}">1</th>
+            <td th:each="eguna : ${ikuspegia.egunak}"
+                th:with="gelaxka=${ikuspegia.gelaxkak.get(eguna.name() + ':' + ordua)}"
+                th:classappend="${gelaxka != null and gelaxka.erronkan} ? 'erronkako-modulua'"
+                th:style="${gelaxka != null and gelaxka.kolorea != null ? 'background:' + gelaxka.kolorea : ''}"
+                th:text="${gelaxka != null ? gelaxka.modulua : ''}"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="ethazi-hutsa" th:if="${ikuspegia.ordutegiHasiera == null}">
+      Talde honek ez du ikasturte aktiborako ordutegirik oraindik.
+    </div>
+  </section>
+</main>
+</body>
+</html>

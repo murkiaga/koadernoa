@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ethazi koadernoa — Programazioa</title>
+  <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/irakasle-common.css}">
+  <link rel="stylesheet" th:href="@{/css/ethazi-koadernoa.css}">
+  <meta th:if="${_csrf != null}" name="_csrf" th:content="${_csrf.token}">
+  <meta th:if="${_csrf != null}" name="_csrf_header" th:content="${_csrf.headerName}">
+  <style>
+    :root {
+      --err1-bg:#b3d9ff; --err2-bg:#b2f2bb; --err3-bg:#ffd699; --err4-bg:#e9d5ff;
+      --br1:#16a34a; --br2:#2563eb; --br3:#a855f7;
+    }
+    body { background:#f6f7fb; }
+    .programazioa-container { max-width:1200px; width:80%; margin:1rem auto; padding:0 1rem 2rem; }
+    .programazioa-card { background:#fff; border:1px solid var(--b); border-radius:14px; box-shadow:0 2px 10px rgba(0,0,0,.04); }
+    .programazioa-header { display:flex; align-items:flex-end; justify-content:space-between; gap:1rem; padding:1rem; border-bottom:1px solid var(--b); }
+    .programazioa-header h1 { margin:0; }
+    .programazioa-header .muted { margin-top:.3rem; }
+    .programazioa-controls { display:flex; align-items:flex-end; justify-content:flex-end; gap:.7rem; flex-wrap:wrap; }
+    .programazioa-control { display:grid; gap:.3rem; min-width:220px; color:#475569; font-size:.75rem; font-weight:800; }
+    .programazioa-control select { box-sizing:border-box; width:100%; padding:.55rem .7rem; border:1px solid #cbd5e1; border-radius:8px; background:#fff; color:#172033; font:inherit; font-size:.86rem; }
+    .programazioa-body { padding:.9rem 1rem 1.2rem; }
+    .erronka-wrap { position:relative; padding-left:88px; }
+    .erronka-list { display:grid; gap:.65rem; list-style:none; padding:0; margin:0; }
+    .erronka-item { border:1px solid var(--b); border-radius:12px; overflow:hidden; }
+    .erronka-item.err-1 { background:var(--err1-bg); }
+    .erronka-item.err-2 { background:var(--err2-bg); }
+    .erronka-item.err-3 { background:var(--err3-bg); }
+    .erronka-item.err-4 { background:var(--err4-bg); }
+    .erronka-header { width:100%; display:grid; grid-template-columns:24px 1fr; align-items:center; gap:.55rem; padding:.85rem 1rem; border:0; background:transparent; color:inherit; text-align:left; cursor:pointer; font:inherit; }
+    .erronka-header:hover { background:rgba(255,255,255,.2); }
+    .caret { font-size:1.25rem; font-weight:800; transition:transform .18s ease; }
+    .erronka-item.open .caret { transform:rotate(90deg); }
+    .erronka-title { font-weight:800; font-size:1rem; }
+    .erronka-meta { color:rgba(15,23,42,.72); font-size:.85rem; margin-top:.2rem; }
+    .erronka-content { display:none; padding:.25rem 1rem 1rem 2.95rem; }
+    .erronka-item.open .erronka-content { display:block; }
+    .erronka-deskribapena { white-space:pre-line; color:#334155; margin:0 0 .8rem; }
+    .modulu-zerrenda { display:flex; flex-wrap:wrap; gap:.4rem; }
+    .modulu-badge { display:inline-flex; padding:.2rem .55rem; border-radius:999px; background:rgba(255,255,255,.72); border:1px solid rgba(15,23,42,.14); font-size:.78rem; font-weight:800; }
+    .kronograma-laburpena { margin-top:1rem; padding-top:.9rem; border-top:1px solid rgba(15,23,42,.13); }
+    .kronograma-goiburua { display:flex; align-items:center; justify-content:space-between; gap:.7rem; margin-bottom:.7rem; }
+    .kronograma-goiburua h3 { margin:0; font-size:.9rem; }
+    .jarduera-berria { padding:.42rem .7rem; border:0; border-radius:8px; background:#172033; color:#fff; font:inherit; font-size:.76rem; font-weight:800; cursor:pointer; }
+    .jarduera-zerrenda { display:grid; gap:.55rem; }
+    .jarduera-zerrenda > [hidden] { display:none!important; }
+    .jarduera-txartela { display:grid; grid-template-columns:auto 105px minmax(0,1fr) auto; align-items:start; gap:.75rem; padding:.7rem .8rem; border:1px solid rgba(15,23,42,.13); border-radius:10px; background:rgba(255,255,255,.72); }
+    .jarduera-txartela.dragging { opacity:.45; }
+    .jarduera-txartela.drag-over { box-shadow:0 -3px #0284c7; }
+    .jarduera-handle { align-self:center; padding:.2rem; border:0; background:transparent; color:#64748b; font-size:1.15rem; cursor:grab; }
+    .jarduera-handle:active { cursor:grabbing; }
+    .jarduera-data { color:#475569; font-size:.75rem; font-weight:800; line-height:1.35; }
+    .jarduera-data span { display:block; }
+    .jarduera-izenburua { margin:0; color:#172033; font-size:.88rem; font-weight:850; }
+    .jarduera-deskribapena { margin:.25rem 0 0; color:#64748b; font-size:.78rem; white-space:pre-line; }
+    .jarduera-meta { display:flex; align-items:center; justify-content:flex-end; gap:.35rem; flex-wrap:wrap; }
+    .jarduera-badge { display:inline-flex; padding:.18rem .48rem; border-radius:999px; background:#e2e8f0; color:#334155; font-size:.68rem; font-weight:900; }
+    .jarduera-badge.orokorra { background:#0789c9; color:#fff; }
+    .jarduera-aurreikuspena { display:inline-flex; padding:.18rem .48rem; border:1px dashed #64748b; border-radius:999px; color:#475569; font-size:.66rem; font-weight:800; }
+    .jarduera-orduak { color:#475569; font-size:.72rem; font-weight:800; white-space:nowrap; }
+    .jarduera-editatu { padding:.2rem .45rem; border:1px solid #94a3b8; border-radius:6px; background:#fff; color:#334155; font:inherit; font-size:.68rem; font-weight:800; cursor:pointer; }
+    .jarduera-hutsa { padding:.7rem; border:1px dashed rgba(15,23,42,.2); border-radius:9px; color:#64748b; font-size:.8rem; text-align:center; }
+    .programazioa-mezua { margin:0 0 .8rem; padding:.65rem .8rem; border-radius:8px; font-weight:700; }
+    .programazioa-mezua.ok { background:#dcfce7; color:#166534; }
+    .programazioa-mezua.error { background:#fee2e2; color:#991b1b; }
+    .jarduera-dialog { width:min(620px,calc(100% - 2rem)); padding:0; border:0; border-radius:14px; box-shadow:0 22px 65px rgba(15,23,42,.35); }
+    .jarduera-dialog::backdrop { background:rgba(15,23,42,.45); }
+    .jarduera-dialog header,.jarduera-dialog footer { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:1rem 1.15rem; border-bottom:1px solid #e2e8f0; }
+    .jarduera-dialog h2 { margin:0; font-size:1.15rem; }
+    .jarduera-dialog .dialog-content { display:grid; gap:.8rem; padding:1rem 1.15rem; }
+    .jarduera-dialog .field { display:grid; gap:.3rem; color:#475569; font-size:.78rem; font-weight:800; }
+    .jarduera-dialog input,.jarduera-dialog textarea,.jarduera-dialog select { box-sizing:border-box; width:100%; padding:.58rem .65rem; border:1px solid #cbd5e1; border-radius:8px; font:inherit; }
+    .jarduera-dialog textarea { resize:vertical; }
+    .jarduera-dialog .dialog-grid { display:grid; grid-template-columns:1fr 1fr; gap:.7rem; }
+    .jarduera-dialog footer { justify-content:flex-end; border-top:1px solid #e2e8f0; border-bottom:0; }
+    .dialog-btn { padding:.5rem .75rem; border:1px solid #94a3b8; border-radius:8px; background:#fff; font:inherit; font-weight:800; cursor:pointer; }
+    .dialog-btn.primary { border-color:#172033; background:#172033; color:#fff; }
+    .ebal-brackets { position:absolute; inset:0 auto 0 0; width:84px; pointer-events:none; }
+    .ebal-bracket { --bracket:var(--br1); position:absolute; left:35px; width:28px; min-height:28px; border-left:3px solid var(--bracket); border-radius:999px; }
+    .ebal-bracket[data-color="ebal2"] { --bracket:var(--br2); }
+    .ebal-bracket[data-color="ebal3"] { --bracket:var(--br3); }
+    .ebal-bracket::before,.ebal-bracket::after { content:""; position:absolute; left:-3px; width:18px; height:3px; background:var(--bracket); border-radius:999px; }
+    .ebal-bracket::before { top:0; } .ebal-bracket::after { bottom:0; }
+    .ebal-bracket .lbl { position:absolute; left:-54px; top:50%; transform:translateY(-50%) rotate(180deg); writing-mode:vertical-rl; padding:.25rem .35rem; border-radius:999px; color:var(--bracket); font-weight:800; font-size:.82rem; letter-spacing:.35px; background:#fff; border:1px solid currentColor; white-space:nowrap; }
+    .erronka-hutsa { padding:2.5rem 1rem; text-align:center; color:var(--muted); border:1px dashed var(--b); border-radius:12px; }
+    @media(max-width:700px) { .programazioa-container{width:100%;} .programazioa-header{align-items:stretch;flex-direction:column;} .programazioa-controls{justify-content:stretch;} .programazioa-control{min-width:100%;} .erronka-wrap{padding-left:64px;} .ebal-brackets{width:62px;} .ebal-bracket{left:25px;} .ebal-bracket .lbl{left:-45px;} .jarduera-txartela{grid-template-columns:auto 1fr;} .jarduera-meta{grid-column:2;justify-content:flex-start;} .jarduera-dialog .dialog-grid{grid-template-columns:1fr;} }
+  </style>
+</head>
+<body>
+<div th:replace="~{irakasleak/fragments/ethazi-navbar :: navbar(${ethaziKoadernoAktiboa}, ${irakasleKoadernoAktiboak}, ${irakasleEthaziKoadernoAktiboak})}"></div>
+
+<main class="programazioa-container" th:attr="data-koaderno-id=${ethaziKoadernoAktiboa.id}">
+  <section class="programazioa-card">
+    <header class="programazioa-header">
+      <div>
+        <h1>Programazioa</h1>
+        <div class="muted" th:text="${'Koadernoa: ' + ethaziKoadernoAktiboa.izena + ' · ' + programazioaIkuspegia.ikasturtea}">Koadernoa</div>
+      </div>
+      <div class="programazioa-controls">
+        <label class="programazioa-control">Modulua
+          <select id="moduluIragazkia">
+            <option value="">Modulu guztiak</option>
+            <option th:each="modulua : ${programazioaIkuspegia.moduluAukerak}"
+                    th:value="${modulua.id}" th:text="${modulua.etiketa}">MOD</option>
+          </select>
+        </label>
+      </div>
+    </header>
+    <div class="programazioa-body">
+      <p class="programazioa-mezua ok" th:if="${success}" th:text="${success}"></p>
+      <p class="programazioa-mezua error" th:if="${error}" th:text="${error}"></p>
+      <div class="erronka-hutsa" th:if="${#lists.isEmpty(programazioaIkuspegia.erronkak)}">
+        Ez dago talde honentzako erronkarik ikasturte aktiboan.
+      </div>
+
+      <div class="erronka-wrap" id="erronkaWrap" th:if="${!#lists.isEmpty(programazioaIkuspegia.erronkak)}">
+        <div class="ebal-brackets" aria-hidden="true">
+          <div class="ebal-bracket"
+               th:each="ebal : ${programazioaIkuspegia.ebaluazioTarteak}"
+               th:attr="data-color=${ebal.kolorea},data-from=${ebal.hasieraErronka},data-from-ratio=${ebal.hasieraRatioa},data-to=${ebal.bukaeraErronka},data-to-ratio=${ebal.bukaeraRatioa}">
+            <span class="lbl" th:text="${ebal.izena}">1. ebal</span>
+          </div>
+        </div>
+
+        <ol class="erronka-list" id="erronkaList">
+          <li class="erronka-item" th:each="erronka : ${programazioaIkuspegia.erronkak}"
+              th:classappend="${'err-' + (((erronka.indizea - 1) % 4) + 1)}"
+              th:attr="data-index=${erronka.indizea},data-erronka-id=${erronka.id}">
+            <button class="erronka-header" type="button" aria-expanded="false" onclick="toggleErronka(this)">
+              <span class="caret">›</span>
+              <span>
+                <span class="erronka-title" th:text="${erronka.izena}">Erronka</span>
+                <span class="erronka-meta">
+                  <span th:text="${#temporals.format(erronka.hasieraData, 'yyyy-MM-dd')}">2026-09-01</span>
+                  <span> → </span>
+                  <span th:text="${#temporals.format(erronka.bukaeraData, 'yyyy-MM-dd')}">2026-11-30</span>
+                </span>
+              </span>
+            </button>
+            <div class="erronka-content">
+              <p class="erronka-deskribapena" th:if="${erronka.deskribapena != null and !#strings.isEmpty(erronka.deskribapena)}"
+                 th:text="${erronka.deskribapena}"></p>
+              <div class="modulu-zerrenda" th:if="${!#lists.isEmpty(erronka.moduluak)}">
+                <span class="modulu-badge" th:each="modulua : ${erronka.moduluak}" th:text="${modulua}">MOD</span>
+              </div>
+              <section class="kronograma-laburpena" th:attr="aria-label=${erronka.izena + ' erronkaren kronograma'}">
+                <div class="kronograma-goiburua">
+                  <h3>Kronograma</h3>
+                  <button th:if="${!#lists.isEmpty(erronka.moduluAukerak)}" type="button" class="jarduera-berria"
+                          onclick="irekiJardueraModala(this, true)">＋ Jarduera berria</button>
+                </div>
+                <div class="jarduera-zerrenda" data-jarduera-zerrenda th:attr="data-challenge-id=${erronka.id}">
+                  <article class="jarduera-txartela" th:each="jarduera : ${erronka.jarduerak}"
+                           th:attr="data-module-id=${jarduera.moduloaId},data-common=${jarduera.orokorra},
+                                    data-date=${jarduera.hasieraData},data-activity-id=${jarduera.id},
+                                    data-editable=${jarduera.editagarria},data-title=${jarduera.izenburua},
+                                    data-description=${jarduera.deskribapena},data-hours=${jarduera.iraupenOrduak},
+                                    draggable=${jarduera.editagarria}">
+                    <span class="jarduera-handle" th:if="${jarduera.editagarria}"
+                          title="Arrastatu jarduera ordena aldatzeko" aria-label="Arrastatu jarduera">⠿</span>
+                    <span th:unless="${jarduera.editagarria}"></span>
+                    <div class="jarduera-data">
+                      <span th:text="${#temporals.format(jarduera.hasieraData, 'yyyy-MM-dd')}">2026-09-01</span>
+                      <span th:if="${jarduera.bukaeraData != null and !jarduera.bukaeraData.equals(jarduera.hasieraData)}"
+                            th:text="${'→ ' + #temporals.format(jarduera.bukaeraData, 'yyyy-MM-dd')}">→ 2026-09-02</span>
+                    </div>
+                    <div>
+                      <p class="jarduera-izenburua" th:text="${jarduera.izenburua}">Jarduera</p>
+                      <p class="jarduera-deskribapena"
+                         th:if="${jarduera.deskribapena != null and !#strings.isEmpty(jarduera.deskribapena)}"
+                         th:text="${jarduera.deskribapena}"></p>
+                    </div>
+                    <div class="jarduera-meta">
+                      <span class="jarduera-badge" th:classappend="${jarduera.orokorra} ? ' orokorra' : ''"
+                            th:text="${jarduera.badgea}">Orokorra</span>
+                      <span class="jarduera-aurreikuspena" th:if="${jarduera.aurreikusitakoModuloa != null}"
+                            th:text="${'Ordua: ' + jarduera.aurreikusitakoModuloa}">Ordua: MOD</span>
+                      <span class="jarduera-orduak" th:text="${jarduera.iraupenOrduak + ' h'}">2 h</span>
+                      <button class="jarduera-editatu" th:if="${jarduera.editagarria}" type="button"
+                              onclick="irekiJardueraModala(this, false)">Editatu</button>
+                    </div>
+                  </article>
+                  <p class="jarduera-hutsa" data-jarduera-hutsa th:hidden="${!#lists.isEmpty(erronka.jarduerak)}">
+                    Ez dago kronogramako jarduerarik.
+                  </p>
+                </div>
+              </section>
+
+              <dialog class="jarduera-dialog" th:if="${!#lists.isEmpty(erronka.moduluAukerak)}">
+                <form method="post" th:action="@{/irakasle/ethazi-koadernoa/programazioa/erronkak/{id}/jarduerak/gorde(id=${erronka.id})}">
+                  <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                  <input type="hidden" name="id">
+                  <header><h2 data-dialog-title>Jarduera berria</h2><button type="button" class="dialog-btn" data-dialog-close>×</button></header>
+                  <div class="dialog-content">
+                    <label class="field">Izenburua<input name="izenburua" required maxlength="200"></label>
+                    <label class="field">Deskribapena edo oharrak<textarea name="deskribapena" rows="3" maxlength="60000"></textarea></label>
+                    <div class="dialog-grid">
+                      <label class="field">Modulua
+                        <select name="moduloaId" required>
+                          <option th:each="modulua : ${erronka.moduluAukerak}" th:value="${modulua.id}"
+                                  th:text="${modulua.etiketa}">MOD</option>
+                        </select>
+                      </label>
+                      <label class="field">Hasiera
+                        <input type="date" name="hasieraData" required th:min="${erronka.hasieraData}"
+                               th:max="${erronka.bukaeraData}" th:value="${erronka.hasieraData}">
+                      </label>
+                    </div>
+                    <label class="field">Iraupena (orduak)<input type="number" name="iraupenOrduak" required min="0.01" max="999.99" step="0.01"></label>
+                  </div>
+                  <footer><button type="button" class="dialog-btn" data-dialog-close>Utzi</button><button type="submit" class="dialog-btn primary">Gorde</button></footer>
+                </form>
+              </dialog>
+            </div>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+  function toggleErronka(button) {
+    const item = button.closest('.erronka-item');
+    const irekita = item.classList.toggle('open');
+    button.setAttribute('aria-expanded', String(irekita));
+    gordeProgramazioEgoera();
+    requestAnimationFrame(positionEbaluazioBrackets);
+  }
+
+  function positionEbaluazioBrackets() {
+    const wrap = document.getElementById('erronkaWrap');
+    const list = document.getElementById('erronkaList');
+    if (!wrap || !list) return;
+    const item = index => list.querySelector('.erronka-item[data-index="' + index + '"]');
+    wrap.querySelectorAll('.ebal-bracket').forEach(bracket => {
+      const hasiera = item(bracket.dataset.from);
+      const bukaera = item(bracket.dataset.to);
+      if (!hasiera || !bukaera) return;
+      const hasieraRatioa = Number(bracket.dataset.fromRatio || 0);
+      const bukaeraRatioa = Number(bracket.dataset.toRatio || 1);
+      const y1 = hasiera.offsetTop + hasiera.offsetHeight * hasieraRatioa;
+      const y2 = bukaera.offsetTop + bukaera.offsetHeight * bukaeraRatioa;
+      bracket.style.top = Math.round(y1) + 'px';
+      bracket.style.height = Math.max(28, Math.round(y2 - y1)) + 'px';
+    });
+  }
+
+  function iragaziJarduerak() {
+    const modulua = document.getElementById('moduluIragazkia')?.value || '';
+    document.querySelectorAll('[data-jarduera-zerrenda]').forEach(zerrenda => {
+      let ikusgaiKopurua = 0;
+      zerrenda.querySelectorAll('.jarduera-txartela').forEach(jarduera => {
+        const ikusgai = jarduera.dataset.common === 'true' || !modulua || jarduera.dataset.moduleId === modulua;
+        jarduera.hidden = !ikusgai;
+        if (ikusgai) ikusgaiKopurua++;
+      });
+      const hutsa = zerrenda.querySelector('[data-jarduera-hutsa]');
+      if (hutsa) {
+        hutsa.hidden = ikusgaiKopurua > 0;
+        hutsa.textContent = zerrenda.querySelector('.jarduera-txartela')
+            ? 'Ez dago aukeratutako iragazkiarekin bat datorren jarduerarik.'
+            : 'Ez dago kronogramako jarduerarik.';
+      }
+    });
+    requestAnimationFrame(positionEbaluazioBrackets);
+  }
+
+  const PROGRAMAZIO_EGOERA_GAKOA = 'ethaziProgramazioaEgoera_'
+      + (document.querySelector('.programazioa-container')?.dataset.koadernoId || 'default');
+
+  function gordeProgramazioEgoera() {
+    const erronkaIrekiak = Array.from(document.querySelectorAll('.erronka-item.open'))
+        .map(item => item.dataset.erronkaId);
+    const modulua = document.getElementById('moduluIragazkia')?.value || '';
+    try {
+      localStorage.setItem(PROGRAMAZIO_EGOERA_GAKOA, JSON.stringify({ erronkaIrekiak, modulua }));
+    } catch (error) {
+      console.warn('Ezin izan da programazioaren egoera gorde.', error);
+    }
+  }
+
+  function leheneratuProgramazioEgoera() {
+    let egoera = null;
+    try {
+      const gordeta = localStorage.getItem(PROGRAMAZIO_EGOERA_GAKOA);
+      if (gordeta) egoera = JSON.parse(gordeta);
+    } catch (error) {
+      console.warn('Ezin izan da programazioaren egoera leheneratu.', error);
+    }
+    if (egoera?.erronkaIrekiak && Array.isArray(egoera.erronkaIrekiak)) {
+      egoera.erronkaIrekiak.forEach(id => {
+        const item = document.querySelector(`.erronka-item[data-erronka-id="${CSS.escape(String(id))}"]`);
+        if (!item) return;
+        item.classList.add('open');
+        item.querySelector('.erronka-header')?.setAttribute('aria-expanded', 'true');
+      });
+    }
+    const filtroa = document.getElementById('moduluIragazkia');
+    if (filtroa && egoera?.modulua != null
+        && Array.from(filtroa.options).some(option => option.value === String(egoera.modulua))) {
+      filtroa.value = String(egoera.modulua);
+    }
+    iragaziJarduerak();
+    requestAnimationFrame(positionEbaluazioBrackets);
+  }
+
+  function irekiJardueraModala(button, berria) {
+    const edukia = button.closest('.erronka-content');
+    const dialog = edukia?.querySelector('.jarduera-dialog');
+    const form = dialog?.querySelector('form');
+    if (!dialog || !form) return;
+    form.reset();
+    form.elements.id.value = '';
+    dialog.querySelector('[data-dialog-title]').textContent = berria ? 'Jarduera berria' : 'Jarduera editatu';
+    if (!berria) {
+      const jarduera = button.closest('.jarduera-txartela');
+      form.elements.id.value = jarduera.dataset.activityId;
+      form.elements.izenburua.value = jarduera.dataset.title || '';
+      form.elements.deskribapena.value = jarduera.dataset.description || '';
+      form.elements.moduloaId.value = jarduera.dataset.moduleId || '';
+      form.elements.hasieraData.value = jarduera.dataset.date || '';
+      form.elements.iraupenOrduak.value = jarduera.dataset.hours || '';
+    }
+    dialog.showModal();
+  }
+
+  document.querySelectorAll('[data-dialog-close]').forEach(button => button.addEventListener('click', () => {
+    button.closest('dialog')?.close();
+  }));
+
+  let arrastatutakoa = null;
+  document.querySelectorAll('.jarduera-txartela[data-editable="true"]').forEach(jarduera => {
+    jarduera.addEventListener('dragstart', event => {
+      arrastatutakoa = jarduera;
+      jarduera.classList.add('dragging');
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', jarduera.dataset.activityId);
+    });
+    jarduera.addEventListener('dragend', () => {
+      jarduera.classList.remove('dragging');
+      document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+      arrastatutakoa = null;
+    });
+    jarduera.addEventListener('dragover', event => {
+      if (!arrastatutakoa || arrastatutakoa === jarduera
+          || arrastatutakoa.dataset.moduleId !== jarduera.dataset.moduleId
+          || arrastatutakoa.closest('[data-jarduera-zerrenda]') !== jarduera.closest('[data-jarduera-zerrenda]')) return;
+      event.preventDefault();
+      jarduera.classList.add('drag-over');
+    });
+    jarduera.addEventListener('dragleave', () => jarduera.classList.remove('drag-over'));
+    jarduera.addEventListener('drop', async event => {
+      event.preventDefault();
+      jarduera.classList.remove('drag-over');
+      if (!arrastatutakoa || arrastatutakoa.dataset.moduleId !== jarduera.dataset.moduleId) return;
+      const zerrenda = jarduera.closest('[data-jarduera-zerrenda]');
+      const ondoren = event.clientY > jarduera.getBoundingClientRect().top + jarduera.offsetHeight / 2;
+      zerrenda.insertBefore(arrastatutakoa, ondoren ? jarduera.nextSibling : jarduera);
+      const moduloaId = Number(jarduera.dataset.moduleId);
+      const jardueraIds = Array.from(zerrenda.querySelectorAll('.jarduera-txartela[data-editable="true"]'))
+          .filter(item => Number(item.dataset.moduleId) === moduloaId)
+          .map(item => Number(item.dataset.activityId));
+      const token = document.querySelector('meta[name="_csrf"]')?.content || '';
+      const header = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
+      try {
+        const response = await fetch(`/irakasle/ethazi-koadernoa/programazioa/erronkak/${zerrenda.dataset.challengeId}/jarduerak/berrordenatu`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(token ? { [header]: token } : {}) },
+          body: JSON.stringify({ moduloaId, jardueraIds })
+        });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(result.message || 'Ezin izan da ordena gorde.');
+        window.location.reload();
+      } catch (error) {
+        window.alert(error.message || 'Ezin izan da ordena gorde.');
+        window.location.reload();
+      }
+    });
+  });
+
+  document.getElementById('moduluIragazkia')?.addEventListener('change', () => {
+    iragaziJarduerak();
+    gordeProgramazioEgoera();
+  });
+  window.addEventListener('resize', positionEbaluazioBrackets);
+  document.addEventListener('DOMContentLoaded', leheneratuProgramazioEgoera);
+</script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="${ethaziKoadernoAktiboa.izena + ' — Ikasleak'}">Ethazi koadernoa — Ikasleak</title>
+  <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/irakasle-common.css}">
+  <link rel="stylesheet" th:href="@{/css/ethazi-koadernoa.css}">
+  <style>
+    .ikasle-topbar { display:flex; justify-content:space-between; align-items:center; gap:1rem; margin-bottom:1rem; }
+    .ikasle-topbar h1 { margin:0; }
+    .ikasle-kop { background:#e0f2fe; color:#155e75; border-radius:999px; padding:.35rem .75rem; font-weight:700; }
+    .ikasle-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; }
+    .ikasle-card { overflow:hidden; background:#fff; border:1px solid var(--b); border-radius:14px; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+    .ikasle-media { width:100%; height:160px; overflow:hidden; background:#f3f4f6; }
+    .ikasle-media img { width:100%; height:100%; display:block; object-fit:cover; }
+    .ikasle-meta { padding:.6rem .75rem .75rem; }
+    .ikasle-abizenak { font-size:.95rem; line-height:1.1; }
+    .ikasle-izena { font-weight:700; font-size:1.05rem; line-height:1.2; }
+    .ikasle-id { color:var(--muted); font-size:.85rem; margin-top:.15rem; }
+    .ikasle-hutsa { color:var(--muted); padding:2rem; text-align:center; background:#fff; border:1px dashed var(--b); border-radius:12px; }
+  </style>
+</head>
+<body>
+<div th:replace="~{irakasleak/fragments/ethazi-navbar :: navbar(${ethaziKoadernoAktiboa}, ${irakasleKoadernoAktiboak}, ${irakasleEthaziKoadernoAktiboak})}"></div>
+
+<main class="page">
+  <div class="ikasle-topbar">
+    <h1 th:text="${ethaziKoadernoAktiboa.izena + ' — Ikasleak'}">Ethazi koadernoa — Ikasleak</h1>
+    <span class="ikasle-kop" th:text="${kop + ' ikasle'}">0 ikasle</span>
+  </div>
+
+  <div class="ikasle-hutsa" th:if="${#lists.isEmpty(ikasleak)}">Ez dago ikaslerik talde honetan.</div>
+  <div class="ikasle-grid" th:if="${!#lists.isEmpty(ikasleak)}">
+    <article class="ikasle-card" th:each="ikaslea : ${ikasleak}">
+      <div class="ikasle-media">
+        <img th:src="${#strings.isEmpty(ikaslea.argazkiPath) ? '/img/avatar-user.svg' : ikaslea.argazkiPath}"
+             th:alt="${ikaslea.izenOsoa}">
+      </div>
+      <div class="ikasle-meta">
+        <div class="ikasle-abizenak"
+             th:text="${(ikaslea.abizena1 ?: '') + (ikaslea.abizena2 != null and !#strings.isEmpty(ikaslea.abizena2) ? ' ' + ikaslea.abizena2 : '')}">
+          Abizenak
+        </div>
+        <div class="ikasle-izena" th:text="${ikaslea.izena}">Izena</div>
+        <div class="ikasle-id">
+          <span th:text="${ikaslea.hna}">HNA</span>
+          <span th:if="${ikaslea.nan != null and !#strings.isEmpty(ikaslea.nan)}" th:text="${' · ' + ikaslea.nan}"></span>
+        </div>
+      </div>
+    </article>
+  </div>
+</main>
+</body>
+</html>

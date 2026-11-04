@@ -1,0 +1,24 @@
+.ethazi-t-nav { background: #164e63; border-bottom-color: #0e7490; }
+.ethazi-t-nav .t-desktop a:hover { background: #155e75; }
+.ethazi-t-nav .t-desktop a.active { background: #0891b2; }
+
+.ethazi-hasiera { max-width: 1180px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+.ethazi-goiburua { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; margin-bottom: 1.25rem; }
+.ethazi-goiburua h1 { margin: 0; font-size: clamp(1.5rem, 3vw, 2.1rem); }
+.ethazi-goiburua p, .ethazi-goiburua span { margin: .35rem 0 0; color: #64748b; }
+.ethazi-panela { background: #fff; border: 1px solid #dbe3ea; border-radius: 14px; box-shadow: 0 4px 18px rgba(15, 23, 42, .06); padding: 1.25rem; }
+.ethazi-panel-goiburua { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.ethazi-panel-goiburua h2 { margin: 0; }
+.ethazi-panel-goiburua p { margin: .35rem 0 0; color: #64748b; }
+.ethazi-legenda { display: flex; gap: .55rem 1rem; flex-wrap: wrap; }
+.ethazi-legenda > span { display: inline-flex; align-items: center; gap: .35rem; font-weight: 600; font-size: .9rem; }
+.ethazi-legenda i { width: 1rem; height: 1rem; border: 1px solid rgba(15,23,42,.15); border-radius: 3px; }
+.ethazi-ordutegi-wrap { overflow-x: auto; }
+.ethazi-ordutegia { width: 100%; min-width: 720px; table-layout: fixed; border-collapse: collapse; }
+.ethazi-ordutegia th, .ethazi-ordutegia td { border: 1px solid #dbe3ea; height: 58px; padding: .4rem; text-align: center; }
+.ethazi-ordutegia thead th, .ethazi-ordutegia tbody th { background: #f8fafc; color: #334155; }
+.ethazi-ordutegia thead th:first-child, .ethazi-ordutegia tbody th { width: 64px; }
+.ethazi-ordutegia td { color: #334155; font-weight: 600; }
+.ethazi-ordutegia td.erronkako-modulua { color: #0f172a; box-shadow: inset 0 0 0 1px rgba(15,23,42,.08); }
+.ethazi-hutsa { padding: 2.5rem 1rem; border: 1px dashed #cbd5e1; border-radius: 10px; text-align: center; color: #64748b; }
+@media (max-width: 640px) { .ethazi-goiburua { align-items: flex-start; flex-direction: column; } }

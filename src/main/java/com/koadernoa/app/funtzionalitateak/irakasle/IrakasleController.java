@@ -32,6 +32,7 @@ import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
 import com.koadernoa.app.objektuak.ordutegiak.entitateak.IrakasleOrdutegiLerroa;
 import com.koadernoa.app.objektuak.ordutegiak.repository.IrakasleOrdutegiaRepository;
+import com.koadernoa.app.ethazi.entitateak.EthaziKoadernoa;
 
 import lombok.RequiredArgsConstructor;
 
@@ -76,6 +77,8 @@ public class IrakasleController {
 	    List<Koadernoa> koadernoZerrenda =
 	    		irakasleModelAttributes.getKoadernoAktiboak(auth);
 	    model.addAttribute("irakasleKoadernoAktiboak", koadernoZerrenda);
+	    List<EthaziKoadernoa> ethaziKoadernoZerrenda = irakasleModelAttributes.getEthaziKoadernoAktiboak(auth);
+	    model.addAttribute("irakasleEthaziKoadernoAktiboak", ethaziKoadernoZerrenda);
 
 	    // 3) Ez badago koaderno aktiborik, baina badago gutxienez bat zerrendan → lehenengora redirect
 	    boolean sesioanDago = (koadernoAktiboa != null && koadernoAktiboa.getId() != null);
@@ -85,6 +88,8 @@ public class IrakasleController {
 	            Long lehenId = aukeratuHasierakoKoadernoAktiboa(koadernoZerrenda, LocalDate.now(), LocalTime.now());
 	            // KoadernoaController-ek sartuko du sesioan, eta gero berriz etorriko gara /irakasle-ra
 	            return "redirect:/irakasle/koadernoa/" + lehenId + "?next=/irakasle";
+	        } else if (!ethaziKoadernoZerrenda.isEmpty()) {
+	            return "redirect:/irakasle/ethazi-koadernoa/" + ethaziKoadernoZerrenda.get(0).getId() + "/hautatu";
 	        } else {
 	            // benetan ez dauka koadernorik
 	            model.addAttribute("koadernoAktiboDago", false);

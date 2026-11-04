@@ -32,11 +32,16 @@
 
             <!-- 2) Irakaslearen “ohiko” koadernoak -->
             <option th:each="k : ${irakasleKoadernoak}"
-                    th:value="${k.id}"
+                    th:value="${'arrunta:' + k.id}"
                     th:text="${k.izenaTaldearekin}"
                     th:selected="${koadernoAktiboa != null
                                   and !navbarKontsultaModua
                                   and k.id == koadernoAktiboa.id}">
+            </option>
+
+            <option th:each="ek : ${irakasleEthaziKoadernoAktiboak}"
+                    th:value="${'ethazi:' + ek.id}"
+                    th:text="${ek.izena}">
             </option>
           </select>
 
@@ -181,8 +186,13 @@
   </div>
 
   <script>
-    function aldatuKoadernoa(id){
+    function aldatuKoadernoa(aukera){
       const next = encodeURIComponent(location.pathname + location.search);
+      if (aukera.startsWith('ethazi:')) {
+        location.href = '/irakasle/ethazi-koadernoa/' + aukera.substring(7) + '/hautatu';
+        return;
+      }
+      const id = aukera.startsWith('arrunta:') ? aukera.substring(8) : aukera;
       location.href = '/irakasle/koadernoa/' + id + '?next=' + next;
     }
 

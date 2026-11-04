@@ -14,6 +14,8 @@ import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Taldea;
+import com.koadernoa.app.ethazi.entitateak.EthaziKoadernoa;
+import com.koadernoa.app.ethazi.service.EthaziKoadernoaService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,13 +25,19 @@ public class IrakasleModelAttributes {
 
     private final IrakasleaService irakasleaService;
     private final KoadernoaService koadernoaService;
+    private final EthaziKoadernoaService ethaziKoadernoaService;
 
     // Lehenetsi: sesioan badago koadernoAktiboa, hura erabili; bestela lehen aktiboa
     @ModelAttribute("koadernoAktiboa")
     @Transactional(readOnly = true)
     public Koadernoa getKoadernoAktiboa(
             Authentication auth,
-            @SessionAttribute(value = "koadernoAktiboa", required = false) Koadernoa sessionKoadernoa) {
+            @SessionAttribute(value = "koadernoAktiboa", required = false) Koadernoa sessionKoadernoa,
+            @SessionAttribute(value = EthaziKoadernoaController.KOADERNO_MOTA, required = false) String koadernoMota) {
+
+        if (EthaziKoadernoaController.ETHAZI_MOTA.equals(koadernoMota)) {
+            return null;
+        }
 
         if (sessionKoadernoa != null && sessionKoadernoa.getId() != null) {
             return sessionKoadernoa;
@@ -87,6 +95,24 @@ public class IrakasleModelAttributes {
                           && k.getEgutegia().getIkasturtea() != null
                           && k.getEgutegia().getIkasturtea().isAktiboa())
                 .toList();
+    }
+
+    @ModelAttribute("irakasleEthaziKoadernoAktiboak")
+    public List<EthaziKoadernoa> getEthaziKoadernoAktiboak(Authentication auth) {
+        if (auth == null) return List.of();
+        try {
+            Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+            return ethaziKoadernoaService.lortuIrakaslearenKoadernoak(irakaslea);
+        } catch (RuntimeException ex) {
+            return List.of();
+        }
+    }
+
+    @ModelAttribute("ethaziKoadernoAktiboa")
+    public EthaziKoadernoa getEthaziKoadernoAktiboa(
+            @SessionAttribute(value = "ethaziKoadernoAktiboa", required = false) EthaziKoadernoa koadernoa,
+            @SessionAttribute(value = EthaziKoadernoaController.KOADERNO_MOTA, required = false) String koadernoMota) {
+        return EthaziKoadernoaController.ETHAZI_MOTA.equals(koadernoMota) ? koadernoa : null;
     }
 
     @ModelAttribute("tutoretzaTaldea")

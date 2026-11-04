@@ -24,7 +24,8 @@ import lombok.Setter;
 @Entity
 @Table(name = "ethazi_erronka_kronograma_jarduera", indexes = {
     @Index(name = "ix_kronograma_jarduera_erronka_data", columnList = "erronka_id,hasiera_data,bukaera_data"),
-    @Index(name = "ix_kronograma_jarduera_moduloa", columnList = "moduloa_id")
+    @Index(name = "ix_kronograma_jarduera_moduloa", columnList = "moduloa_id"),
+    @Index(name = "ix_kronograma_jarduera_erronka_moduloa_ordena", columnList = "erronka_id,moduloa_id,ordena")
 })
 @Getter @Setter
 public class ErronkaKronogramaJarduera {
@@ -63,4 +64,8 @@ public class ErronkaKronogramaJarduera {
 
     @Column(name = "iraupen_orduak", nullable = false, precision = 7, scale = 2)
     private BigDecimal iraupenOrduak;
+
+    /** Modulu bereko jardueren sekuentzia; datak ordena honetatik birkalkulatzen dira. */
+    @Column(nullable = false)
+    private Integer ordena = 0;
 }

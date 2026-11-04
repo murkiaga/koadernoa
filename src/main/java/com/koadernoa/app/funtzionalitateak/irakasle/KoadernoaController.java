@@ -35,6 +35,7 @@ import com.koadernoa.app.objektuak.ordutegiak.repository.IrakasleOrdutegiaReposi
 import com.koadernoa.app.objektuak.zikloak.service.FamiliaService;
 
 import jakarta.transaction.Transactional;
+import jakarta.servlet.http.HttpSession;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -76,7 +77,8 @@ public class KoadernoaController {
 	        @RequestParam(value = "next", required = false) String nextEncoded,
 	        Authentication auth,
 	        Model model,
-	        RedirectAttributes ra) {
+	        RedirectAttributes ra,
+	        HttpSession session) {
 
 	    Koadernoa koadernoa = koadernoaService.findById(id);
 	    if (koadernoa == null) {
@@ -101,6 +103,9 @@ public class KoadernoaController {
 
 	    // Sesioan gorde (@SessionAttributes("koadernoAktiboa") dela eta)
 	    model.addAttribute("koadernoAktiboa", koadernoa);
+	    session.setAttribute("koadernoAktiboa", koadernoa);
+	    session.setAttribute(EthaziKoadernoaController.KOADERNO_MOTA, EthaziKoadernoaController.ARRUNTA_MOTA);
+	    session.removeAttribute("ethaziKoadernoAktiboa");
 
 	    // 'next' DEKODETU eta modu seguruan balidatu
 	    String next = null;

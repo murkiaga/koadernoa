@@ -35,6 +35,26 @@ public interface ModuloaRepository extends JpaRepository<Moduloa, Long>{
 	Optional<Moduloa> findWithIrakasleakById(@Param("id") Long id);
 
 	boolean existsByIdAndIrakasleak_Id(Long moduloaId, Long irakasleaId);
+	boolean existsByTaldeaIdAndIrakasleakIdAndAktiboTrue(Long taldeaId, Long irakasleaId);
+
+	@Query("""
+		select distinct m from Moduloa m
+		join m.irakasleak i
+		where m.taldea.id = :taldeaId
+		  and i.id = :irakasleaId
+		  and m.aktibo = true
+		order by m.kodea asc, m.izena asc
+	""")
+	List<Moduloa> findAktiboakByTaldeaIdAndIrakasleaId(@Param("taldeaId") Long taldeaId,
+	                                                   @Param("irakasleaId") Long irakasleaId);
+
+	@Query("""
+		select distinct m.taldea from Moduloa m
+		join m.irakasleak i
+		where i.id = :irakasleaId and m.taldea is not null and m.aktibo = true
+		order by m.taldea.izena asc
+	""")
+	List<Taldea> findDistinctTaldeakByIrakasleaId(@Param("irakasleaId") Long irakasleaId);
 	List<Moduloa> findByEeiKodeaIgnoreCaseOrderByIdAsc(String eeiKodea);
 	Page<Moduloa> findByTaldeaId(Long taldeaId, Pageable pageable);
 	Page<Moduloa> findAll(Pageable pageable);

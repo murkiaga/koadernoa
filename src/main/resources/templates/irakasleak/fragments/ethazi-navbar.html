@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu"><body>
+<div th:fragment="navbar (ethaziKoadernoAktiboa, irakasleKoadernoak, irakasleEthaziKoadernoak)" class="t-nav ethazi-t-nav">
+  <div class="t-navbar">
+    <div class="t-left">
+      <span class="koaderno-izena" th:text="${ethaziKoadernoAktiboa.izena}">Ethazi koadernoa</span>
+      <div class="koaderno-hautapena">
+        <label for="ethaziKoadernoSelect">Koadernoak:</label>
+        <select id="ethaziKoadernoSelect" onchange="aldatuKoadernoAktiboa(this.value)">
+          <option th:each="k : ${irakasleKoadernoak}"
+                  th:value="${'arrunta:' + k.id}"
+                  th:text="${k.izenaTaldearekin}"></option>
+          <option th:each="ek : ${irakasleEthaziKoadernoak}"
+                  th:value="${'ethazi:' + ek.id}"
+                  th:text="${ek.izena}"
+                  th:selected="${ek.id == ethaziKoadernoAktiboa.id}"></option>
+        </select>
+      </div>
+    </div>
+    <nav class="t-desktop" aria-label="Ethazi koadernoaren nabigazioa">
+      <ul class="nav-links">
+        <li><a th:href="@{/irakasle/ethazi-koadernoa}"
+               th:classappend="${currentPath == '/irakasle/ethazi-koadernoa' or currentPath == '/irakasle/ethazi-koadernoa/'} ? 'active'">Hasiera</a></li>
+        <li><a th:href="@{/irakasle/ethazi-koadernoa/egutegia}"
+               th:classappend="${currentPath == '/irakasle/ethazi-koadernoa/egutegia'} ? 'active'">Egutegia</a></li>
+        <li><a th:href="@{/irakasle/ethazi-koadernoa/ikasleak}"
+               th:classappend="${currentPath == '/irakasle/ethazi-koadernoa/ikasleak'} ? 'active'">Ikasleak</a></li>
+        <li><a th:href="@{/irakasle/ethazi-koadernoa/programazioa}"
+               th:classappend="${currentPath == '/irakasle/ethazi-koadernoa/programazioa'} ? 'active'">Programazioa</a></li>
+        <li th:if="${#authorization.expression('hasAnyRole(''KUDEATZAILEA'',''ADMIN'')')}">
+          <a th:href="@{/kudeatzaile}">Kudeaketa</a>
+        </li>
+        <li>
+          <form th:action="@{/logout}" method="post">
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <button type="submit" class="logout-btn">Irten</button>
+          </form>
+        </li>
+      </ul>
+    </nav>
+    <button class="t-hamb" type="button" onclick="TNav.toggle()" aria-expanded="false" aria-controls="tNav">☰ Menua</button>
+  </div>
+  <div id="tNav" class="t-panel" aria-hidden="true">
+    <div class="t-panel-header"><button type="button" onclick="TNav.toggle()" aria-label="Itxi">✕ Itxi</button></div>
+    <div class="t-panel-content">
+      <ul class="t-list">
+        <li><a th:href="@{/irakasle/ethazi-koadernoa}"
+               th:classappend="${currentPath == '/irakasle/ethazi-koadernoa' or currentPath == '/irakasle/ethazi-koadernoa/'} ? 'active'">Hasiera</a></li>
+        <li><a th:href="@{/irakasle/ethazi-koadernoa/egutegia}"
+               th:classappend="${currentPath == '/irakasle/ethazi-koadernoa/egutegia'} ? 'active'">Egutegia</a></li>
+        <li><a th:href="@{/irakasle/ethazi-koadernoa/ikasleak}"
+               th:classappend="${currentPath == '/irakasle/ethazi-koadernoa/ikasleak'} ? 'active'">Ikasleak</a></li>
+        <li><a th:href="@{/irakasle/ethazi-koadernoa/programazioa}"
+               th:classappend="${currentPath == '/irakasle/ethazi-koadernoa/programazioa'} ? 'active'">Programazioa</a></li>
+        <li th:if="${#authorization.expression('hasAnyRole(''KUDEATZAILEA'',''ADMIN'')')}"><a th:href="@{/kudeatzaile}">Kudeaketa</a></li>
+        <li><form th:action="@{/logout}" method="post">
+          <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+          <button type="submit" class="logout-btn">Irten</button>
+        </form></li>
+      </ul>
+    </div>
+  </div>
+  <script>
+    function aldatuKoadernoAktiboa(aukera) {
+      if (aukera.startsWith('ethazi:')) {
+        location.href = '/irakasle/ethazi-koadernoa/' + aukera.substring(7) + '/hautatu';
+        return;
+      }
+      const id = aukera.startsWith('arrunta:') ? aukera.substring(8) : aukera;
+      location.href = '/irakasle/koadernoa/' + id;
+    }
+  </script>
+  <script th:src="@{/js/irakasle-nav.js}" defer></script>
+</div>
+</body></html>
