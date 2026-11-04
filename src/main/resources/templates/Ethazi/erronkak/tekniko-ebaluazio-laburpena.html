@@ -1,0 +1,53 @@
+<!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head th:replace="~{Ethazi/fragments/common :: head('Moduluaren ebaluazio laburpena')}"></head><body class="ethazi-body">
+<div th:replace="~{kudeatzaile/fragments/navbar :: kudeatzaile-navbar}"></div>
+<nav th:replace="~{Ethazi/fragments/navbar :: navbar('erronkak')}"></nav>
+<main class="page ethazi-page evaluation-summary-page">
+  <header class="page-header"><div><h1>Moduluaren ebaluazio laburpena</h1>
+    <p><strong th:text="${laburpena.moduloa.kodea}"></strong><span th:text="${' — ' + laburpena.moduloa.izena}"></span></p>
+    <p th:text="${laburpena.erronka.izena}"></p></div>
+    <a class="btn" th:href="@{/ethazi/erronkak/{id}/ebaluazio-laburpena(id=${laburpena.erronka.id},zikloaId=${itzuliZikloaId},mailaId=${itzuliMailaId},hizkuntza=${itzuliHizkuntza},ikasturteaId=${itzuliIkasturteaId})}">← Ebaluazio laburpenera</a>
+  </header>
+  <p th:unless="${laburpena.konfiguratuta}" class="empty-state">Modulu honek ez du errubrika teknikorik konfiguratuta.</p>
+  <p th:if="${#lists.isEmpty(laburpena.ikasleak)}" class="empty-state">Erronkak ez du ikaslerik esleituta.</p>
+  <div th:unless="${#lists.isEmpty(laburpena.ikasleak)}" class="evaluation-summary-scroll" tabindex="0" role="region" aria-label="Moduluaren ebaluazio laburpen taula">
+    <table class="evaluation-summary-table transverse-columns-hidden"><thead>
+      <tr><th rowspan="2" class="summary-student">Ikaslea</th>
+        <th th:unless="${#lists.isEmpty(laburpena.ebidentziak)}" th:colspan="${#lists.size(laburpena.ebidentziak)}" class="summary-technical-group">
+          <span>Errubrika teknikoa</span><small class="summary-header-weight" th:text="${laburpena.errubrikaPisuaEtiketa}"></small></th>
+        <th th:unless="${#lists.isEmpty(laburpena.probak)}" th:colspan="${#lists.size(laburpena.probak)}" class="summary-technical-tests-group">
+          <span>Bestelako probak</span><small class="summary-header-weight" th:text="${laburpena.bestelakoProbenPisuaEtiketa}"></small></th>
+        <th rowspan="2" class="summary-technical-value"><span>Teknikoa guztira</span><small class="summary-header-weight" th:text="${laburpena.teknikoenPisuaEtiketa}"></small></th>
+        <th rowspan="2" class="summary-transverse-total"><span class="summary-heading-with-toggle"><span>Zeharkakoa</span>
+          <button type="button" class="summary-column-toggle" data-summary-transverse-toggle aria-expanded="false" aria-label="Zeharkako zutabeak erakutsi" title="Zeharkako zutabeak erakutsi"><span aria-hidden="true">+</span></button>
+          </span><small class="summary-header-weight" th:text="${laburpena.zeharkakoenPisuaEtiketa}"></small></th>
+        <th th:each="eb, es : ${laburpena.zeharkakoEbidentziak}" th:colspan="${eb.ebaluazioAnitza ? 4 : 1}"
+          class="summary-evidence-group" data-summary-transverse-column th:attr="data-summary-evidence-group=${'technical-transverse-' + es.index}"><span th:text="${eb.izena}"></span><small class="summary-header-weight" th:text="${eb.pisuaEtiketa}"></small></th>
+        <th rowspan="2" class="summary-grand-total">TOTALA</th>
+      </tr><tr>
+        <th th:each="eb : ${laburpena.ebidentziak}"><span th:text="${eb.izena}"></span><small class="technical-summary-kind">Ebidentzia</small><small class="summary-header-weight" th:text="${eb.pisuaEtiketa}"></small></th>
+        <th th:each="proba : ${laburpena.probak}"><span th:text="${proba.izena}"></span><small class="technical-summary-kind">Bestelako proba</small><small class="summary-header-weight" th:text="${proba.pisuaEtiketa}"></small></th>
+        <th:block th:each="eb, es : ${laburpena.zeharkakoEbidentziak}">
+          <th th:if="${eb.ebaluazioAnitza}" class="summary-evidence-column summary-evaluator-heading" data-summary-transverse-column th:attr="data-summary-detail-group=${'technical-transverse-' + es.index}">Irakasle</th>
+          <th th:if="${eb.ebaluazioAnitza}" class="summary-evidence-column summary-evaluator-heading" data-summary-transverse-column th:attr="data-summary-detail-group=${'technical-transverse-' + es.index}">Koeb.</th>
+          <th th:if="${eb.ebaluazioAnitza}" class="summary-evidence-column summary-evaluator-heading" data-summary-transverse-column th:attr="data-summary-detail-group=${'technical-transverse-' + es.index}">Autoeb.</th>
+          <th class="summary-evidence-column" data-summary-transverse-column><span th:if="${eb.ebaluazioAnitza}" class="summary-heading-with-toggle"><span>Orokorra</span><button type="button" class="summary-column-toggle" th:attr="data-summary-toggle=${'technical-transverse-' + es.index},aria-label=${eb.izena + ' ebaluatzaileen zutabeak ezkutatu'}" aria-expanded="true" title="Ebaluatzaileen zutabeak ezkutatu"><span aria-hidden="true">−</span></button></span></th>
+        </th:block>
+      </tr>
+    </thead><tbody>
+      <tr th:each="ikaslea : ${laburpena.ikasleak}"><th class="summary-student" th:text="${ikaslea.izena}"></th>
+        <td th:each="nota : ${ikaslea.ebidentziak}" th:classappend="${nota.minimoaUrratuta} ? ' minimum-failed'" th:text="${nota.nota != null ? #numbers.formatDecimal(nota.nota,1,2) : '—'}"></td>
+        <td th:each="nota : ${ikaslea.probak}" th:classappend="${nota.minimoaUrratuta} ? ' minimum-failed'" th:text="${nota.nota != null ? #numbers.formatDecimal(nota.nota,1,2) : '—'}"></td>
+        <td class="technical-summary-total" th:classappend="${!#lists.isEmpty(ikaslea.minimoUrraketak)} ? ' minimum-failed'" th:text="${ikaslea.guztira != null ? #numbers.formatDecimal(ikaslea.guztira,1,2) : '—'}"></td>
+        <td class="summary-transverse-total" th:classappend="${ikaslea.zeharkakoMinimoaUrratuta} ? ' minimum-failed'" th:text="${ikaslea.zeharkakoa != null ? #numbers.formatDecimal(ikaslea.zeharkakoa,1,2) : '—'}"></td>
+        <th:block th:each="nota, ns : ${ikaslea.zeharkakoNotak}">
+          <td th:if="${laburpena.zeharkakoEbidentziak[ns.index].ebaluazioAnitza}" class="summary-evidence-column" data-summary-transverse-column th:attr="data-summary-detail-group=${'technical-transverse-' + ns.index}" th:text="${nota.irakaslea != null ? #numbers.formatDecimal(nota.irakaslea,1,2) : '—'}"></td>
+          <td th:if="${laburpena.zeharkakoEbidentziak[ns.index].ebaluazioAnitza}" class="summary-evidence-column" data-summary-transverse-column th:attr="data-summary-detail-group=${'technical-transverse-' + ns.index}" th:text="${nota.koebaluazioa != null ? #numbers.formatDecimal(nota.koebaluazioa,1,2) : '—'}"></td>
+          <td th:if="${laburpena.zeharkakoEbidentziak[ns.index].ebaluazioAnitza}" class="summary-evidence-column" data-summary-transverse-column th:attr="data-summary-detail-group=${'technical-transverse-' + ns.index}" th:text="${nota.autoebaluazioa != null ? #numbers.formatDecimal(nota.autoebaluazioa,1,2) : '—'}"></td>
+          <td class="summary-evidence-column summary-evidence-total" data-summary-transverse-column th:classappend="${nota.minimoaUrratuta} ? ' minimum-failed'" th:text="${nota.guztira != null ? #numbers.formatDecimal(nota.guztira,1,2) : '—'}"></td>
+        </th:block>
+        <td class="summary-grand-total" th:classappend="${ikaslea.zeharkakoMinimoaUrratuta or !#lists.isEmpty(ikaslea.minimoUrraketak)} ? ' minimum-failed'" th:text="${ikaslea.totala != null ? #numbers.formatDecimal(ikaslea.totala,1,2) : '—'}"></td>
+      </tr>
+    </tbody></table>
+  </div>
+</main><script th:src="@{/js/ethazi.js}" defer></script></body></html>

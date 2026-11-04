@@ -20,7 +20,9 @@
           <th th:if="${eb.ebaluazioAnitza}" class="summary-evidence-column summary-evaluator-heading" data-summary-transverse-column th:attr="data-summary-detail-group=${'evidence-' + es.index}">Irakasle</th><th th:if="${eb.ebaluazioAnitza}" class="summary-evidence-column summary-evaluator-heading" data-summary-transverse-column th:attr="data-summary-detail-group=${'evidence-' + es.index}">Koeb.</th><th th:if="${eb.ebaluazioAnitza}" class="summary-evidence-column summary-evaluator-heading" data-summary-transverse-column th:attr="data-summary-detail-group=${'evidence-' + es.index}">Autoeb.</th>
           <th class="summary-evidence-column" data-summary-transverse-column><span th:if="${eb.ebaluazioAnitza}" class="summary-heading-with-toggle"><span>Orokorra</span><button type="button" class="summary-column-toggle" th:attr="data-summary-toggle=${'evidence-' + es.index},aria-label=${eb.izena + ' ebaluatzaileen zutabeak ezkutatu'}" aria-expanded="true" title="Ebaluatzaileen zutabeak ezkutatu"><span aria-hidden="true">−</span></button></span></th>
         </th:block>
-        <th th:each="m : ${laburpena.moduluak}" th:title="${m.izena}" th:text="${m.kodea}"></th>
+        <th th:each="m : ${laburpena.moduluak}" th:title="${m.izena}"><a class="summary-module-link"
+          th:href="@{/ethazi/erronkak/{id}/ebaluazio-laburpena/teknikoa/{moduloaId}(id=${laburpena.erronka.id},moduloaId=${m.id},zikloaId=${itzuliZikloaId},mailaId=${itzuliMailaId},hizkuntza=${itzuliHizkuntza},ikasturteaId=${itzuliIkasturteaId})}"
+          th:text="${m.kodea}" th:aria-label="${m.kodea + ' moduluaren ebaluazio teknikoaren laburpena ikusi'}"></a></th>
       </tr></thead><tbody>
       <tr th:each="ikaslea : ${laburpena.ikasleak}"><th class="summary-student" th:text="${ikaslea.izena}"></th>
         <th:block th:each="nota, ns : ${ikaslea.zeharkakoNotak}">

@@ -264,6 +264,24 @@ public class KinielaService {
         public String zeharkakoenPisuaEtiketa() { return ehunekoEtiketa(zeharkakoenPisua); }
         public String teknikoenPisuaEtiketa() { return ehunekoEtiketa(teknikoenPisua); }
     }
+    public record TeknikoLaburpenZutabe(Long id, String izena, BigDecimal pisua, boolean bestelakoProba) {
+        public String pisuaEtiketa() { return ehunekoEtiketa(pisua); }
+    }
+    public record TeknikoLaburpenIkaslea(Long id, String izena,
+            List<LaburpenKalkuluOsagaia> ebidentziak, List<LaburpenKalkuluOsagaia> probak,
+            BigDecimal guztira, List<String> minimoUrraketak,
+            List<LaburpenEbidentziaNota> zeharkakoNotak, BigDecimal zeharkakoa,
+            boolean zeharkakoMinimoaUrratuta, BigDecimal totala) {}
+    public record TeknikoEbaluazioLaburpena(Erronka erronka, LaburpenModuloa moduloa,
+            boolean konfiguratuta, BigDecimal errubrikaPisua, BigDecimal bestelakoProbenPisua,
+            List<TeknikoLaburpenZutabe> ebidentziak, List<TeknikoLaburpenZutabe> probak,
+            List<LaburpenEbidentzia> zeharkakoEbidentziak, BigDecimal teknikoenPisua,
+            BigDecimal zeharkakoenPisua, List<TeknikoLaburpenIkaslea> ikasleak) {
+        public String errubrikaPisuaEtiketa() { return ehunekoEtiketa(errubrikaPisua); }
+        public String bestelakoProbenPisuaEtiketa() { return ehunekoEtiketa(bestelakoProbenPisua); }
+        public String teknikoenPisuaEtiketa() { return ehunekoEtiketa(teknikoenPisua); }
+        public String zeharkakoenPisuaEtiketa() { return ehunekoEtiketa(zeharkakoenPisua); }
+    }
 
     private static String ehunekoEtiketa(BigDecimal pisua) {
         return pisua == null ? "%0" : "%" + pisua.stripTrailingZeros().toPlainString();
@@ -451,6 +469,32 @@ public class KinielaService {
         }).toList();
         return new EbaluazioLaburpena(challenge, multiple, heteroWeight, peerWeight, selfWeight,
             transverseWeight, technicalWeight, evidenceHeaders, moduleHeaders, rows);
+    }
+
+    public TeknikoEbaluazioLaburpena teknikoEbaluazioLaburpena(Long erronkaId, Long moduloaId) {
+        var summary = ebaluazioLaburpena(erronkaId);
+        int moduleIndex = java.util.stream.IntStream.range(0, summary.moduluak().size())
+            .filter(i -> summary.moduluak().get(i).id().equals(moduloaId)).findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Modulua ez da erronka honetakoa."));
+        var module = summary.moduluak().get(moduleIndex);
+        var rubric = errubrikak.findByErronkaId(erronkaId).stream()
+            .filter(r -> r.getModuloa().getId().equals(moduloaId)).findFirst().orElse(null);
+        var evidenceHeaders = rubric == null ? List.<TeknikoLaburpenZutabe>of() : rubric.getEbidentziak().stream()
+            .map(e -> new TeknikoLaburpenZutabe(e.getId(), e.getDeskribapena(), e.getPisua(), false)).toList();
+        var testHeaders = rubric == null ? List.<TeknikoLaburpenZutabe>of() : rubric.getBestelakoProbak().stream()
+            .map(p -> new TeknikoLaburpenZutabe(p.getId(), p.getIzena(), p.getPisua(), true)).toList();
+        final int selectedModuleIndex = moduleIndex;
+        var rows = summary.ikasleak().stream().map(student -> {
+            var calculation = student.kalkuluTeknikoak().get(selectedModuleIndex);
+            return new TeknikoLaburpenIkaslea(student.id(), student.izena(), calculation.ebidentziak(),
+                calculation.probak(), calculation.guztira(), calculation.minimoUrraketak(),
+                student.zeharkakoNotak(), student.zeharkakoa(), student.zeharkakoMinimoaUrratuta(),
+                student.totalak().get(selectedModuleIndex));
+        }).toList();
+        return new TeknikoEbaluazioLaburpena(summary.erronka(), module, rubric != null,
+            rubric == null ? null : rubric.getErrubrikaPisua(),
+            rubric == null ? null : rubric.getBestelakoProbenPisua(), evidenceHeaders, testHeaders,
+            summary.ebidentziak(), summary.teknikoenPisua(), summary.zeharkakoenPisua(), rows);
     }
 
     private boolean gutxienekoaUrratuta(BigDecimal grade, ZeharkakoErrubrikaMaila minimumLevel) {

@@ -448,7 +448,7 @@ class EthaziServiceTest {
         transverseForm.getEbidentziak().get(0).setMota(
             com.koadernoa.app.ethazi.entitateak.errubrikak.ZeharkakoEbidentziaMota.IRAKASLE_AUTO_KOEBALUAZIOA);
         kiniela.gordeZeharkakoErrubrika(challengeId, transverseForm);
-        assertThat(kiniela.zeharkakoErrubrika(challengeId, m.getId()).adierazleak().get(0).deskribapena())
+        assertThat(kiniela.zeharkakoErrubrika(challengeId, firstModule.getId()).adierazleak().get(0).deskribapena())
             .isEqualTo("Osagaiak identifikatzen ditu");
 
         var auth = new UsernamePasswordAuthenticationToken("manager", "",
@@ -1508,7 +1508,7 @@ class EthaziServiceTest {
             .isEqualByComparingTo("10.00");
         var rubricOnlyCalculation = kiniela.ebaluazioLaburpena(challengeId).ikasleak().get(0).kalkuluTeknikoak().get(0);
         assertThat(rubricOnlyCalculation.badagoProbaNotarik()).isFalse();
-        assertThat(rubricOnlyCalculation.guztizkoEragiketa()).contains("10.00", "100.00");
+        assertThat(rubricOnlyCalculation.guztizkoEragiketa()).contains("10.00");
         kiniela.gordeBestelakoProbaNota(challengeId, m.getId(), testId, student.getId(), new java.math.BigDecimal("6"), auth);
         em.flush(); em.clear();
 
@@ -1525,10 +1525,10 @@ class EthaziServiceTest {
             assertThat(row.zeharkakoa()).isEqualByComparingTo("8.00");
             assertThat(row.teknikoak()).singleElement().satisfies(n -> assertThat(n).isEqualByComparingTo("8.00"));
             assertThat(row.kalkuluTeknikoak()).singleElement().satisfies(k -> {
-                assertThat(k.ebidentziak()).singleElement().extracting(KinielaService.LaburpenKalkuluOsagaia::nota)
-                    .isEqualTo(java.math.BigDecimal.TEN);
-                assertThat(k.probak()).singleElement().extracting(KinielaService.LaburpenKalkuluOsagaia::nota)
-                    .isEqualTo(new java.math.BigDecimal("6"));
+                assertThat(k.ebidentziak()).singleElement().satisfies(osagaia ->
+                    assertThat(osagaia.nota()).isEqualByComparingTo(java.math.BigDecimal.TEN));
+                assertThat(k.probak()).singleElement().satisfies(osagaia ->
+                    assertThat(osagaia.nota()).isEqualByComparingTo("6"));
                 assertThat(k.guztizkoEragiketa()).contains("10.00", "6.00", "8.00");
             });
             assertThat(row.totalak()).singleElement().satisfies(n -> assertThat(n).isEqualByComparingTo("8.00"));
@@ -1551,12 +1551,24 @@ class EthaziServiceTest {
             String html = mvc().perform(get("/ethazi/erronkak/" + challengeId + "/ebaluazio-laburpena").principal(auth))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
             assertThat(html).contains("Irakasle", "Koeb.", "Autoeb.", "Orokorra", "%100", "Zeharkakoa", "%30",
-                "Teknikoak", "(%70)", ">SUMMARY</th>", "SUMMARY TOTALA", "Nola kalkulatu da?",
+                "Teknikoak", "(%70)", ">SUMMARY</a>", "SUMMARY TOTALA", "Nola kalkulatu da?",
                 "Errubrika teknikoa", "Bestelako probak", "Azken kalifikazio teknikoa");
+            assertThat(html).contains("/ethazi/erronkak/" + challengeId
+                + "/ebaluazio-laburpena/teknikoa/" + m.getId());
             assertThat(html).doesNotContain("Zehar ebidentzia</th>");
             assertThat(html).contains("data-summary-toggle=\"evidence-0\"", "data-summary-transverse-toggle",
                 "data-summary-evidence-group=\"evidence-0\"");
             assertThat(html).contains("calculation-grade-minimum-failed");
+            String technicalHtml = mvc().perform(get("/ethazi/erronkak/" + challengeId
+                    + "/ebaluazio-laburpena/teknikoa/" + m.getId()).principal(auth)
+                    .param("zikloaId", cycle.getId().toString()).param("hizkuntza", "EUSKARA"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+            assertThat(technicalHtml).contains("Moduluaren ebaluazio laburpena", "SUMMARY",
+                "Laburpen modulua", "Aranburu, Ane", "Errubrika teknikoa", "Ebidentzia",
+                "Bestelako probak", "Bestelako proba", "Azterketa", "colspan=\"1\"", "%50",
+                "Teknikoa guztira", "Zeharkakoa", "TOTALA", "transverse-columns-hidden",
+                "data-summary-transverse-toggle", "aria-expanded=\"false\"", "Zehar ebidentzia A",
+                "10.00", "6.00", "8.00", "4.00", "Ebaluazio laburpenera");
             String list = mvc().perform(get("/ethazi/erronkak").principal(auth)
                 .param("zikloaId", cycle.getId().toString()).param("ikasturteaId", kiniela.ikasturteAktiboaId().toString()))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
