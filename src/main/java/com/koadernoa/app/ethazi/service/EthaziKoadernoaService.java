@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.stereotype.Service;
@@ -15,12 +16,16 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.koadernoa.app.ethazi.entitateak.Erronka;
 import com.koadernoa.app.ethazi.entitateak.EthaziKoadernoa;
+import com.koadernoa.app.ethazi.entitateak.kronograma.ErronkaJardueraMultzoa;
 import com.koadernoa.app.ethazi.entitateak.kronograma.ErronkaKronogramaJarduera;
 import com.koadernoa.app.ethazi.entitateak.kronograma.KronogramaJardueraMota;
 import com.koadernoa.app.ethazi.repository.ErronkaRepository;
+import com.koadernoa.app.ethazi.repository.ErronkaJardueraMultzoaRepository;
 import com.koadernoa.app.ethazi.repository.ErronkaKronogramaJardueraRepository;
 import com.koadernoa.app.ethazi.repository.EthaziKoadernoaRepository;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
+import com.koadernoa.app.objektuak.egutegia.entitateak.EgunBerezi;
+import com.koadernoa.app.objektuak.egutegia.entitateak.EgunMota;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
 import com.koadernoa.app.objektuak.egutegia.repository.IkasturteaRepository;
@@ -49,6 +54,7 @@ public class EthaziKoadernoaService {
     private final TaldeOrdutegiaRepository taldeOrdutegiak;
     private final ErronkaRepository erronkak;
     private final ErronkaKronogramaJardueraRepository kronogramaJarduerak;
+    private final ErronkaJardueraMultzoaRepository jardueraMultzoak;
 
     @Transactional
     public List<EthaziKoadernoa> lortuIrakaslearenKoadernoak(Irakaslea irakaslea) {
@@ -160,6 +166,12 @@ public class EthaziKoadernoaService {
                         aukeratutakoErronkak.stream().map(Erronka::getId).toList()).stream()
                         .collect(java.util.stream.Collectors.groupingBy(j -> j.getErronka().getId(),
                                 LinkedHashMap::new, java.util.stream.Collectors.toList()));
+        Map<Long, List<ErronkaJardueraMultzoa>> multzoakErronkaka = aukeratutakoErronkak.isEmpty()
+                ? Map.of()
+                : jardueraMultzoak.findByErronkaIdInOrderByOrdenaAscIdAsc(
+                        aukeratutakoErronkak.stream().map(Erronka::getId).toList()).stream()
+                        .collect(java.util.stream.Collectors.groupingBy(m -> m.getErronka().getId(),
+                                LinkedHashMap::new, java.util.stream.Collectors.toList()));
 
         Set<Long> erronketakoModuloIds = aukeratutakoErronkak.stream()
                 .flatMap(e -> e.getModuluak().stream()).map(Moduloa::getId)
@@ -171,6 +183,8 @@ public class EthaziKoadernoaService {
                         .toList();
         Set<Long> irakaslearenModuloIds = moduluAukerak.stream().map(ModuluAukera::id)
                 .collect(java.util.stream.Collectors.toSet());
+        List<TaldeOrdutegia> ordutegiBertsioak = taldeOrdutegiak
+                .findByTaldea_IdAndIkasturtea_IdOrderByHasieraDataAsc(taldeaId, ikasturtea.getId());
 
         List<ErronkaTxartela> txartelak = new java.util.ArrayList<>();
         int indizea = 1;
@@ -184,14 +198,37 @@ public class EthaziKoadernoaService {
                     .getOrDefault(erronka.getId(), List.of()).stream()
                     .map(j -> jardueraTxartela(j, irakaslearenModuloIds))
                     .toList();
+            List<JardueraMultzoTxartela> multzoTxartelak = multzoakErronkaka
+                    .getOrDefault(erronka.getId(), List.of()).stream()
+                    .map(m -> {
+                        List<KronogramaJardueraTxartela> multzokoak = jardueraTxartelak.stream()
+                                .filter(j -> m.getId().equals(j.multzoaId())).toList();
+                        LocalDate hasiera = multzokoak.stream().map(KronogramaJardueraTxartela::hasieraData)
+                                .filter(java.util.Objects::nonNull).min(LocalDate::compareTo).orElse(null);
+                        LocalDate bukaera = multzokoak.stream().map(KronogramaJardueraTxartela::bukaeraData)
+                                .filter(java.util.Objects::nonNull).max(LocalDate::compareTo).orElse(null);
+                        return new JardueraMultzoTxartela(m.getId(), m.getIzena(), m.getOrdena(),
+                                hasiera, bukaera, multzokoak);
+                    })
+                    .toList();
+            List<KronogramaJardueraTxartela> multzokatuGabekoak = jardueraTxartelak.stream()
+                    .filter(j -> j.multzoaId() == null).toList();
             List<ModuluAukera> erronkakoModuluAukerak = erronka.getModuluak().stream()
                     .filter(m -> irakaslearenModuloIds.contains(m.getId()))
                     .sorted(Comparator.comparing(m -> etiketa(m).toLowerCase()))
                     .map(m -> new ModuluAukera(m.getId(), etiketa(m)))
                     .toList();
+            List<ModuluOrduEgoera> moduluOrduak = erronka.getModuluak().stream()
+                    .filter(m -> irakaslearenModuloIds.contains(m.getId()))
+                    .map(m -> new ModuluOrduEgoera(m.getId(),
+                            kalkulatuOrduErabilgarriak(erronka, m, egutegia, ordutegiBertsioak),
+                            kalkulatuOrduProgramatuak(m.getId(),
+                                    jarduerakErronkaka.getOrDefault(erronka.getId(), List.of()))))
+                    .toList();
             txartelak.add(new ErronkaTxartela(erronka.getId(), indizea++, erronka.getIzena(),
                     erronka.getDeskribapena(), erronka.getHasieraData(), erronka.getBukaeraData(),
-                    moduloEtiketak, jardueraTxartelak, erronkakoModuluAukerak));
+                    moduloEtiketak, jardueraTxartelak, erronkakoModuluAukerak,
+                    multzoTxartelak, multzokatuGabekoak, moduluOrduak));
         }
         return new ProgramazioaIkuspegia(ikasturtea.getIzena(), txartelak,
                 kalkulatuEbaluazioTarteak(txartelak, egutegia), moduluAukerak);
@@ -208,7 +245,8 @@ public class EthaziKoadernoaService {
                 jarduera.getIraupenOrduak(), orokorra, jabea == null ? null : jabea.getId(), badgea,
                 aurreikusitakoa == null ? null : etiketa(aurreikusitakoa),
                 jarduera.getOrdena() == null ? 0 : jarduera.getOrdena(),
-                !orokorra && jabea != null && irakaslearenModuloIds.contains(jabea.getId()));
+                !orokorra && jabea != null && irakaslearenModuloIds.contains(jabea.getId()),
+                jarduera.getMultzoa() == null ? null : jarduera.getMultzoa().getId());
     }
 
     private List<EbaluazioTartea> kalkulatuEbaluazioTarteak(List<ErronkaTxartela> erronkak, Egutegia egutegia) {
@@ -257,6 +295,68 @@ public class EthaziKoadernoaService {
         return Math.max(0d, Math.min(1d, (double) kokapena / egunGuztiak));
     }
 
+    private int kalkulatuOrduErabilgarriak(Erronka erronka, Moduloa modulua, Egutegia egutegia,
+            List<TaldeOrdutegia> bertsioak) {
+        if (erronka.getHasieraData() == null || erronka.getBukaeraData() == null) return 0;
+        Map<LocalDate, EgunBerezi> egunBereziak = egutegia == null ? Map.of()
+                : Optional.ofNullable(egutegia.getEgunBereziak()).orElse(List.of()).stream()
+                        .filter(e -> e != null && e.getData() != null)
+                        .collect(java.util.stream.Collectors.toMap(EgunBerezi::getData, e -> e, (a, b) -> a));
+        int guztira = 0;
+        for (LocalDate data = erronka.getHasieraData(); !data.isAfter(erronka.getBukaeraData());
+                data = data.plusDays(1)) {
+            if (!egutegiBarruan(data, egutegia)) continue;
+            Astegunak asteguna = astegunEraginkorra(data, egunBereziak);
+            if (asteguna == null) continue;
+            LocalDate unekoData = data;
+            TaldeOrdutegia ordutegia = bertsioak.stream()
+                    .filter(o -> o.getHasieraData() != null && !o.getHasieraData().isAfter(unekoData))
+                    .max(Comparator.comparing(TaldeOrdutegia::getHasieraData)).orElse(null);
+            if (ordutegia == null) continue;
+            guztira += (int) Optional.ofNullable(ordutegia.getLerroak()).orElse(List.of()).stream()
+                    .filter(l -> l.getModuloa() != null && modulua.getId().equals(l.getModuloa().getId())
+                            && asteguna == l.getAsteguna())
+                    .count();
+        }
+        return guztira;
+    }
+
+    private BigDecimal kalkulatuOrduProgramatuak(Long moduloaId,
+            List<ErronkaKronogramaJarduera> jarduerak) {
+        return jarduerak.stream()
+                .filter(j -> j.getIraupenOrduak() != null)
+                .filter(j -> j.getMota() == KronogramaJardueraMota.MODULUA && j.getModuloa() != null
+                            && moduloaId.equals(j.getModuloa().getId())
+                        || j.getMota() == KronogramaJardueraMota.KOMUNA
+                            && j.getAurreikusitakoModuloa() != null
+                            && moduloaId.equals(j.getAurreikusitakoModuloa().getId()))
+                .map(ErronkaKronogramaJarduera::getIraupenOrduak)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private boolean egutegiBarruan(LocalDate data, Egutegia egutegia) {
+        return egutegia == null
+                || (egutegia.getHasieraData() == null || !data.isBefore(egutegia.getHasieraData()))
+                && (egutegia.getBukaeraData() == null || !data.isAfter(egutegia.getBukaeraData()));
+    }
+
+    private Astegunak astegunEraginkorra(LocalDate data, Map<LocalDate, EgunBerezi> egunBereziak) {
+        EgunBerezi berezia = egunBereziak.get(data);
+        if (berezia != null && berezia.getMota() != null) {
+            if (berezia.getMota() == EgunMota.EZ_LEKTIBOA || berezia.getMota() == EgunMota.JAIEGUNA) return null;
+            if (berezia.getMota() == EgunMota.ORDEZKATUA) return berezia.getOrdezkatua();
+        }
+        return switch (data.getDayOfWeek()) {
+            case MONDAY -> Astegunak.ASTELEHENA;
+            case TUESDAY -> Astegunak.ASTEARTEA;
+            case WEDNESDAY -> Astegunak.ASTEAZKENA;
+            case THURSDAY -> Astegunak.OSTEGUNA;
+            case FRIDAY -> Astegunak.OSTIRALA;
+            case SATURDAY -> Astegunak.LARUNBATA;
+            case SUNDAY -> Astegunak.IGANDEA;
+        };
+    }
+
     private void ziurtatuKoadernoa(Taldea taldea) {
         if (ethaziKoadernoak.findByTaldeaId(taldea.getId()).isPresent()) return;
         EthaziKoadernoa berria = new EthaziKoadernoa();
@@ -298,10 +398,18 @@ public class EthaziKoadernoaService {
     public record KronogramaJardueraTxartela(Long id, String izenburua, String deskribapena,
             LocalDate hasieraData, LocalDate bukaeraData, BigDecimal iraupenOrduak, boolean orokorra,
             Long moduloaId, String badgea, String aurreikusitakoModuloa, int ordena,
-            boolean editagarria) {}
+            boolean editagarria, Long multzoaId) {}
+    public record JardueraMultzoTxartela(Long id, String izena, int ordena,
+            LocalDate hasieraData, LocalDate bukaeraData,
+            List<KronogramaJardueraTxartela> jarduerak) {}
     public record ErronkaTxartela(Long id, int indizea, String izena, String deskribapena,
             LocalDate hasieraData, LocalDate bukaeraData, List<String> moduluak,
-            List<KronogramaJardueraTxartela> jarduerak, List<ModuluAukera> moduluAukerak) {}
+            List<KronogramaJardueraTxartela> jarduerak, List<ModuluAukera> moduluAukerak,
+            List<JardueraMultzoTxartela> multzoak,
+            List<KronogramaJardueraTxartela> multzokatuGabekoJarduerak,
+            List<ModuluOrduEgoera> moduluOrduak) {}
+    public record ModuluOrduEgoera(Long moduloaId, int orduErabilgarriak,
+            BigDecimal orduProgramatuak) {}
     public record EbaluazioTartea(String izena, String kolorea, int hasieraErronka,
             double hasieraRatioa, int bukaeraErronka, double bukaeraRatioa) {}
     public record ProgramazioaIkuspegia(String ikasturtea, List<ErronkaTxartela> erronkak,

@@ -3,6 +3,9 @@ package com.koadernoa.app.ethazi.entitateak.kronograma;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
 import com.koadernoa.app.ethazi.entitateak.Erronka;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 
@@ -25,6 +28,7 @@ import lombok.Setter;
 @Table(name = "ethazi_erronka_kronograma_jarduera", indexes = {
     @Index(name = "ix_kronograma_jarduera_erronka_data", columnList = "erronka_id,hasiera_data,bukaera_data"),
     @Index(name = "ix_kronograma_jarduera_moduloa", columnList = "moduloa_id"),
+    @Index(name = "ix_kronograma_jarduera_multzoa", columnList = "multzoa_id"),
     @Index(name = "ix_kronograma_jarduera_erronka_moduloa_ordena", columnList = "erronka_id,moduloa_id,ordena")
 })
 @Getter @Setter
@@ -49,6 +53,12 @@ public class ErronkaKronogramaJarduera {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "aurreikusitako_moduloa_id")
     private Moduloa aurreikusitakoModuloa;
+
+    /** Aukerako kategoria komuna; multzo berean hainbat modulutako jarduerak egon daitezke. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "multzoa_id")
+    @OnDelete(action = OnDeleteAction.SET_NULL)
+    private ErronkaJardueraMultzoa multzoa;
 
     @Column(nullable = false, length = 200)
     private String izenburua;

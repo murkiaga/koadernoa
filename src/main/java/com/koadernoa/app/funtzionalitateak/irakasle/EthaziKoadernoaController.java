@@ -19,6 +19,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.koadernoa.app.ethazi.entitateak.EthaziKoadernoa;
 import com.koadernoa.app.ethazi.dto.KronogramaJardueraForm;
+import com.koadernoa.app.ethazi.dto.JardueraMultzoForm;
 import com.koadernoa.app.ethazi.entitateak.kronograma.KronogramaJardueraMota;
 import com.koadernoa.app.ethazi.service.EthaziKoadernoaService;
 import com.koadernoa.app.ethazi.service.KronogramaService;
@@ -153,9 +154,35 @@ public class EthaziKoadernoaController {
         form.setMota(KronogramaJardueraMota.MODULUA);
         form.setAurreikusitakoModuloaId(null);
         try {
-            kronogramaService.gorde(erronkaId, form, auth);
+            kronogramaService.gordeProgramaziotik(erronkaId, form, auth);
             flash.addFlashAttribute("success", form.getId() == null
                     ? "Jarduera sortu da." : "Jarduera eguneratu da.");
+        } catch (IllegalArgumentException | AccessDeniedException ex) {
+            flash.addFlashAttribute("error", ex.getMessage());
+        }
+        return "redirect:/irakasle/ethazi-koadernoa/programazioa";
+    }
+
+    @PostMapping("/programazioa/erronkak/{erronkaId}/multzoak/gorde")
+    public String programazioMultzoaGorde(@PathVariable Long erronkaId,
+            @ModelAttribute JardueraMultzoForm form, Authentication auth,
+            RedirectAttributes flash) {
+        try {
+            kronogramaService.multzoaGorde(erronkaId, form, auth);
+            flash.addFlashAttribute("success", form.getId() == null
+                    ? "Jarduera-multzoa sortu da." : "Jarduera-multzoa eguneratu da.");
+        } catch (IllegalArgumentException | AccessDeniedException ex) {
+            flash.addFlashAttribute("error", ex.getMessage());
+        }
+        return "redirect:/irakasle/ethazi-koadernoa/programazioa";
+    }
+
+    @PostMapping("/programazioa/erronkak/{erronkaId}/multzoak/{multzoaId}/ezabatu")
+    public String programazioMultzoaEzabatu(@PathVariable Long erronkaId,
+            @PathVariable Long multzoaId, Authentication auth, RedirectAttributes flash) {
+        try {
+            kronogramaService.multzoaEzabatu(erronkaId, multzoaId, auth);
+            flash.addFlashAttribute("success", "Jarduera-multzoa ezabatu da; bertako jarduerak multzokatu gabe geratu dira.");
         } catch (IllegalArgumentException | AccessDeniedException ex) {
             flash.addFlashAttribute("error", ex.getMessage());
         }
@@ -167,7 +194,8 @@ public class EthaziKoadernoaController {
             @PathVariable Long erronkaId, @RequestBody BerrordenatuEskaera eskaera,
             Authentication auth) {
         try {
-            kronogramaService.berrordenatu(erronkaId, eskaera.moduloaId(), eskaera.jardueraIds(), auth);
+            kronogramaService.jardueraKokatu(erronkaId, eskaera.moduloaId(), eskaera.jardueraId(),
+                    eskaera.multzoaId(), eskaera.jardueraIds(), auth);
             return ResponseEntity.ok(Map.of("message", "Ordena eta datak eguneratu dira."));
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
@@ -176,7 +204,26 @@ public class EthaziKoadernoaController {
         }
     }
 
-    public record BerrordenatuEskaera(Long moduloaId, java.util.List<Long> jardueraIds) {}
+    public record BerrordenatuEskaera(Long moduloaId, Long jardueraId, Long multzoaId,
+            java.util.List<Long> jardueraIds) {}
+
+    @PostMapping("/programazioa/erronkak/{erronkaId}/multzoak/berrordenatu")
+    public ResponseEntity<Map<String, String>> programazioMultzoakBerrordenatu(
+            @PathVariable Long erronkaId, @RequestBody ProgramazioBlokeakBerrordenatuEskaera eskaera,
+            Authentication auth) {
+        try {
+            kronogramaService.programazioBlokeakBerrordenatu(
+                    erronkaId, eskaera.moduloaId(), eskaera.blokeak(), auth);
+            return ResponseEntity.ok(Map.of("message", "Multzoen ordena eta jardueren datak eguneratu dira."));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+        } catch (AccessDeniedException ex) {
+            return ResponseEntity.status(403).body(Map.of("message", ex.getMessage()));
+        }
+    }
+
+    public record ProgramazioBlokeakBerrordenatuEskaera(
+            Long moduloaId, java.util.List<String> blokeak) {}
 
     private Egutegia lortuTaldearenEgutegia(EthaziKoadernoa koadernoa) {
         Long mailaId = moduloaRepository.findByTaldeaId(koadernoa.getTaldea().getId()).stream()

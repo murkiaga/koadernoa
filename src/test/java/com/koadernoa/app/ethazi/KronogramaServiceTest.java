@@ -22,10 +22,13 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 
 import com.koadernoa.app.ethazi.dto.KronogramaJardueraForm;
+import com.koadernoa.app.ethazi.dto.JardueraMultzoForm;
 import com.koadernoa.app.ethazi.entitateak.Erronka;
+import com.koadernoa.app.ethazi.entitateak.kronograma.ErronkaJardueraMultzoa;
 import com.koadernoa.app.ethazi.entitateak.kronograma.ErronkaKronogramaJarduera;
 import com.koadernoa.app.ethazi.entitateak.kronograma.KronogramaJardueraMota;
 import com.koadernoa.app.ethazi.repository.ErronkaKronogramaJardueraRepository;
+import com.koadernoa.app.ethazi.repository.ErronkaJardueraMultzoaRepository;
 import com.koadernoa.app.ethazi.repository.ErronkaRepository;
 import com.koadernoa.app.ethazi.service.KronogramaService;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
@@ -48,6 +51,7 @@ import com.koadernoa.app.objektuak.zikloak.entitateak.Taldea;
 class KronogramaServiceTest {
     @Mock ErronkaRepository erronkak;
     @Mock ErronkaKronogramaJardueraRepository jarduerak;
+    @Mock ErronkaJardueraMultzoaRepository multzoak;
     @Mock ModuloaRepository moduloak;
     @Mock IrakasleaRepository irakasleak;
     @Mock EgutegiaRepository egutegiak;
@@ -59,7 +63,7 @@ class KronogramaServiceTest {
 
     @BeforeEach
     void setup() {
-        service = new KronogramaService(erronkak, jarduerak, moduloak, irakasleak, egutegiak, taldeOrdutegiak);
+        service = new KronogramaService(erronkak, jarduerak, multzoak, moduloak, irakasleak, egutegiak, taldeOrdutegiak);
         var year = new Ikasturtea(); year.setId(4L); year.setAktiboa(true);
         var maila = new Maila(); maila.setId(6L);
         sareak = modulua(10L, "SARE", "Sare lokalak");
@@ -183,6 +187,25 @@ class KronogramaServiceTest {
     }
 
     @Test
+    void programazioBistatikHasieraDatarikGabeSortuEtaKokapenetikKalkulatzenDu() {
+        gordetzeakIdaEsleitzenDu();
+        TaldeOrdutegia ordutegia = taldeOrdutegia(LocalDate.of(2026, 9, 1), sareak,
+                Astegunak.ASTELEHENA, 1, Astegunak.ASTEAZKENA, 1);
+        when(taldeOrdutegiak.findByTaldea_IdAndIkasturtea_IdOrderByHasieraDataAsc(13L, 4L))
+                .thenReturn(List.of(ordutegia));
+        var form = form(KronogramaJardueraMota.MODULUA, 10L);
+        form.setHasieraData(null);
+        form.setIraupenOrduak(new BigDecimal("2.00"));
+
+        service.gordeProgramaziotik(7L, form, auth("manager", "ROLE_ADMIN"));
+
+        var captor = ArgumentCaptor.forClass(ErronkaKronogramaJarduera.class);
+        verify(jarduerak).save(captor.capture());
+        assertThat(captor.getValue().getHasieraData()).isEqualTo(LocalDate.of(2026, 10, 5));
+        assertThat(captor.getValue().getBukaeraData()).isEqualTo(LocalDate.of(2026, 10, 7));
+    }
+
+    @Test
     void jardueraKomunakModulukoOrduaErreserbatuEtaJardueraEspezifikoaHurrengoKlaseEguneraLuzatzenDu() {
         gordetzeakIdaEsleitzenDu();
         TaldeOrdutegia ordutegia = taldeOrdutegia(LocalDate.of(2026, 9, 1), sareak,
@@ -248,6 +271,166 @@ class KronogramaServiceTest {
         assertThat(lehenengoa.getOrdena()).isEqualTo(2);
         assertThat(lehenengoa.getHasieraData()).isEqualTo(LocalDate.of(2026, 10, 14));
         verify(jarduerak).saveAll(any());
+    }
+
+    @Test
+    void berrordenatzeakJardueraKomunarenDataMantentzenDuEtaBereOrduaErreserbatzenDu() {
+        TaldeOrdutegia ordutegia = taldeOrdutegia(LocalDate.of(2026, 9, 1), sareak,
+                Astegunak.ASTELEHENA, 1);
+        when(taldeOrdutegiak.findByTaldea_IdAndIkasturtea_IdOrderByHasieraDataAsc(13L, 4L))
+                .thenReturn(List.of(ordutegia));
+        ErronkaKronogramaJarduera komuna = new ErronkaKronogramaJarduera();
+        komuna.setId(80L); komuna.setErronka(erronka); komuna.setMota(KronogramaJardueraMota.KOMUNA);
+        komuna.setAurreikusitakoModuloa(sareak); komuna.setIzenburua("Aurkezpen komuna");
+        komuna.setHasieraData(LocalDate.of(2026, 10, 12));
+        komuna.setBukaeraData(LocalDate.of(2026, 10, 12));
+        komuna.setIraupenOrduak(BigDecimal.ONE);
+        ErronkaKronogramaJarduera lehenengoa = modulukoJarduera(
+                81L, "Lehenengoa", 1, LocalDate.of(2026, 10, 5));
+        ErronkaKronogramaJarduera bigarrena = modulukoJarduera(
+                82L, "Bigarrena", 2, LocalDate.of(2026, 10, 19));
+        when(jarduerak.findByErronkaIdOrderByHasieraDataAscBukaeraDataAscIdAsc(7L))
+                .thenReturn(List.of(lehenengoa, komuna, bigarrena));
+
+        service.berrordenatu(7L, 10L, List.of(82L, 81L),
+                auth("manager", "ROLE_ADMIN"));
+
+        assertThat(komuna.getHasieraData()).isEqualTo(LocalDate.of(2026, 10, 12));
+        assertThat(komuna.getBukaeraData()).isEqualTo(LocalDate.of(2026, 10, 12));
+        assertThat(bigarrena.getHasieraData()).isEqualTo(LocalDate.of(2026, 10, 5));
+        assertThat(lehenengoa.getHasieraData()).isEqualTo(LocalDate.of(2026, 10, 19));
+    }
+
+    @Test
+    void moduluBatekoIrakasleakMultzoKomunaSortuEtaBereJardueraBertanSarDezake() {
+        Irakaslea teacher = irakaslea();
+        when(irakasleak.findByEmailaIgnoreCase("ane@example.com")).thenReturn(Optional.of(teacher));
+        when(moduloak.existsByIdAndIrakasleak_Id(10L, 30L)).thenReturn(true);
+        when(moduloak.existsByIdAndIrakasleak_Id(20L, 30L)).thenReturn(false);
+        when(multzoak.findByErronkaIdOrderByOrdenaAscIdAsc(7L)).thenReturn(List.of());
+        when(multzoak.save(any())).thenAnswer(invocation -> {
+            ErronkaJardueraMultzoa m = invocation.getArgument(0); m.setId(40L); return m;
+        });
+        JardueraMultzoForm multzoForm = new JardueraMultzoForm(); multzoForm.setIzena("Prestaketa");
+        var auth = auth("ane@example.com", "ROLE_IRAKASLEA");
+
+        assertThat(service.multzoaGorde(7L, multzoForm, auth)).isEqualTo(40L);
+
+        ErronkaJardueraMultzoa multzoa = new ErronkaJardueraMultzoa();
+        multzoa.setId(40L); multzoa.setErronka(erronka); multzoa.setIzena("Prestaketa");
+        when(multzoak.findById(40L)).thenReturn(Optional.of(multzoa));
+        gordetzeakIdaEsleitzenDu();
+        ordutegiaLehenetsia();
+        KronogramaJardueraForm jardueraForm = form(KronogramaJardueraMota.MODULUA, 10L);
+        jardueraForm.setMultzoaId(40L);
+        service.gorde(7L, jardueraForm, auth);
+
+        var captor = ArgumentCaptor.forClass(ErronkaKronogramaJarduera.class);
+        verify(jarduerak).save(captor.capture());
+        assertThat(captor.getValue().getMultzoa()).isSameAs(multzoa);
+    }
+
+    @Test
+    void multzoaEzabatzeanJarduerakEzDiraEzabatzenEtaMultzokatuGabeGeratzenDira() {
+        ordutegiaLehenetsia();
+        ErronkaJardueraMultzoa multzoa = new ErronkaJardueraMultzoa();
+        multzoa.setId(40L); multzoa.setErronka(erronka); multzoa.setIzena("Prestaketa");
+        ErronkaKronogramaJarduera jarduera = modulukoJarduera(
+                81L, "Diseinua", 1, LocalDate.of(2026, 10, 7));
+        jarduera.setMultzoa(multzoa);
+        when(multzoak.findById(40L)).thenReturn(Optional.of(multzoa));
+        when(jarduerak.findByMultzoaId(40L)).thenReturn(List.of(jarduera));
+
+        service.multzoaEzabatu(7L, 40L, auth("manager", "ROLE_ADMIN"));
+
+        assertThat(jarduera.getMultzoa()).isNull();
+        verify(jarduerak).saveAll(List.of(jarduera));
+        verify(multzoak).delete(multzoa);
+    }
+
+    @Test
+    void multzoakMugitzeanBarrukoJarduerenOrdenaEtaDatakBirkalkulatzenDitu() {
+        TaldeOrdutegia ordutegia = taldeOrdutegia(LocalDate.of(2026, 9, 1), sareak,
+                Astegunak.ASTEAZKENA, 1);
+        when(taldeOrdutegiak.findByTaldea_IdAndIkasturtea_IdOrderByHasieraDataAsc(13L, 4L))
+                .thenReturn(List.of(ordutegia));
+        ErronkaJardueraMultzoa lehena = new ErronkaJardueraMultzoa();
+        lehena.setId(40L); lehena.setErronka(erronka); lehena.setIzena("Lehena"); lehena.setOrdena(1);
+        ErronkaJardueraMultzoa bigarrena = new ErronkaJardueraMultzoa();
+        bigarrena.setId(41L); bigarrena.setErronka(erronka); bigarrena.setIzena("Bigarrena"); bigarrena.setOrdena(2);
+        ErronkaKronogramaJarduera lehenJarduera = modulukoJarduera(
+                81L, "Lehen jarduera", 1, LocalDate.of(2026, 10, 7));
+        lehenJarduera.setMultzoa(lehena);
+        ErronkaKronogramaJarduera bigarrenJarduera = modulukoJarduera(
+                82L, "Bigarren jarduera", 2, LocalDate.of(2026, 10, 14));
+        bigarrenJarduera.setMultzoa(bigarrena);
+        when(multzoak.findByErronkaIdOrderByOrdenaAscIdAsc(7L)).thenReturn(List.of(lehena, bigarrena));
+        when(jarduerak.findByErronkaIdOrderByHasieraDataAscBukaeraDataAscIdAsc(7L))
+                .thenReturn(List.of(lehenJarduera, bigarrenJarduera));
+
+        service.multzoakBerrordenatu(7L, List.of(41L, 40L), auth("manager", "ROLE_ADMIN"));
+
+        assertThat(bigarrena.getOrdena()).isEqualTo(1);
+        assertThat(lehena.getOrdena()).isEqualTo(2);
+        assertThat(bigarrenJarduera.getOrdena()).isEqualTo(1);
+        assertThat(bigarrenJarduera.getHasieraData()).isEqualTo(LocalDate.of(2026, 10, 7));
+        assertThat(lehenJarduera.getOrdena()).isEqualTo(2);
+        assertThat(lehenJarduera.getHasieraData()).isEqualTo(LocalDate.of(2026, 10, 14));
+        verify(multzoak).saveAll(List.of(lehena, bigarrena));
+        verify(jarduerak).saveAll(List.of(lehenJarduera, bigarrenJarduera));
+    }
+
+    @Test
+    void multzoaJardueraSolteBatenAtzeraMugiDaiteke() {
+        TaldeOrdutegia ordutegia = taldeOrdutegia(LocalDate.of(2026, 9, 1), sareak,
+                Astegunak.ASTEAZKENA, 1);
+        when(taldeOrdutegiak.findByTaldea_IdAndIkasturtea_IdOrderByHasieraDataAsc(13L, 4L))
+                .thenReturn(List.of(ordutegia));
+        ErronkaJardueraMultzoa multzoa = new ErronkaJardueraMultzoa();
+        multzoa.setId(40L); multzoa.setErronka(erronka); multzoa.setIzena("Multzoa"); multzoa.setOrdena(1);
+        ErronkaKronogramaJarduera multzokoa = modulukoJarduera(
+                81L, "Multzokoa", 1, LocalDate.of(2026, 10, 7));
+        multzokoa.setMultzoa(multzoa);
+        ErronkaKronogramaJarduera soltea = modulukoJarduera(
+                82L, "Soltea", 2, LocalDate.of(2026, 10, 14));
+        when(multzoak.findByErronkaIdOrderByOrdenaAscIdAsc(7L)).thenReturn(List.of(multzoa));
+        when(jarduerak.findByErronkaIdOrderByHasieraDataAscBukaeraDataAscIdAsc(7L))
+                .thenReturn(List.of(multzokoa, soltea));
+
+        service.programazioBlokeakBerrordenatu(7L, 10L,
+                List.of("JARDUERA:82", "MULTZOA:40"), auth("manager", "ROLE_ADMIN"));
+
+        assertThat(soltea.getOrdena()).isEqualTo(1);
+        assertThat(soltea.getHasieraData()).isEqualTo(LocalDate.of(2026, 10, 7));
+        assertThat(multzoa.getOrdena()).isEqualTo(2);
+        assertThat(multzokoa.getOrdena()).isEqualTo(2);
+        assertThat(multzokoa.getHasieraData()).isEqualTo(LocalDate.of(2026, 10, 14));
+    }
+
+    @Test
+    void jardueraMultzoBatetikBesteraEtaMultzokatuGaberaMugiDaiteke() {
+        TaldeOrdutegia ordutegia = taldeOrdutegia(LocalDate.of(2026, 9, 1), sareak,
+                Astegunak.ASTEAZKENA, 1);
+        when(taldeOrdutegiak.findByTaldea_IdAndIkasturtea_IdOrderByHasieraDataAsc(13L, 4L))
+                .thenReturn(List.of(ordutegia));
+        ErronkaJardueraMultzoa jatorria = new ErronkaJardueraMultzoa();
+        jatorria.setId(40L); jatorria.setErronka(erronka); jatorria.setIzena("Jatorria"); jatorria.setOrdena(1);
+        ErronkaJardueraMultzoa helmuga = new ErronkaJardueraMultzoa();
+        helmuga.setId(41L); helmuga.setErronka(erronka); helmuga.setIzena("Helmuga"); helmuga.setOrdena(2);
+        ErronkaKronogramaJarduera jarduera = modulukoJarduera(
+                81L, "Mugitzekoa", 1, LocalDate.of(2026, 10, 7));
+        jarduera.setMultzoa(jatorria);
+        when(multzoak.findById(41L)).thenReturn(Optional.of(helmuga));
+        when(jarduerak.findByErronkaIdOrderByHasieraDataAscBukaeraDataAscIdAsc(7L))
+                .thenReturn(List.of(jarduera));
+
+        service.jardueraKokatu(7L, 10L, 81L, 41L, List.of(81L),
+                auth("manager", "ROLE_ADMIN"));
+        assertThat(jarduera.getMultzoa()).isSameAs(helmuga);
+
+        service.jardueraKokatu(7L, 10L, 81L, null, List.of(81L),
+                auth("manager", "ROLE_ADMIN"));
+        assertThat(jarduera.getMultzoa()).isNull();
     }
 
     private KronogramaJardueraForm form(KronogramaJardueraMota mota, Long moduloaId) {

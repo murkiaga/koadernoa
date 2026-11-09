@@ -44,10 +44,15 @@
     .modulu-badge { display:inline-flex; padding:.2rem .55rem; border-radius:999px; background:rgba(255,255,255,.72); border:1px solid rgba(15,23,42,.14); font-size:.78rem; font-weight:800; }
     .kronograma-laburpena { margin-top:1rem; padding-top:.9rem; border-top:1px solid rgba(15,23,42,.13); }
     .kronograma-goiburua { display:flex; align-items:center; justify-content:space-between; gap:.7rem; margin-bottom:.7rem; }
+    .kronograma-izenburua { display:flex; align-items:baseline; gap:.55rem; flex-wrap:wrap; }
+    .kronograma-ekintzak { display:flex; align-items:center; gap:.45rem; flex-wrap:wrap; }
     .kronograma-goiburua h3 { margin:0; font-size:.9rem; }
+    .kronograma-orduak { color:#475569; font-size:.75rem; font-weight:800; }
     .jarduera-berria { padding:.42rem .7rem; border:0; border-radius:8px; background:#172033; color:#fff; font:inherit; font-size:.76rem; font-weight:800; cursor:pointer; }
     .jarduera-zerrenda { display:grid; gap:.55rem; }
-    .jarduera-zerrenda > [hidden] { display:none!important; }
+    .jarduera-zerrenda.activity-drop-over { outline:2px dashed #0284c7; outline-offset:3px; border-radius:9px; }
+    .programazio-blokeak { display:grid; gap:.55rem; }
+    .programazio-blokeak > [hidden], .jarduera-zerrenda > [hidden] { display:none!important; }
     .jarduera-txartela { display:grid; grid-template-columns:auto 105px minmax(0,1fr) auto; align-items:start; gap:.75rem; padding:.7rem .8rem; border:1px solid rgba(15,23,42,.13); border-radius:10px; background:rgba(255,255,255,.72); }
     .jarduera-txartela.dragging { opacity:.45; }
     .jarduera-txartela.drag-over { box-shadow:0 -3px #0284c7; }
@@ -64,6 +69,28 @@
     .jarduera-orduak { color:#475569; font-size:.72rem; font-weight:800; white-space:nowrap; }
     .jarduera-editatu { padding:.2rem .45rem; border:1px solid #94a3b8; border-radius:6px; background:#fff; color:#334155; font:inherit; font-size:.68rem; font-weight:800; cursor:pointer; }
     .jarduera-hutsa { padding:.7rem; border:1px dashed rgba(15,23,42,.2); border-radius:9px; color:#64748b; font-size:.8rem; text-align:center; }
+    .jarduera-multzoa { margin:.7rem 0; overflow:hidden; border:1px solid rgba(15,23,42,.16); border-radius:11px; background:rgba(255,255,255,.34); }
+    .jarduera-multzoa[hidden] { display:none!important; }
+    .jarduera-multzoa.group-dragging { opacity:.45; }
+    .jarduera-multzoa.group-drag-over { box-shadow:0 -3px #0284c7; }
+    .jarduera-multzoa.activity-drop-over { outline:2px dashed #0284c7; outline-offset:3px; }
+    .multzo-header { display:flex; align-items:center; gap:.55rem; width:100%; padding:.58rem .72rem; border:0; background:rgba(226,232,240,.72); color:#172033; text-align:left; }
+    .multzo-handle { padding:.1rem .2rem; color:#64748b; font-size:1.1rem; font-weight:900; cursor:grab; user-select:none; }
+    .multzo-handle:active { cursor:grabbing; }
+    .multzo-toggle { display:flex; flex:1; align-items:center; gap:.55rem; padding:0; border:0; background:transparent; color:inherit; font:inherit; font-weight:850; cursor:pointer; }
+    .multzo-caret { font-size:1.15rem; transition:transform .18s ease; }
+    .jarduera-multzoa.open .multzo-caret { transform:rotate(90deg); }
+    .multzo-kopurua { color:#64748b; font-size:.72rem; font-weight:800; }
+    .multzo-datak { color:#475569; font-size:.7rem; font-weight:800; white-space:nowrap; }
+    .multzo-ekintzak { display:flex; align-items:center; gap:.3rem; }
+    .multzo-ekintzak form { margin:0; }
+    .multzo-btn { padding:.2rem .45rem; border:1px solid #94a3b8; border-radius:6px; background:#fff; color:#334155; font:inherit; font-size:.68rem; font-weight:800; cursor:pointer; }
+    .multzo-btn.danger { color:#991b1b; border-color:#fca5a5; }
+    .multzo-content { display:none; padding:.65rem; }
+    .jarduera-multzoa.open .multzo-content { display:block; }
+    .multzokatu-gabe { margin-top:.7rem; }
+    .multzokatu-gabe-drop { padding:.55rem .7rem; border:1px dashed #94a3b8; border-radius:9px; color:#64748b; background:rgba(255,255,255,.45); font-size:.75rem; font-weight:800; text-align:center; }
+    .multzokatu-gabe-drop.activity-drop-over { border-color:#0284c7; color:#0369a1; background:#e0f2fe; }
     .programazioa-mezua { margin:0 0 .8rem; padding:.65rem .8rem; border-radius:8px; font-weight:700; }
     .programazioa-mezua.ok { background:#dcfce7; color:#166534; }
     .programazioa-mezua.error { background:#fee2e2; color:#991b1b; }
@@ -103,9 +130,9 @@
       <div class="programazioa-controls">
         <label class="programazioa-control">Modulua
           <select id="moduluIragazkia">
-            <option value="">Modulu guztiak</option>
             <option th:each="modulua : ${programazioaIkuspegia.moduluAukerak}"
                     th:value="${modulua.id}" th:text="${modulua.etiketa}">MOD</option>
+            <option th:if="${#lists.isEmpty(programazioaIkuspegia.moduluAukerak)}" value="">Ez duzu modulurik</option>
           </select>
         </label>
       </div>
@@ -149,44 +176,80 @@
               </div>
               <section class="kronograma-laburpena" th:attr="aria-label=${erronka.izena + ' erronkaren kronograma'}">
                 <div class="kronograma-goiburua">
-                  <h3>Kronograma</h3>
-                  <button th:if="${!#lists.isEmpty(erronka.moduluAukerak)}" type="button" class="jarduera-berria"
-                          onclick="irekiJardueraModala(this, true)">＋ Jarduera berria</button>
+                  <div class="kronograma-izenburua">
+                    <h3>Kronograma</h3>
+                    <span class="kronograma-orduak" data-module-summary hidden
+                          th:each="orduak : ${erronka.moduluOrduak}"
+                          th:attr="data-module-id=${orduak.moduloaId}"
+                          th:text="${'· ' + orduak.orduErabilgarriak + ' h erabilgarri / '
+                              + orduak.orduProgramatuak.stripTrailingZeros().toPlainString() + ' h programatuta'}">
+                      · 30 h erabilgarri / 12 h programatuta
+                    </span>
+                  </div>
+                  <div class="kronograma-ekintzak" th:if="${!#lists.isEmpty(erronka.moduluAukerak)}">
+                    <button type="button" class="dialog-btn" onclick="irekiMultzoModala(this, true)">＋ Multzo berria</button>
+                    <button type="button" class="jarduera-berria" onclick="irekiJardueraModala(this, true)">＋ Jarduera berria</button>
+                  </div>
                 </div>
-                <div class="jarduera-zerrenda" data-jarduera-zerrenda th:attr="data-challenge-id=${erronka.id}">
-                  <article class="jarduera-txartela" th:each="jarduera : ${erronka.jarduerak}"
+                <div class="programazio-blokeak" data-jarduera-zerrenda
+                     th:attr="data-challenge-id=${erronka.id},data-group-id=''">
+                <section class="jarduera-multzoa" th:each="multzoa : ${erronka.multzoak}"
+                         th:attr="data-group-id=${multzoa.id},data-challenge-id=${erronka.id},data-program-order=${multzoa.ordena}">
+                  <div class="multzo-header">
+                    <span class="multzo-handle" draggable="true"
+                          th:if="${!#lists.isEmpty(erronka.moduluAukerak)}"
+                          title="Arrastatu multzoa ordena aldatzeko" aria-label="Arrastatu multzoa">⠿</span>
+                    <button type="button" class="multzo-toggle" aria-expanded="false" onclick="toggleMultzoa(this)">
+                      <span class="multzo-caret">›</span>
+                      <span th:text="${multzoa.izena}">Multzoa</span>
+                      <span class="multzo-kopurua" th:text="${'(' + #lists.size(multzoa.jarduerak) + ')'}">(0)</span>
+                      <span class="multzo-datak" data-group-dates th:hidden="${multzoa.hasieraData == null}"
+                            th:text="${multzoa.bukaeraData != null and !multzoa.bukaeraData.equals(multzoa.hasieraData)
+                                ? #temporals.format(multzoa.hasieraData, 'yyyy-MM-dd') + ' → ' + #temporals.format(multzoa.bukaeraData, 'yyyy-MM-dd')
+                                : #temporals.format(multzoa.hasieraData, 'yyyy-MM-dd')}">2026-09-01 → 2026-09-10</span>
+                    </button>
+                    <div class="multzo-ekintzak" th:if="${!#lists.isEmpty(erronka.moduluAukerak)}">
+                      <button type="button" class="multzo-btn" th:attr="data-group-name=${multzoa.izena}"
+                              onclick="irekiMultzoModala(this, false)">Editatu</button>
+                      <form method="post" th:action="@{/irakasle/ethazi-koadernoa/programazioa/erronkak/{eid}/multzoak/{mid}/ezabatu(eid=${erronka.id},mid=${multzoa.id})}"
+                            onsubmit="return confirm('Multzoa ezabatu? Jarduerak multzokatu gabe geratuko dira.');">
+                        <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                        <button type="submit" class="multzo-btn danger">Ezabatu</button>
+                      </form>
+                    </div>
+                  </div>
+                  <div class="multzo-content">
+                    <div class="jarduera-zerrenda" data-jarduera-zerrenda
+                         th:attr="data-challenge-id=${erronka.id},data-group-id=${multzoa.id}">
+                      <article class="jarduera-txartela" th:each="jarduera : ${multzoa.jarduerak}"
                            th:attr="data-module-id=${jarduera.moduloaId},data-common=${jarduera.orokorra},
-                                    data-date=${jarduera.hasieraData},data-activity-id=${jarduera.id},
+                                    data-date=${jarduera.hasieraData},data-end-date=${jarduera.bukaeraData},data-activity-id=${jarduera.id},
                                     data-editable=${jarduera.editagarria},data-title=${jarduera.izenburua},
                                     data-description=${jarduera.deskribapena},data-hours=${jarduera.iraupenOrduak},
+                                    data-group-id=${jarduera.multzoaId},
                                     draggable=${jarduera.editagarria}">
-                    <span class="jarduera-handle" th:if="${jarduera.editagarria}"
-                          title="Arrastatu jarduera ordena aldatzeko" aria-label="Arrastatu jarduera">⠿</span>
-                    <span th:unless="${jarduera.editagarria}"></span>
-                    <div class="jarduera-data">
-                      <span th:text="${#temporals.format(jarduera.hasieraData, 'yyyy-MM-dd')}">2026-09-01</span>
-                      <span th:if="${jarduera.bukaeraData != null and !jarduera.bukaeraData.equals(jarduera.hasieraData)}"
-                            th:text="${'→ ' + #temporals.format(jarduera.bukaeraData, 'yyyy-MM-dd')}">→ 2026-09-02</span>
+                        <span class="jarduera-handle" th:if="${jarduera.editagarria}" title="Arrastatu jarduera ordena aldatzeko">⠿</span><span th:unless="${jarduera.editagarria}"></span>
+                        <div class="jarduera-data"><span th:text="${#temporals.format(jarduera.hasieraData, 'yyyy-MM-dd')}">2026-09-01</span><span th:if="${jarduera.bukaeraData != null and !jarduera.bukaeraData.equals(jarduera.hasieraData)}" th:text="${'→ ' + #temporals.format(jarduera.bukaeraData, 'yyyy-MM-dd')}">→ 2026-09-02</span></div>
+                        <div><p class="jarduera-izenburua" th:text="${jarduera.izenburua}">Jarduera</p><p class="jarduera-deskribapena" th:if="${jarduera.deskribapena != null and !#strings.isEmpty(jarduera.deskribapena)}" th:text="${jarduera.deskribapena}"></p></div>
+                        <div class="jarduera-meta"><span class="jarduera-badge" th:classappend="${jarduera.orokorra} ? ' orokorra' : ''" th:text="${jarduera.badgea}">MOD</span><span class="jarduera-aurreikuspena" th:if="${jarduera.aurreikusitakoModuloa != null}" th:text="${'Ordua: ' + jarduera.aurreikusitakoModuloa}">Ordua</span><span class="jarduera-orduak" th:text="${jarduera.iraupenOrduak + ' h'}">2 h</span><button class="jarduera-editatu" th:if="${jarduera.editagarria}" type="button" onclick="irekiJardueraModala(this, false)">Editatu</button></div>
+                      </article>
+                      <p class="jarduera-hutsa" data-jarduera-hutsa th:hidden="${!#lists.isEmpty(multzoa.jarduerak)}">Ez dago jarduerarik multzo honetan. Arrastatu jarduera hona.</p>
                     </div>
-                    <div>
-                      <p class="jarduera-izenburua" th:text="${jarduera.izenburua}">Jarduera</p>
-                      <p class="jarduera-deskribapena"
-                         th:if="${jarduera.deskribapena != null and !#strings.isEmpty(jarduera.deskribapena)}"
-                         th:text="${jarduera.deskribapena}"></p>
-                    </div>
-                    <div class="jarduera-meta">
-                      <span class="jarduera-badge" th:classappend="${jarduera.orokorra} ? ' orokorra' : ''"
-                            th:text="${jarduera.badgea}">Orokorra</span>
-                      <span class="jarduera-aurreikuspena" th:if="${jarduera.aurreikusitakoModuloa != null}"
-                            th:text="${'Ordua: ' + jarduera.aurreikusitakoModuloa}">Ordua: MOD</span>
-                      <span class="jarduera-orduak" th:text="${jarduera.iraupenOrduak + ' h'}">2 h</span>
-                      <button class="jarduera-editatu" th:if="${jarduera.editagarria}" type="button"
-                              onclick="irekiJardueraModala(this, false)">Editatu</button>
-                    </div>
+                  </div>
+                </section>
+
+                  <article class="jarduera-txartela multzokatu-gabe" th:each="jarduera : ${erronka.multzokatuGabekoJarduerak}"
+                           th:attr="data-module-id=${jarduera.moduloaId},data-common=${jarduera.orokorra},data-date=${jarduera.hasieraData},data-end-date=${jarduera.bukaeraData},
+                                    data-activity-id=${jarduera.id},data-editable=${jarduera.editagarria},data-title=${jarduera.izenburua},
+                                    data-description=${jarduera.deskribapena},data-hours=${jarduera.iraupenOrduak},data-group-id='',data-program-order=${jarduera.ordena},
+                                    draggable=${jarduera.editagarria}">
+                    <span class="jarduera-handle" th:if="${jarduera.editagarria}" title="Arrastatu jarduera ordena aldatzeko">⠿</span><span th:unless="${jarduera.editagarria}"></span>
+                    <div class="jarduera-data"><span th:text="${#temporals.format(jarduera.hasieraData, 'yyyy-MM-dd')}">2026-09-01</span><span th:if="${jarduera.bukaeraData != null and !jarduera.bukaeraData.equals(jarduera.hasieraData)}" th:text="${'→ ' + #temporals.format(jarduera.bukaeraData, 'yyyy-MM-dd')}">→ 2026-09-02</span></div>
+                    <div><p class="jarduera-izenburua" th:text="${jarduera.izenburua}">Jarduera</p><p class="jarduera-deskribapena" th:if="${jarduera.deskribapena != null and !#strings.isEmpty(jarduera.deskribapena)}" th:text="${jarduera.deskribapena}"></p></div>
+                    <div class="jarduera-meta"><span class="jarduera-badge" th:classappend="${jarduera.orokorra} ? ' orokorra' : ''" th:text="${jarduera.badgea}">MOD</span><span class="jarduera-aurreikuspena" th:if="${jarduera.aurreikusitakoModuloa != null}" th:text="${'Ordua: ' + jarduera.aurreikusitakoModuloa}">Ordua</span><span class="jarduera-orduak" th:text="${jarduera.iraupenOrduak + ' h'}">2 h</span><button class="jarduera-editatu" th:if="${jarduera.editagarria}" type="button" onclick="irekiJardueraModala(this, false)">Editatu</button></div>
                   </article>
-                  <p class="jarduera-hutsa" data-jarduera-hutsa th:hidden="${!#lists.isEmpty(erronka.jarduerak)}">
-                    Ez dago kronogramako jarduerarik.
-                  </p>
+                  <p class="jarduera-hutsa" data-jarduera-hutsa th:hidden="${!#lists.isEmpty(erronka.multzokatuGabekoJarduerak)}">Ez dago multzokatu gabeko jarduerarik.</p>
+                  <div class="multzokatu-gabe-drop">Arrastatu hona jarduera multzotik ateratzeko</div>
                 </div>
               </section>
 
@@ -198,19 +261,32 @@
                   <div class="dialog-content">
                     <label class="field">Izenburua<input name="izenburua" required maxlength="200"></label>
                     <label class="field">Deskribapena edo oharrak<textarea name="deskribapena" rows="3" maxlength="60000"></textarea></label>
-                    <div class="dialog-grid">
-                      <label class="field">Modulua
-                        <select name="moduloaId" required>
-                          <option th:each="modulua : ${erronka.moduluAukerak}" th:value="${modulua.id}"
-                                  th:text="${modulua.etiketa}">MOD</option>
-                        </select>
-                      </label>
-                      <label class="field">Hasiera
-                        <input type="date" name="hasieraData" required th:min="${erronka.hasieraData}"
-                               th:max="${erronka.bukaeraData}" th:value="${erronka.hasieraData}">
-                      </label>
-                    </div>
+                    <label class="field">Multzoa
+                      <select name="multzoaId">
+                        <option value="">Multzokatu gabe</option>
+                        <option th:each="multzoa : ${erronka.multzoak}" th:value="${multzoa.id}" th:text="${multzoa.izena}">Multzoa</option>
+                      </select>
+                    </label>
+                    <label class="field">Modulua
+                      <select name="moduloaId" required>
+                        <option th:each="modulua : ${erronka.moduluAukerak}" th:value="${modulua.id}"
+                                th:text="${modulua.etiketa}">MOD</option>
+                      </select>
+                    </label>
                     <label class="field">Iraupena (orduak)<input type="number" name="iraupenOrduak" required min="0.01" max="999.99" step="0.01"></label>
+                  </div>
+                  <footer><button type="button" class="dialog-btn" data-dialog-close>Utzi</button><button type="submit" class="dialog-btn primary">Gorde</button></footer>
+                </form>
+              </dialog>
+
+              <dialog class="jarduera-dialog multzo-dialog" th:if="${!#lists.isEmpty(erronka.moduluAukerak)}">
+                <form method="post" th:action="@{/irakasle/ethazi-koadernoa/programazioa/erronkak/{id}/multzoak/gorde(id=${erronka.id})}">
+                  <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                  <input type="hidden" name="id">
+                  <header><h2 data-dialog-title>Multzo berria</h2><button type="button" class="dialog-btn" data-dialog-close>×</button></header>
+                  <div class="dialog-content">
+                    <label class="field">Izena<input name="izena" required maxlength="200" placeholder="Adib.: Diseinua eta prestaketa"></label>
+                    <p class="muted">Multzoa modulu guztientzat komuna da, ez du ordurik eta hainbat modulutako jarduerak har ditzake.</p>
                   </div>
                   <footer><button type="button" class="dialog-btn" data-dialog-close>Utzi</button><button type="submit" class="dialog-btn primary">Gorde</button></footer>
                 </form>
@@ -227,6 +303,14 @@
   function toggleErronka(button) {
     const item = button.closest('.erronka-item');
     const irekita = item.classList.toggle('open');
+    button.setAttribute('aria-expanded', String(irekita));
+    gordeProgramazioEgoera();
+    requestAnimationFrame(positionEbaluazioBrackets);
+  }
+
+  function toggleMultzoa(button) {
+    const multzoa = button.closest('.jarduera-multzoa');
+    const irekita = multzoa.classList.toggle('open');
     button.setAttribute('aria-expanded', String(irekita));
     gordeProgramazioEgoera();
     requestAnimationFrame(positionEbaluazioBrackets);
@@ -254,37 +338,137 @@
     const modulua = document.getElementById('moduluIragazkia')?.value || '';
     document.querySelectorAll('[data-jarduera-zerrenda]').forEach(zerrenda => {
       let ikusgaiKopurua = 0;
-      zerrenda.querySelectorAll('.jarduera-txartela').forEach(jarduera => {
-        const ikusgai = jarduera.dataset.common === 'true' || !modulua || jarduera.dataset.moduleId === modulua;
+      const ikusgaiak = [];
+      zerrenda.querySelectorAll(':scope > .jarduera-txartela').forEach(jarduera => {
+        const jardueraModulua = String(jarduera.dataset.moduleId || '');
+        const ikusgai = jarduera.dataset.common === 'true'
+            || (modulua !== '' && jardueraModulua === String(modulua));
         jarduera.hidden = !ikusgai;
-        if (ikusgai) ikusgaiKopurua++;
+        if (ikusgai) {
+          ikusgaiKopurua++;
+          ikusgaiak.push(jarduera);
+        }
       });
-      const hutsa = zerrenda.querySelector('[data-jarduera-hutsa]');
+      const hutsa = zerrenda.querySelector(':scope > [data-jarduera-hutsa]');
       if (hutsa) {
         hutsa.hidden = ikusgaiKopurua > 0;
-        hutsa.textContent = zerrenda.querySelector('.jarduera-txartela')
-            ? 'Ez dago aukeratutako iragazkiarekin bat datorren jarduerarik.'
-            : 'Ez dago kronogramako jarduerarik.';
+        if (zerrenda.closest('.jarduera-multzoa')) {
+          hutsa.textContent = 'Ez dago jarduerarik multzo honetan. Arrastatu jarduera hona.';
+        } else {
+          hutsa.textContent = zerrenda.querySelector(':scope > .jarduera-txartela')
+              ? 'Ez dago aukeratutako iragazkiarekin bat datorren jarduerarik.'
+              : 'Ez dago multzokatu gabeko jarduerarik.';
+        }
+      }
+      const multzoa = zerrenda.closest('.jarduera-multzoa');
+      if (multzoa) {
+        multzoa.hidden = false;
+        const kopurua = multzoa.querySelector('.multzo-kopurua');
+        if (kopurua) kopurua.textContent = `(${ikusgaiKopurua})`;
+        const dataTartea = multzoa.querySelector('[data-group-dates]');
+        if (dataTartea) {
+          const hasierak = ikusgaiak.map(j => j.dataset.date).filter(Boolean).sort();
+          const bukaerak = ikusgaiak.map(j => j.dataset.endDate || j.dataset.date).filter(Boolean).sort();
+          dataTartea.hidden = hasierak.length === 0;
+          if (hasierak.length > 0) {
+            const hasiera = hasierak[0];
+            const bukaera = bukaerak[bukaerak.length - 1];
+            dataTartea.textContent = hasiera === bukaera ? hasiera : `${hasiera} → ${bukaera}`;
+          }
+        }
       }
     });
+    document.querySelectorAll('[data-module-summary]').forEach(laburpena => {
+      laburpena.hidden = String(laburpena.dataset.moduleId || '') !== String(modulua);
+    });
+    ordenatuProgramazioBlokeakDatarenArabera();
     requestAnimationFrame(positionEbaluazioBrackets);
   }
 
   const PROGRAMAZIO_EGOERA_GAKOA = 'ethaziProgramazioaEgoera_'
       + (document.querySelector('.programazioa-container')?.dataset.koadernoId || 'default');
 
+  function ordenatuProgramazioBlokeak() {
+    document.querySelectorAll('.programazio-blokeak').forEach(zerrenda => {
+      const blokeak = Array.from(zerrenda.children)
+          .filter(item => item.classList.contains('jarduera-multzoa')
+              || item.classList.contains('jarduera-txartela'))
+          .sort((a, b) => {
+            const ordenaA = Number(a.dataset.programOrder || Number.MAX_SAFE_INTEGER);
+            const ordenaB = Number(b.dataset.programOrder || Number.MAX_SAFE_INTEGER);
+            if (ordenaA !== ordenaB) return ordenaA - ordenaB;
+            return a.classList.contains('jarduera-multzoa') ? -1 : 1;
+          });
+      blokeak.forEach(blokea => zerrenda.appendChild(blokea));
+      const hutsa = zerrenda.querySelector(':scope > [data-jarduera-hutsa]');
+      if (hutsa) zerrenda.appendChild(hutsa);
+    });
+  }
+
+  function blokearenHasieraData(blokea) {
+    if (blokea.classList.contains('jarduera-txartela')) return blokea.dataset.date || '9999-12-31';
+    const datak = Array.from(blokea.querySelectorAll('.jarduera-zerrenda > .jarduera-txartela'))
+        .filter(jarduera => !jarduera.hidden)
+        .map(jarduera => jarduera.dataset.date)
+        .filter(Boolean)
+        .sort();
+    return datak[0] || '9999-12-31';
+  }
+
+  function ordenatuProgramazioBlokeakDatarenArabera() {
+    document.querySelectorAll('.programazio-blokeak').forEach(zerrenda => {
+      const blokeak = Array.from(zerrenda.children)
+          .filter(item => item.classList.contains('jarduera-multzoa')
+              || item.classList.contains('jarduera-txartela'));
+      const ordenaz = [...blokeak].sort((a, b) =>
+          Number(a.dataset.programOrder || Number.MAX_SAFE_INTEGER)
+              - Number(b.dataset.programOrder || Number.MAX_SAFE_INTEGER));
+      const dataEraginkorrak = new Map();
+      ordenaz.forEach((blokea, index) => {
+        const bereData = blokearenHasieraData(blokea);
+        if (bereData !== '9999-12-31') {
+          dataEraginkorrak.set(blokea, bereData);
+          return;
+        }
+        const hurrengoa = ordenaz.slice(index + 1)
+            .map(blokearenHasieraData).find(data => data !== '9999-12-31');
+        const aurrekoa = ordenaz.slice(0, index).reverse()
+            .map(blokearenHasieraData).find(data => data !== '9999-12-31');
+        dataEraginkorrak.set(blokea, hurrengoa || aurrekoa || '9999-12-31');
+      });
+      blokeak
+          .sort((a, b) => {
+            const aEzkutuan = a.hidden ? 1 : 0;
+            const bEzkutuan = b.hidden ? 1 : 0;
+            if (aEzkutuan !== bEzkutuan) return aEzkutuan - bEzkutuan;
+            const dataKonparazioa = dataEraginkorrak.get(a).localeCompare(dataEraginkorrak.get(b));
+            if (dataKonparazioa !== 0) return dataKonparazioa;
+            return Number(a.dataset.programOrder || Number.MAX_SAFE_INTEGER)
+                - Number(b.dataset.programOrder || Number.MAX_SAFE_INTEGER);
+          });
+      blokeak.forEach(blokea => zerrenda.appendChild(blokea));
+      const hutsa = zerrenda.querySelector(':scope > [data-jarduera-hutsa]');
+      if (hutsa) zerrenda.appendChild(hutsa);
+      const ateratzekoGunea = zerrenda.querySelector(':scope > .multzokatu-gabe-drop');
+      if (ateratzekoGunea) zerrenda.appendChild(ateratzekoGunea);
+    });
+  }
+
   function gordeProgramazioEgoera() {
     const erronkaIrekiak = Array.from(document.querySelectorAll('.erronka-item.open'))
         .map(item => item.dataset.erronkaId);
+    const multzoIrekiak = Array.from(document.querySelectorAll('.jarduera-multzoa.open'))
+        .map(item => item.dataset.groupId);
     const modulua = document.getElementById('moduluIragazkia')?.value || '';
     try {
-      localStorage.setItem(PROGRAMAZIO_EGOERA_GAKOA, JSON.stringify({ erronkaIrekiak, modulua }));
+      localStorage.setItem(PROGRAMAZIO_EGOERA_GAKOA, JSON.stringify({ erronkaIrekiak, multzoIrekiak, modulua }));
     } catch (error) {
       console.warn('Ezin izan da programazioaren egoera gorde.', error);
     }
   }
 
   function leheneratuProgramazioEgoera() {
+    ordenatuProgramazioBlokeak();
     let egoera = null;
     try {
       const gordeta = localStorage.getItem(PROGRAMAZIO_EGOERA_GAKOA);
@@ -298,6 +482,14 @@
         if (!item) return;
         item.classList.add('open');
         item.querySelector('.erronka-header')?.setAttribute('aria-expanded', 'true');
+      });
+    }
+    if (egoera?.multzoIrekiak && Array.isArray(egoera.multzoIrekiak)) {
+      egoera.multzoIrekiak.forEach(id => {
+        const multzoa = document.querySelector(`.jarduera-multzoa[data-group-id="${CSS.escape(String(id))}"]`);
+        if (!multzoa) return;
+        multzoa.classList.add('open');
+        multzoa.querySelector('.multzo-toggle')?.setAttribute('aria-expanded', 'true');
       });
     }
     const filtroa = document.getElementById('moduluIragazkia');
@@ -317,14 +509,36 @@
     form.reset();
     form.elements.id.value = '';
     dialog.querySelector('[data-dialog-title]').textContent = berria ? 'Jarduera berria' : 'Jarduera editatu';
-    if (!berria) {
+    if (berria) {
+      const aukeratutakoModuloa = document.getElementById('moduluIragazkia')?.value || '';
+      if (Array.from(form.elements.moduloaId.options)
+          .some(option => option.value === aukeratutakoModuloa)) {
+        form.elements.moduloaId.value = aukeratutakoModuloa;
+      }
+    } else {
       const jarduera = button.closest('.jarduera-txartela');
       form.elements.id.value = jarduera.dataset.activityId;
       form.elements.izenburua.value = jarduera.dataset.title || '';
       form.elements.deskribapena.value = jarduera.dataset.description || '';
       form.elements.moduloaId.value = jarduera.dataset.moduleId || '';
-      form.elements.hasieraData.value = jarduera.dataset.date || '';
+      form.elements.multzoaId.value = jarduera.dataset.groupId || '';
       form.elements.iraupenOrduak.value = jarduera.dataset.hours || '';
+    }
+    dialog.showModal();
+  }
+
+  function irekiMultzoModala(button, berria) {
+    const edukia = button.closest('.erronka-content');
+    const dialog = edukia?.querySelector('.multzo-dialog');
+    const form = dialog?.querySelector('form');
+    if (!dialog || !form) return;
+    form.reset();
+    form.elements.id.value = '';
+    dialog.querySelector('[data-dialog-title]').textContent = berria ? 'Multzo berria' : 'Multzoa editatu';
+    if (!berria) {
+      const multzoa = button.closest('.jarduera-multzoa');
+      form.elements.id.value = multzoa?.dataset.groupId || '';
+      form.elements.izena.value = button.dataset.groupName || '';
     }
     dialog.showModal();
   }
@@ -333,7 +547,108 @@
     button.closest('dialog')?.close();
   }));
 
+  let arrastatutakoMultzoa = null;
+  document.querySelectorAll('.multzo-handle').forEach(handle => {
+    handle.addEventListener('dragstart', event => {
+      arrastatutakoMultzoa = handle.closest('.jarduera-multzoa');
+      arrastatutakoMultzoa.classList.add('group-dragging');
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', arrastatutakoMultzoa.dataset.groupId);
+    });
+    handle.addEventListener('dragend', () => {
+      arrastatutakoMultzoa?.classList.remove('group-dragging');
+      document.querySelectorAll('.group-drag-over').forEach(el => el.classList.remove('group-drag-over'));
+      arrastatutakoMultzoa = null;
+    });
+  });
+
+  async function gordeProgramazioBlokeenOrdena(zerrenda) {
+    const moduloaId = Number(document.getElementById('moduluIragazkia')?.value);
+    const challengeId = zerrenda.dataset.challengeId;
+    const blokeak = Array.from(zerrenda.children)
+        .filter(item => item.classList.contains('jarduera-multzoa')
+            || item.classList.contains('jarduera-txartela')
+                && (item.dataset.common === 'true' || Number(item.dataset.moduleId) === moduloaId))
+        .map(item => item.classList.contains('jarduera-multzoa')
+            ? `MULTZOA:${item.dataset.groupId}` : `JARDUERA:${item.dataset.activityId}`);
+    const token = document.querySelector('meta[name="_csrf"]')?.content || '';
+    const header = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
+    const response = await fetch(`/irakasle/ethazi-koadernoa/programazioa/erronkak/${challengeId}/multzoak/berrordenatu`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(token ? { [header]: token } : {}) },
+      body: JSON.stringify({ moduloaId, blokeak })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.message || 'Ezin izan da programazioaren ordena gorde.');
+  }
+
+  document.querySelectorAll('.programazio-blokeak > .jarduera-multzoa, .programazio-blokeak > .jarduera-txartela')
+      .forEach(helmuga => {
+    helmuga.addEventListener('dragover', event => {
+      if (!arrastatutakoMultzoa || arrastatutakoMultzoa === helmuga
+          || arrastatutakoMultzoa.closest('.programazio-blokeak') !== helmuga.closest('.programazio-blokeak')) return;
+      event.preventDefault();
+      helmuga.classList.add('group-drag-over');
+    });
+    helmuga.addEventListener('dragleave', event => {
+      if (!helmuga.contains(event.relatedTarget)) helmuga.classList.remove('group-drag-over');
+    });
+    helmuga.addEventListener('drop', async event => {
+      if (!arrastatutakoMultzoa || arrastatutakoMultzoa === helmuga) return;
+      event.preventDefault();
+      event.stopPropagation();
+      helmuga.classList.remove('group-drag-over');
+      const ondoren = event.clientY > helmuga.getBoundingClientRect().top + helmuga.offsetHeight / 2;
+      const zerrenda = helmuga.closest('.programazio-blokeak');
+      zerrenda.insertBefore(arrastatutakoMultzoa, ondoren ? helmuga.nextSibling : helmuga);
+      try {
+        await gordeProgramazioBlokeenOrdena(zerrenda);
+        window.location.reload();
+      } catch (error) {
+        window.alert(error.message || 'Ezin izan da programazioaren ordena gorde.');
+        window.location.reload();
+      }
+    });
+  });
+
   let arrastatutakoa = null;
+
+  async function gordeJarduerarenKokapena(jarduera, zerrenda) {
+    const moduloaId = Number(jarduera.dataset.moduleId);
+    const edukia = zerrenda.closest('.erronka-content');
+    const jardueraIds = Array.from(edukia.querySelectorAll('.jarduera-txartela[data-editable="true"]'))
+        .filter(item => Number(item.dataset.moduleId) === moduloaId)
+        .map(item => Number(item.dataset.activityId));
+    const multzoaId = zerrenda.dataset.groupId ? Number(zerrenda.dataset.groupId) : null;
+    const token = document.querySelector('meta[name="_csrf"]')?.content || '';
+    const header = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
+    const response = await fetch(`/irakasle/ethazi-koadernoa/programazioa/erronkak/${zerrenda.dataset.challengeId}/jarduerak/berrordenatu`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...(token ? { [header]: token } : {}) },
+      body: JSON.stringify({
+        moduloaId,
+        jardueraId: Number(jarduera.dataset.activityId),
+        multzoaId,
+        jardueraIds
+      })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.message || 'Ezin izan da jardueraren kokapena gorde.');
+  }
+
+  async function kokatuEtaGorde(jarduera, zerrenda, erreferentzia = null, ondoren = false) {
+    const hutsa = zerrenda.querySelector(':scope > [data-jarduera-hutsa]');
+    if (erreferentzia) zerrenda.insertBefore(jarduera, ondoren ? erreferentzia.nextSibling : erreferentzia);
+    else zerrenda.insertBefore(jarduera, hutsa || null);
+    try {
+      await gordeJarduerarenKokapena(jarduera, zerrenda);
+      window.location.reload();
+    } catch (error) {
+      window.alert(error.message || 'Ezin izan da jardueraren kokapena gorde.');
+      window.location.reload();
+    }
+  }
+
   document.querySelectorAll('.jarduera-txartela[data-editable="true"]').forEach(jarduera => {
     jarduera.addEventListener('dragstart', event => {
       arrastatutakoa = jarduera;
@@ -344,42 +659,80 @@
     jarduera.addEventListener('dragend', () => {
       jarduera.classList.remove('dragging');
       document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+      document.querySelectorAll('.activity-drop-over').forEach(el => el.classList.remove('activity-drop-over'));
       arrastatutakoa = null;
     });
+  });
+
+  document.querySelectorAll('.jarduera-txartela').forEach(jarduera => {
     jarduera.addEventListener('dragover', event => {
-      if (!arrastatutakoa || arrastatutakoa === jarduera
-          || arrastatutakoa.dataset.moduleId !== jarduera.dataset.moduleId
-          || arrastatutakoa.closest('[data-jarduera-zerrenda]') !== jarduera.closest('[data-jarduera-zerrenda]')) return;
+      if (!arrastatutakoa || arrastatutakoa === jarduera) return;
       event.preventDefault();
       jarduera.classList.add('drag-over');
     });
     jarduera.addEventListener('dragleave', () => jarduera.classList.remove('drag-over'));
     jarduera.addEventListener('drop', async event => {
+      if (!arrastatutakoa || arrastatutakoa === jarduera) return;
       event.preventDefault();
+      event.stopPropagation();
       jarduera.classList.remove('drag-over');
-      if (!arrastatutakoa || arrastatutakoa.dataset.moduleId !== jarduera.dataset.moduleId) return;
       const zerrenda = jarduera.closest('[data-jarduera-zerrenda]');
       const ondoren = event.clientY > jarduera.getBoundingClientRect().top + jarduera.offsetHeight / 2;
-      zerrenda.insertBefore(arrastatutakoa, ondoren ? jarduera.nextSibling : jarduera);
-      const moduloaId = Number(jarduera.dataset.moduleId);
-      const jardueraIds = Array.from(zerrenda.querySelectorAll('.jarduera-txartela[data-editable="true"]'))
-          .filter(item => Number(item.dataset.moduleId) === moduloaId)
-          .map(item => Number(item.dataset.activityId));
-      const token = document.querySelector('meta[name="_csrf"]')?.content || '';
-      const header = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
-      try {
-        const response = await fetch(`/irakasle/ethazi-koadernoa/programazioa/erronkak/${zerrenda.dataset.challengeId}/jarduerak/berrordenatu`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', ...(token ? { [header]: token } : {}) },
-          body: JSON.stringify({ moduloaId, jardueraIds })
-        });
-        const result = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(result.message || 'Ezin izan da ordena gorde.');
-        window.location.reload();
-      } catch (error) {
-        window.alert(error.message || 'Ezin izan da ordena gorde.');
-        window.location.reload();
-      }
+      await kokatuEtaGorde(arrastatutakoa, zerrenda, jarduera, ondoren);
+    });
+  });
+
+  document.querySelectorAll('.jarduera-multzoa .jarduera-zerrenda').forEach(zerrenda => {
+    zerrenda.addEventListener('dragover', event => {
+      if (!arrastatutakoa) return;
+      event.preventDefault();
+      zerrenda.classList.add('activity-drop-over');
+    });
+    zerrenda.addEventListener('dragleave', event => {
+      if (!zerrenda.contains(event.relatedTarget)) zerrenda.classList.remove('activity-drop-over');
+    });
+    zerrenda.addEventListener('drop', async event => {
+      if (!arrastatutakoa) return;
+      event.preventDefault();
+      event.stopPropagation();
+      zerrenda.classList.remove('activity-drop-over');
+      await kokatuEtaGorde(arrastatutakoa, zerrenda);
+    });
+  });
+
+  document.querySelectorAll('.multzo-header').forEach(header => {
+    header.addEventListener('dragover', event => {
+      if (!arrastatutakoa) return;
+      event.preventDefault();
+      header.closest('.jarduera-multzoa').classList.add('activity-drop-over');
+    });
+    header.addEventListener('dragleave', () =>
+        header.closest('.jarduera-multzoa').classList.remove('activity-drop-over'));
+    header.addEventListener('drop', async event => {
+      if (!arrastatutakoa) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const multzoa = header.closest('.jarduera-multzoa');
+      multzoa.classList.remove('activity-drop-over');
+      const zerrenda = multzoa.closest('.programazio-blokeak');
+      const ondoren = event.clientY > header.getBoundingClientRect().top + header.offsetHeight / 2;
+      await kokatuEtaGorde(arrastatutakoa, zerrenda, multzoa, ondoren);
+    });
+  });
+
+  document.querySelectorAll('.multzokatu-gabe-drop').forEach(gunea => {
+    gunea.addEventListener('dragover', event => {
+      if (!arrastatutakoa) return;
+      event.preventDefault();
+      gunea.classList.add('activity-drop-over');
+    });
+    gunea.addEventListener('dragleave', () => gunea.classList.remove('activity-drop-over'));
+    gunea.addEventListener('drop', async event => {
+      if (!arrastatutakoa) return;
+      event.preventDefault();
+      event.stopPropagation();
+      gunea.classList.remove('activity-drop-over');
+      await kokatuEtaGorde(arrastatutakoa, gunea.closest('.programazio-blokeak'), gunea, false);
     });
   });
 

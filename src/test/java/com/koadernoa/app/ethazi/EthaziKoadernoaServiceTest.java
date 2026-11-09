@@ -19,8 +19,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.koadernoa.app.ethazi.entitateak.Erronka;
 import com.koadernoa.app.ethazi.entitateak.EthaziKoadernoa;
 import com.koadernoa.app.ethazi.entitateak.kronograma.ErronkaKronogramaJarduera;
+import com.koadernoa.app.ethazi.entitateak.kronograma.ErronkaJardueraMultzoa;
 import com.koadernoa.app.ethazi.entitateak.kronograma.KronogramaJardueraMota;
 import com.koadernoa.app.ethazi.repository.ErronkaRepository;
+import com.koadernoa.app.ethazi.repository.ErronkaJardueraMultzoaRepository;
 import com.koadernoa.app.ethazi.repository.ErronkaKronogramaJardueraRepository;
 import com.koadernoa.app.ethazi.repository.EthaziKoadernoaRepository;
 import com.koadernoa.app.ethazi.service.EthaziKoadernoaService;
@@ -47,6 +49,7 @@ class EthaziKoadernoaServiceTest {
     @Mock TaldeOrdutegiaRepository taldeOrdutegiak;
     @Mock ErronkaRepository erronkak;
     @Mock ErronkaKronogramaJardueraRepository kronogramaJarduerak;
+    @Mock ErronkaJardueraMultzoaRepository jardueraMultzoak;
 
     @Test
     void irakaslearenTaldeBakoitzekoKoadernoaSortuEtaZerrendatzenDu() {
@@ -125,6 +128,11 @@ class EthaziKoadernoaServiceTest {
         egutegia.setLehenEbalBukaera(LocalDate.of(2026, 12, 20));
         egutegia.setBigarrenEbalBukaera(LocalDate.of(2027, 3, 31));
         egutegia.setBukaeraData(LocalDate.of(2027, 6, 30));
+        egutegia.setEgunBereziak(List.of());
+        TaldeOrdutegia ordutegia = new TaldeOrdutegia(); ordutegia.setTaldea(taldea);
+        ordutegia.setIkasturtea(ikasturtea); ordutegia.setHasieraData(LocalDate.of(2026, 9, 1));
+        ordutegia.setLerroak(new ArrayList<>(List.of(
+                lerroa(ordutegia, sareak, Astegunak.ASTELEHENA, 1))));
 
         when(ikasturteak.findFirstByAktiboaTrueOrderByIdDesc()).thenReturn(Optional.of(ikasturtea));
         when(moduluak.findByTaldeaId(4L)).thenReturn(List.of(sareak));
@@ -136,9 +144,18 @@ class EthaziKoadernoaServiceTest {
                 51L, lehenengoa, KronogramaJardueraMota.MODULUA, sareak, null, "Sareak prestatu");
         ErronkaKronogramaJarduera jardueraOrokorra = jarduera(
                 52L, lehenengoa, KronogramaJardueraMota.KOMUNA, null, sareak, "Aurkezpena");
+        ErronkaJardueraMultzoa prestaketa = new ErronkaJardueraMultzoa();
+        prestaketa.setId(70L); prestaketa.setErronka(lehenengoa); prestaketa.setIzena("Prestaketa");
+        prestaketa.setOrdena(1);
+        modulukoJarduera.setMultzoa(prestaketa);
+        jardueraOrokorra.setMultzoa(prestaketa);
         when(kronogramaJarduerak.findByErronkaIdInOrderByHasieraDataAscBukaeraDataAscIdAsc(
                 List.of(31L, 32L, 33L))).thenReturn(List.of(modulukoJarduera, jardueraOrokorra));
+        when(jardueraMultzoak.findByErronkaIdInOrderByOrdenaAscIdAsc(List.of(31L, 32L, 33L)))
+                .thenReturn(List.of(prestaketa));
         when(moduluak.findAktiboakByTaldeaIdAndIrakasleaId(4L, 8L)).thenReturn(List.of(sareak, sistemak));
+        when(taldeOrdutegiak.findByTaldea_IdAndIkasturtea_IdOrderByHasieraDataAsc(4L, 3L))
+                .thenReturn(List.of(ordutegia));
 
         var ikuspegia = service.programazioaIkuspegia(koadernoa, egutegia, irakaslea);
 
@@ -155,11 +172,23 @@ class EthaziKoadernoaServiceTest {
                 .containsExactly("SARE", "Orokorra");
         assertThat(ikuspegia.erronkak().get(0).jarduerak().get(1).aurreikusitakoModuloa())
                 .isEqualTo("SARE");
+        assertThat(ikuspegia.erronkak().get(0).moduluOrduak()).singleElement()
+                .satisfies(orduak -> {
+                    assertThat(orduak.orduErabilgarriak()).isEqualTo(10);
+                    assertThat(orduak.orduProgramatuak()).isEqualByComparingTo("4.00");
+                });
+        assertThat(ikuspegia.erronkak().get(0).multzoak()).singleElement()
+                .satisfies(m -> {
+                    assertThat(m.izena()).isEqualTo("Prestaketa");
+                    assertThat(m.jarduerak()).hasSize(2);
+                    assertThat(m.hasieraData()).isEqualTo(LocalDate.of(2026, 9, 15));
+                    assertThat(m.bukaeraData()).isEqualTo(LocalDate.of(2026, 9, 15));
+                });
     }
 
     private EthaziKoadernoaService service() {
         return new EthaziKoadernoaService(ethaziKoadernoak, moduluak, ikasturteak, taldeOrdutegiak,
-                erronkak, kronogramaJarduerak);
+                erronkak, kronogramaJarduerak, jardueraMultzoak);
     }
 
     private Taldea taldea() {

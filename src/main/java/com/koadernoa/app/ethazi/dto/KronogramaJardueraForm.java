@@ -21,4 +21,5 @@ public class KronogramaJardueraForm {
     private KronogramaJardueraMota mota;
     private Long moduloaId;
     private Long aurreikusitakoModuloaId;
+    private Long multzoaId;
 }
