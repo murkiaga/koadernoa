@@ -197,7 +197,8 @@ public class KronogramaService {
 
     @Transactional
     public void jardueraKokatu(Long erronkaId, Long moduloaId, Long jardueraId,
-            Long multzoaId, List<Long> jardueraIds, Authentication auth) {
+            Long multzoaId, List<Long> jardueraIds, List<Long> programazioJardueraIds,
+            List<String> blokeak, Authentication auth) {
         Erronka erronka = erronka(erronkaId);
         parteHartzenDuenModuloa(erronka, moduloaId);
         egiaztatuEditatzekoBaimena(auth, erronka, KronogramaJardueraMota.MODULUA, moduloaId);
@@ -219,7 +220,25 @@ public class KronogramaService {
         ErronkaKronogramaJarduera mugitutakoa = idz.get(jardueraId);
         require(mugitutakoa != null, "Mugitutako jarduera ez da modulu honetakoa.");
         mugitutakoa.setMultzoa(multzoaId == null ? null : erronkakoMultzoa(erronkaId, multzoaId));
-        for (int i = 0; i < jardueraIds.size(); i++) idz.get(jardueraIds.get(i)).setOrdena(i + 1);
+        List<ErronkaKronogramaJarduera> programaziokoak = guztiak.stream()
+                .filter(j -> j.getMota() == KronogramaJardueraMota.MODULUA && j.getModuloa() != null
+                            && moduloaId.equals(j.getModuloa().getId())
+                        || j.getMota() == KronogramaJardueraMota.KOMUNA
+                            && j.getAurreikusitakoModuloa() != null
+                            && moduloaId.equals(j.getAurreikusitakoModuloa().getId()))
+                .toList();
+        Set<Long> programaziokoIds = programaziokoak.stream().map(ErronkaKronogramaJarduera::getId)
+                .collect(java.util.stream.Collectors.toSet());
+        require(programazioJardueraIds != null
+                        && programaziokoIds.equals(new LinkedHashSet<>(programazioJardueraIds))
+                        && programazioJardueraIds.stream().distinct().count() == programazioJardueraIds.size(),
+                "Berrantolatzeko moduluko jarduera eta aingura orokor guztiak bidali behar dira.");
+        Map<Long, ErronkaKronogramaJarduera> programazioIdz = programaziokoak.stream().collect(
+                java.util.stream.Collectors.toMap(ErronkaKronogramaJarduera::getId, j -> j));
+        for (int i = 0; i < programazioJardueraIds.size(); i++) {
+            programazioIdz.get(programazioJardueraIds.get(i)).setOrdena(i + 1);
+        }
+        eguneratuProgramazioBlokeenOrdena(erronkaId, moduloaId, blokeak, guztiak);
 
         berrordenatuEtaDatakBirkalkulatu(erronka, guztiak);
         jarduerak.saveAll(guztiak);
@@ -250,8 +269,9 @@ public class KronogramaService {
 
     private void normalizatuProgramazioOrdena(List<ErronkaKronogramaJarduera> guztiak) {
         guztiak.stream()
-                .filter(j -> j.getMota() == KronogramaJardueraMota.MODULUA && j.getModuloa() != null)
-                .collect(java.util.stream.Collectors.groupingBy(j -> j.getModuloa().getId()))
+                .filter(j -> jarduerarenOrdutegikoModuloa(j) != null)
+                .collect(java.util.stream.Collectors.groupingBy(
+                        j -> jarduerarenOrdutegikoModuloa(j).getId()))
                 .values().forEach(modulukoak -> {
                     List<ErronkaKronogramaJarduera> ordenatuta = modulukoak.stream()
                             .sorted(programazioOrdena()).toList();
@@ -274,9 +294,9 @@ public class KronogramaService {
                     Integer ordena = j.getMultzoa() == null ? j.getOrdena() : j.getMultzoa().getOrdena();
                     return ordena != null && ordena > 0 ? ordena : Integer.MAX_VALUE;
                 })
-                .thenComparingInt(j -> j.getMota() == KronogramaJardueraMota.KOMUNA ? 0 : 1)
                 .thenComparingInt(j -> j.getOrdena() != null && j.getOrdena() > 0
                         ? j.getOrdena() : Integer.MAX_VALUE)
+                .thenComparingInt(j -> j.getMota() == KronogramaJardueraMota.KOMUNA ? 0 : 1)
                 .thenComparing(ErronkaKronogramaJarduera::getId,
                         Comparator.nullsLast(Comparator.naturalOrder()));
     }
@@ -355,6 +375,15 @@ public class KronogramaService {
         Erronka erronka = erronka(erronkaId);
         parteHartzenDuenModuloa(erronka, moduloaId);
         egiaztatuEditatzekoBaimena(auth, erronka, KronogramaJardueraMota.MODULUA, moduloaId);
+        List<ErronkaKronogramaJarduera> guztiak = new ArrayList<>(
+                jarduerak.findByErronkaIdOrderByHasieraDataAscBukaeraDataAscIdAsc(erronkaId));
+        eguneratuProgramazioBlokeenOrdena(erronkaId, moduloaId, blokeak, guztiak);
+        berrordenatuEtaDatakBirkalkulatu(erronka, guztiak);
+        jarduerak.saveAll(guztiak);
+    }
+
+    private void eguneratuProgramazioBlokeenOrdena(Long erronkaId, Long moduloaId,
+            List<String> blokeak, List<ErronkaKronogramaJarduera> guztiak) {
         require(blokeak != null && !blokeak.isEmpty(), "Programazioaren ordena falta da.");
         require(blokeak.stream().allMatch(java.util.Objects::nonNull)
                         && blokeak.stream().distinct().count() == blokeak.size(),
@@ -362,8 +391,6 @@ public class KronogramaService {
 
         List<ErronkaJardueraMultzoa> erronkakoMultzoak =
                 multzoak.findByErronkaIdOrderByOrdenaAscIdAsc(erronkaId);
-        List<ErronkaKronogramaJarduera> guztiak = new ArrayList<>(
-                jarduerak.findByErronkaIdOrderByHasieraDataAscBukaeraDataAscIdAsc(erronkaId));
         List<ErronkaKronogramaJarduera> jardueraSolteIkusgaiak = guztiak.stream()
                 .filter(j -> j.getMultzoa() == null)
                 .filter(j -> j.getMota() == KronogramaJardueraMota.KOMUNA
@@ -387,8 +414,6 @@ public class KronogramaService {
             else jardueraMap.get(blokea).setOrdena(ordena);
         }
         multzoak.saveAll(erronkakoMultzoak);
-        berrordenatuEtaDatakBirkalkulatu(erronka, guztiak);
-        jarduerak.saveAll(guztiak);
     }
 
     @Transactional
@@ -671,35 +696,96 @@ public class KronogramaService {
                 moduluka.computeIfAbsent(moduloa.getId(), __ -> new ArrayList<>()).add(jarduera);
             }
         }
-        Comparator<ErronkaKronogramaJarduera> ordena = programazioAutomatikoa
-                ? Comparator.comparingInt((ErronkaKronogramaJarduera j) ->
+        Comparator<ErronkaKronogramaJarduera> ordena = Comparator
+                .comparingInt((ErronkaKronogramaJarduera j) ->
                         j.getMota() == KronogramaJardueraMota.KOMUNA ? 0 : 1)
-                    .thenComparing(programazioOrdena())
-                : Comparator
-                    .comparingInt((ErronkaKronogramaJarduera j) ->
-                            j.getMota() == KronogramaJardueraMota.KOMUNA ? 0 : 1)
-                    .thenComparingInt(j -> j.getMota() == KronogramaJardueraMota.MODULUA
-                            && j.getOrdena() != null && j.getOrdena() > 0 ? j.getOrdena() : Integer.MAX_VALUE)
-                    .thenComparing(ErronkaKronogramaJarduera::getHasieraData)
-                    .thenComparing(ErronkaKronogramaJarduera::getId,
-                            Comparator.nullsLast(Comparator.naturalOrder()));
+                .thenComparingInt(j -> j.getMota() == KronogramaJardueraMota.MODULUA
+                        && j.getOrdena() != null && j.getOrdena() > 0 ? j.getOrdena() : Integer.MAX_VALUE)
+                .thenComparing(ErronkaKronogramaJarduera::getHasieraData)
+                .thenComparing(ErronkaKronogramaJarduera::getId,
+                        Comparator.nullsLast(Comparator.naturalOrder()));
         moduluka.forEach((moduloaId, modulukoJarduerak) -> {
             Map<LocalDate, Integer> gaitasuna = testuingurua.egunekoOrduak()
                     .getOrDefault(moduloaId, Map.of());
             Map<LocalDate, BigDecimal> erabilgarri = new LinkedHashMap<>();
             gaitasuna.forEach((data, orduak) -> erabilgarri.put(data, BigDecimal.valueOf(orduak)));
+            if (programazioAutomatikoa) {
+                banatuProgramazioAutomatikoa(modulukoJarduerak, gaitasuna, erabilgarri,
+                        erronka, zorrotza, emaitza);
+                return;
+            }
             modulukoJarduerak.stream().sorted(ordena).forEach(jarduera -> {
                 Map<LocalDate, BigDecimal> banaketa = banatuJarduera(
-                        programazioAutomatikoa && jarduera.getMota() == KronogramaJardueraMota.MODULUA
-                                ? erronka.getHasieraData() : jarduera.getHasieraData(),
+                        jarduera.getHasieraData(),
                         jarduera.getIraupenOrduak(), gaitasuna, erabilgarri, erronka,
-                        zorrotza && !programazioAutomatikoa, zorrotza);
+                        zorrotza, zorrotza);
                 emaitza.put(jarduera, banaketa);
                 banaketa.forEach((data, orduak) -> erabilgarri.computeIfPresent(data,
                         (__, libre) -> libre.subtract(orduak).max(BigDecimal.ZERO)));
             });
         });
         return emaitza;
+    }
+
+    private void banatuProgramazioAutomatikoa(List<ErronkaKronogramaJarduera> modulukoJarduerak,
+            Map<LocalDate, Integer> gaitasuna, Map<LocalDate, BigDecimal> erabilgarri,
+            Erronka erronka, boolean zorrotza,
+            Map<ErronkaKronogramaJarduera, Map<LocalDate, BigDecimal>> emaitza) {
+        List<ErronkaKronogramaJarduera> ordenatuta = modulukoJarduerak.stream()
+                .sorted(programazioOrdena()).toList();
+        List<ErronkaKronogramaJarduera> aingurak = ordenatuta.stream()
+                .filter(j -> j.getMota() == KronogramaJardueraMota.KOMUNA)
+                .sorted(Comparator.comparing(ErronkaKronogramaJarduera::getHasieraData)
+                        .thenComparing(ErronkaKronogramaJarduera::getId))
+                .toList();
+
+        for (ErronkaKronogramaJarduera aingura : aingurak) {
+            Map<LocalDate, BigDecimal> banaketa = banatuJarduera(aingura.getHasieraData(),
+                    aingura.getIraupenOrduak(), gaitasuna, erabilgarri, erronka, false, zorrotza);
+            emaitza.put(aingura, banaketa);
+            kenduErabilgarritasuna(erabilgarri, banaketa);
+        }
+
+        for (int i = 0; i < ordenatuta.size(); i++) {
+            ErronkaKronogramaJarduera jarduera = ordenatuta.get(i);
+            if (jarduera.getMota() != KronogramaJardueraMota.MODULUA) continue;
+            ErronkaKronogramaJarduera aurrekoAingura = null;
+            ErronkaKronogramaJarduera hurrengoAingura = null;
+            for (int j = i - 1; j >= 0; j--) {
+                if (ordenatuta.get(j).getMota() == KronogramaJardueraMota.KOMUNA) {
+                    aurrekoAingura = ordenatuta.get(j);
+                    break;
+                }
+            }
+            for (int j = i + 1; j < ordenatuta.size(); j++) {
+                if (ordenatuta.get(j).getMota() == KronogramaJardueraMota.KOMUNA) {
+                    hurrengoAingura = ordenatuta.get(j);
+                    break;
+                }
+            }
+            LocalDate hasiera = aurrekoAingura == null ? erronka.getHasieraData()
+                    : emaitza.getOrDefault(aurrekoAingura, Map.of()).keySet().stream()
+                            .max(LocalDate::compareTo).orElse(aurrekoAingura.getBukaeraData()).plusDays(1);
+            LocalDate azkenData = hurrengoAingura == null ? erronka.getBukaeraData()
+                    : hurrengoAingura.getHasieraData().minusDays(1);
+            try {
+                Map<LocalDate, BigDecimal> banaketa = banatuJarduera(hasiera,
+                        jarduera.getIraupenOrduak(), gaitasuna, erabilgarri, erronka,
+                        false, zorrotza, azkenData);
+                emaitza.put(jarduera, banaketa);
+                kenduErabilgarritasuna(erabilgarri, banaketa);
+            } catch (IllegalArgumentException ex) {
+                throw new IllegalArgumentException("Ezin da '" + jarduera.getIzenburua()
+                        + "' jarduera aukeratutako kokapenean jarri: ez dago nahikoa klase-ordurik "
+                        + "aurreko eta hurrengo jarduera orokorren artean.");
+            }
+        }
+    }
+
+    private void kenduErabilgarritasuna(Map<LocalDate, BigDecimal> erabilgarri,
+            Map<LocalDate, BigDecimal> banaketa) {
+        banaketa.forEach((data, orduak) -> erabilgarri.computeIfPresent(data,
+                (__, libre) -> libre.subtract(orduak).max(BigDecimal.ZERO)));
     }
 
     private Moduloa jarduerarenOrdutegikoModuloa(ErronkaKronogramaJarduera jarduera) {
@@ -709,12 +795,20 @@ public class KronogramaService {
     private Map<LocalDate, BigDecimal> banatuJarduera(LocalDate hasiera, BigDecimal iraupena,
             Map<LocalDate, Integer> gaitasuna, Map<LocalDate, BigDecimal> erabilgarri,
             Erronka erronka, boolean hasieraKlaseEgunaEskatu, boolean nahikoaEskatu) {
+        return banatuJarduera(hasiera, iraupena, gaitasuna, erabilgarri, erronka,
+                hasieraKlaseEgunaEskatu, nahikoaEskatu, erronka.getBukaeraData());
+    }
+
+    private Map<LocalDate, BigDecimal> banatuJarduera(LocalDate hasiera, BigDecimal iraupena,
+            Map<LocalDate, Integer> gaitasuna, Map<LocalDate, BigDecimal> erabilgarri,
+            Erronka erronka, boolean hasieraKlaseEgunaEskatu, boolean nahikoaEskatu,
+            LocalDate azkenData) {
         Map<LocalDate, BigDecimal> banaketa = new LinkedHashMap<>();
         if (hasiera == null || iraupena == null) return banaketa;
         if (hasieraKlaseEgunaEskatu) require(gaitasuna.containsKey(hasiera),
                 "Aukeratutako moduluak ez dauka klaserik hasiera-egun horretan.");
         BigDecimal falta = iraupena;
-        for (LocalDate data = hasiera; !data.isAfter(erronka.getBukaeraData())
+        for (LocalDate data = hasiera; azkenData != null && !data.isAfter(azkenData)
                 && falta.compareTo(BigDecimal.ZERO) > 0; data = data.plusDays(1)) {
             BigDecimal egunekoGaitasuna = erabilgarri.getOrDefault(data, BigDecimal.ZERO);
             if (egunekoGaitasuna.compareTo(BigDecimal.ZERO) <= 0) continue;

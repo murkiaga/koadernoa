@@ -195,7 +195,8 @@ public class EthaziKoadernoaController {
             Authentication auth) {
         try {
             kronogramaService.jardueraKokatu(erronkaId, eskaera.moduloaId(), eskaera.jardueraId(),
-                    eskaera.multzoaId(), eskaera.jardueraIds(), auth);
+                    eskaera.multzoaId(), eskaera.jardueraIds(), eskaera.programazioJardueraIds(),
+                    eskaera.blokeak(), auth);
             return ResponseEntity.ok(Map.of("message", "Ordena eta datak eguneratu dira."));
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
@@ -205,7 +206,8 @@ public class EthaziKoadernoaController {
     }
 
     public record BerrordenatuEskaera(Long moduloaId, Long jardueraId, Long multzoaId,
-            java.util.List<Long> jardueraIds) {}
+            java.util.List<Long> jardueraIds, java.util.List<Long> programazioJardueraIds,
+            java.util.List<String> blokeak) {}
 
     @PostMapping("/programazioa/erronkak/{erronkaId}/multzoak/berrordenatu")
     public ResponseEntity<Map<String, String>> programazioMultzoakBerrordenatu(

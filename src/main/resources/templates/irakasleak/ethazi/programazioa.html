@@ -69,10 +69,15 @@
     .jarduera-orduak { color:#475569; font-size:.72rem; font-weight:800; white-space:nowrap; }
     .jarduera-editatu { padding:.2rem .45rem; border:1px solid #94a3b8; border-radius:6px; background:#fff; color:#334155; font:inherit; font-size:.68rem; font-weight:800; cursor:pointer; }
     .jarduera-hutsa { padding:.7rem; border:1px dashed rgba(15,23,42,.2); border-radius:9px; color:#64748b; font-size:.8rem; text-align:center; }
-    .jarduera-multzoa { margin:.7rem 0; overflow:hidden; border:1px solid rgba(15,23,42,.16); border-radius:11px; background:rgba(255,255,255,.34); }
+    .jarduera-multzoa { position:relative; margin:.7rem 0; overflow:hidden; border:1px solid rgba(15,23,42,.16); border-radius:11px; background:rgba(255,255,255,.34); }
     .jarduera-multzoa[hidden] { display:none!important; }
     .jarduera-multzoa.group-dragging { opacity:.45; }
-    .jarduera-multzoa.group-drag-over { box-shadow:0 -3px #0284c7; }
+    .programazio-blokeak > .group-drop-before,
+    .programazio-blokeak > .group-drop-after { position:relative; }
+    .programazio-blokeak > .group-drop-before::before,
+    .programazio-blokeak > .group-drop-after::after { content:""; position:absolute; z-index:20; left:0; right:0; height:4px; background:#0284c7; border-radius:999px; pointer-events:none; }
+    .programazio-blokeak > .group-drop-before::before { top:0; }
+    .programazio-blokeak > .group-drop-after::after { bottom:0; }
     .jarduera-multzoa.activity-drop-over { outline:2px dashed #0284c7; outline-offset:3px; }
     .multzo-header { display:flex; align-items:center; gap:.55rem; width:100%; padding:.58rem .72rem; border:0; background:rgba(226,232,240,.72); color:#172033; text-align:left; }
     .multzo-handle { padding:.1rem .2rem; color:#64748b; font-size:1.1rem; font-weight:900; cursor:grab; user-select:none; }
@@ -226,6 +231,7 @@
                                     data-date=${jarduera.hasieraData},data-end-date=${jarduera.bukaeraData},data-activity-id=${jarduera.id},
                                     data-editable=${jarduera.editagarria},data-title=${jarduera.izenburua},
                                     data-description=${jarduera.deskribapena},data-hours=${jarduera.iraupenOrduak},
+                                    data-schedule-module-id=${jarduera.aurreikusitakoModuloaId},
                                     data-group-id=${jarduera.multzoaId},
                                     draggable=${jarduera.editagarria}">
                         <span class="jarduera-handle" th:if="${jarduera.editagarria}" title="Arrastatu jarduera ordena aldatzeko">⠿</span><span th:unless="${jarduera.editagarria}"></span>
@@ -242,6 +248,7 @@
                            th:attr="data-module-id=${jarduera.moduloaId},data-common=${jarduera.orokorra},data-date=${jarduera.hasieraData},data-end-date=${jarduera.bukaeraData},
                                     data-activity-id=${jarduera.id},data-editable=${jarduera.editagarria},data-title=${jarduera.izenburua},
                                     data-description=${jarduera.deskribapena},data-hours=${jarduera.iraupenOrduak},data-group-id='',data-program-order=${jarduera.ordena},
+                                    data-schedule-module-id=${jarduera.aurreikusitakoModuloaId},
                                     draggable=${jarduera.editagarria}">
                     <span class="jarduera-handle" th:if="${jarduera.editagarria}" title="Arrastatu jarduera ordena aldatzeko">⠿</span><span th:unless="${jarduera.editagarria}"></span>
                     <div class="jarduera-data"><span th:text="${#temporals.format(jarduera.hasieraData, 'yyyy-MM-dd')}">2026-09-01</span><span th:if="${jarduera.bukaeraData != null and !jarduera.bukaeraData.equals(jarduera.hasieraData)}" th:text="${'→ ' + #temporals.format(jarduera.bukaeraData, 'yyyy-MM-dd')}">→ 2026-09-02</span></div>
@@ -557,20 +564,25 @@
     });
     handle.addEventListener('dragend', () => {
       arrastatutakoMultzoa?.classList.remove('group-dragging');
-      document.querySelectorAll('.group-drag-over').forEach(el => el.classList.remove('group-drag-over'));
+      document.querySelectorAll('.group-drop-before, .group-drop-after').forEach(el =>
+          el.classList.remove('group-drop-before', 'group-drop-after'));
       arrastatutakoMultzoa = null;
     });
   });
 
-  async function gordeProgramazioBlokeenOrdena(zerrenda) {
-    const moduloaId = Number(document.getElementById('moduluIragazkia')?.value);
-    const challengeId = zerrenda.dataset.challengeId;
-    const blokeak = Array.from(zerrenda.children)
+  function lortuProgramazioBlokeak(zerrenda, moduloaId) {
+    return Array.from(zerrenda.children)
         .filter(item => item.classList.contains('jarduera-multzoa')
             || item.classList.contains('jarduera-txartela')
                 && (item.dataset.common === 'true' || Number(item.dataset.moduleId) === moduloaId))
         .map(item => item.classList.contains('jarduera-multzoa')
             ? `MULTZOA:${item.dataset.groupId}` : `JARDUERA:${item.dataset.activityId}`);
+  }
+
+  async function gordeProgramazioBlokeenOrdena(zerrenda) {
+    const moduloaId = Number(document.getElementById('moduluIragazkia')?.value);
+    const challengeId = zerrenda.dataset.challengeId;
+    const blokeak = lortuProgramazioBlokeak(zerrenda, moduloaId);
     const token = document.querySelector('meta[name="_csrf"]')?.content || '';
     const header = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
     const response = await fetch(`/irakasle/ethazi-koadernoa/programazioa/erronkak/${challengeId}/multzoak/berrordenatu`, {
@@ -588,17 +600,21 @@
       if (!arrastatutakoMultzoa || arrastatutakoMultzoa === helmuga
           || arrastatutakoMultzoa.closest('.programazio-blokeak') !== helmuga.closest('.programazio-blokeak')) return;
       event.preventDefault();
-      helmuga.classList.add('group-drag-over');
+      const ondoren = event.clientY > helmuga.getBoundingClientRect().top + helmuga.offsetHeight / 2;
+      helmuga.classList.toggle('group-drop-before', !ondoren);
+      helmuga.classList.toggle('group-drop-after', ondoren);
     });
     helmuga.addEventListener('dragleave', event => {
-      if (!helmuga.contains(event.relatedTarget)) helmuga.classList.remove('group-drag-over');
+      if (!helmuga.contains(event.relatedTarget)) {
+        helmuga.classList.remove('group-drop-before', 'group-drop-after');
+      }
     });
     helmuga.addEventListener('drop', async event => {
       if (!arrastatutakoMultzoa || arrastatutakoMultzoa === helmuga) return;
       event.preventDefault();
       event.stopPropagation();
-      helmuga.classList.remove('group-drag-over');
       const ondoren = event.clientY > helmuga.getBoundingClientRect().top + helmuga.offsetHeight / 2;
+      helmuga.classList.remove('group-drop-before', 'group-drop-after');
       const zerrenda = helmuga.closest('.programazio-blokeak');
       zerrenda.insertBefore(arrastatutakoMultzoa, ondoren ? helmuga.nextSibling : helmuga);
       try {
@@ -619,7 +635,12 @@
     const jardueraIds = Array.from(edukia.querySelectorAll('.jarduera-txartela[data-editable="true"]'))
         .filter(item => Number(item.dataset.moduleId) === moduloaId)
         .map(item => Number(item.dataset.activityId));
+    const programazioJardueraIds = Array.from(edukia.querySelectorAll('.jarduera-txartela'))
+        .filter(item => Number(item.dataset.moduleId) === moduloaId
+            || item.dataset.common === 'true' && Number(item.dataset.scheduleModuleId) === moduloaId)
+        .map(item => Number(item.dataset.activityId));
     const multzoaId = zerrenda.dataset.groupId ? Number(zerrenda.dataset.groupId) : null;
+    const blokeak = lortuProgramazioBlokeak(edukia.querySelector('.programazio-blokeak'), moduloaId);
     const token = document.querySelector('meta[name="_csrf"]')?.content || '';
     const header = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
     const response = await fetch(`/irakasle/ethazi-koadernoa/programazioa/erronkak/${zerrenda.dataset.challengeId}/jarduerak/berrordenatu`, {
@@ -629,7 +650,9 @@
         moduloaId,
         jardueraId: Number(jarduera.dataset.activityId),
         multzoaId,
-        jardueraIds
+        jardueraIds,
+        programazioJardueraIds,
+        blokeak
       })
     });
     const result = await response.json().catch(() => ({}));

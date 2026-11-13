@@ -243,6 +243,7 @@ public class EthaziKoadernoaService {
         return new KronogramaJardueraTxartela(jarduera.getId(), jarduera.getIzenburua(),
                 jarduera.getDeskribapena(), jarduera.getHasieraData(), jarduera.getBukaeraData(),
                 jarduera.getIraupenOrduak(), orokorra, jabea == null ? null : jabea.getId(), badgea,
+                aurreikusitakoa == null ? null : aurreikusitakoa.getId(),
                 aurreikusitakoa == null ? null : etiketa(aurreikusitakoa),
                 jarduera.getOrdena() == null ? 0 : jarduera.getOrdena(),
                 !orokorra && jabea != null && irakaslearenModuloIds.contains(jabea.getId()),
@@ -397,7 +398,8 @@ public class EthaziKoadernoaService {
     public record ModuluAukera(Long id, String etiketa) {}
     public record KronogramaJardueraTxartela(Long id, String izenburua, String deskribapena,
             LocalDate hasieraData, LocalDate bukaeraData, BigDecimal iraupenOrduak, boolean orokorra,
-            Long moduloaId, String badgea, String aurreikusitakoModuloa, int ordena,
+            Long moduloaId, String badgea, Long aurreikusitakoModuloaId,
+            String aurreikusitakoModuloa, int ordena,
             boolean editagarria, Long multzoaId) {}
     public record JardueraMultzoTxartela(Long id, String izena, int ordena,
             LocalDate hasieraData, LocalDate bukaeraData,
