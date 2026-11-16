@@ -17,8 +17,6 @@
       <h1 th:text="${ethaziKoadernoAktiboa.izena}">Ethazi koadernoa 1MS2D</h1>
       <p th:text="${ikuspegia.ikasturtea}">2026-2027</p>
     </div>
-    <span th:if="${ikuspegia.ordutegiHasiera != null}"
-          th:text="${'Ordutegia: ' + #temporals.format(ikuspegia.ordutegiHasiera, 'yyyy-MM-dd') + 'tik'}"></span>
   </header>
 
   <section class="ethazi-panela" aria-labelledby="ordutegia-izenburua">
@@ -34,15 +32,28 @@
       </div>
     </div>
 
-    <div class="ethazi-ordutegi-wrap" th:if="${ikuspegia.ordutegiHasiera != null}">
-      <table class="ethazi-ordutegia">
+    <div class="ethazi-ordutegi-tabs" role="tablist" aria-label="Ordutegi bertsioak"
+         th:if="${!#lists.isEmpty(ikuspegia.ordutegiak)}">
+      <button type="button" role="tab" th:each="ordutegia : ${ikuspegia.ordutegiak}"
+              class="ethazi-ordutegi-tab" th:classappend="${ordutegia.aktiboa} ? ' aktiboa'"
+              th:attr="data-ordutegi-tab=${ordutegia.id},aria-selected=${ordutegia.aktiboa}"
+              th:onclick="|erakutsiOrdutegia('${ordutegia.id}')|">
+        <strong th:text="${ordutegia.indizea + '. ordutegia'}">1. ordutegia</strong>
+        <span th:text="${#temporals.format(ordutegia.hasiera, 'yyyy/MM/dd') + (ordutegia.bukaera != null ? ' — ' + #temporals.format(ordutegia.bukaera, 'yyyy/MM/dd') : 'tik aurrera')}">2026/09/01tik aurrera</span>
+        <small th:if="${ordutegia.aktiboa}">Aktiboa</small>
+      </button>
+    </div>
+
+    <div class="ethazi-ordutegi-wrap" th:each="ordutegia : ${ikuspegia.ordutegiak}"
+         th:attr="data-ordutegi-panela=${ordutegia.id}" th:hidden="${!ordutegia.aktiboa}">
+      <table class="ethazi-ordutegia" th:attr="aria-label=${ordutegia.indizea + '. ordutegia'}">
         <thead><tr><th>Ordua</th><th th:each="eguna : ${ikuspegia.egunak}"
           th:text="${#strings.capitalize(#strings.toLowerCase(eguna.name()))}">Astelehena</th></tr></thead>
         <tbody>
           <tr th:each="ordua : ${ikuspegia.orduak}">
             <th th:text="${ordua}">1</th>
             <td th:each="eguna : ${ikuspegia.egunak}"
-                th:with="gelaxka=${ikuspegia.gelaxkak.get(eguna.name() + ':' + ordua)}"
+                th:with="gelaxka=${ordutegia.gelaxkak.get(eguna.name() + ':' + ordua)}"
                 th:classappend="${gelaxka != null and gelaxka.erronkan} ? 'erronkako-modulua'"
                 th:style="${gelaxka != null and gelaxka.kolorea != null ? 'background:' + gelaxka.kolorea : ''}"
                 th:text="${gelaxka != null ? gelaxka.modulua : ''}"></td>
@@ -50,10 +61,22 @@
         </tbody>
       </table>
     </div>
-    <div class="ethazi-hutsa" th:if="${ikuspegia.ordutegiHasiera == null}">
+    <div class="ethazi-hutsa" th:if="${#lists.isEmpty(ikuspegia.ordutegiak)}">
       Talde honek ez du ikasturte aktiborako ordutegirik oraindik.
     </div>
   </section>
 </main>
+<script>
+  function erakutsiOrdutegia(ordutegiaId) {
+    document.querySelectorAll('[data-ordutegi-panela]').forEach(panela => {
+      panela.hidden = panela.dataset.ordutegiPanela !== String(ordutegiaId);
+    });
+    document.querySelectorAll('[data-ordutegi-tab]').forEach(tab => {
+      const aktiboa = tab.dataset.ordutegiTab === String(ordutegiaId);
+      tab.classList.toggle('aktiboa', aktiboa);
+      tab.setAttribute('aria-selected', String(aktiboa));
+    });
+  }
+</script>
 </body>
 </html>

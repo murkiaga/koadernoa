@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}">
+  <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}">
+  <title>Ethazi koadernoa — Jarraipena</title>
+  <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/irakasle-common.css}">
+  <link rel="stylesheet" th:href="@{/css/ethazi-koadernoa.css}">
+  <style>
+    .jarraipena-page{max-width:none;padding:1rem 1.25rem 2rem}.jarraipena-header{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1rem}.jarraipena-header h1{margin:0}.jarraipena-header p{margin:.3rem 0 0;color:var(--muted)}.jarraipena-filter{display:grid;gap:.35rem;min-width:230px;font-size:.78rem;font-weight:800;color:#475569}.jarraipena-filter select{padding:.6rem .7rem;border:1px solid #cbd5e1;border-radius:9px;background:#fff;color:#172033}.jarraipena-info{display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:.8rem}.jarraipena-chip{padding:.35rem .65rem;border-radius:999px;background:#e0f2fe;color:#155e75;font-size:.8rem;font-weight:800}.jarraipena-wrap{overflow:auto;max-height:calc(100vh - 240px);border:1px solid #cbd5e1;border-radius:12px;background:#fff}.jarraipena-taula{border-collapse:separate;border-spacing:0;min-width:100%;font-size:.82rem}.jarraipena-taula th,.jarraipena-taula td{box-sizing:border-box;min-width:82px;height:46px;padding:.45rem .55rem;border-right:1px solid #d7dde5;border-bottom:1px solid #d7dde5;text-align:center;vertical-align:middle}.jarraipena-taula thead th{position:sticky;z-index:4;background:#e8f1fb;color:#172033;font-weight:800}.jarraipena-taula thead tr:first-child th{top:0}.jarraipena-taula thead tr:nth-child(2) th{top:46px}.jarraipena-taula thead .erronka-burua:nth-child(even){background:#f1e6ef}.jarraipena-taula .sticky-taldea{position:sticky;left:0;z-index:3;min-width:58px;width:58px}.jarraipena-taula .sticky-ikaslea{position:sticky;left:58px;z-index:3;min-width:190px;text-align:left;background:#fff}.jarraipena-taula thead .sticky-taldea,.jarraipena-taula thead .sticky-ikaslea{z-index:6;background:#eef2f7}.jarraipena-taula tbody tr:hover td,.jarraipena-taula tbody tr:hover .sticky-ikaslea{background:#f8fafc}.talde-gelaxka{background:#d9ead3!important;color:#274e13;font-weight:900;writing-mode:vertical-rl;letter-spacing:.03em}.talde-gelaxka>span{display:inline-block;transform:rotate(180deg)}.laburpen-gelaxka{min-width:118px;background:#f8fafc}.laburpen-ehunekoa{display:block;font-size:1rem;font-weight:900}.laburpen-orduak{display:block;margin-top:.15rem;color:#64748b;font-size:.7rem}.jarraipen-suspendituta{background:#fee2e2!important;color:#991b1b}.jarraipen-egoera{display:block;margin-top:.2rem;font-size:.66rem;font-weight:900}.egun-burua{min-width:92px}.egun-burua small{display:block;margin-top:.15rem;color:#64748b}.jarraipen-gelaxka{cursor:pointer;background:#fff;transition:background .12s}.jarraipen-gelaxka:hover{background:#e0f2fe!important}.jarraipen-gelaxka:focus{outline:3px solid #38bdf8;outline-offset:-3px}.falta-balioa{font-size:1rem;font-weight:900;color:#9f1239}.ohar-ikonoa{margin-left:.25rem}.jarraipena-hutsa{padding:2.5rem;text-align:center;color:var(--muted)}.jarraipen-dialog{width:min(720px,calc(100% - 2rem));max-height:90vh;padding:0;border:0;border-radius:16px;box-shadow:0 24px 70px rgb(15 23 42 / 38%)}.jarraipen-dialog::backdrop{background:rgb(15 23 42 / 50%)}.jarraipen-dialog header,.jarraipen-dialog footer{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem 1.2rem;border-bottom:1px solid #e2e8f0}.jarraipen-dialog header h2{margin:0;font-size:1.15rem}.jarraipen-dialog-close{border:0;background:transparent;font-size:1.7rem;cursor:pointer}.jarraipen-dialog-content{display:grid;gap:.8rem;padding:1rem 1.2rem;overflow:auto;max-height:62vh}.jarraipen-dialog-meta{margin:0;color:#64748b}.modulu-gelaxka{display:grid;grid-template-columns:minmax(110px,.7fr) minmax(110px,.5fr) minmax(220px,2fr);gap:.8rem;align-items:start;padding:.85rem;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc}.modulu-gelaxka label{display:grid;gap:.3rem;font-size:.76rem;font-weight:800;color:#475569}.modulu-gelaxka input,.modulu-gelaxka textarea{box-sizing:border-box;width:100%;padding:.55rem .6rem;border:1px solid #cbd5e1;border-radius:8px;background:#fff;font:inherit}.modulu-gelaxka textarea{resize:vertical}.modulu-gelaxka .modulu-izena{padding-top:1.4rem;font-weight:900}.modulu-gelaxka.readonly{opacity:.72}.jarraipen-dialog footer{justify-content:flex-end;border-top:1px solid #e2e8f0;border-bottom:0}.jarraipen-error{margin:0;padding:.65rem .8rem;border-radius:8px;background:#fee2e2;color:#991b1b;font-weight:700}[hidden]{display:none!important}@media(max-width:700px){.jarraipena-page{padding:.75rem}.modulu-gelaxka{grid-template-columns:1fr}.modulu-gelaxka .modulu-izena{padding-top:0}.jarraipena-wrap{max-height:calc(100vh - 280px)}}
+    .erronka-toggle{display:inline-flex;align-items:center;justify-content:center;width:1.65rem;height:1.65rem;margin-right:.4rem;border:1px solid rgb(15 23 42 / 25%);border-radius:50%;background:rgb(255 255 255 / 65%);color:inherit;font-size:1.1rem;font-weight:900;line-height:1;cursor:pointer}.erronka-toggle:hover{background:#fff}.erronka-xehetasuna-ezkututa{display:none}.jarraipena-taula tbody tr.talde-hasiera:not(:first-child)>th,.jarraipena-taula tbody tr.talde-hasiera:not(:first-child)>td{border-top:3px solid #111827}
+    .jarraipen-scroll-kontrola{position:relative;margin:.65rem 58px 0;padding:.45rem .65rem;border:1px solid #cbd5e1;border-radius:999px;background:#e2e8f0;box-shadow:inset 0 1px 2px rgb(15 23 42 / 12%)}.jarraipen-scroll-kontrola input{display:block;width:100%;height:22px;margin:0;cursor:ew-resize;appearance:none;background:transparent}.jarraipen-scroll-kontrola input::-webkit-slider-runnable-track{height:10px;border-radius:999px;background:#94a3b8}.jarraipen-scroll-kontrola input::-webkit-slider-thumb{width:34px;height:22px;margin-top:-6px;border:2px solid #0e7490;border-radius:999px;background:#ecfeff;box-shadow:0 1px 4px rgb(15 23 42 / 30%);appearance:none}.jarraipen-scroll-kontrola input::-moz-range-track{height:10px;border-radius:999px;background:#94a3b8}.jarraipen-scroll-kontrola input::-moz-range-thumb{width:34px;height:22px;border:2px solid #0e7490;border-radius:999px;background:#ecfeff;box-shadow:0 1px 4px rgb(15 23 42 / 30%)}
+  </style>
+</head>
+<body>
+<div th:replace="~{irakasleak/fragments/ethazi-navbar :: navbar(${ethaziKoadernoAktiboa}, ${irakasleKoadernoAktiboak}, ${irakasleEthaziKoadernoAktiboak})}"></div>
+
+<main class="jarraipena-page" id="jarraipenaPage"
+      th:attr="data-modulo-id=${jarraipena.aukeratutakoModuloaId}">
+  <header class="jarraipena-header">
+    <div>
+      <h1>Jarraipena</h1>
+      <p th:text="${ethaziKoadernoAktiboa.izena + ' · ' + jarraipena.ikasturtea}">Koadernoa · Ikasturtea</p>
+    </div>
+    <label class="jarraipena-filter">Ikuspegia
+      <select id="moduloFiltroa" onchange="aldatuJarraipenFiltroa(this.value)">
+        <option value="" th:selected="${jarraipena.aukeratutakoModuloaId == null}">Orokorra</option>
+        <option th:each="modulua : ${jarraipena.moduluAukerak}"
+                th:value="${modulua.id}" th:text="${modulua.etiketa}"
+                th:selected="${modulua.id == jarraipena.aukeratutakoModuloaId}">MOD</option>
+      </select>
+    </label>
+  </header>
+
+  <div class="jarraipena-info">
+    <span class="jarraipena-chip" th:text="${'Filtroa: ' + jarraipena.filtroEtiketa}">Filtroa: Orokorra</span>
+    <span class="jarraipena-chip" th:text="${'Suspenditzeko muga: %' + jarraipena.faltenMugaPortzentaia}">Muga: %20</span>
+    <span class="jarraipena-chip" th:if="${jarraipena.aukeratutakoModuloaId != null}">Klikatu eguneko gelaxka hutsegiteak edo oharrak editatzeko</span>
+    <span class="jarraipena-chip" th:if="${jarraipena.aukeratutakoModuloaId == null}">Orokorra kontsulta soilik da; aukeratu modulu bat datuak sartzeko</span>
+  </div>
+
+  <div class="jarraipena-wrap" th:if="${!#lists.isEmpty(jarraipena.erronkak) and !#lists.isEmpty(jarraipena.ikasleak)}">
+    <table class="jarraipena-taula">
+      <thead>
+        <tr>
+          <th rowspan="2" class="sticky-taldea">Taldea</th>
+          <th rowspan="2" class="sticky-ikaslea">Ikaslea</th>
+          <th th:each="erronka : ${jarraipena.erronkak}" class="erronka-burua"
+              th:colspan="${erronka.lehenetsitaUzkurtuta ? 1 : erronka.zutabeKopurua}"
+              th:attr="data-erronka-header=${erronka.id},data-zutabe-kopurua=${erronka.zutabeKopurua}">
+            <button type="button" class="erronka-toggle"
+                    th:attr="data-erronka-toggle=${erronka.id},aria-expanded=${!erronka.lehenetsitaUzkurtuta},aria-label=${erronka.lehenetsitaUzkurtuta ? 'Zabaldu erronka' : 'Uzkurtu erronka'}"
+                    th:onclick="|aldatuErronka('${erronka.id}')|">
+              <span aria-hidden="true" th:text="${erronka.lehenetsitaUzkurtuta ? '+' : '−'}">−</span>
+            </button>
+            <span th:text="${erronka.indizea + '. ' + erronka.izena}">1. Erronka</span>
+          </th>
+        </tr>
+        <tr>
+          <th:block th:each="erronka : ${jarraipena.erronkak}">
+            <th class="laburpen-gelaxka"
+                th:text="${erronka.indizea + '. erronkako faltak'}">Erronkako faltak</th>
+            <th th:each="eguna : ${erronka.egunak}" class="egun-burua"
+                th:classappend="${erronka.lehenetsitaUzkurtuta} ? ' erronka-xehetasuna-ezkututa'"
+                th:attr="data-erronka-xehetasuna=${erronka.id}">
+              <span th:text="${#temporals.format(eguna.data, 'yyyy/MM/dd')}">2026/11/02</span>
+              <small th:text="${eguna.orduak + ' ordu'}">2 ordu</small>
+            </th>
+          </th:block>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="row : ${jarraipena.ikasleak}" th:classappend="${row.taldeHasiera} ? 'talde-hasiera'">
+          <th th:if="${row.taldeHasiera}" th:rowspan="${row.taldekoLerroKopurua}"
+              class="sticky-taldea talde-gelaxka"><span th:text="${row.taldea}">1. taldea</span></th>
+          <th class="sticky-ikaslea" th:text="${row.izenOsoa}">Ikaslea</th>
+          <th:block th:each="erronka : ${jarraipena.erronkak}"
+                    th:with="laburpena=${row.laburpena(erronka.id)}">
+            <td class="laburpen-gelaxka"
+                th:classappend="${laburpena.suspendituta} ? ' jarraipen-suspendituta'">
+              <span class="laburpen-ehunekoa"
+                    th:text="${#numbers.formatDecimal(laburpena.portzentaia, 1, 2) + '%'}">0,00%</span>
+              <span class="laburpen-orduak"
+                    th:text="${#numbers.formatDecimal(laburpena.faltaOrduak, 1, 2) + ' / ' + erronka.programaOrduak + ' ordu'}">0 / 20 ordu</span>
+              <span class="jarraipen-egoera" th:if="${laburpena.suspendituta}"
+                    th:text="${laburpena.egoeraEtiketa}">Erronka suspendituta</span>
+            </td>
+            <td th:each="eguna : ${erronka.egunak}" class="jarraipen-gelaxka" tabindex="0"
+                th:classappend="${erronka.lehenetsitaUzkurtuta} ? ' erronka-xehetasuna-ezkututa'"
+                th:with="gelaxka=${row.gelaxka(erronka.id, eguna.data)}"
+                th:attr="data-ikaslea-id=${row.id},data-ikaslea=${row.izenOsoa},data-erronka-id=${erronka.id},data-erronka-xehetasuna=${erronka.id},data-data=${eguna.data}"
+                onclick="irekiJarraipenGelaxka(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();irekiJarraipenGelaxka(this)}">
+              <span class="falta-balioa" th:if="${gelaxka.faltaOrduak > 0}"
+                    th:text="${#numbers.formatDecimal(gelaxka.faltaOrduak, 1, 2)}">2</span>
+              <span class="ohar-ikonoa" th:if="${gelaxka.oharra}" title="Oharra dago">📝</span>
+            </td>
+          </th:block>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div id="jarraipenScrollKontrola" class="jarraipen-scroll-kontrola" hidden
+       th:if="${!#lists.isEmpty(jarraipena.erronkak) and !#lists.isEmpty(jarraipena.ikasleak)}">
+    <input id="jarraipenScrollBarra" type="range" min="0" max="0" value="0" step="1"
+           aria-label="Mugitu jarraipen-taula horizontalki">
+  </div>
+
+  <div class="jarraipena-hutsa" th:if="${#lists.isEmpty(jarraipena.erronkak)}">
+    Ez dago ikuspegi honetarako erronkarik edo klase-egunik.
+  </div>
+  <div class="jarraipena-hutsa" th:if="${!#lists.isEmpty(jarraipena.erronkak) and #lists.isEmpty(jarraipena.ikasleak)}">
+    Ez dago ikaslerik talde honetan.
+  </div>
+</main>
+
+<dialog id="jarraipenDialog" class="jarraipen-dialog">
+  <form id="jarraipenForm">
+    <header>
+      <div><h2 id="jarraipenDialogTitle">Jarraipen-gelaxka</h2><p id="jarraipenDialogMeta" class="jarraipen-dialog-meta"></p></div>
+      <button type="button" class="jarraipen-dialog-close" onclick="itxiJarraipenDialog()" aria-label="Itxi">×</button>
+    </header>
+    <div class="jarraipen-dialog-content">
+      <p id="jarraipenError" class="jarraipen-error" hidden></p>
+      <div id="jarraipenModuluak"></div>
+    </div>
+    <footer>
+      <button type="button" class="btn secondary" onclick="itxiJarraipenDialog()">Utzi</button>
+      <button type="submit" class="btn primary" id="jarraipenGorde">Gorde</button>
+    </footer>
+  </form>
+</dialog>
+
+<script>
+  const jarraipenPage = document.getElementById('jarraipenaPage');
+  const jarraipenDialog = document.getElementById('jarraipenDialog');
+  const jarraipenForm = document.getElementById('jarraipenForm');
+  const jarraipenModuluak = document.getElementById('jarraipenModuluak');
+  const jarraipenError = document.getElementById('jarraipenError');
+  const jarraipenWrap = document.querySelector('.jarraipena-wrap');
+  const jarraipenScrollKontrola = document.getElementById('jarraipenScrollKontrola');
+  const jarraipenScrollBarra = document.getElementById('jarraipenScrollBarra');
+  let unekoGelaxka = null;
+
+  function eguneratuScrollKontrola() {
+    if (!jarraipenWrap || !jarraipenScrollKontrola || !jarraipenScrollBarra) return;
+    const gehienezkoa = Math.max(0, jarraipenWrap.scrollWidth - jarraipenWrap.clientWidth);
+    jarraipenScrollBarra.max = String(gehienezkoa);
+    jarraipenScrollBarra.value = String(Math.min(jarraipenWrap.scrollLeft, gehienezkoa));
+    jarraipenScrollKontrola.hidden = gehienezkoa === 0;
+  }
+
+  if (jarraipenWrap && jarraipenScrollBarra) {
+    jarraipenScrollBarra.addEventListener('input', () => {
+      jarraipenWrap.scrollLeft = Number(jarraipenScrollBarra.value);
+    });
+    jarraipenWrap.addEventListener('scroll', () => {
+      jarraipenScrollBarra.value = String(jarraipenWrap.scrollLeft);
+    }, {passive:true});
+    new ResizeObserver(eguneratuScrollKontrola).observe(jarraipenWrap);
+    window.addEventListener('load', eguneratuScrollKontrola);
+    eguneratuScrollKontrola();
+  }
+
+  function aldatuJarraipenFiltroa(moduloaId) {
+    const url = new URL('/irakasle/ethazi-koadernoa/jarraipena', window.location.origin);
+    if (moduloaId) url.searchParams.set('moduloaId', moduloaId);
+    window.location.href = url.toString();
+  }
+
+  function aldatuErronka(erronkaId) {
+    const botoia = document.querySelector(`[data-erronka-toggle="${erronkaId}"]`);
+    const goiburua = document.querySelector(`[data-erronka-header="${erronkaId}"]`);
+    if (!botoia || !goiburua) return;
+    const zabalik = botoia.getAttribute('aria-expanded') === 'true';
+    document.querySelectorAll(`[data-erronka-xehetasuna="${erronkaId}"]`).forEach(zutabea => {
+      zutabea.classList.toggle('erronka-xehetasuna-ezkututa', zabalik);
+    });
+    botoia.setAttribute('aria-expanded', String(!zabalik));
+    botoia.setAttribute('aria-label', zabalik ? 'Zabaldu erronka' : 'Uzkurtu erronka');
+    botoia.querySelector('span').textContent = zabalik ? '+' : '−';
+    goiburua.colSpan = zabalik ? 1 : Number(goiburua.dataset.zutabeKopurua);
+    eguneratuScrollKontrola();
+  }
+
+  async function irekiJarraipenGelaxka(gelaxka) {
+    jarraipenError.hidden = true;
+    jarraipenModuluak.replaceChildren();
+    unekoGelaxka = {
+      ikasleaId: Number(gelaxka.dataset.ikasleaId),
+      erronkaId: Number(gelaxka.dataset.erronkaId),
+      data: gelaxka.dataset.data
+    };
+    const query = new URLSearchParams(unekoGelaxka);
+    if (jarraipenPage.dataset.moduloId) query.set('moduloaId', jarraipenPage.dataset.moduloId);
+    try {
+      const response = await fetch('/irakasle/ethazi-koadernoa/jarraipena/gelaxka?' + query, {credentials:'same-origin'});
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || 'Ezin izan da gelaxka kargatu.');
+      document.getElementById('jarraipenDialogTitle').textContent = result.ikaslea;
+      document.getElementById('jarraipenDialogMeta').textContent = result.erronka + ' · ' + result.data;
+      let editagarririk = false;
+      result.moduluak.forEach(modulua => {
+        editagarririk ||= modulua.editagarria;
+        const lerroa = document.createElement('section');
+        lerroa.className = 'modulu-gelaxka' + (modulua.editagarria ? '' : ' readonly');
+        lerroa.dataset.moduloId = modulua.moduloaId;
+        lerroa.dataset.editagarria = modulua.editagarria;
+
+        const izena = document.createElement('div');
+        izena.className = 'modulu-izena';
+        izena.textContent = modulua.modulua;
+
+        const orduLabel = document.createElement('label');
+        orduLabel.textContent = 'Falta-orduak (geh. ' + modulua.gehienezkoOrduak + ')';
+        const input = document.createElement('input');
+        input.type = 'number'; input.min = '0'; input.max = String(modulua.gehienezkoOrduak);
+        input.step = '0.25'; input.value = modulua.faltaOrduak ?? 0;
+        input.disabled = !modulua.editagarria; input.dataset.orduak = '';
+        orduLabel.appendChild(input);
+
+        const oharLabel = document.createElement('label');
+        oharLabel.textContent = 'Oharra';
+        const textarea = document.createElement('textarea');
+        textarea.rows = 2; textarea.maxLength = 2000; textarea.value = modulua.oharra || '';
+        textarea.disabled = !modulua.editagarria; textarea.dataset.oharra = '';
+        oharLabel.appendChild(textarea);
+
+        lerroa.append(izena, orduLabel, oharLabel);
+        jarraipenModuluak.appendChild(lerroa);
+      });
+      document.getElementById('jarraipenGorde').hidden = !editagarririk;
+      jarraipenDialog.showModal();
+    } catch (error) {
+      window.alert(error.message || 'Ezin izan da gelaxka kargatu.');
+    }
+  }
+
+  function itxiJarraipenDialog() { jarraipenDialog.close(); }
+
+  jarraipenForm.addEventListener('submit', async event => {
+    event.preventDefault();
+    jarraipenError.hidden = true;
+    const moduluak = [...jarraipenModuluak.querySelectorAll('.modulu-gelaxka')]
+      .filter(row => row.dataset.editagarria === 'true')
+      .map(row => ({
+        moduloaId: Number(row.dataset.moduloId),
+        faltaOrduak: Number(row.querySelector('[data-orduak]').value || 0),
+        oharra: row.querySelector('[data-oharra]').value
+      }));
+    const headers = {'Content-Type':'application/json'};
+    const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+    const csrfHeader = document.querySelector('meta[name="_csrf_header"]')?.content;
+    if (csrfToken && csrfHeader) headers[csrfHeader] = csrfToken;
+    try {
+      const response = await fetch('/irakasle/ethazi-koadernoa/jarraipena/gelaxka', {
+        method:'POST', credentials:'same-origin', headers,
+        body:JSON.stringify({
+          ...unekoGelaxka,
+          aukeratutakoModuloaId: jarraipenPage.dataset.moduloId
+            ? Number(jarraipenPage.dataset.moduloId) : null,
+          moduluak
+        })
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.message || 'Ezin izan da gelaxka gorde.');
+      window.location.reload();
+    } catch (error) {
+      jarraipenError.textContent = error.message || 'Ezin izan da gelaxka gorde.';
+      jarraipenError.hidden = false;
+    }
+  });
+</script>
+</body>
+</html>

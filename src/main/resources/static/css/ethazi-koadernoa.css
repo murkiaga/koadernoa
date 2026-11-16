@@ -13,6 +13,11 @@
 .ethazi-legenda { display: flex; gap: .55rem 1rem; flex-wrap: wrap; }
 .ethazi-legenda > span { display: inline-flex; align-items: center; gap: .35rem; font-weight: 600; font-size: .9rem; }
 .ethazi-legenda i { width: 1rem; height: 1rem; border: 1px solid rgba(15,23,42,.15); border-radius: 3px; }
+.ethazi-ordutegi-tabs { display: flex; gap: .55rem; flex-wrap: wrap; margin: 0 0 1rem; }
+.ethazi-ordutegi-tab { display: grid; gap: .12rem; padding: .55rem .75rem; border: 1px solid #cbd5e1; border-radius: 9px; background: #f8fafc; color: #334155; text-align: left; cursor: pointer; }
+.ethazi-ordutegi-tab span { font-size: .76rem; color: #64748b; }
+.ethazi-ordutegi-tab small { color: #0e7490; font-weight: 800; }
+.ethazi-ordutegi-tab.aktiboa { border-color: #0891b2; background: #ecfeff; box-shadow: inset 0 0 0 1px #0891b2; }
 .ethazi-ordutegi-wrap { overflow-x: auto; }
 .ethazi-ordutegia { width: 100%; min-width: 720px; table-layout: fixed; border-collapse: collapse; }
 .ethazi-ordutegia th, .ethazi-ordutegia td { border: 1px solid #dbe3ea; height: 58px; padding: .4rem; text-align: center; }

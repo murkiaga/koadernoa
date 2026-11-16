@@ -80,19 +80,28 @@ class EthaziKoadernoaServiceTest {
         ordutegia.setLerroak(new ArrayList<>(List.of(
                 lerroa(ordutegia, sareak, Astegunak.ASTELEHENA, 1),
                 lerroa(ordutegia, sistema, Astegunak.ASTEARTEA, 2))));
+        TaldeOrdutegia bigarrenOrdutegia = new TaldeOrdutegia(); bigarrenOrdutegia.setId(21L);
+        bigarrenOrdutegia.setTaldea(taldea); bigarrenOrdutegia.setIkasturtea(ikasturtea);
+        bigarrenOrdutegia.setHasieraData(LocalDate.now().plusDays(10));
+        bigarrenOrdutegia.setLerroak(new ArrayList<>(List.of(
+                lerroa(bigarrenOrdutegia, sistema, Astegunak.OSTIRALA, 3))));
         Erronka erronka = new Erronka();
         erronka.setModuluak(new LinkedHashSet<>(List.of(sareak, sistema)));
 
         when(ikasturteak.findFirstByAktiboaTrueOrderByIdDesc()).thenReturn(Optional.of(ikasturtea));
         when(taldeOrdutegiak.findByTaldea_IdAndIkasturtea_IdOrderByHasieraDataAsc(4L, 3L))
-                .thenReturn(List.of(ordutegia));
+                .thenReturn(List.of(ordutegia, bigarrenOrdutegia));
         when(moduluak.findByTaldeaId(4L)).thenReturn(List.of(sareak, sistema));
         when(erronkak.findWithModuluakByZikloaIdAndIkasturteaId(7L, 3L)).thenReturn(List.of(erronka));
 
         var ikuspegia = service.hasieraIkuspegia(koadernoa);
 
-        var lehenengoa = ikuspegia.gelaxkak().get("ASTELEHENA:1");
-        var bigarrena = ikuspegia.gelaxkak().get("ASTEARTEA:2");
+        assertThat(ikuspegia.ordutegiak()).hasSize(2);
+        assertThat(ikuspegia.ordutegiak().get(0).aktiboa()).isTrue();
+        assertThat(ikuspegia.ordutegiak().get(0).bukaera())
+                .isEqualTo(bigarrenOrdutegia.getHasieraData().minusDays(1));
+        var lehenengoa = ikuspegia.ordutegiak().get(0).gelaxkak().get("ASTELEHENA:1");
+        var bigarrena = ikuspegia.ordutegiak().get(0).gelaxkak().get("ASTEARTEA:2");
         assertThat(lehenengoa.erronkan()).isTrue();
         assertThat(bigarrena.erronkan()).isTrue();
         assertThat(lehenengoa.kolorea()).isNotEqualTo(bigarrena.kolorea());

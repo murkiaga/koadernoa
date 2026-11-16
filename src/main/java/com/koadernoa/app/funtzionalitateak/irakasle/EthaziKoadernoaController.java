@@ -1,5 +1,6 @@
 package com.koadernoa.app.funtzionalitateak.irakasle;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,8 +13,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -22,6 +25,7 @@ import com.koadernoa.app.ethazi.dto.KronogramaJardueraForm;
 import com.koadernoa.app.ethazi.dto.JardueraMultzoForm;
 import com.koadernoa.app.ethazi.entitateak.kronograma.KronogramaJardueraMota;
 import com.koadernoa.app.ethazi.service.EthaziKoadernoaService;
+import com.koadernoa.app.ethazi.service.EthaziJarraipenaService;
 import com.koadernoa.app.ethazi.service.KronogramaService;
 import com.koadernoa.app.objektuak.egutegia.entitateak.EgunBerezi;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
@@ -51,6 +55,7 @@ public class EthaziKoadernoaController {
     private final EgutegiaRepository egutegiaRepository;
     private final EgutegiaService egutegiaService;
     private final KronogramaService kronogramaService;
+    private final EthaziJarraipenaService ethaziJarraipenaService;
 
     @GetMapping("/{id}/hautatu")
     public String hautatu(@PathVariable Long id, Authentication auth, HttpSession session,
@@ -145,6 +150,62 @@ public class EthaziKoadernoaController {
                 ethaziKoadernoaService.programazioaIkuspegia(
                         koadernoa, lortuTaldearenEgutegia(koadernoa), irakaslea));
         return "irakasleak/ethazi/programazioa";
+    }
+
+    @GetMapping("/jarraipena")
+    public String jarraipena(Authentication auth,
+            @SessionAttribute(name = "ethaziKoadernoAktiboa", required = false) EthaziKoadernoa sessionKoadernoa,
+            @RequestParam(name = "moduloaId", required = false) Long moduloaId,
+            HttpSession session, Model model, RedirectAttributes flash) {
+        EthaziKoadernoa koadernoa = lortuBaimendutakoKoadernoa(sessionKoadernoa, auth, session, flash);
+        if (koadernoa == null) return "redirect:/irakasle";
+        Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+        model.addAttribute("ethaziKoadernoAktiboa", koadernoa);
+        model.addAttribute("jarraipena", ethaziJarraipenaService.prestatu(
+                koadernoa, lortuTaldearenEgutegia(koadernoa), irakaslea,
+                adminEdoKudeatzaileaDa(auth), moduloaId));
+        return "irakasleak/ethazi/jarraipena";
+    }
+
+    @GetMapping("/jarraipena/gelaxka")
+    public ResponseEntity<?> jarraipenGelaxka(Authentication auth,
+            @SessionAttribute(name = "ethaziKoadernoAktiboa", required = false) EthaziKoadernoa sessionKoadernoa,
+            @RequestParam Long ikasleaId,
+            @RequestParam Long erronkaId,
+            @RequestParam LocalDate data,
+            @RequestParam(name = "moduloaId", required = false) Long moduloaId) {
+        EthaziKoadernoa koadernoa = lortuBaimendutakoKoadernoaApi(sessionKoadernoa, auth);
+        if (koadernoa == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "Ez duzu Ethazi koaderno honetarako sarbiderik."));
+        }
+        try {
+            Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+            return ResponseEntity.ok(ethaziJarraipenaService.gelaxkaXehetasuna(
+                    koadernoa, irakaslea, adminEdoKudeatzaileaDa(auth),
+                    ikasleaId, erronkaId, data, moduloaId));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+        }
+    }
+
+    @PostMapping("/jarraipena/gelaxka")
+    public ResponseEntity<Map<String, String>> jarraipenGelaxkaGorde(Authentication auth,
+            @SessionAttribute(name = "ethaziKoadernoAktiboa", required = false) EthaziKoadernoa sessionKoadernoa,
+            @RequestBody EthaziJarraipenaService.GelaxkaGordeEskaera eskaera) {
+        EthaziKoadernoa koadernoa = lortuBaimendutakoKoadernoaApi(sessionKoadernoa, auth);
+        if (koadernoa == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "Ez duzu Ethazi koaderno honetarako sarbiderik."));
+        }
+        try {
+            Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+            ethaziJarraipenaService.gordeGelaxka(
+                    koadernoa, irakaslea, adminEdoKudeatzaileaDa(auth), eskaera);
+            return ResponseEntity.ok(Map.of("message", "Hutsegiteak eta oharrak gorde dira."));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+        }
     }
 
     @PostMapping("/programazioa/erronkak/{erronkaId}/jarduerak/gorde")
@@ -254,6 +315,17 @@ public class EthaziKoadernoaController {
         session.setAttribute("ethaziKoadernoAktiboa", koadernoa);
         session.setAttribute(KOADERNO_MOTA, ETHAZI_MOTA);
         return koadernoa;
+    }
+
+    private EthaziKoadernoa lortuBaimendutakoKoadernoaApi(EthaziKoadernoa sessionKoadernoa,
+            Authentication auth) {
+        if (sessionKoadernoa == null || sessionKoadernoa.getId() == null) return null;
+        EthaziKoadernoa koadernoa = ethaziKoadernoaService.findById(sessionKoadernoa.getId());
+        if (koadernoa == null) return null;
+        Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+        return adminEdoKudeatzaileaDa(auth)
+                || ethaziKoadernoaService.irakasleakBadaukaSarbidea(irakaslea, koadernoa)
+                        ? koadernoa : null;
     }
 
     private Map<String, String> oharMap(Egutegia egutegia) {

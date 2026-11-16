@@ -20,6 +20,7 @@ import org.springframework.mock.web.MockHttpSession;
 
 import com.koadernoa.app.ethazi.entitateak.EthaziKoadernoa;
 import com.koadernoa.app.ethazi.service.EthaziKoadernoaService;
+import com.koadernoa.app.ethazi.service.EthaziJarraipenaService;
 import com.koadernoa.app.ethazi.service.KronogramaService;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
@@ -43,6 +44,7 @@ class EthaziKoadernoaControllerTest {
     @Mock EgutegiaRepository egutegiak;
     @Mock EgutegiaService egutegiaService;
     @Mock KronogramaService kronogramaService;
+    @Mock EthaziJarraipenaService ethaziJarraipenaService;
     @Mock Authentication auth;
 
     private EthaziKoadernoaController controller;
@@ -52,7 +54,7 @@ class EthaziKoadernoaControllerTest {
     @BeforeEach
     void prestatu() {
         controller = new EthaziKoadernoaController(koadernoaService, irakasleaService, ikasleak,
-                moduluak, egutegiak, egutegiaService, kronogramaService);
+                moduluak, egutegiak, egutegiaService, kronogramaService, ethaziJarraipenaService);
         Taldea taldea = new Taldea(); taldea.setId(4L); taldea.setIzena("1MS2D");
         koadernoa = new EthaziKoadernoa(); koadernoa.setId(6L); koadernoa.setTaldea(taldea);
         irakaslea = new Irakaslea(); irakaslea.setId(8L);
@@ -115,5 +117,25 @@ class EthaziKoadernoaControllerTest {
 
         assertThat(view).isEqualTo("irakasleak/ethazi/programazioa");
         assertThat(model.get("programazioaIkuspegia")).isSameAs(ikuspegia);
+    }
+
+    @Test
+    void jarraipenIkuspegiaModuluFiltroarekinKargatzenDu() {
+        Maila maila = new Maila(); maila.setId(2L);
+        Moduloa modulua = new Moduloa(); modulua.setMaila(maila); modulua.setAktibo(true);
+        Egutegia egutegia = new Egutegia();
+        var ikuspegia = new EthaziJarraipenaService.JarraipenaIkuspegia(
+                "2026-2027", List.of(), 20L, "PROG", 20, List.of(), List.of());
+        when(moduluak.findByTaldeaId(4L)).thenReturn(List.of(modulua));
+        when(egutegiak.findByIkasturtea_AktiboaTrueAndMaila_Id(2L)).thenReturn(Optional.of(egutegia));
+        when(ethaziJarraipenaService.prestatu(koadernoa, egutegia, irakaslea, false, 20L))
+                .thenReturn(ikuspegia);
+        ExtendedModelMap model = new ExtendedModelMap();
+
+        String view = controller.jarraipena(auth, koadernoa, 20L, new MockHttpSession(), model,
+                new RedirectAttributesModelMap());
+
+        assertThat(view).isEqualTo("irakasleak/ethazi/jarraipena");
+        assertThat(model.get("jarraipena")).isSameAs(ikuspegia);
     }
 }

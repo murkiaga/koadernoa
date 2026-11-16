@@ -90,7 +90,7 @@ public class EthaziKoadernoaService {
         Long taldeaId = koadernoa.getTaldea().getId();
         List<TaldeOrdutegia> bertsioak = taldeOrdutegiak
                 .findByTaldea_IdAndIkasturtea_IdOrderByHasieraDataAsc(taldeaId, ikasturtea.getId());
-        TaldeOrdutegia ordutegia = aukeratuOrdutegia(bertsioak, LocalDate.now());
+        TaldeOrdutegia ordutegiAktiboa = aukeratuOrdutegia(bertsioak, LocalDate.now());
 
         List<Moduloa> taldekoModuluak = moduluak.findByTaldeaId(taldeaId).stream()
                 .sorted(Comparator.comparing(m -> etiketa(m).toLowerCase()))
@@ -104,22 +104,28 @@ public class EthaziKoadernoaService {
             }
         }
 
-        Map<String, OrdutegiGelaxka> gelaxkak = new LinkedHashMap<>();
-        if (ordutegia != null) {
+        List<OrdutegiBista> ordutegiBistak = new java.util.ArrayList<>();
+        for (int i = 0; i < bertsioak.size(); i++) {
+            TaldeOrdutegia ordutegia = bertsioak.get(i);
+            Map<String, OrdutegiGelaxka> gelaxkak = new LinkedHashMap<>();
             ordutegia.getLerroak().forEach(lerroa -> {
                 Moduloa modulua = lerroa.getModuloa();
                 gelaxkak.put(gakoa(lerroa.getAsteguna(), lerroa.getOrduZenbakia()),
                         new OrdutegiGelaxka(etiketa(modulua), koloreak.get(modulua.getId()),
                                 erronkakoModuluIds.contains(modulua.getId())));
             });
+            LocalDate bukaera = i + 1 < bertsioak.size()
+                    ? bertsioak.get(i + 1).getHasieraData().minusDays(1) : null;
+            ordutegiBistak.add(new OrdutegiBista(ordutegia.getId(), i + 1, ordutegia.getHasieraData(),
+                    bukaera, ordutegiAktiboa != null && ordutegia.getId().equals(ordutegiAktiboa.getId()),
+                    gelaxkak));
         }
         List<ModuluLegenda> legenda = taldekoModuluak.stream()
                 .filter(m -> erronkakoModuluIds.contains(m.getId()))
                 .map(m -> new ModuluLegenda(etiketa(m), koloreak.get(m.getId())))
                 .toList();
         return new HasieraIkuspegia(ikasturtea.getIzena(), ASTE_ORDENA,
-                java.util.stream.IntStream.rangeClosed(1, 12).boxed().toList(), gelaxkak, legenda,
-                ordutegia == null ? null : ordutegia.getHasieraData());
+                java.util.stream.IntStream.rangeClosed(1, 12).boxed().toList(), ordutegiBistak, legenda);
     }
 
     @Transactional(readOnly = true)
@@ -417,11 +423,13 @@ public class EthaziKoadernoaService {
     public record ProgramazioaIkuspegia(String ikasturtea, List<ErronkaTxartela> erronkak,
             List<EbaluazioTartea> ebaluazioTarteak, List<ModuluAukera> moduluAukerak) {}
     private record DataTartea(String izena, String kolorea, LocalDate hasiera, LocalDate bukaera) {}
+    public record OrdutegiBista(Long id, int indizea, LocalDate hasiera, LocalDate bukaera,
+            boolean aktiboa, Map<String, OrdutegiGelaxka> gelaxkak) {}
     public record HasieraIkuspegia(String ikasturtea, List<Astegunak> egunak, List<Integer> orduak,
-            Map<String, OrdutegiGelaxka> gelaxkak, List<ModuluLegenda> legenda, LocalDate ordutegiHasiera) {
+            List<OrdutegiBista> ordutegiak, List<ModuluLegenda> legenda) {
         static HasieraIkuspegia hutsa() {
             return new HasieraIkuspegia("", ASTE_ORDENA,
-                    java.util.stream.IntStream.rangeClosed(1, 12).boxed().toList(), Map.of(), List.of(), null);
+                    java.util.stream.IntStream.rangeClosed(1, 12).boxed().toList(), List.of(), List.of());
         }
     }
 }
