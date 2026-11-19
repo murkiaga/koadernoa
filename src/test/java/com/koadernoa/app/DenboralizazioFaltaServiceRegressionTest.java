@@ -28,6 +28,7 @@ import com.koadernoa.app.objektuak.koadernoak.service.DenboralizazioFaltaService
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoKlaseEgunService;
 import com.koadernoa.app.objektuak.modulua.repository.MatrikulaRepository;
 import com.koadernoa.app.objektuak.modulua.entitateak.Matrikula;
+import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 
 class DenboralizazioFaltaServiceRegressionTest {
 
@@ -57,7 +58,7 @@ class DenboralizazioFaltaServiceRegressionTest {
                 entry(LocalDate.of(2026, 10, 12), 2),
                 entry(LocalDate.of(2026, 10, 19), 2),
                 entry(LocalDate.of(2026, 10, 26), 2));
-        assertThat(dto.getProgramaOrduak()).isEqualTo(8);
+        assertThat(dto.getModuluOrduak()).isEqualTo(120);
     }
 
     @Test
@@ -73,7 +74,7 @@ class DenboralizazioFaltaServiceRegressionTest {
         assertThat(dto.getEgunekoOrduak()).containsExactly(
                 entry(LocalDate.of(2026, 10, 5), 2),
                 entry(LocalDate.of(2026, 10, 12), 2));
-        assertThat(dto.getProgramaOrduak()).isEqualTo(4);
+        assertThat(dto.getModuluOrduak()).isEqualTo(120);
     }
 
     @Test
@@ -93,17 +94,18 @@ class DenboralizazioFaltaServiceRegressionTest {
 
         assertThat(dto.getEgunekoOrduak()).containsExactly(
                 entry(LocalDate.of(2026, 10, 8), 2));
-        assertThat(dto.getProgramaOrduak()).isEqualTo(2);
+        assertThat(dto.getModuluOrduak()).isEqualTo(120);
     }
 
     @Test
-    void hutsegitePortzentajeakMainEkoProgramaOrduBerakErabiltzenDitu() {
+    void hutsegitePortzentajeakModuluarenOrduakErabiltzenDitu() {
         Koadernoa koadernoa = koadernoa(
                 LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30), List.of());
         prestatu(koadernoa, List.of(
                 blokea(LocalDate.of(2026, 9, 1), Astegunak.ASTELEHENA, 2),
                 blokea(LocalDate.of(2026, 9, 1), Astegunak.LARUNBATA, 3),
                 duala(LocalDate.of(2026, 9, 14))));
+        koadernoa.getModuloa().setOrduak(40);
         Matrikula matrikula = new Matrikula();
         matrikula.setId(7L);
         matrikula.setKoadernoa(koadernoa);
@@ -125,7 +127,42 @@ class DenboralizazioFaltaServiceRegressionTest {
 
         Map<Long, Double> emaitza = service.kalkulatuHutsegitePortzentaiak(List.of(matrikula));
 
-        assertThat(emaitza).containsEntry(7L, 25.0);
+        assertThat(emaitza).containsEntry(7L, 5.0);
+    }
+
+    @Test
+    void faltenBistakoEhunekoaModuluarenOrduenAraberaKalkulatzenDu() {
+        Koadernoa koadernoa = koadernoa(
+                LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30), List.of());
+        prestatu(koadernoa, List.of(
+                blokea(LocalDate.of(2026, 9, 1), Astegunak.ASTELEHENA, 2)));
+        koadernoa.getModuloa().setOrduak(40);
+        Matrikula matrikula = new Matrikula();
+        matrikula.setId(7L);
+        matrikula.setKoadernoa(koadernoa);
+        Saioa saioa = new Saioa();
+        saioa.setKoadernoa(koadernoa);
+        saioa.setData(LocalDate.of(2026, 9, 7));
+        saioa.setIraupenaSlot(2);
+        Asistentzia asistentzia = new Asistentzia();
+        asistentzia.setSaioa(saioa);
+        asistentzia.setMatrikula(matrikula);
+        asistentzia.setEgoera(Asistentzia.AsistentziaEgoera.HUTS);
+        when(matrikulaRepository.findByKoadernoaIdAndEgoeraMatrikulatuta(koadernoa.getId()))
+                .thenReturn(List.of(matrikula));
+        when(saioaRepository.findByKoadernoaIdAndDataBetweenOrderByDataAscHasieraSlotAsc(
+                org.mockito.ArgumentMatchers.eq(koadernoa.getId()),
+                org.mockito.ArgumentMatchers.any(LocalDate.class),
+                org.mockito.ArgumentMatchers.any(LocalDate.class)))
+                .thenReturn(List.of(saioa));
+        when(asistentziaRepository.findBySaioaInAndMatrikulaIn(
+                List.of(saioa), List.of(matrikula))).thenReturn(List.of(asistentzia));
+
+        FaltakBistaDTO dto = service.kalkulatuFaltenBista(koadernoa, 9, 2026);
+
+        assertThat(dto.getModuluOrduak()).isEqualTo(40);
+        assertThat(dto.getIkasleRows()).singleElement()
+                .satisfies(row -> assertThat(row.getFaltaPortzentaia()).isEqualTo(5.0));
     }
 
     private void prestatu(Koadernoa koadernoa, List<KoadernoOrdutegiBlokea> blokeak) {
@@ -142,6 +179,9 @@ class DenboralizazioFaltaServiceRegressionTest {
         Koadernoa koadernoa = new Koadernoa();
         koadernoa.setId(1L);
         koadernoa.setEgutegia(egutegia);
+        Moduloa moduloa = new Moduloa();
+        moduloa.setOrduak(120);
+        koadernoa.setModuloa(moduloa);
         return koadernoa;
     }
 

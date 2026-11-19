@@ -228,14 +228,11 @@ public class AsistentziaService {
                 saioaRepo.findByKoadernoaIdAndDataBetweenOrderByDataAscHasieraSlotAsc(
                         koadernoId, from, to);
 
-        // 2) Koaderno honetako saio GUZTIAK (programa orduak kalkulatzeko)
-        List<Saioa> saioakGuztiak =
-                saioaRepo.findByKoadernoa_Id(koadernoId);
-
-        int programaOrduak = saioakGuztiak.stream()
-                .filter(s -> s.getEgoera() != Saioa.SaioEgoera.EZEZTATUA)
-                .mapToInt(Saioa::getIraupenaSlot)
-                .sum();
+        // 2) Ehunekoa moduluaren fitxan adierazitako orduen gainean kalkulatzen da.
+        int moduluOrduak = koadernoa.getModuloa() == null
+                || koadernoa.getModuloa().getOrduak() == null
+                ? 0
+                : Math.max(0, koadernoa.getModuloa().getOrduak());
 
         // 3) Hilabeteko egunak eta egun bakoitzeko klase orduak
         Map<LocalDate, List<Saioa>> byDate = saioakHilabetean.stream()
@@ -304,14 +301,14 @@ public class AsistentziaService {
 
         // 6) % kalkulua
         for (FaltaIkasleRow row : rowMap.values()) {
-            double pct = programaOrduak == 0 ? 0
-                    : row.getFaltaOrduak() * 100.0 / programaOrduak;
+            double pct = moduluOrduak == 0 ? 0
+                    : row.getFaltaOrduak() * 100.0 / moduluOrduak;
             row.setFaltaPortzentaia(pct);
         }
 
         // 7) DTO-a osatu
         FaltakBistaDTO dto = new FaltakBistaDTO();
-        dto.setProgramaOrduak(programaOrduak);
+        dto.setModuluOrduak(moduluOrduak);
         dto.setEgunak(egunak);
         dto.setEgunekoOrduak(egunekoOrduak);
         dto.setIkasleRows(new ArrayList<>(rowMap.values()));

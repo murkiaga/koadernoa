@@ -234,7 +234,7 @@ public class IkasleakKontsultatuService {
 
             lerroak.add(new IkaslearenAsistentziaLerroa(
                     matrikula,
-                    faltak.getProgramaOrduak(),
+                    faltak.getModuluOrduak(),
                     faltaLerroa.getFaltaOrduak(),
                     faltaLerroa.getFaltaPortzentaia(),
                     Map.copyOf(faltaLerroa.getBalioak()),

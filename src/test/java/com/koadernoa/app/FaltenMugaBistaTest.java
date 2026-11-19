@@ -39,11 +39,14 @@ class FaltenMugaBistaTest {
         context.setVariable("faltakIkasleak", List.of(row));
         context.setVariable("faltaEgunak", List.of());
         context.setVariable("faltenMugaPortzentaia", muga);
+        context.setVariable("moduluOrduak", 234);
         context.setVariable("hilabetea", 9);
         context.setVariable("urtea", 2026);
         String html = engine.process("irakasleak/denboralizazioa/falten-bista-fragment", context);
         assertThat(html.contains("falta-pct-altua")).isEqualTo(altua);
         assertThat(html.contains("falta-pct-ertaina")).isEqualTo(ertaina);
         assertThat(html.contains("📄")).isEqualTo(altua);
+        assertThat(html).contains("Moduluaren orduak:", ">234<")
+                .doesNotContain("programatutako orduak");
     }
 }

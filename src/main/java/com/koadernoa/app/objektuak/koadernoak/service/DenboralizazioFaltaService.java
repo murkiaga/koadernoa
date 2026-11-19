@@ -40,7 +40,7 @@ public class DenboralizazioFaltaService {
     /**
      * Matrikula bakoitzak bere koadernoan dituen hutsegiteen ehunekoa kalkulatzen du.
      * Falten bistaren irizpide bera erabiltzen da: HUTS eta JUSTIFIKATUA egoeren
-     * orduak, koadernoan programatutako ikasturte osoko orduen gainean.
+     * orduak, moduluaren fitxan adierazitako orduen gainean.
      */
     @Transactional(readOnly = true)
     public Map<Long, Double> kalkulatuHutsegitePortzentaiak(List<Matrikula> matrikulak) {
@@ -55,8 +55,8 @@ public class DenboralizazioFaltaService {
             }
 
             Koadernoa koadernoa = matrikula.getKoadernoa();
-            int programaOrduak = kalkulatuProgramaOrduakUrteOsoan(koadernoa);
-            if (programaOrduak <= 0) {
+            int moduluOrduak = kalkulatuModuluOrduak(koadernoa);
+            if (moduluOrduak <= 0) {
                 emaitza.put(matrikula.getId(), 0.0);
                 continue;
             }
@@ -84,7 +84,7 @@ public class DenboralizazioFaltaService {
                             .mapToInt(Saioa::getIraupenaSlot)
                             .sum();
 
-            emaitza.put(matrikula.getId(), hutsegiteOrduak * 100.0 / programaOrduak);
+            emaitza.put(matrikula.getId(), hutsegiteOrduak * 100.0 / moduluOrduak);
         }
         return emaitza;
     }
@@ -123,8 +123,8 @@ public class DenboralizazioFaltaService {
 
         List<LocalDate> egunak = new ArrayList<>(egunekoOrduak.keySet());
 
-        // Programatutako ordu GUZTIAK (ikasturte osoan) → 2. puntuan komentatuko dugu
-        int programaOrduak = koadernoKlaseEgunService.ikasturtekoKlaseSlotak(egutegia, blokak);
+        // Falten ehunekorako izendatzailea moduluaren fitxako ordu kopurua da.
+        int moduluOrduak = kalkulatuModuluOrduak(koadernoa);
 
         // Koaderno honetako MATRIKULATUAK
         List<Matrikula> matrikulak = mugatutakoMatrikulak != null
@@ -199,26 +199,24 @@ public class DenboralizazioFaltaService {
 
         // % kalkulua
         for (FaltaIkasleRow row : rowMap.values()) {
-            double pct = programaOrduak == 0 ? 0
-                    : row.getFaltaOrduak() * 100.0 / programaOrduak;
+            double pct = moduluOrduak == 0 ? 0
+                    : row.getFaltaOrduak() * 100.0 / moduluOrduak;
             row.setFaltaPortzentaia(pct);
         }
 
         FaltakBistaDTO dto = new FaltakBistaDTO();
-        dto.setProgramaOrduak(programaOrduak);
+        dto.setModuluOrduak(moduluOrduak);
         dto.setEgunak(egunak);
         dto.setEgunekoOrduak(egunekoOrduak);
         dto.setIkasleRows(new ArrayList<>(rowMap.values()));
         return dto;
     }
 
-    private int kalkulatuProgramaOrduakUrteOsoan(Koadernoa koadernoa) {
-        if (koadernoa == null || koadernoa.getId() == null || koadernoa.getEgutegia() == null) {
+    private int kalkulatuModuluOrduak(Koadernoa koadernoa) {
+        if (koadernoa == null || koadernoa.getModuloa() == null
+                || koadernoa.getModuloa().getOrduak() == null) {
             return 0;
         }
-
-        List<KoadernoOrdutegiBlokea> blokeak =
-                koadernoOrdutegiBlokeaRepository.findByKoadernoa_Id(koadernoa.getId());
-        return koadernoKlaseEgunService.ikasturtekoKlaseSlotak(koadernoa.getEgutegia(), blokeak);
+        return Math.max(0, koadernoa.getModuloa().getOrduak());
     }
 }

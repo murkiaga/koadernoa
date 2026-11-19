@@ -14,7 +14,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public class IkaslearenAsistentziaLerroa {
     private final Matrikula matrikula;
-    private final int programaOrduak;
+    private final int moduluOrduak;
     private final int faltaOrduak;
     private final double faltaPortzentaia;
     private final Map<LocalDate, String> egunekoBalioak;

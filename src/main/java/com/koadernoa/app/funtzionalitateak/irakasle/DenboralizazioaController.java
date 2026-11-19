@@ -292,7 +292,7 @@ public class DenboralizazioaController {
 
 	        model.addAttribute("faltenMugaPortzentaia",
                     kargatutakoKoadernoa.getModuloa().getMaila().getFaltenMugaPortzentaia());
-	        model.addAttribute("programaOrduak", faltak.getProgramaOrduak());
+	        model.addAttribute("moduluOrduak", faltak.getModuluOrduak());
 	        model.addAttribute("faltaEgunak", faltak.getEgunak());
 	        model.addAttribute("faltaEgunOrduak", faltak.getEgunekoOrduak());
 	        model.addAttribute("faltakIkasleak", faltak.getIkasleRows());

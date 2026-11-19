@@ -10,7 +10,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class FaltakBistaDTO {
-    private int programaOrduak;
+    private int moduluOrduak;
     private List<LocalDate> egunak;                 // zutabeen ordena
     private Map<LocalDate,Integer> egunekoOrduak;   // headerreko 2,2,3,2
     private List<FaltaIkasleRow> ikasleRows;
