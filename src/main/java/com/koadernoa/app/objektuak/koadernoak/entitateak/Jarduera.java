@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.koadernoa.app.objektuak.zikloak.entitateak.Taldea;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -26,6 +27,12 @@ public class Jarduera {
     private float orduak;
     
     private String mota; //"planifikatua", "eginda", "ebaluazioa", etab.
+
+    // Datu-basean zutabe hau NOT NULL da. Oraingo adarrean ez dago oraindik
+    // jarduerak kalifikatzeko interfazea, beraz jarduera berriak ez-kalifikagarri
+    // sortzen dira, baina INSERT-ean balioa esplizituki bidaltzen da.
+    @Column(nullable = false)
+    private boolean kalifikagarria = false;
     
 
     @ManyToOne

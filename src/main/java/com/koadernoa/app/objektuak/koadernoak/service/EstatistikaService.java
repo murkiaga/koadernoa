@@ -272,15 +272,13 @@ public class EstatistikaService {
     /**
      * Unitate “emanda” kopurua.
      *
-     * Hurbilpen berria (kontserbadoreagoa):
-     *  - Tarte horretako jarduera NO-PLANIFIKATUAK hartzen ditugu.
-     *  - Jarduera bakoitzean, deskribapenaren hasierako zatiak hartzen ditugu
-     *    (lehen "—" arte): "2UD — (UD orokorra)" -> "2UD".
-     *  - UD bat emanda kontsideratzen da bere kodea (ud.getKodea())
-     *    jardueretatik ateratako kode horien multzoan badago.
+     * Tarteko jarduera EGINDA bakoitzak zuzenean lotuta duen UDa hartzen da.
+     * Lotura ez da titulu edo deskribapenetik ondorioztatzen: testua editatzeak ez du
+     * estatistika aldatu behar. UD bera hainbat jardueratan eginda badago, behin
+     * bakarrik zenbatzen da.
      */
     private int kalkulatuUnitateakEmanda(Programazioa p, DateRange tartea) {
-        if (p == null || tartea == null || p.getEbaluaketak() == null) {
+        if (p == null || tartea == null) {
             return 0;
         }
 
@@ -289,67 +287,19 @@ public class EstatistikaService {
             return 0;
         }
 
-        // Tarte horretako jarduera NO-PLANIFIKATUAK
-        List<Jarduera> jarduerakNoPlan = jardueraRepository
+        Set<Long> emandakoUdIds = jardueraRepository
                 .findByKoadernoaIdAndDataBetweenOrderByDataAscIdAsc(
                         k.getId(),
                         tartea.from(),
                         tartea.to()
-                ).stream()
-                .filter(j -> j.getMota() == null ||
-                             !"planifikatua".equalsIgnoreCase(j.getMota()))
-                .toList();
-
-        if (jarduerakNoPlan.isEmpty()) {
-            return 0;
-        }
-
-        // Jardueretatik ateratako "UD kode" multzoa (deskribapenaren lehenengo zatia, "—" arte)
-        Set<String> jardueraUdKodeak = jarduerakNoPlan.stream()
-                .map(j -> {
-                    String base = j.getDeskribapena();
-                    if (base == null || base.isBlank()) {
-                        base = j.getTitulua();
-                    }
-                    if (base == null || base.isBlank()) {
-                        return null;
-                    }
-                    String[] parts = base.split("—", 2);
-                    String first = parts[0].trim();   // adib. "2UD"
-                    if (first.isEmpty()) return null;
-                    return first.toLowerCase();
-                })
+                )
+                .stream()
+                .filter(this::egindaDago)
+                .map(Jarduera::getUnitatea)
+                .filter(Objects::nonNull)
+                .map(UnitateDidaktikoa::getId)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-
-        if (jardueraUdKodeak.isEmpty()) {
-            return 0;
-        }
-
-        // Ebaluazio tarte honetan dauden UD-etatik, zenbat daude jarduera-kode multzo horretan
-        Set<Long> emandakoUdIds = new java.util.HashSet<>();
-
-        for (Ebaluaketa eb : p.getEbaluaketak()) {
-            if (!ebTarteanDago(eb, tartea)) {
-                continue;
-            }
-
-            for (UnitateDidaktikoa ud : eb.getUnitateak()) {
-                if (ud == null || ud.getId() == null) continue;
-                if (emandakoUdIds.contains(ud.getId())) continue;
-
-                String kodea = ud.getKodea();
-                if (kodea == null || kodea.isBlank()) {
-                    continue; // kode barik -> ez dugu detektatzen heuristikan
-                }
-
-                String kodeLower = kodea.toLowerCase();
-
-                if (jardueraUdKodeak.contains(kodeLower)) {
-                    emandakoUdIds.add(ud.getId());
-                }
-            }
-        }
 
         return emandakoUdIds.size();
     }
@@ -376,9 +326,9 @@ public class EstatistikaService {
     }
 
     /**
-     * Orduak emanda:
+     * Saioak emanda:
      *  - Jardueretatik hartzen dira, tarte horretan,
-     *  - `mota != 'planifikatua'` (edo null) diren jardueren orduen batura.
+     *  - `mota = 'eginda'` duten jardueren orduen batura.
      */
     private int kalkulatuOrduakEmanda(Koadernoa k, DateRange tartea) {
         if (k == null || k.getId() == null || tartea == null) return 0;
@@ -387,12 +337,17 @@ public class EstatistikaService {
                 .findByKoadernoaIdAndDataBetweenOrderByDataAscIdAsc(
                         k.getId(), tartea.from(), tartea.to())
                 .stream()
-                .filter(j -> j.getMota() == null ||
-                             !"planifikatua".equalsIgnoreCase(j.getMota()))
+                .filter(this::egindaDago)
                 .mapToDouble(Jarduera::getOrduak)
                 .sum();
 
         return (int) Math.round(total);
+    }
+
+    private boolean egindaDago(Jarduera jarduera) {
+        return jarduera != null
+                && jarduera.getMota() != null
+                && "eginda".equalsIgnoreCase(jarduera.getMota().trim());
     }
 
     // ============================================================
