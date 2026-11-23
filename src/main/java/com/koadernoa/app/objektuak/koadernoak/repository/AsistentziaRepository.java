@@ -37,6 +37,22 @@ public interface AsistentziaRepository extends JpaRepository<Asistentzia, Long> 
 	""")
 	void deleteByKoadernoaIdAndSaioaDataIn(@Param("koadernoaId") Long koadernoaId,
 	                                       @Param("datak") Set<LocalDate> datak);
+
+	@Query("""
+	    select a
+	    from Asistentzia a
+	      join fetch a.saioa s
+	      join fetch a.matrikula m
+	      left join fetch m.ikaslea i
+	    where s.koadernoa.id = :koadernoaId
+	      and s.data between :hasiera and :bukaera
+	      and a.egoera in :egoerak
+	    order by s.data asc, s.hasieraSlot asc, i.abizena1 asc, i.abizena2 asc, i.izena asc
+	""")
+	List<Asistentzia> findFaltakEbaluazioan(@Param("koadernoaId") Long koadernoaId,
+	                                        @Param("hasiera") LocalDate hasiera,
+	                                        @Param("bukaera") LocalDate bukaera,
+	                                        @Param("egoerak") List<AsistentziaEgoera> egoerak);
 	  
 	  // Estatistiketarako: saio multzo bateko HUTS egoerako asistentziak
 	  List<Asistentzia> findBySaioa_IdInAndEgoeraIn(

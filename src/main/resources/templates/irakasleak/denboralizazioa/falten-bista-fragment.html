@@ -114,12 +114,34 @@
                 <button class="close" type="button" onclick="itxiFaltenInportModal()">×</button>
             </div>
 
-            <form method="post"
+            <form id="faltenInportForm"
+                  method="post"
                   enctype="multipart/form-data"
                   th:action="@{/irakasle/denboralizazioa/faltak/inportatu}">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" th:if="${_csrf != null}">
                 <input type="hidden" name="urtea" th:value="${urtea}">
                 <input type="hidden" name="hilabetea" th:value="${hilabetea}">
+
+                <label for="faltenEbaluaketa"
+                       style="display:grid; gap:.4rem; margin-top:1rem; font-weight:600;">
+                    Ebaluazioa
+                    <select id="faltenEbaluaketa"
+                            name="ebaluaketa"
+                            required
+                            style="padding:.65rem .75rem; border:1px solid #9ca3af; border-radius:8px; background:#fff;">
+                        <option value="" selected>--aukeratu--</option>
+                        <option th:each="aukera : ${faltenEbaluaketak}"
+                                th:value="${aukera.zenbakia}"
+                                th:text="|${aukera.izena} (${#temporals.format(aukera.hasieraData, 'yyyy-MM-dd')} - ${#temporals.format(aukera.bukaeraData, 'yyyy-MM-dd')} · ${aukera.klaseOrduak} ordu)|">
+                            1. ebaluazioa
+                        </option>
+                    </select>
+                </label>
+
+                <p th:if="${#lists.isEmpty(faltenEbaluaketak)}"
+                   style="margin:.5rem 0 0; color:#b91c1c; font-size:.9rem;">
+                    Koadernoaren egutegian ez dago ebaluazio baliodunik.
+                </p>
 
                 <input id="faltenInportFileInput"
                        type="file"
@@ -135,12 +157,17 @@
                     <p id="faltenInportFileName" style="margin:.7rem 0 0 0; font-size:.9rem; color:#111827;"></p>
                 </div>
 
+                <p id="faltenInportError"
+                   role="alert"
+                   style="display:none; margin:.5rem 0; padding:.65rem .75rem; border-radius:8px; background:#fee2e2; color:#991b1b;"></p>
+
                 <div class="modal-actions">
                     <button type="button" class="btn secondary" onclick="document.getElementById('faltenInportFileInput').click()">
                         aukeratu fitxategi
                     </button>
                     <button type="button" class="btn secondary" onclick="itxiFaltenInportModal()">Utzi</button>
-                    <button type="submit" class="btn primary">Inportatu</button>
+                    <button id="faltenInportSubmit" type="submit" class="btn primary"
+                            th:disabled="${#lists.isEmpty(faltenEbaluaketak)}">Inportatu</button>
                 </div>
             </form>
         </div>

@@ -35,6 +35,7 @@ import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Saioa;
 import com.koadernoa.app.objektuak.koadernoak.repository.AsistentziaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.SaioaRepository;
+import com.koadernoa.app.objektuak.koadernoak.service.FaltenEbaluaketaService.EbaluaketaAukera;
 import com.koadernoa.app.objektuak.modulua.entitateak.Matrikula;
 import com.koadernoa.app.objektuak.modulua.repository.MatrikulaRepository;
 
@@ -52,6 +53,7 @@ public class FaltenExcelInportService {
     private final SaioaRepository saioaRepository;
     private final AsistentziaRepository asistentziaRepository;
     private final AsistentziaService asistentziaService;
+    private final FaltenEbaluaketaService faltenEbaluaketaService;
     private static final DateTimeFormatter SHORT_YEAR_SLASH = new DateTimeFormatterBuilder()
             .appendValue(ChronoField.DAY_OF_MONTH)
             .appendLiteral('/')
@@ -68,7 +70,8 @@ public class FaltenExcelInportService {
             .toFormatter();
 
     @Transactional
-    public InportEmaitza inportatu(Koadernoa koadernoa, MultipartFile fitxategia) throws IOException {
+    public InportEmaitza inportatu(Koadernoa koadernoa, Integer ebaluaketaZenbakia,
+                                   MultipartFile fitxategia) throws IOException {
         if (fitxategia == null || fitxategia.isEmpty()) {
             throw new IllegalArgumentException("Ez da fitxategirik jaso.");
         }
@@ -77,6 +80,8 @@ public class FaltenExcelInportService {
         if (!izena.endsWith(".xls") && !izena.endsWith(".xlsx")) {
             throw new IllegalArgumentException(".xls edo .xlsx fitxategia behar da.");
         }
+
+        EbaluaketaAukera ebaluaketa = faltenEbaluaketaService.lortuAukera(koadernoa, ebaluaketaZenbakia);
 
         List<Matrikula> matrikulak = matrikulaRepository.findByKoadernoaIdAndEgoeraMatrikulatuta(koadernoa.getId());
         Map<String, List<Matrikula>> matrikulaMap = eraikiMatrikulaMap(matrikulak);
@@ -111,14 +116,34 @@ public class FaltenExcelInportService {
         }
 
         if (rows.isEmpty()) {
-            return new InportEmaitza(0, 0, 0, List.of("Ez da lerro baliagarririk aurkitu."));
+            return new InportEmaitza(0, 0, 0, List.of("Ez da lerro baliagarririk aurkitu."), List.of());
+        }
+
+        List<ImportRow> tartezKanpokoak = rows.stream()
+                .filter(row -> row.data().isBefore(ebaluaketa.hasieraData())
+                        || row.data().isAfter(ebaluaketa.bukaeraData()))
+                .toList();
+        if (!tartezKanpokoak.isEmpty()) {
+            String datakTestua = tartezKanpokoak.stream()
+                    .limit(5)
+                    .map(row -> "R" + row.rowNum() + " (" + row.data() + ")")
+                    .collect(java.util.stream.Collectors.joining(", "));
+            throw new IllegalArgumentException("Excelak aukeratutako ebaluaziotik kanpoko datak ditu: " + datakTestua);
         }
 
         for (LocalDate data : datak) {
             asistentziaService.ensureSaioakForDate(koadernoa, data);
         }
 
-        asistentziaRepository.deleteByKoadernoaIdAndSaioaDataIn(koadernoa.getId(), datak);
+        List<Asistentzia> aurrekoFaltak = asistentziaRepository.findFaltakEbaluazioan(
+                koadernoa.getId(),
+                ebaluaketa.hasieraData(),
+                ebaluaketa.bukaeraData(),
+                List.of(Asistentzia.AsistentziaEgoera.HUTS, Asistentzia.AsistentziaEgoera.JUSTIFIKATUA));
+        List<BackupFalta> backupFaltak = aurrekoFaltak.stream()
+                .map(this::backupFalta)
+                .toList();
+        asistentziaRepository.deleteAll(aurrekoFaltak);
 
         Map<String, Saioa> saioMap = new HashMap<>();
         Map<LocalDate, List<Saioa>> saioakByData = new HashMap<>();
@@ -164,7 +189,21 @@ public class FaltenExcelInportService {
             sortuak++;
         }
 
-        return new InportEmaitza(rows.size(), sortuak, baztertuak, oharrak);
+        return new InportEmaitza(rows.size(), sortuak, baztertuak, oharrak, backupFaltak);
+    }
+
+    private BackupFalta backupFalta(Asistentzia asistentzia) {
+        String ikaslea = "";
+        if (asistentzia.getMatrikula() != null && asistentzia.getMatrikula().getIkaslea() != null) {
+            ikaslea = asistentzia.getMatrikula().getIkaslea().getIzenOsoa();
+        }
+        Saioa saioa = asistentzia.getSaioa();
+        return new BackupFalta(garbituBackupBalioa(ikaslea), saioa.getData(), saioa.getHasieraSlot());
+    }
+
+    private String garbituBackupBalioa(String balioa) {
+        if (balioa == null) return "";
+        return balioa.replace(';', ',').replace('\r', ' ').replace('\n', ' ').trim();
     }
 
     private Optional<Matrikula> matchMatrikula(Map<String, List<Matrikula>> matrikulaMap, String alumnoRaw) {
@@ -398,6 +437,16 @@ public class FaltenExcelInportService {
         private int sortuak;
         private int baztertuak;
         private List<String> oharrak;
+        private List<BackupFalta> backupFaltak;
+
+        public String backupTestua() {
+            return backupFaltak.stream()
+                    .map(falta -> falta.ikaslea() + ";" + falta.data() + ";" + falta.ordua())
+                    .collect(java.util.stream.Collectors.joining("\n"));
+        }
+    }
+
+    public record BackupFalta(String ikaslea, LocalDate data, int ordua) {
     }
 
     private record ImportRow(int rowNum, String alumno, LocalDate data, int slot, boolean justifikatua) {

@@ -449,6 +449,9 @@ document.addEventListener('DOMContentLoaded', function(){
   const faltakInput = document.getElementById('faltenInportFileInput');
   const faltakDropzone = document.getElementById('faltenDropzone');
   const faltakFileName = document.getElementById('faltenInportFileName');
+  const faltakForm = document.getElementById('faltenInportForm');
+  const faltakSubmit = document.getElementById('faltenInportSubmit');
+  const faltakError = document.getElementById('faltenInportError');
   if (faltakInput && faltakDropzone) {
     faltakDropzone.addEventListener('click', () => faltakInput.click());
 
@@ -478,6 +481,55 @@ document.addEventListener('DOMContentLoaded', function(){
       if (!files || !files.length) return;
       faltakInput.files = files;
       faltakFileName.textContent = files[0].name || '';
+    });
+  }
+
+  if (faltakForm) {
+    faltakForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      if (!faltakForm.reportValidity()) return;
+      if (faltakError) {
+        faltakError.style.display = 'none';
+        faltakError.textContent = '';
+      }
+      if (faltakSubmit) faltakSubmit.disabled = true;
+
+      try {
+        const response = await fetch(faltakForm.action, {
+          method: 'POST',
+          body: new FormData(faltakForm),
+          credentials: 'same-origin',
+          headers: {'X-Falten-Inport-Ajax': 'true'}
+        });
+        if (!response.ok) {
+          window.location.reload();
+          return;
+        }
+
+        const disposition = response.headers.get('Content-Disposition') || '';
+        if (disposition.toLowerCase().includes('attachment')) {
+          const blob = await response.blob();
+          const match = disposition.match(/filename="?([^";]+)"?/i);
+          const link = document.createElement('a');
+          const blobUrl = URL.createObjectURL(blob);
+          link.href = blobUrl;
+          link.download = match ? match[1] : 'faltak-backup.txt';
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+        }
+
+        window.location.reload();
+      } catch (error) {
+        if (faltakError) {
+          faltakError.textContent = error.message || 'Ezin izan dira faltak inportatu.';
+          faltakError.style.display = 'block';
+        } else {
+          window.alert(error.message || 'Ezin izan dira faltak inportatu.');
+        }
+        if (faltakSubmit) faltakSubmit.disabled = false;
+      }
     });
   }
 

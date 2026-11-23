@@ -1,5 +1,6 @@
 package com.koadernoa.app.funtzionalitateak.irakasle;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -17,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.servlet.support.RequestContextUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,6 +28,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.SessionAttribute;
 import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -58,6 +61,7 @@ import com.koadernoa.app.objektuak.koadernoak.service.DenboralizazioFaltaService
 import com.koadernoa.app.objektuak.koadernoak.service.DenboralizazioGeneratorService;
 import com.koadernoa.app.objektuak.koadernoak.service.FaltenJakinarazpenPdfService;
 import com.koadernoa.app.objektuak.koadernoak.service.FaltenExcelInportService;
+import com.koadernoa.app.objektuak.koadernoak.service.FaltenEbaluaketaService;
 import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
 import com.koadernoa.app.objektuak.koadernoak.service.ProgramazioTxantiloiService;
 import com.koadernoa.app.objektuak.koadernoak.service.ProgramazioaService;
@@ -80,6 +84,7 @@ public class DenboralizazioaController {
 	private final DenboralizazioGeneratorService denboralizazioGeneratorService;
 	private final FaltenJakinarazpenPdfService faltenJakinarazpenPdfService;
 	private final FaltenExcelInportService faltenExcelInportService;
+	private final FaltenEbaluaketaService faltenEbaluaketaService;
 	private final ProgramazioTxantiloiService programazioTxantiloiService;
 	private final ProgramazioaService programazioaService;
 	private final IrakasleaService irakasleaService;
@@ -296,6 +301,7 @@ public class DenboralizazioaController {
 	        model.addAttribute("faltaEgunak", faltak.getEgunak());
 	        model.addAttribute("faltaEgunOrduak", faltak.getEgunekoOrduak());
 	        model.addAttribute("faltakIkasleak", faltak.getIkasleRows());
+	        model.addAttribute("faltenEbaluaketak", faltenEbaluaketaService.lortuAukerak(kargatutakoKoadernoa));
 	        model.addAttribute("oharGakoak", ikasleEgunJardueraService.oharGakoak(kargatutakoKoadernoa.getId(), hilabeteHasiera, hilabeteAmaiera));
 	        model.addAttribute("jokabideGakoak", ikasleEgunJardueraService.jokabideGakoak(kargatutakoKoadernoa.getId(), hilabeteHasiera, hilabeteAmaiera));
 	    }
@@ -437,13 +443,19 @@ public class DenboralizazioaController {
 	}
 
 	@PostMapping("/faltak/inportatu")
-	public String inportatuFaltakExcel(
+	public Object inportatuFaltakExcel(
 	        @SessionAttribute(value = "koadernoAktiboa", required = false) Koadernoa koadernoa,
+	        @RequestParam("ebaluaketa") Integer ebaluaketa,
 	        @RequestParam("fitxategia") MultipartFile fitxategia,
 	        @RequestParam("urtea") int urtea,
 	        @RequestParam("hilabetea") int hilabetea,
 	        RedirectAttributes ra,
+	        HttpServletRequest request,
+	        HttpServletResponse response,
 	        Authentication auth) {
+	    boolean ajax = "true".equalsIgnoreCase(request.getHeader("X-Falten-Inport-Ajax"));
+	    String redirectUrl = "/irakasle/denboralizazioa?urtea=" + urtea
+	            + "&hilabetea=" + hilabetea + "&bista=faltak";
 
 	    if (koadernoa == null || koadernoa.getId() == null) {
 	        ra.addFlashAttribute("error", "Ez dago koaderno aktiborik aukeratuta.");
@@ -457,20 +469,58 @@ public class DenboralizazioaController {
 	    }
 
 	    try {
-	        var emaitza = faltenExcelInportService.inportatu(koadernoaOpt.get(), fitxategia);
+	        var emaitza = faltenExcelInportService.inportatu(koadernoaOpt.get(), ebaluaketa, fitxategia);
 	        String mezua = String.format("Inportazioa eginda. Irakurrita: %d · Sortuta: %d · Baztertuta: %d",
 	                emaitza.getIrakurritakoak(), emaitza.getSortuak(), emaitza.getBaztertuak());
-	        ra.addFlashAttribute("success", mezua);
-	        if (!emaitza.getOharrak().isEmpty()) {
-	            ra.addFlashAttribute("error", String.join(" | ", emaitza.getOharrak().stream().limit(5).toList()));
+	        if (!ajax) {
+	            ra.addFlashAttribute("success", mezua);
+	            if (!emaitza.getOharrak().isEmpty()) {
+	                ra.addFlashAttribute("error", String.join(" | ", emaitza.getOharrak().stream().limit(5).toList()));
+	            }
 	        }
 	        gordeFaltenInportazioLoga(auth, koadernoaOpt.get(), emaitza, null);
+	        if (ajax) {
+	            String oharrak = emaitza.getOharrak().isEmpty()
+	                    ? null
+	                    : String.join(" | ", emaitza.getOharrak().stream().limit(5).toList());
+	            gordeFaltenInportazioFlash(request, response, redirectUrl, mezua, oharrak);
+	        }
+	        if (!emaitza.getBackupFaltak().isEmpty()) {
+	            byte[] backup = (emaitza.backupTestua() + System.lineSeparator()).getBytes(StandardCharsets.UTF_8);
+	            String fitxategiIzena = "faltak-backup-" + ebaluaketa + "-ebaluazioa.txt";
+	            return ResponseEntity.ok()
+	                    .contentType(MediaType.parseMediaType("text/plain;charset=UTF-8"))
+	                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fitxategiIzena + "\"")
+	                    .body(backup);
+	        }
+	        if (ajax) {
+	            return ResponseEntity.noContent().build();
+	        }
 	    } catch (Exception ex) {
-	        ra.addFlashAttribute("error", "Ezin izan dira faltak inportatu: " + ex.getMessage());
 	        gordeFaltenInportazioLoga(auth, koadernoaOpt.get(), null, ex.getMessage());
+	        if (ajax) {
+	            gordeFaltenInportazioFlash(request, response, redirectUrl, null,
+	                    "Ezin izan dira faltak inportatu: " + ex.getMessage());
+	            return ResponseEntity.badRequest()
+	                    .contentType(MediaType.parseMediaType("text/plain;charset=UTF-8"))
+	                    .body("Ezin izan dira faltak inportatu: " + ex.getMessage());
+	        }
+	        ra.addFlashAttribute("error", "Ezin izan dira faltak inportatu: " + ex.getMessage());
 	    }
 
 	    return "redirect:/irakasle/denboralizazioa?urtea=" + urtea + "&hilabetea=" + hilabetea + "&bista=faltak";
+	}
+
+	private void gordeFaltenInportazioFlash(HttpServletRequest request,
+	                                        HttpServletResponse response,
+	                                        String redirectUrl,
+	                                        String success,
+	                                        String error) {
+	    var flashMap = RequestContextUtils.getOutputFlashMap(request);
+	    if (flashMap == null) return;
+	    if (success != null && !success.isBlank()) flashMap.put("success", success);
+	    if (error != null && !error.isBlank()) flashMap.put("error", error);
+	    RequestContextUtils.saveOutputFlashMap(redirectUrl, request, response);
 	}
 
 	private void gordeFaltenInportazioLoga(Authentication auth,
