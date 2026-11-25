@@ -184,10 +184,30 @@ public class EthaziKoadernoaController {
         return "irakasleak/ethazi/denboralizazioa";
     }
 
+    @PostMapping("/programazioa/erronkak/{erronkaId}/denboralizaziora-bolkatu")
+    public String denboralizazioraBolkatu(@PathVariable Long erronkaId, Authentication auth,
+            @SessionAttribute(name = "ethaziKoadernoAktiboa", required = false) EthaziKoadernoa sessionKoadernoa,
+            HttpSession session, RedirectAttributes flash) {
+        EthaziKoadernoa koadernoa = lortuBaimendutakoKoadernoa(sessionKoadernoa, auth, session, flash);
+        if (koadernoa == null) return "redirect:/irakasle";
+        try {
+            Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+            int egunekoJardueraKopurua = ethaziDenboralizazioaService.bolkatu(
+                    koadernoa, lortuTaldearenEgutegia(koadernoa), irakaslea, erronkaId, auth);
+            flash.addFlashAttribute("success", "Erronka denboralizaziora bolkatu da ("
+                    + egunekoJardueraKopurua + " eguneko jarduera). Aurreko bolkadura ordezkatu da.");
+        } catch (IllegalArgumentException | AccessDeniedException ex) {
+            flash.addFlashAttribute("error", ex.getMessage());
+        }
+        return "redirect:/irakasle/ethazi-koadernoa/programazioa";
+    }
+
     @GetMapping("/denboralizazioa/asistentzia")
     public String denboralizazioAsistentzia(Authentication auth,
             @SessionAttribute(name = "ethaziKoadernoAktiboa", required = false) EthaziKoadernoa sessionKoadernoa,
             @RequestParam Long moduloaId, @RequestParam LocalDate data,
+            @RequestParam(required = false) Integer urtea,
+            @RequestParam(required = false) Integer hilabetea,
             HttpSession session, RedirectAttributes flash) {
         EthaziKoadernoa koadernoa = lortuBaimendutakoKoadernoa(sessionKoadernoa, auth, session, flash);
         if (koadernoa == null) return "redirect:/irakasle";
@@ -199,7 +219,11 @@ public class EthaziKoadernoaController {
             return "redirect:/irakasle/ethazi-koadernoa/denboralizazioa?moduloaId=" + moduloaId;
         }
         session.setAttribute("koadernoAktiboa", asistentziaKoadernoa);
-        return "redirect:/irakasle/asistentzia?data=" + data + "&itzuliEthazi=true";
+        String itzulera = "&itzuliEthazi=true"
+                + (urtea == null ? "" : "&itzuliEthaziUrtea=" + urtea)
+                + (hilabetea == null ? "" : "&itzuliEthaziHilabetea=" + hilabetea)
+                + "&itzuliEthaziModuloaId=" + moduloaId;
+        return "redirect:/irakasle/asistentzia?data=" + data + itzulera;
     }
 
     @GetMapping("/jarraipena")

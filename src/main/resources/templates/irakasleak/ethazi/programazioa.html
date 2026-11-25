@@ -46,6 +46,7 @@
     .kronograma-goiburua { display:flex; align-items:center; justify-content:space-between; gap:.7rem; margin-bottom:.7rem; }
     .kronograma-izenburua { display:flex; align-items:baseline; gap:.55rem; flex-wrap:wrap; }
     .kronograma-ekintzak { display:flex; align-items:center; gap:.45rem; flex-wrap:wrap; }
+    .kronograma-ekintzak form { margin:0; }
     .kronograma-goiburua h3 { margin:0; font-size:.9rem; }
     .kronograma-orduak { color:#475569; font-size:.75rem; font-weight:800; }
     .jarduera-berria { padding:.42rem .7rem; border:0; border-radius:8px; background:#172033; color:#fff; font:inherit; font-size:.76rem; font-weight:800; cursor:pointer; }
@@ -191,9 +192,15 @@
                       · 30 h erabilgarri / 12 h programatuta
                     </span>
                   </div>
-                  <div class="kronograma-ekintzak" th:if="${!#lists.isEmpty(erronka.moduluAukerak)}">
-                    <button type="button" class="dialog-btn" onclick="irekiMultzoModala(this, true)">＋ Multzo berria</button>
-                    <button type="button" class="jarduera-berria" onclick="irekiJardueraModala(this, true)">＋ Jarduera berria</button>
+                  <div class="kronograma-ekintzak">
+                    <form method="post"
+                          th:action="@{/irakasle/ethazi-koadernoa/programazioa/erronkak/{id}/denboralizaziora-bolkatu(id=${erronka.id})}"
+                          onsubmit="return confirm('Erronka honen aurreko denboralizazioa ordezkatu eta berriro bolkatu?');">
+                      <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                      <button type="submit" class="dialog-btn">Denboralizaziora bolkatu</button>
+                    </form>
+                    <button th:if="${!#lists.isEmpty(erronka.moduluAukerak)}" type="button" class="dialog-btn" onclick="irekiMultzoModala(this, true)">＋ Multzo berria</button>
+                    <button th:if="${!#lists.isEmpty(erronka.moduluAukerak)}" type="button" class="jarduera-berria" onclick="irekiJardueraModala(this, true)">＋ Jarduera berria</button>
                   </div>
                 </div>
                 <div class="programazio-blokeak" data-jarduera-zerrenda

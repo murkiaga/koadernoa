@@ -59,6 +59,9 @@ public class AsistentziaController {
 	      @SessionAttribute("koadernoAktiboa") Koadernoa koadernoa,
 	      @RequestParam("data") String dataIso,
 	      @RequestParam(name = "itzuliEthazi", required = false, defaultValue = "false") boolean itzuliEthazi,
+	      @RequestParam(name = "itzuliEthaziUrtea", required = false) Integer itzuliEthaziUrtea,
+	      @RequestParam(name = "itzuliEthaziHilabetea", required = false) Integer itzuliEthaziHilabetea,
+	      @RequestParam(name = "itzuliEthaziModuloaId", required = false) Long itzuliEthaziModuloaId,
 	      Authentication auth,
 	      Model model) {
 
@@ -87,6 +90,9 @@ public class AsistentziaController {
 	    model.addAttribute("matrikulak", matrikulak);
 	    model.addAttribute("egoeraMap", asistentziaService.mapEgoerak(saioak, matrikulak));
 	    model.addAttribute("itzuliEthazi", itzuliEthazi);
+	    model.addAttribute("itzuliEthaziUrtea", itzuliEthaziUrtea);
+	    model.addAttribute("itzuliEthaziHilabetea", itzuliEthaziHilabetea);
+	    model.addAttribute("itzuliEthaziModuloaId", itzuliEthaziModuloaId);
     model.addAttribute("oharGakoak", ikasleEgunJardueraService.oharGakoak(kargatutakoKoadernoa.getId(), data, data));
     model.addAttribute("egunekoJokabideak", ikasleEgunJardueraService.egunekoJokabideak(kargatutakoKoadernoa.getId(), data));
 	    PrincipalInfo p = resolvePrincipalInfo(auth);

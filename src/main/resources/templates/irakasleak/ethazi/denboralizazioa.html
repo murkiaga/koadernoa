@@ -71,7 +71,7 @@
                 <span class="day-number" th:text="${eguna.data.dayOfMonth}">1</span>
                 <div class="attendance" th:if="${eguna.hilabeteAktibokoa and !#lists.isEmpty(eguna.asistentziak)}">
                   <a th:each="asistentzia : ${eguna.asistentziak}"
-                     th:href="@{/irakasle/ethazi-koadernoa/denboralizazioa/asistentzia(data=${eguna.data},moduloaId=${asistentzia.moduloaId})}"
+                     th:href="@{/irakasle/ethazi-koadernoa/denboralizazioa/asistentzia(data=${eguna.data},moduloaId=${asistentzia.moduloaId},urtea=${denboralizazioa.urtea},hilabetea=${denboralizazioa.hilabetea})}"
                      th:classappend="${asistentzia.irekita} ? ' open' : ''"
                      th:title="${asistentzia.etiketa + ' — asistentzia'}">
                     <span th:text="${asistentzia.irekita ? '👤✔' : '👤'}">👤</span>
@@ -87,6 +87,7 @@
                   <div class="activity-meta">
                     <span class="activity-badge" th:text="${jarduera.badgea}">MOD</span>
                     <span th:text="${jarduera.erronka}">Erronka</span>
+                    <span th:text="${jarduera.orduak.stripTrailingZeros().toPlainString() + ' h'}">1 h</span>
                   </div>
                 </article>
               </div>

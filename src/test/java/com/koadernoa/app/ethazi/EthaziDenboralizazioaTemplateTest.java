@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.LocalDate;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -47,9 +48,9 @@ class EthaziDenboralizazioaTemplateTest {
     void egutegiakFiltroaJarduerakEtaAsistentziaEstekaErrendatzenDitu() throws Exception {
         LocalDate data = LocalDate.of(2026, 11, 2);
         var jarduera = new EthaziDenboralizazioaService.EgunekoJarduera(
-                50L, 30L, "Web erronka", "APIa diseinatu", "Xehetasuna", "PROG", false, data, data);
+                50L, 30L, "Web erronka", "APIa diseinatu", "Xehetasuna", "PROG", false, data, BigDecimal.ONE);
         var komuna = new EthaziDenboralizazioaService.EgunekoJarduera(
-                51L, 30L, "Web erronka", "Aurkezpena", "", "Orokorra", true, data, data);
+                51L, 30L, "Web erronka", "Aurkezpena", "", "Orokorra", true, data, BigDecimal.valueOf(2));
         var eguna = new EthaziDenboralizazioaService.Eguna(data, true, "lektibo1",
                 List.of(jarduera, komuna),
                 List.of(new EthaziDenboralizazioaService.AsistentziaAukera(10L, "PROG", true)));
@@ -99,7 +100,7 @@ class EthaziDenboralizazioaTemplateTest {
                             .session(session).principal(auth))
                     .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
             assertThat(html).contains("Denboralizazioa", "Nire moduluak", "APIa diseinatu",
-                    "Aurkezpena", "Orokorra", "Web erronka", "👤✔", "moduloaId=10");
+                    "Aurkezpena", "Orokorra", "Web erronka", "1 h", "2 h", "👤✔", "moduloaId=10");
         } finally {
             SecurityContextHolder.clearContext();
         }

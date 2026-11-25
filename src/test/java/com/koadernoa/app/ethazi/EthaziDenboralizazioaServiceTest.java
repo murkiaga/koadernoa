@@ -2,6 +2,10 @@ package com.koadernoa.app.ethazi;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.lenient;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -13,10 +17,17 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.Authentication;
 
 import com.koadernoa.app.ethazi.entitateak.EthaziKoadernoa;
+import com.koadernoa.app.ethazi.entitateak.EthaziDenboralizazioJarduera;
+import com.koadernoa.app.ethazi.entitateak.Erronka;
+import com.koadernoa.app.ethazi.entitateak.kronograma.KronogramaJardueraMota;
+import com.koadernoa.app.ethazi.entitateak.kronograma.ErronkaKronogramaJarduera;
+import com.koadernoa.app.ethazi.repository.EthaziDenboralizazioJardueraRepository;
 import com.koadernoa.app.ethazi.service.EthaziDenboralizazioaService;
 import com.koadernoa.app.ethazi.service.EthaziKoadernoaService;
+import com.koadernoa.app.ethazi.service.KronogramaService;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
 import com.koadernoa.app.objektuak.egutegia.service.EgutegiaService;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
@@ -25,6 +36,7 @@ import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.SaioaRepository;
 import com.koadernoa.app.objektuak.koadernoak.service.AsistentziaService;
 import com.koadernoa.app.objektuak.modulua.repository.ModuloaRepository;
+import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Taldea;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,6 +48,8 @@ class EthaziDenboralizazioaServiceTest {
     @Mock SaioaRepository saioak;
     @Mock AsistentziaService asistentziaService;
     @Mock EgutegiaService egutegiaService;
+    @Mock EthaziDenboralizazioJardueraRepository denboralizazioJarduerak;
+    @Mock KronogramaService kronogramaService;
 
     private EthaziDenboralizazioaService service;
     private EthaziKoadernoa koadernoa;
@@ -45,20 +59,26 @@ class EthaziDenboralizazioaServiceTest {
     @BeforeEach
     void prestatu() {
         service = new EthaziDenboralizazioaService(koadernoaService, moduluak, koadernoak,
-                blokeak, saioak, asistentziaService, egutegiaService);
+                blokeak, saioak, asistentziaService, egutegiaService,
+                denboralizazioJarduerak, kronogramaService);
         Taldea taldea = new Taldea(); taldea.setId(4L);
         koadernoa = new EthaziKoadernoa(); koadernoa.setId(6L); koadernoa.setTaldea(taldea);
         egutegia = new Egutegia();
         irakaslea = new Irakaslea(); irakaslea.setId(8L);
-        when(egutegiaService.kalkulatuKlaseak(egutegia)).thenReturn(Map.of());
+        lenient().when(egutegiaService.kalkulatuKlaseak(egutegia)).thenReturn(Map.of());
+        Moduloa a = new Moduloa(); a.setId(10L); a.setKodea("PROG");
+        Moduloa b = new Moduloa(); b.setId(20L); b.setKodea("SARE");
+        lenient().when(moduluak.findAktiboakByTaldeaIdAndIrakasleaId(4L, 8L))
+                .thenReturn(List.of(a, b));
     }
 
     @Test
     void nireModuluetanNorbereJarduerakEtaOrokorrakErakustenDitu() {
-        when(koadernoaService.programazioaIkuspegia(koadernoa, egutegia, irakaslea))
-                .thenReturn(programazioa());
         when(koadernoak.findByModuloaIdInAktiboIkasturtea(10L)).thenReturn(List.of());
         when(koadernoak.findByModuloaIdInAktiboIkasturtea(20L)).thenReturn(List.of());
+        when(denboralizazioJarduerak.findByEthaziKoadernoaIdAndDataBetweenOrderByDataAscIdAsc(
+                6L, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30)))
+                .thenReturn(gordetakoJarduerak());
 
         var ikuspegia = service.prestatu(koadernoa, egutegia, irakaslea, null, 2026, 9);
         var irailarenHamabosta = ikuspegia.asteak().stream().flatMap(List::stream)
@@ -71,9 +91,10 @@ class EthaziDenboralizazioaServiceTest {
 
     @Test
     void moduluZehatzeanModuluHorretakoJarduerakEtaOrokorrakBakarrikErakustenDitu() {
-        when(koadernoaService.programazioaIkuspegia(koadernoa, egutegia, irakaslea))
-                .thenReturn(programazioa());
         when(koadernoak.findByModuloaIdInAktiboIkasturtea(10L)).thenReturn(List.of());
+        when(denboralizazioJarduerak.findByEthaziKoadernoaIdAndDataBetweenOrderByDataAscIdAsc(
+                6L, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30)))
+                .thenReturn(gordetakoJarduerak());
 
         var ikuspegia = service.prestatu(koadernoa, egutegia, irakaslea, 10L, 2026, 9);
         var irailarenHamabosta = ikuspegia.asteak().stream().flatMap(List::stream)
@@ -83,6 +104,37 @@ class EthaziDenboralizazioaServiceTest {
         assertThat(irailarenHamabosta.jarduerak())
                 .extracting(EthaziDenboralizazioaService.EgunekoJarduera::id)
                 .containsExactlyInAnyOrder(101L, 103L);
+    }
+
+    @Test
+    void bolkatzeakAurrekoaOrdezkatuEtaEgunekoOrduakSnapshotGisaGordetzenDitu() {
+        when(koadernoaService.programazioaIkuspegia(koadernoa, egutegia, irakaslea))
+                .thenReturn(programazioa());
+        Erronka erronka = new Erronka(); erronka.setId(30L); erronka.setIzena("Erronka 1");
+        Moduloa modulua = new Moduloa(); modulua.setId(10L); modulua.setKodea("PROG");
+        ErronkaKronogramaJarduera jatorria = new ErronkaKronogramaJarduera();
+        jatorria.setId(101L); jatorria.setErronka(erronka); jatorria.setIzenburua("APIa");
+        jatorria.setDeskribapena("Diseinua"); jatorria.setMota(KronogramaJardueraMota.MODULUA);
+        jatorria.setModuloa(modulua);
+        LocalDate data = LocalDate.of(2026, 9, 15);
+        Authentication auth = mock(Authentication.class);
+        when(kronogramaService.denboralizazioBanaketa(30L, auth)).thenReturn(
+                new KronogramaService.DenboralizazioBanaketa(erronka, List.of(
+                        new KronogramaService.DenboralizazioEgunJarduera(
+                                jatorria, data, BigDecimal.valueOf(1.5)))));
+
+        int kopurua = service.bolkatu(koadernoa, egutegia, irakaslea, 30L, auth);
+
+        assertThat(kopurua).isEqualTo(1);
+        verify(denboralizazioJarduerak).deleteByEthaziKoadernoaIdAndErronkaId(6L, 30L);
+        verify(denboralizazioJarduerak).saveAll(argThat(gordetakoak -> {
+            EthaziDenboralizazioJarduera gordea = gordetakoak.iterator().next();
+            return "APIa".equals(gordea.getIzenburua())
+                    && "Erronka 1".equals(gordea.getErronkaIzena())
+                    && data.equals(gordea.getData())
+                    && BigDecimal.valueOf(1.5).equals(gordea.getOrduak())
+                    && gordea.getModuloa() == modulua;
+        }));
     }
 
     private EthaziKoadernoaService.ProgramazioaIkuspegia programazioa() {
@@ -104,5 +156,24 @@ class EthaziDenboralizazioaServiceTest {
             boolean orokorra, Long moduloaId, String badgea, LocalDate data) {
         return new EthaziKoadernoaService.KronogramaJardueraTxartela(id, izena, "", data, data,
                 BigDecimal.ONE, orokorra, moduloaId, badgea, null, null, 1, false, null);
+    }
+
+    private List<EthaziDenboralizazioJarduera> gordetakoJarduerak() {
+        LocalDate data = LocalDate.of(2026, 9, 15);
+        Erronka erronka = new Erronka(); erronka.setId(30L); erronka.setIzena("Erronka 1");
+        Moduloa a = new Moduloa(); a.setId(10L); a.setKodea("PROG");
+        Moduloa b = new Moduloa(); b.setId(20L); b.setKodea("SARE");
+        return List.of(gordea(101L, "A", KronogramaJardueraMota.MODULUA, a, erronka, data),
+                gordea(102L, "B", KronogramaJardueraMota.MODULUA, b, erronka, data),
+                gordea(103L, "Komuna", KronogramaJardueraMota.KOMUNA, null, erronka, data));
+    }
+
+    private EthaziDenboralizazioJarduera gordea(Long id, String izena,
+            KronogramaJardueraMota mota, Moduloa modulua, Erronka erronka, LocalDate data) {
+        EthaziDenboralizazioJarduera j = new EthaziDenboralizazioJarduera();
+        j.setId(id); j.setIzenburua(izena); j.setMota(mota); j.setModuloa(modulua);
+        j.setErronka(erronka); j.setErronkaIzena(erronka.getIzena());
+        j.setData(data); j.setOrduak(BigDecimal.ONE);
+        return j;
     }
 }

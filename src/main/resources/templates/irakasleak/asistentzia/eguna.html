@@ -162,9 +162,19 @@
 <script th:inline="javascript">
 (function(){
   const itzuliEthazi = /*[[${itzuliEthazi == true}]]*/ false;
+  const itzuliEthaziUrtea = /*[[${itzuliEthaziUrtea}]]*/ null;
+  const itzuliEthaziHilabetea = /*[[${itzuliEthaziHilabetea}]]*/ null;
+  const itzuliEthaziModuloaId = /*[[${itzuliEthaziModuloaId}]]*/ null;
   // Itxi laguntzaileak
   window.itxiAsistentzia = function(){
-    if (itzuliEthazi) { window.location.href = '/irakasle/ethazi-koadernoa/denboralizazioa'; return; }
+    if (itzuliEthazi) {
+      const url = new URL('/irakasle/ethazi-koadernoa/denboralizazioa', window.location.origin);
+      if (itzuliEthaziUrtea != null) url.searchParams.set('urtea', itzuliEthaziUrtea);
+      if (itzuliEthaziHilabetea != null) url.searchParams.set('hilabetea', itzuliEthaziHilabetea);
+      if (itzuliEthaziModuloaId != null) url.searchParams.set('moduloaId', itzuliEthaziModuloaId);
+      window.location.href = url.toString();
+      return;
+    }
     if (window.history.length > 1) { window.history.back(); }
     else { window.location.href = '/irakasle/denboralizazioa'; }
   };
