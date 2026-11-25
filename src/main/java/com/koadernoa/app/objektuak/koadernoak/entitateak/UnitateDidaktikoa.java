@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -18,6 +19,9 @@ import lombok.Setter;
        })
 public class UnitateDidaktikoa {
 
+    public static final int KODEA_MAX_LENGTH = 20;
+    public static final int IZENBURUA_MAX_LENGTH = 255;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -28,11 +32,13 @@ public class UnitateDidaktikoa {
     private Programazioa programazioa;
 
     @NotBlank
-    @Column(nullable = false, length = 20)
+    @Size(max = KODEA_MAX_LENGTH)
+    @Column(nullable = false, length = KODEA_MAX_LENGTH)
     private String kodea; // "UD0", "UD1", ...
 
     @NotBlank
-    @Column(nullable = false)
+    @Size(max = IZENBURUA_MAX_LENGTH)
+    @Column(nullable = false, length = IZENBURUA_MAX_LENGTH)
     private String izenburua;
 
     @Min(0)

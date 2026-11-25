@@ -25,6 +25,7 @@ import com.koadernoa.app.ethazi.dto.KronogramaJardueraForm;
 import com.koadernoa.app.ethazi.dto.JardueraMultzoForm;
 import com.koadernoa.app.ethazi.entitateak.kronograma.KronogramaJardueraMota;
 import com.koadernoa.app.ethazi.service.EthaziKoadernoaService;
+import com.koadernoa.app.ethazi.service.EthaziDenboralizazioaService;
 import com.koadernoa.app.ethazi.service.EthaziJarraipenaService;
 import com.koadernoa.app.ethazi.service.KronogramaService;
 import com.koadernoa.app.objektuak.egutegia.entitateak.EgunBerezi;
@@ -34,6 +35,7 @@ import com.koadernoa.app.objektuak.egutegia.service.EgutegiaService;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.modulua.repository.IkasleaRepository;
 import com.koadernoa.app.objektuak.modulua.repository.ModuloaRepository;
 
@@ -56,6 +58,7 @@ public class EthaziKoadernoaController {
     private final EgutegiaService egutegiaService;
     private final KronogramaService kronogramaService;
     private final EthaziJarraipenaService ethaziJarraipenaService;
+    private final EthaziDenboralizazioaService ethaziDenboralizazioaService;
 
     @GetMapping("/{id}/hautatu")
     public String hautatu(@PathVariable Long id, Authentication auth, HttpSession session,
@@ -150,6 +153,53 @@ public class EthaziKoadernoaController {
                 ethaziKoadernoaService.programazioaIkuspegia(
                         koadernoa, lortuTaldearenEgutegia(koadernoa), irakaslea));
         return "irakasleak/ethazi/programazioa";
+    }
+
+    @GetMapping("/denboralizazioa")
+    public String denboralizazioa(Authentication auth,
+            @SessionAttribute(name = "ethaziKoadernoAktiboa", required = false) EthaziKoadernoa sessionKoadernoa,
+            @RequestParam(name = "moduloaId", required = false) Long moduloaId,
+            @RequestParam(name = "urtea", required = false) Integer urtea,
+            @RequestParam(name = "hilabetea", required = false) Integer hilabetea,
+            HttpSession session, Model model, RedirectAttributes flash) {
+        EthaziKoadernoa koadernoa = lortuBaimendutakoKoadernoa(sessionKoadernoa, auth, session, flash);
+        if (koadernoa == null) return "redirect:/irakasle";
+        Egutegia egutegia = lortuTaldearenEgutegia(koadernoa);
+        if (egutegia == null) {
+            model.addAttribute("egutegiErrorea", "Taldearen mailak ez du ikasturte aktiborako egutegirik.");
+            model.addAttribute("ethaziKoadernoAktiboa", koadernoa);
+            return "irakasleak/ethazi/denboralizazioa";
+        }
+        LocalDate gaur = LocalDate.now();
+        int ikuspegiUrtea = urtea == null ? gaur.getYear() : urtea;
+        int ikuspegiHilabetea = hilabetea == null ? gaur.getMonthValue() : hilabetea;
+        if (ikuspegiHilabetea < 1 || ikuspegiHilabetea > 12) {
+            ikuspegiUrtea += ikuspegiHilabetea < 1 ? -1 : 1;
+            ikuspegiHilabetea = ikuspegiHilabetea < 1 ? 12 : 1;
+        }
+        Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+        model.addAttribute("ethaziKoadernoAktiboa", koadernoa);
+        model.addAttribute("denboralizazioa", ethaziDenboralizazioaService.prestatu(
+                koadernoa, egutegia, irakaslea, moduloaId, ikuspegiUrtea, ikuspegiHilabetea));
+        return "irakasleak/ethazi/denboralizazioa";
+    }
+
+    @GetMapping("/denboralizazioa/asistentzia")
+    public String denboralizazioAsistentzia(Authentication auth,
+            @SessionAttribute(name = "ethaziKoadernoAktiboa", required = false) EthaziKoadernoa sessionKoadernoa,
+            @RequestParam Long moduloaId, @RequestParam LocalDate data,
+            HttpSession session, RedirectAttributes flash) {
+        EthaziKoadernoa koadernoa = lortuBaimendutakoKoadernoa(sessionKoadernoa, auth, session, flash);
+        if (koadernoa == null) return "redirect:/irakasle";
+        Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+        Koadernoa asistentziaKoadernoa = ethaziDenboralizazioaService
+                .lortuAsistentziaKoadernoa(koadernoa, irakaslea, moduloaId);
+        if (asistentziaKoadernoa == null) {
+            flash.addFlashAttribute("error", "Aukeratutako moduluak ez du asistentzia-koaderno erabilgarririk.");
+            return "redirect:/irakasle/ethazi-koadernoa/denboralizazioa?moduloaId=" + moduloaId;
+        }
+        session.setAttribute("koadernoAktiboa", asistentziaKoadernoa);
+        return "redirect:/irakasle/asistentzia?data=" + data + "&itzuliEthazi=true";
     }
 
     @GetMapping("/jarraipena")

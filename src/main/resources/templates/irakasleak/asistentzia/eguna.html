@@ -159,10 +159,12 @@
   </div>
 </div>
 
-<script>
+<script th:inline="javascript">
 (function(){
+  const itzuliEthazi = /*[[${itzuliEthazi == true}]]*/ false;
   // Itxi laguntzaileak
   window.itxiAsistentzia = function(){
+    if (itzuliEthazi) { window.location.href = '/irakasle/ethazi-koadernoa/denboralizazioa'; return; }
     if (window.history.length > 1) { window.history.back(); }
     else { window.location.href = '/irakasle/denboralizazioa'; }
   };

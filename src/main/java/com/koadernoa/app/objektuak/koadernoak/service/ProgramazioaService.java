@@ -146,6 +146,8 @@ public class ProgramazioaService {
     // ========= UD =========
     @Transactional
     public UnitateDidaktikoa addUdToEbaluaketa(Long ebaluaketaId, String kodea, String izenburua, int orduak, int posizioa) {
+        kodea = balidatuTestua(kodea, "Kodea", UnitateDidaktikoa.KODEA_MAX_LENGTH);
+        izenburua = balidatuTestua(izenburua, "Izenburua", UnitateDidaktikoa.IZENBURUA_MAX_LENGTH);
         Ebaluaketa eb = ebaluaketaRepository.findById(ebaluaketaId)
             .orElseThrow(() -> new IllegalArgumentException("Ebaluaketa ez da existitzen: " + ebaluaketaId));
 
@@ -163,6 +165,8 @@ public class ProgramazioaService {
 
     @Transactional
     public void updateUd(Long udId, String kodea, String izenburua, int orduak, Integer posizioa) {
+        kodea = balidatuTestua(kodea, "Kodea", UnitateDidaktikoa.KODEA_MAX_LENGTH);
+        izenburua = balidatuTestua(izenburua, "Izenburua", UnitateDidaktikoa.IZENBURUA_MAX_LENGTH);
         var ud = udRepository.findById(udId).orElseThrow();
         ud.setKodea(kodea);
         ud.setIzenburua(izenburua);
@@ -181,6 +185,8 @@ public class ProgramazioaService {
 
     @Transactional
     public void addJardueraPlanifikatua(Long udId, String izenburua, int orduak) {
+        izenburua = balidatuTestua(izenburua, "Jardueraren izenburua",
+                JardueraPlanifikatua.IZENBURUA_MAX_LENGTH);
         var ud = udRepository.findById(udId).orElseThrow();
         balidatuJardueraOrduakEzDirelaGainditzen(udId, null, orduak);
         var jp = new JardueraPlanifikatua();
@@ -188,16 +194,31 @@ public class ProgramazioaService {
         jp.setIzenburua(izenburua);
         jp.setOrduak(orduak);
         jp.setPosizioa(ud.getAzpiJarduerak().size());
+        jp.setKalifikagarria(false);
         jpRepository.save(jp);
     }
 
     @Transactional
     public void updateJardueraPlanifikatua(Long jpId, String izenburua, int orduak) {
+        izenburua = balidatuTestua(izenburua, "Jardueraren izenburua",
+                JardueraPlanifikatua.IZENBURUA_MAX_LENGTH);
         var jp = jpRepository.findById(jpId).orElseThrow();
         balidatuJardueraOrduakEzDirelaGainditzen(jp.getUnitatea().getId(), jpId, orduak);
         jp.setIzenburua(izenburua);
         jp.setOrduak(orduak);
         jpRepository.save(jp);
+    }
+
+    private String balidatuTestua(String balioa, String eremuIzena, int gehienezkoLuzera) {
+        String garbia = balioa == null ? "" : balioa.trim();
+        if (garbia.isEmpty()) {
+            throw new IllegalArgumentException(eremuIzena + " derrigorrezkoa da.");
+        }
+        if (garbia.length() > gehienezkoLuzera) {
+            throw new IllegalArgumentException(
+                    eremuIzena + " ezin da " + gehienezkoLuzera + " karaktere baino luzeagoa izan.");
+        }
+        return garbia;
     }
 
     @Transactional

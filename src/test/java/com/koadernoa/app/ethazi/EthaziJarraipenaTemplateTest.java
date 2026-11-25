@@ -27,6 +27,7 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 
 import com.koadernoa.app.ethazi.entitateak.EthaziKoadernoa;
 import com.koadernoa.app.ethazi.service.EthaziJarraipenaService;
+import com.koadernoa.app.ethazi.service.EthaziDenboralizazioaService;
 import com.koadernoa.app.ethazi.service.EthaziKoadernoaService;
 import com.koadernoa.app.ethazi.service.KronogramaService;
 import com.koadernoa.app.funtzionalitateak.irakasle.EthaziKoadernoaController;
@@ -75,6 +76,7 @@ class EthaziJarraipenaTemplateTest {
         EgutegiaService egutegiaService = mock(EgutegiaService.class);
         KronogramaService kronogramaService = mock(KronogramaService.class);
         EthaziJarraipenaService jarraipenaService = mock(EthaziJarraipenaService.class);
+        EthaziDenboralizazioaService denboralizazioaService = mock(EthaziDenboralizazioaService.class);
         when(koadernoService.findById(6L)).thenReturn(koadernoa);
         when(irakasleaService.getLogeatutaDagoenIrakaslea(org.mockito.ArgumentMatchers.any()))
                 .thenReturn(irakaslea);
@@ -83,7 +85,8 @@ class EthaziJarraipenaTemplateTest {
         when(egutegiak.findByIkasturtea_AktiboaTrueAndMaila_Id(2L)).thenReturn(Optional.of(egutegia));
         when(jarraipenaService.prestatu(koadernoa, egutegia, irakaslea, false, 10L)).thenReturn(ikuspegia);
         var controller = new EthaziKoadernoaController(koadernoService, irakasleaService, ikasleak,
-                moduluak, egutegiak, egutegiaService, kronogramaService, jarraipenaService);
+                moduluak, egutegiak, egutegiaService, kronogramaService, jarraipenaService,
+                denboralizazioaService);
 
         var resolver = new ClassLoaderTemplateResolver();
         resolver.setPrefix("templates/"); resolver.setSuffix(".html"); resolver.setTemplateMode("HTML");

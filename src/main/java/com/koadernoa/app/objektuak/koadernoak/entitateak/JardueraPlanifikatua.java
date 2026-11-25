@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -12,6 +13,8 @@ import lombok.Setter;
 @Entity
 @Table(name = "jarduera_planifikatua")
 public class JardueraPlanifikatua {
+
+    public static final int IZENBURUA_MAX_LENGTH = 255;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,7 +26,8 @@ public class JardueraPlanifikatua {
     private UnitateDidaktikoa unitatea;
 
     @NotBlank
-    @Column(nullable = false)
+    @Size(max = IZENBURUA_MAX_LENGTH)
+    @Column(nullable = false, length = IZENBURUA_MAX_LENGTH)
     private String izenburua;
 
     @Min(0)
@@ -34,6 +38,9 @@ public class JardueraPlanifikatua {
     @Column(nullable=false)
     private int posizioa = 0;
 
+    @Column(nullable = false)
+    private boolean kalifikagarria = false;
+
     public JardueraPlanifikatua() {}
 
     public JardueraPlanifikatua(UnitateDidaktikoa unitatea, String izenburua, int orduak) {
@@ -42,4 +49,3 @@ public class JardueraPlanifikatua {
         this.orduak = orduak;
     }
 }
-

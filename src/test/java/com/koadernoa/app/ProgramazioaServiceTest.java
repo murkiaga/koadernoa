@@ -1,6 +1,7 @@
 package com.koadernoa.app;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -11,11 +12,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Ebaluaketa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.KoadernoOrdutegiBlokea;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.JardueraPlanifikatua;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Programazioa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.UnitateDidaktikoa;
@@ -30,6 +33,47 @@ import com.koadernoa.app.objektuak.koadernoak.service.ProgramazioaService;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 
 class ProgramazioaServiceTest {
+
+    @Test
+    void udKodeEtaIzenburuLuzeegiakGordeAurretikBaztertzenDitu() {
+        ProgramazioaService service = new ProgramazioaService(
+                mock(ProgramazioaRepository.class), mock(UnitateDidaktikoaRepository.class),
+                mock(JardueraPlanifikatuaRepository.class), mock(JardueraRepository.class),
+                mock(EbaluaketaRepository.class), mock(KoadernoaRepository.class),
+                mock(DenboralizazioGeneratorService.class));
+
+        assertThatThrownBy(() -> service.addUdToEbaluaketa(
+                1L, "K".repeat(21), "Izenburua", 1, 0))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Kodea ezin da 20 karaktere baino luzeagoa izan.");
+        assertThatThrownBy(() -> service.addUdToEbaluaketa(
+                1L, "UD1", "I".repeat(256), 1, 0))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Izenburua ezin da 255 karaktere baino luzeagoa izan.");
+    }
+
+    @Test
+    void jardueraPlanifikatuaEzKalifikagarriSortzenEtaIzenburuLuzeaBaztertzenDu() {
+        UnitateDidaktikoaRepository udRepository = mock(UnitateDidaktikoaRepository.class);
+        JardueraPlanifikatuaRepository jpRepository = mock(JardueraPlanifikatuaRepository.class);
+        ProgramazioaService service = new ProgramazioaService(
+                mock(ProgramazioaRepository.class), udRepository, jpRepository,
+                mock(JardueraRepository.class), mock(EbaluaketaRepository.class),
+                mock(KoadernoaRepository.class), mock(DenboralizazioGeneratorService.class));
+        UnitateDidaktikoa ud = new UnitateDidaktikoa();
+        ud.setId(10L); ud.setOrduak(10); ud.setAzpiJarduerak(new ArrayList<>());
+        when(udRepository.findById(10L)).thenReturn(java.util.Optional.of(ud));
+
+        service.addJardueraPlanifikatua(10L, " Jarduera ", 1);
+
+        ArgumentCaptor<JardueraPlanifikatua> captor = ArgumentCaptor.forClass(JardueraPlanifikatua.class);
+        verify(jpRepository).save(captor.capture());
+        assertThat(captor.getValue().getIzenburua()).isEqualTo("Jarduera");
+        assertThat(captor.getValue().isKalifikagarria()).isFalse();
+        assertThatThrownBy(() -> service.addJardueraPlanifikatua(10L, "J".repeat(256), 1))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Jardueraren izenburua ezin da 255 karaktere baino luzeagoa izan.");
+    }
 
     @Test
     void syncDualUdForProgramazioaReusesDualUdMovedToAnotherEbaluaketa() {
