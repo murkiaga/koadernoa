@@ -35,6 +35,8 @@ import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
 import com.koadernoa.app.objektuak.egutegia.repository.EgutegiaRepository;
 import com.koadernoa.app.objektuak.egutegia.repository.IkasturteaRepository;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
+import com.koadernoa.app.objektuak.jokabidea.entitateak.IkasleEgunOharra;
+import com.koadernoa.app.objektuak.jokabidea.repository.IkasleEgunOharraRepository;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Asistentzia;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Saioa;
@@ -64,6 +66,7 @@ class EthaziJarraipenaServiceTest {
     @Mock EgutegiaRepository egutegiak;
     @Mock SaioaRepository saioak;
     @Mock AsistentziaRepository asistentziak;
+    @Mock IkasleEgunOharraRepository egunOharrak;
 
     private EthaziJarraipenaService service;
     private EthaziKoadernoa koadernoa;
@@ -81,7 +84,7 @@ class EthaziJarraipenaServiceTest {
     @BeforeEach
     void prestatu() {
         service = new EthaziJarraipenaService(ikasturteak, erronkak, taldeKideak, gelaxkak,
-                ikasleak, moduluak, taldeOrdutegiak, egutegiak, saioak, asistentziak);
+                ikasleak, moduluak, taldeOrdutegiak, egutegiak, saioak, asistentziak, egunOharrak);
         Zikloa zikloa = new Zikloa(); zikloa.setId(7L);
         Taldea taldea = new Taldea(); taldea.setId(4L); taldea.setIzena("1DAM"); taldea.setZikloa(zikloa);
         koadernoa = new EthaziKoadernoa(); koadernoa.setId(6L); koadernoa.setTaldea(taldea);
@@ -182,6 +185,49 @@ class EthaziJarraipenaServiceTest {
         assertThat(ikuspegia.ikasleak().get(0).laburpena(20L).portzentaia()).isEqualTo(25d);
         assertThat(ikuspegia.ikasleak().get(0).laburpena(20L).egoeraEtiketa())
                 .isEqualTo("Modulua suspendituta");
+    }
+
+    @Test
+    void oharIkonoakAsistentziakoOharrakErabiltzenDituEtaEzJarraipenZaharrekoak() {
+        Koadernoa progKoadernoa = new Koadernoa(); progKoadernoa.setId(70L);
+        progKoadernoa.setModuloa(prog); progKoadernoa.setEgutegia(egutegia);
+        IkasleEgunOharra asistentziaOharra = new IkasleEgunOharra();
+        asistentziaOharra.setIkaslea(ane); asistentziaOharra.setKoadernoa(progKoadernoa);
+        asistentziaOharra.setData(LocalDate.of(2026, 11, 2));
+        asistentziaOharra.setTestua("Asistentzian idatzitako oharra");
+        Koadernoa datuKoadernoa = new Koadernoa(); datuKoadernoa.setId(71L);
+        datuKoadernoa.setModuloa(datu); datuKoadernoa.setEgutegia(egutegia);
+        IkasleEgunOharra bigarrenOharra = new IkasleEgunOharra();
+        bigarrenOharra.setIkaslea(ane); bigarrenOharra.setKoadernoa(datuKoadernoa);
+        bigarrenOharra.setData(LocalDate.of(2026, 11, 2));
+        bigarrenOharra.setTestua("Beste moduluko oharra");
+        EthaziJarraipenGelaxka zaharra = gelaxka(beñat, prog, BigDecimal.ZERO);
+        zaharra.setOharra("Jarraipen zaharreko oharra");
+        when(gelaxkak.findByEthaziKoadernoaIdAndErronkaIdIn(6L, List.of(20L)))
+                .thenReturn(List.of(zaharra));
+        when(egunOharrak
+                .findByKoadernoa_Moduloa_Taldea_IdAndKoadernoa_Egutegia_Ikasturtea_IdAndDataBetween(
+                        4L, 3L, LocalDate.of(2026, 11, 2), LocalDate.of(2026, 11, 3)))
+                .thenReturn(List.of(asistentziaOharra, bigarrenOharra));
+
+        var ikuspegia = service.prestatu(koadernoa, egutegia, irakaslea, false, null);
+        var anerenGelaxka = ikuspegia.ikasleak().stream().filter(i -> i.id().equals(30L))
+                .findFirst().orElseThrow().gelaxka(20L, LocalDate.of(2026, 11, 2));
+        var benatenGelaxka = ikuspegia.ikasleak().stream().filter(i -> i.id().equals(31L))
+                .findFirst().orElseThrow().gelaxka(20L, LocalDate.of(2026, 11, 2));
+
+        assertThat(anerenGelaxka.oharra()).isTrue();
+        assertThat(anerenGelaxka.oharrak()).extracting(EthaziJarraipenaService.OharXehetasuna::modulua)
+                .containsExactly("PROG", "DATU");
+        assertThat(benatenGelaxka.oharra()).isFalse();
+
+        var modulukoIkuspegia = service.prestatu(koadernoa, egutegia, irakaslea, false, 10L);
+        var modulukoOharrak = modulukoIkuspegia.ikasleak().stream().filter(i -> i.id().equals(30L))
+                .findFirst().orElseThrow().gelaxka(20L, LocalDate.of(2026, 11, 2)).oharrak();
+        assertThat(modulukoOharrak).singleElement().satisfies(o -> {
+            assertThat(o.modulua()).isEqualTo("PROG");
+            assertThat(o.testua()).isEqualTo("Asistentzian idatzitako oharra");
+        });
     }
 
     @Test

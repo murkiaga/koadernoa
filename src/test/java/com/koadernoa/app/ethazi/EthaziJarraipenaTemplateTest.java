@@ -56,7 +56,9 @@ class EthaziJarraipenaTemplateTest {
         var laburpena = new EthaziJarraipenaService.ErronkaIkasleLaburpena(
                 new BigDecimal("0.50"), 25d, true, "Modulua suspendituta");
         var gelaxka = new EthaziJarraipenaService.JarraipenGelaxka(
-                new BigDecimal("0.50"), true);
+                new BigDecimal("0.50"), List.of(
+                        new EthaziJarraipenaService.OharXehetasuna(10L, "PROG", "Etxeko lana falta da"),
+                        new EthaziJarraipenaService.OharXehetasuna(11L, "DATU", "Arreta handiagoa behar du")));
         var ikaslea = new EthaziJarraipenaService.IkasleLerroa(
                 30L, "Alberdi, Ane", "1. taldea", true, 1,
                 Map.of(20L, laburpena), Map.of("20|2026-11-02", gelaxka));
@@ -113,7 +115,9 @@ class EthaziJarraipenaTemplateTest {
                     .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
             assertThat(html).contains("Egutegi bista", "Falten bista", "Kontsulta soilik",
                     "Web aplikazioa", "Alberdi, Ane",
-                    "1. taldea", "25.00%", "Modulua suspendituta", "2026/11/02", "📝");
+                    "1. taldea", "25.00%", "Modulua suspendituta", "2026/11/02", "📝",
+                    "Etxeko lana falta da", "Arreta handiagoa behar du", "PROG", "DATU",
+                    "Asistentziako oharrak ikusi", "oharrak-30-20-2026-11-02");
             assertThat(html).contains("data-erronka-toggle=\"20\"", "aria-expanded=\"false\"",
                     "erronka-xehetasuna-ezkututa", ">+</span>", "class=\"talde-hasiera\"",
                     "id=\"jarraipenScrollKontrola\"", "id=\"jarraipenScrollBarra\"");
