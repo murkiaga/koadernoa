@@ -38,9 +38,15 @@ import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
 import com.koadernoa.app.objektuak.egutegia.repository.EgutegiaRepository;
 import com.koadernoa.app.objektuak.egutegia.repository.IkasturteaRepository;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.Asistentzia;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.Saioa;
+import com.koadernoa.app.objektuak.koadernoak.repository.AsistentziaRepository;
+import com.koadernoa.app.objektuak.koadernoak.repository.SaioaRepository;
 import com.koadernoa.app.objektuak.modulua.entitateak.Hizkuntza;
 import com.koadernoa.app.objektuak.modulua.entitateak.Ikaslea;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
+import com.koadernoa.app.objektuak.modulua.entitateak.Matrikula;
 import com.koadernoa.app.objektuak.modulua.repository.IkasleaRepository;
 import com.koadernoa.app.objektuak.modulua.repository.ModuloaRepository;
 import com.koadernoa.app.objektuak.ordutegiak.entitateak.TaldeOrdutegia;
@@ -61,6 +67,61 @@ public class EthaziJarraipenaService {
     private final ModuloaRepository moduluak;
     private final TaldeOrdutegiaRepository taldeOrdutegiak;
     private final EgutegiaRepository egutegiak;
+    private final SaioaRepository saioak;
+    private final AsistentziaRepository asistentziak;
+
+    @Transactional
+    public void sinkronizatuAsistentzia(EthaziKoadernoa ethaziKoadernoa,
+            Koadernoa koadernoa, Saioa saioa, Matrikula matrikula) {
+        if (ethaziKoadernoa == null || ethaziKoadernoa.getTaldea() == null
+                || koadernoa == null || koadernoa.getModuloa() == null || saioa == null
+                || saioa.getData() == null || matrikula == null || matrikula.getIkaslea() == null) return;
+        Moduloa modulua = koadernoa.getModuloa();
+        LocalDate data = saioa.getData();
+        Ikasturtea ikasturtea = koadernoa.getEgutegia() != null
+                ? koadernoa.getEgutegia().getIkasturtea() : null;
+        if (ikasturtea == null) {
+            ikasturtea = ikasturteak.findFirstByAktiboaTrueOrderByIdDesc().orElse(null);
+        }
+        if (ikasturtea == null) return;
+
+        List<Saioa> egunekoSaioak = saioak.findByKoadernoaIdAndData(koadernoa.getId(), data);
+        BigDecimal faltaOrduak = asistentziak
+                .findBySaioaInAndMatrikulaIn(egunekoSaioak, List.of(matrikula)).stream()
+                .filter(a -> a.getEgoera() == Asistentzia.AsistentziaEgoera.HUTS
+                        || a.getEgoera() == Asistentzia.AsistentziaEgoera.JUSTIFIKATUA)
+                .map(a -> BigDecimal.valueOf(Math.max(0, a.getSaioa().getIraupenaSlot())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        Set<Long> taldekoModuloIds = moduluak.findByTaldeaId(ethaziKoadernoa.getTaldea().getId())
+                .stream().filter(Moduloa::isAktibo).map(Moduloa::getId).collect(Collectors.toSet());
+        List<Erronka> egunekoErronkak = aukeratuErronkak(
+                ethaziKoadernoa, ikasturtea, taldekoModuloIds).stream()
+                .filter(e -> e.getHasieraData() != null && e.getBukaeraData() != null
+                        && !data.isBefore(e.getHasieraData()) && !data.isAfter(e.getBukaeraData()))
+                .filter(e -> e.getModuluak().stream().anyMatch(m -> modulua.getId().equals(m.getId())))
+                .toList();
+        for (Erronka erronka : egunekoErronkak) {
+            Optional<EthaziJarraipenGelaxka> gordeta = gelaxkak
+                    .findByEthaziKoadernoaIdAndErronkaIdAndIkasleaIdAndModuloaIdAndData(
+                            ethaziKoadernoa.getId(), erronka.getId(), matrikula.getIkaslea().getId(),
+                            modulua.getId(), data);
+            if (faltaOrduak.signum() == 0
+                    && gordeta.map(EthaziJarraipenGelaxka::getOharra)
+                            .map(String::isBlank).orElse(true)) {
+                gordeta.ifPresent(gelaxkak::delete);
+                continue;
+            }
+            EthaziJarraipenGelaxka gelaxka = gordeta.orElseGet(EthaziJarraipenGelaxka::new);
+            gelaxka.setEthaziKoadernoa(ethaziKoadernoa);
+            gelaxka.setErronka(erronka);
+            gelaxka.setIkaslea(matrikula.getIkaslea());
+            gelaxka.setModuloa(modulua);
+            gelaxka.setData(data);
+            gelaxka.setFaltaOrduak(faltaOrduak);
+            gelaxkak.save(gelaxka);
+        }
+    }
 
     @Transactional(readOnly = true)
     public JarraipenaIkuspegia prestatu(EthaziKoadernoa koadernoa, Egutegia egutegia,

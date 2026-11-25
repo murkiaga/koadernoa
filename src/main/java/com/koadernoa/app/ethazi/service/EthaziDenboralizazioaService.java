@@ -7,7 +7,6 @@ import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -31,12 +30,14 @@ import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
 import com.koadernoa.app.objektuak.egutegia.service.EgutegiaService;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
-import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoOrdutegiBlokeaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.SaioaRepository;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.Saioa;
 import com.koadernoa.app.objektuak.koadernoak.service.AsistentziaService;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 import com.koadernoa.app.objektuak.modulua.repository.ModuloaRepository;
+import com.koadernoa.app.objektuak.ordutegiak.entitateak.TaldeOrdutegia;
+import com.koadernoa.app.objektuak.ordutegiak.repository.TaldeOrdutegiaRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -48,7 +49,7 @@ public class EthaziDenboralizazioaService {
     private final EthaziKoadernoaService ethaziKoadernoaService;
     private final ModuloaRepository moduloaRepository;
     private final KoadernoaRepository koadernoaRepository;
-    private final KoadernoOrdutegiBlokeaRepository blokeRepository;
+    private final TaldeOrdutegiaRepository taldeOrdutegiak;
     private final SaioaRepository saioaRepository;
     private final AsistentziaService asistentziaService;
     private final EgutegiaService egutegiaService;
@@ -202,7 +203,7 @@ public class EthaziDenboralizazioaService {
                 .forEach(j -> jarduerakEgunka.computeIfAbsent(j.data(), __ -> new ArrayList<>()).add(j));
 
         List<AsistentziaModulua> asistentziaModuluak = prestatuAsistentziaModuluak(
-                moduluAukerak, moduloaId, egutegia, hilabeteaData);
+                ethaziKoadernoa, moduluAukerak, moduloaId, egutegia, hilabeteaData);
         Map<String, String> egunKlaseak = egutegia == null ? Map.of()
                 : egutegiaService.kalkulatuKlaseak(egutegia);
         List<List<Eguna>> asteak = prestatuAsteak(hilabeteaData, jarduerakEgunka,
@@ -229,57 +230,87 @@ public class EthaziDenboralizazioaService {
                 .findFirst().orElse(null);
     }
 
+    @Transactional
+    public void sortuEthaziAsistentziaSaioak(EthaziKoadernoa ethaziKoadernoa,
+            Egutegia egutegia, Koadernoa koadernoa, Long moduloaId, LocalDate data) {
+        List<Integer> slotak = ethaziOrdutegiSlotak(
+                ethaziKoadernoa, egutegia, moduloaId, data);
+        if (slotak.isEmpty()) {
+            throw new IllegalArgumentException("Aukeratutako moduluak ez du klaserik egun horretan.");
+        }
+        Set<Integer> daudenak = saioaRepository.findByKoadernoaIdAndData(koadernoa.getId(), data)
+                .stream().map(Saioa::getHasieraSlot).collect(Collectors.toSet());
+        slotak.stream().filter(slot -> !daudenak.contains(slot)).forEach(slot -> {
+            Saioa saioa = new Saioa();
+            saioa.setKoadernoa(koadernoa);
+            saioa.setData(data);
+            saioa.setHasieraSlot(slot);
+            saioa.setIraupenaSlot(1);
+            saioaRepository.save(saioa);
+        });
+    }
+
     private List<AsistentziaModulua> prestatuAsistentziaModuluak(
+            EthaziKoadernoa ethaziKoadernoa,
             List<EthaziKoadernoaService.ModuluAukera> aukerak, Long moduloaId,
             Egutegia egutegia, YearMonth hilabetea) {
         if (egutegia == null) return List.of();
+        NavigableMap<LocalDate, TaldeOrdutegia> bertsioak = ordutegiBertsioak(
+                ethaziKoadernoa, egutegia);
         return aukerak.stream()
                 .filter(aukera -> moduloaId == null || moduloaId.equals(aukera.id()))
                 .map(aukera -> asistentziaModulua(
-                        aukera, egutegia, hilabetea, moduloaId != null))
+                        aukera, egutegia, hilabetea, bertsioak))
                 .toList();
     }
 
-    private AsistentziaModulua asistentziaModulua(EthaziKoadernoaService.ModuluAukera aukera,
-            Egutegia egutegia, YearMonth hilabetea, boolean egunGuztietan) {
+    private AsistentziaModulua asistentziaModulua(
+            EthaziKoadernoaService.ModuluAukera aukera, Egutegia egutegia, YearMonth hilabetea,
+            NavigableMap<LocalDate, TaldeOrdutegia> bertsioak) {
         Koadernoa koadernoa = koadernoaRepository.findByModuloaIdInAktiboIkasturtea(aukera.id())
                 .stream().findFirst().orElse(null);
         if (koadernoa == null) return new AsistentziaModulua(aukera.id(), aukera.etiketa(), Set.of(), Set.of());
-
-        if (egunGuztietan) {
-            Set<LocalDate> egunak = hilabetea.atDay(1).datesUntil(hilabetea.atEndOfMonth().plusDays(1))
-                    .filter(d -> d.getDayOfWeek() != DayOfWeek.SATURDAY
-                            && d.getDayOfWeek() != DayOfWeek.SUNDAY)
-                    .collect(Collectors.toSet());
-            Set<LocalDate> irekita = saioaRepository
-                    .findByKoadernoaIdAndDataBetweenOrderByDataAscHasieraSlotAsc(
-                            koadernoa.getId(), hilabetea.atDay(1), hilabetea.atEndOfMonth()).stream()
-                    .map(s -> s.getData()).collect(Collectors.toSet());
-            return new AsistentziaModulua(aukera.id(), aukera.etiketa(), egunak, irekita);
-        }
-
-        NavigableMap<LocalDate, Set<Astegunak>> astegunakDatarenArabera = new TreeMap<>();
-        LocalDate ikasturteHasiera = egutegia == null ? hilabetea.atDay(1) : egutegia.getHasieraData();
-        for (var blokea : blokeRepository.findByKoadernoa_Id(koadernoa.getId())) {
-            LocalDate hasiera = blokea.getHasieraData() == null ? ikasturteHasiera : blokea.getHasieraData();
-            if (hasiera == null) hasiera = hilabetea.atDay(1);
-            if (blokea.isTarteHutsa()) {
-                astegunakDatarenArabera.putIfAbsent(hasiera, new HashSet<>());
-            } else if (!blokea.isDualOrdutegia() && blokea.getAsteguna() != null
-                    && blokea.getIraupenaSlot() > 0) {
-                astegunakDatarenArabera.computeIfAbsent(hasiera, __ -> new HashSet<>())
-                        .add(blokea.getAsteguna());
-            }
-        }
-        Set<LocalDate> egunak = asistentziaService.kalkulatuAsistentziaEgunak(
-                astegunakDatarenArabera, egutegia, hilabetea.getYear(), hilabetea.getMonthValue())
-                .entrySet().stream().filter(Map.Entry::getValue).map(Map.Entry::getKey)
-                .map(LocalDate::parse).collect(Collectors.toSet());
+        Set<LocalDate> egunak = hilabetea.atDay(1).datesUntil(hilabetea.atEndOfMonth().plusDays(1))
+                .filter(data -> !ethaziOrdutegiSlotak(
+                        egutegia, aukera.id(), data, bertsioak).isEmpty())
+                .collect(Collectors.toSet());
         Set<LocalDate> irekita = saioaRepository
                 .findByKoadernoaIdAndDataBetweenOrderByDataAscHasieraSlotAsc(
                         koadernoa.getId(), hilabetea.atDay(1), hilabetea.atEndOfMonth()).stream()
                 .map(s -> s.getData()).collect(Collectors.toSet());
         return new AsistentziaModulua(aukera.id(), aukera.etiketa(), egunak, irekita);
+    }
+
+    private List<Integer> ethaziOrdutegiSlotak(EthaziKoadernoa koadernoa, Egutegia egutegia,
+            Long moduloaId, LocalDate data) {
+        return ethaziOrdutegiSlotak(
+                egutegia, moduloaId, data, ordutegiBertsioak(koadernoa, egutegia));
+    }
+
+    private NavigableMap<LocalDate, TaldeOrdutegia> ordutegiBertsioak(
+            EthaziKoadernoa koadernoa, Egutegia egutegia) {
+        NavigableMap<LocalDate, TaldeOrdutegia> bertsioak = new TreeMap<>();
+        if (koadernoa == null || koadernoa.getTaldea() == null || egutegia == null
+                || egutegia.getIkasturtea() == null) return bertsioak;
+        taldeOrdutegiak.findByTaldea_IdAndIkasturtea_IdOrderByHasieraDataAsc(
+                koadernoa.getTaldea().getId(), egutegia.getIkasturtea().getId()).stream()
+                .filter(o -> o.getHasieraData() != null)
+                .forEach(o -> bertsioak.put(o.getHasieraData(), o));
+        return bertsioak;
+    }
+
+    private List<Integer> ethaziOrdutegiSlotak(Egutegia egutegia, Long moduloaId,
+            LocalDate data, NavigableMap<LocalDate, TaldeOrdutegia> bertsioak) {
+        if (egutegia == null || moduloaId == null || data == null
+                || !asistentziaService.isEgunLektiboa(egutegia, data)) return List.of();
+        Astegunak asteguna = asistentziaService.effectiveAsteguna(egutegia, data);
+        if (asteguna == null) return List.of();
+        Map.Entry<LocalDate, TaldeOrdutegia> bertsioa = bertsioak.floorEntry(data);
+        if (bertsioa == null) return List.of();
+        return bertsioa.getValue().getLerroak().stream()
+                .filter(l -> asteguna == l.getAsteguna() && l.getModuloa() != null
+                        && moduloaId.equals(l.getModuloa().getId()))
+                .map(l -> l.getOrduZenbakia()).distinct().sorted().toList();
     }
 
     private List<List<Eguna>> prestatuAsteak(YearMonth hilabetea,

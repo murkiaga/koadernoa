@@ -219,6 +219,17 @@ public class EthaziKoadernoaController {
             flash.addFlashAttribute("error", "Aukeratutako moduluak ez du asistentzia-koaderno erabilgarririk.");
             return "redirect:/irakasle/ethazi-koadernoa/denboralizazioa?moduloaId=" + moduloaId;
         }
+        try {
+            ethaziDenboralizazioaService.sortuEthaziAsistentziaSaioak(
+                    koadernoa, lortuTaldearenEgutegia(koadernoa),
+                    asistentziaKoadernoa, moduloaId, data);
+        } catch (IllegalArgumentException ex) {
+            flash.addFlashAttribute("error", ex.getMessage());
+            return "redirect:/irakasle/ethazi-koadernoa/denboralizazioa?urtea="
+                    + (urtea == null ? data.getYear() : urtea) + "&hilabetea="
+                    + (hilabetea == null ? data.getMonthValue() : hilabetea)
+                    + "&moduloaId=" + moduloaId;
+        }
         session.setAttribute("koadernoAktiboa", asistentziaKoadernoa);
         String itzulera = "&itzuliEthazi=true"
                 + (urtea == null ? "" : "&itzuliEthaziUrtea=" + urtea)

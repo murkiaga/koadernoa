@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.lenient;
 
@@ -31,15 +32,19 @@ import com.koadernoa.app.ethazi.service.EthaziDenboralizazioaService;
 import com.koadernoa.app.ethazi.service.EthaziKoadernoaService;
 import com.koadernoa.app.ethazi.service.KronogramaService;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
+import com.koadernoa.app.objektuak.egutegia.entitateak.Ikasturtea;
+import com.koadernoa.app.objektuak.egutegia.entitateak.Astegunak;
 import com.koadernoa.app.objektuak.egutegia.service.EgutegiaService;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
-import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoOrdutegiBlokeaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.SaioaRepository;
 import com.koadernoa.app.objektuak.koadernoak.service.AsistentziaService;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.modulua.repository.ModuloaRepository;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
+import com.koadernoa.app.objektuak.ordutegiak.entitateak.TaldeOrdutegia;
+import com.koadernoa.app.objektuak.ordutegiak.entitateak.TaldeOrdutegiLerroa;
+import com.koadernoa.app.objektuak.ordutegiak.repository.TaldeOrdutegiaRepository;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Taldea;
 
 @ExtendWith(MockitoExtension.class)
@@ -47,7 +52,7 @@ class EthaziDenboralizazioaServiceTest {
     @Mock EthaziKoadernoaService koadernoaService;
     @Mock ModuloaRepository moduluak;
     @Mock KoadernoaRepository koadernoak;
-    @Mock KoadernoOrdutegiBlokeaRepository blokeak;
+    @Mock TaldeOrdutegiaRepository taldeOrdutegiak;
     @Mock SaioaRepository saioak;
     @Mock AsistentziaService asistentziaService;
     @Mock EgutegiaService egutegiaService;
@@ -62,13 +67,27 @@ class EthaziDenboralizazioaServiceTest {
     @BeforeEach
     void prestatu() {
         service = new EthaziDenboralizazioaService(koadernoaService, moduluak, koadernoak,
-                blokeak, saioak, asistentziaService, egutegiaService,
+                taldeOrdutegiak, saioak, asistentziaService, egutegiaService,
                 denboralizazioJarduerak, kronogramaService);
         Taldea taldea = new Taldea(); taldea.setId(4L);
         koadernoa = new EthaziKoadernoa(); koadernoa.setId(6L); koadernoa.setTaldea(taldea);
-        egutegia = new Egutegia();
+        Ikasturtea ikasturtea = new Ikasturtea(); ikasturtea.setId(3L);
+        egutegia = new Egutegia(); egutegia.setIkasturtea(ikasturtea);
         irakaslea = new Irakaslea(); irakaslea.setId(8L);
         lenient().when(egutegiaService.kalkulatuKlaseak(egutegia)).thenReturn(Map.of());
+        lenient().when(asistentziaService.isEgunLektiboa(any(), any())).thenReturn(true);
+        lenient().when(asistentziaService.effectiveAsteguna(any(), any())).thenAnswer(inv -> {
+            LocalDate data = inv.getArgument(1);
+            return switch (data.getDayOfWeek()) {
+                case MONDAY -> Astegunak.ASTELEHENA;
+                case TUESDAY -> Astegunak.ASTEARTEA;
+                case WEDNESDAY -> Astegunak.ASTEAZKENA;
+                case THURSDAY -> Astegunak.OSTEGUNA;
+                case FRIDAY -> Astegunak.OSTIRALA;
+                case SATURDAY -> Astegunak.LARUNBATA;
+                case SUNDAY -> Astegunak.IGANDEA;
+            };
+        });
         Moduloa a = new Moduloa(); a.setId(10L); a.setKodea("PROG");
         Moduloa b = new Moduloa(); b.setId(20L); b.setKodea("SARE");
         lenient().when(moduluak.findAktiboakByTaldeaIdAndIrakasleaId(4L, 8L))
@@ -110,8 +129,16 @@ class EthaziDenboralizazioaServiceTest {
     }
 
     @Test
-    void moduluaAukeratutaLanegunBakoitzeanAsistentziaBotoiaDago() {
+    void asistentziaBotoiaEthaziOrdutegikoEgunetanBakarrikDago() {
         Koadernoa asistentziaKoadernoa = new Koadernoa(); asistentziaKoadernoa.setId(70L);
+        Moduloa prog = new Moduloa(); prog.setId(10L);
+        TaldeOrdutegia lehenBertsioa = ordutegia(LocalDate.of(2026, 9, 1),
+                lerroa(Astegunak.ASTELEHENA, 1, prog));
+        TaldeOrdutegia bigarrenBertsioa = ordutegia(LocalDate.of(2026, 9, 14),
+                lerroa(Astegunak.ASTELEHENA, 1, prog),
+                lerroa(Astegunak.ASTEARTEA, 2, prog));
+        when(taldeOrdutegiak.findByTaldea_IdAndIkasturtea_IdOrderByHasieraDataAsc(4L, 3L))
+                .thenReturn(List.of(lehenBertsioa, bigarrenBertsioa));
         when(koadernoak.findByModuloaIdInAktiboIkasturtea(10L))
                 .thenReturn(List.of(asistentziaKoadernoa));
         when(saioak.findByKoadernoaIdAndDataBetweenOrderByDataAscHasieraSlotAsc(
@@ -124,10 +151,31 @@ class EthaziDenboralizazioaServiceTest {
         var ikuspegia = service.prestatu(koadernoa, egutegia, irakaslea, 10L, 2026, 9);
         var asteartea = ikuspegia.asteak().stream().flatMap(List::stream)
                 .filter(e -> e.data().equals(LocalDate.of(2026, 9, 15))).findFirst().orElseThrow();
+        var asteazkena = ikuspegia.asteak().stream().flatMap(List::stream)
+                .filter(e -> e.data().equals(LocalDate.of(2026, 9, 16))).findFirst().orElseThrow();
 
         assertThat(asteartea.asistentziak()).hasSize(1);
         assertThat(asteartea.asistentziak().get(0).moduloaId()).isEqualTo(10L);
         assertThat(asteartea.asistentziak().get(0).irekita()).isFalse();
+        assertThat(asteazkena.asistentziak()).isEmpty();
+    }
+
+    @Test
+    void ethaziOrdutegikoSlotetarakoSaioakSortzenDitu() {
+        Koadernoa asistentziaKoadernoa = new Koadernoa(); asistentziaKoadernoa.setId(70L);
+        Moduloa prog = new Moduloa(); prog.setId(10L);
+        when(taldeOrdutegiak.findByTaldea_IdAndIkasturtea_IdOrderByHasieraDataAsc(4L, 3L))
+                .thenReturn(List.of(ordutegia(LocalDate.of(2026, 9, 1),
+                        lerroa(Astegunak.ASTEARTEA, 2, prog),
+                        lerroa(Astegunak.ASTEARTEA, 4, prog))));
+        when(saioak.findByKoadernoaIdAndData(70L, LocalDate.of(2026, 9, 15)))
+                .thenReturn(List.of());
+
+        service.sortuEthaziAsistentziaSaioak(koadernoa, egutegia,
+                asistentziaKoadernoa, 10L, LocalDate.of(2026, 9, 15));
+
+        verify(saioak).save(argThat(s -> s.getHasieraSlot() == 2 && s.getIraupenaSlot() == 1));
+        verify(saioak).save(argThat(s -> s.getHasieraSlot() == 4 && s.getIraupenaSlot() == 1));
     }
 
     @Test
@@ -236,5 +284,17 @@ class EthaziDenboralizazioaServiceTest {
         j.setErronka(erronka); j.setErronkaIzena(erronka.getIzena());
         j.setData(data); j.setOrduak(BigDecimal.ONE);
         return j;
+    }
+
+    private TaldeOrdutegia ordutegia(LocalDate hasiera, TaldeOrdutegiLerroa... lerroak) {
+        TaldeOrdutegia o = new TaldeOrdutegia();
+        o.setHasieraData(hasiera); o.setLerroak(List.of(lerroak));
+        return o;
+    }
+
+    private TaldeOrdutegiLerroa lerroa(Astegunak asteguna, int ordua, Moduloa modulua) {
+        TaldeOrdutegiLerroa l = new TaldeOrdutegiLerroa();
+        l.setAsteguna(asteguna); l.setOrduZenbakia(ordua); l.setModuloa(modulua);
+        return l;
     }
 }

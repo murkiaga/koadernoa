@@ -189,6 +189,7 @@
     const params = new URLSearchParams();
     params.append('saioaId', saioaId);
     params.append('matrikulaId', matrikulaId);
+    if (itzuliEthazi) params.append('ethazi', 'true');
     if (egoera) params.append('egoera', egoera);
 
     return fetch('/irakasle/asistentzia/markatu', {
