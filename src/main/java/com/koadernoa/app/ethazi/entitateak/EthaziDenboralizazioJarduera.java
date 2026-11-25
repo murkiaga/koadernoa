@@ -62,6 +62,9 @@ public class EthaziDenboralizazioJarduera {
     @Column(columnDefinition = "TEXT")
     private String deskribapena;
 
+    @Column(columnDefinition = "TEXT")
+    private String oharrak;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private KronogramaJardueraMota mota;

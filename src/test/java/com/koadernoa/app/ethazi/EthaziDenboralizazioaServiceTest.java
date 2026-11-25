@@ -1,6 +1,7 @@
 package com.koadernoa.app.ethazi;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.access.AccessDeniedException;
 
 import com.koadernoa.app.ethazi.entitateak.EthaziKoadernoa;
 import com.koadernoa.app.ethazi.entitateak.EthaziDenboralizazioJarduera;
@@ -35,6 +37,7 @@ import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoOrdutegiBlokeaR
 import com.koadernoa.app.objektuak.koadernoak.repository.KoadernoaRepository;
 import com.koadernoa.app.objektuak.koadernoak.repository.SaioaRepository;
 import com.koadernoa.app.objektuak.koadernoak.service.AsistentziaService;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.modulua.repository.ModuloaRepository;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 import com.koadernoa.app.objektuak.zikloak.entitateak.Taldea;
@@ -107,6 +110,27 @@ class EthaziDenboralizazioaServiceTest {
     }
 
     @Test
+    void moduluaAukeratutaLanegunBakoitzeanAsistentziaBotoiaDago() {
+        Koadernoa asistentziaKoadernoa = new Koadernoa(); asistentziaKoadernoa.setId(70L);
+        when(koadernoak.findByModuloaIdInAktiboIkasturtea(10L))
+                .thenReturn(List.of(asistentziaKoadernoa));
+        when(saioak.findByKoadernoaIdAndDataBetweenOrderByDataAscHasieraSlotAsc(
+                70L, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30)))
+                .thenReturn(List.of());
+        when(denboralizazioJarduerak.findByEthaziKoadernoaIdAndDataBetweenOrderByDataAscIdAsc(
+                6L, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30)))
+                .thenReturn(List.of());
+
+        var ikuspegia = service.prestatu(koadernoa, egutegia, irakaslea, 10L, 2026, 9);
+        var asteartea = ikuspegia.asteak().stream().flatMap(List::stream)
+                .filter(e -> e.data().equals(LocalDate.of(2026, 9, 15))).findFirst().orElseThrow();
+
+        assertThat(asteartea.asistentziak()).hasSize(1);
+        assertThat(asteartea.asistentziak().get(0).moduloaId()).isEqualTo(10L);
+        assertThat(asteartea.asistentziak().get(0).irekita()).isFalse();
+    }
+
+    @Test
     void bolkatzeakAurrekoaOrdezkatuEtaEgunekoOrduakSnapshotGisaGordetzenDitu() {
         when(koadernoaService.programazioaIkuspegia(koadernoa, egutegia, irakaslea))
                 .thenReturn(programazioa());
@@ -135,6 +159,43 @@ class EthaziDenboralizazioaServiceTest {
                     && BigDecimal.valueOf(1.5).equals(gordea.getOrduak())
                     && gordea.getModuloa() == modulua;
         }));
+    }
+
+    @Test
+    void norbereModulukoJardueraEditatuEtaMugituDaiteke() {
+        Erronka erronka = new Erronka(); erronka.setId(30L); erronka.setIzena("Erronka 1");
+        Moduloa modulua = new Moduloa(); modulua.setId(10L); modulua.setKodea("PROG");
+        EthaziDenboralizazioJarduera jarduera = gordea(101L, "APIa",
+                KronogramaJardueraMota.MODULUA, modulua, erronka, LocalDate.of(2026, 9, 15));
+        when(denboralizazioJarduerak.findByIdAndEthaziKoadernoaId(101L, 6L))
+                .thenReturn(java.util.Optional.of(jarduera));
+
+        service.eguneratuJarduera(koadernoa, irakaslea, 101L, "API berria", "Xehetasuna",
+                BigDecimal.valueOf(2.5), "Eginda");
+        service.mugituJarduera(koadernoa, irakaslea, 101L, LocalDate.of(2026, 9, 16));
+
+        assertThat(jarduera.getIzenburua()).isEqualTo("API berria");
+        assertThat(jarduera.getOharrak()).isEqualTo("Eginda");
+        assertThat(jarduera.getOrduak()).isEqualByComparingTo("2.5");
+        assertThat(jarduera.getData()).isEqualTo(LocalDate.of(2026, 9, 16));
+    }
+
+    @Test
+    void jardueraOrokorrariOharrakJarriBaiBainaEzinDaMugitu() {
+        Erronka erronka = new Erronka(); erronka.setId(30L); erronka.setIzena("Erronka 1");
+        EthaziDenboralizazioJarduera jarduera = gordea(103L, "Aurkezpena",
+                KronogramaJardueraMota.KOMUNA, null, erronka, LocalDate.of(2026, 9, 15));
+        when(denboralizazioJarduerak.findByIdAndEthaziKoadernoaId(103L, 6L))
+                .thenReturn(java.util.Optional.of(jarduera));
+
+        service.eguneratuJarduera(koadernoa, irakaslea, 103L, "Ez aldatu", "Ez aldatu",
+                BigDecimal.TEN, "Ohar komuna");
+
+        assertThat(jarduera.getIzenburua()).isEqualTo("Aurkezpena");
+        assertThat(jarduera.getOharrak()).isEqualTo("Ohar komuna");
+        assertThatThrownBy(() -> service.mugituJarduera(
+                koadernoa, irakaslea, 103L, LocalDate.of(2026, 9, 16)))
+                .isInstanceOf(AccessDeniedException.class);
     }
 
     private EthaziKoadernoaService.ProgramazioaIkuspegia programazioa() {

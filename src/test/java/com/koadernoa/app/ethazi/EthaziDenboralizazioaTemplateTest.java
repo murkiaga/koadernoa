@@ -48,9 +48,11 @@ class EthaziDenboralizazioaTemplateTest {
     void egutegiakFiltroaJarduerakEtaAsistentziaEstekaErrendatzenDitu() throws Exception {
         LocalDate data = LocalDate.of(2026, 11, 2);
         var jarduera = new EthaziDenboralizazioaService.EgunekoJarduera(
-                50L, 30L, "Web erronka", "APIa diseinatu", "Xehetasuna", "PROG", false, data, BigDecimal.ONE);
+                50L, 30L, "Web erronka", "APIa diseinatu", "Xehetasuna", "PROG", false,
+                data, BigDecimal.ONE, true, true, "Backend oharra");
         var komuna = new EthaziDenboralizazioaService.EgunekoJarduera(
-                51L, 30L, "Web erronka", "Aurkezpena", "", "Orokorra", true, data, BigDecimal.valueOf(2));
+                51L, 30L, "Web erronka", "Aurkezpena", "", "Orokorra", true,
+                data, BigDecimal.valueOf(2), true, false, null);
         var eguna = new EthaziDenboralizazioaService.Eguna(data, true, "lektibo1",
                 List.of(jarduera, komuna),
                 List.of(new EthaziDenboralizazioaService.AsistentziaAukera(10L, "PROG", true)));
@@ -100,7 +102,8 @@ class EthaziDenboralizazioaTemplateTest {
                             .session(session).principal(auth))
                     .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
             assertThat(html).contains("Denboralizazioa", "Nire moduluak", "APIa diseinatu",
-                    "Aurkezpena", "Orokorra", "Web erronka", "1 h", "2 h", "👤✔", "moduloaId=10");
+                    "Aurkezpena", "Orokorra", "Web erronka", "1 h", "2 h", "👤✔",
+                    "moduloaId=10", "draggable=\"true\"", "id=\"jardueraDialog\"", "📝");
         } finally {
             SecurityContextHolder.clearContext();
         }

@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.access.AccessDeniedException;
 
 import com.koadernoa.app.ethazi.entitateak.EthaziDenboralizazioJarduera;
 import com.koadernoa.app.ethazi.entitateak.EthaziKoadernoa;
@@ -88,6 +89,89 @@ public class EthaziDenboralizazioaService {
     }
 
     @Transactional(readOnly = true)
+    public JardueraXehetasuna lortuJarduera(EthaziKoadernoa koadernoa, Irakaslea irakaslea,
+            Long jardueraId) {
+        EthaziDenboralizazioJarduera jarduera = koadernokoJarduera(koadernoa, jardueraId);
+        boolean edukiEditagarria = modulukoJardueraEditagarria(jarduera, koadernoa, irakaslea);
+        boolean oharrakEditagarri = jarduera.getMota() == KronogramaJardueraMota.KOMUNA
+                || edukiEditagarria;
+        if (!oharrakEditagarri) throw new AccessDeniedException("Ezin duzu jarduera hau editatu.");
+        return new JardueraXehetasuna(jarduera.getId(), jarduera.getIzenburua(),
+                jarduera.getDeskribapena(), jarduera.getOharrak(), jarduera.getOrduak(),
+                jarduera.getData(), jarduera.getMota() == KronogramaJardueraMota.KOMUNA,
+                edukiEditagarria);
+    }
+
+    @Transactional
+    public void eguneratuJarduera(EthaziKoadernoa koadernoa, Irakaslea irakaslea,
+            Long jardueraId, String izenburua, String deskribapena, BigDecimal orduak,
+            String oharrak) {
+        EthaziDenboralizazioJarduera jarduera = koadernokoJarduera(koadernoa, jardueraId);
+        boolean edukiEditagarria = modulukoJardueraEditagarria(jarduera, koadernoa, irakaslea);
+        if (jarduera.getMota() != KronogramaJardueraMota.KOMUNA && !edukiEditagarria) {
+            throw new AccessDeniedException("Ezin duzu jarduera hau editatu.");
+        }
+        if (edukiEditagarria) {
+            String izenburuaGarbia = izenburua == null ? "" : izenburua.strip();
+            if (izenburuaGarbia.isEmpty() || izenburuaGarbia.length() > 200) {
+                throw new IllegalArgumentException("Izenburuak 1 eta 200 karaktere artean izan behar ditu.");
+            }
+            if (orduak == null || orduak.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new IllegalArgumentException("Ordu kopuruak zero baino handiagoa izan behar du.");
+            }
+            jarduera.setIzenburua(izenburuaGarbia);
+            jarduera.setDeskribapena(hutsikNull(deskribapena));
+            jarduera.setOrduak(orduak);
+        }
+        jarduera.setOharrak(hutsikNull(oharrak));
+    }
+
+    @Transactional
+    public void mugituJarduera(EthaziKoadernoa koadernoa, Irakaslea irakaslea,
+            Long jardueraId, LocalDate dataBerria) {
+        EthaziDenboralizazioJarduera jarduera = koadernokoJarduera(koadernoa, jardueraId);
+        if (jarduera.getMota() == KronogramaJardueraMota.KOMUNA) {
+            throw new AccessDeniedException("Jarduera orokorrak ezin dira denboralizaziotik mugitu.");
+        }
+        if (!modulukoJardueraEditagarria(jarduera, koadernoa, irakaslea)) {
+            throw new AccessDeniedException("Beste modulu bateko jarduera ezin duzu mugitu.");
+        }
+        if (dataBerria == null || dataBerria.getDayOfWeek() == DayOfWeek.SATURDAY
+                || dataBerria.getDayOfWeek() == DayOfWeek.SUNDAY) {
+            throw new IllegalArgumentException("Jarduera lanegun batera mugitu behar da.");
+        }
+        if (jarduera.getJatorrizkoJarduera() != null && denboralizazioJarduerak
+                .existsByEthaziKoadernoaIdAndJatorrizkoJardueraIdAndDataAndIdNot(
+                        koadernoa.getId(), jarduera.getJatorrizkoJarduera().getId(),
+                        dataBerria, jarduera.getId())) {
+            throw new IllegalArgumentException(
+                    "Jarduera beraren beste ordu-zati bat badago egun horretan.");
+        }
+        jarduera.setData(dataBerria);
+    }
+
+    private EthaziDenboralizazioJarduera koadernokoJarduera(EthaziKoadernoa koadernoa,
+            Long jardueraId) {
+        if (koadernoa == null || koadernoa.getId() == null) {
+            throw new IllegalArgumentException("Ez dago Ethazi koaderno aktiborik.");
+        }
+        return denboralizazioJarduerak.findByIdAndEthaziKoadernoaId(jardueraId, koadernoa.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Jarduera ez da aurkitu."));
+    }
+
+    private boolean modulukoJardueraEditagarria(EthaziDenboralizazioJarduera jarduera,
+            EthaziKoadernoa koadernoa, Irakaslea irakaslea) {
+        if (jarduera.getMota() != KronogramaJardueraMota.MODULUA || jarduera.getModuloa() == null
+                || irakaslea == null || irakaslea.getId() == null || koadernoa.getTaldea() == null) {
+            return false;
+        }
+        Long jarduerarenModuloaId = jarduera.getModuloa().getId();
+        return moduloaRepository.findAktiboakByTaldeaIdAndIrakasleaId(
+                        koadernoa.getTaldea().getId(), irakaslea.getId()).stream()
+                .map(Moduloa::getId).anyMatch(jarduerarenModuloaId::equals);
+    }
+
+    @Transactional(readOnly = true)
     public DenboralizazioaIkuspegia prestatu(EthaziKoadernoa ethaziKoadernoa, Egutegia egutegia,
             Irakaslea irakaslea, Long aukeratutakoModuloaId, int urtea, int hilabetea) {
         YearMonth hilabeteaData = YearMonth.of(urtea, hilabetea);
@@ -151,15 +235,28 @@ public class EthaziDenboralizazioaService {
         if (egutegia == null) return List.of();
         return aukerak.stream()
                 .filter(aukera -> moduloaId == null || moduloaId.equals(aukera.id()))
-                .map(aukera -> asistentziaModulua(aukera, egutegia, hilabetea))
+                .map(aukera -> asistentziaModulua(
+                        aukera, egutegia, hilabetea, moduloaId != null))
                 .toList();
     }
 
     private AsistentziaModulua asistentziaModulua(EthaziKoadernoaService.ModuluAukera aukera,
-            Egutegia egutegia, YearMonth hilabetea) {
+            Egutegia egutegia, YearMonth hilabetea, boolean egunGuztietan) {
         Koadernoa koadernoa = koadernoaRepository.findByModuloaIdInAktiboIkasturtea(aukera.id())
                 .stream().findFirst().orElse(null);
         if (koadernoa == null) return new AsistentziaModulua(aukera.id(), aukera.etiketa(), Set.of(), Set.of());
+
+        if (egunGuztietan) {
+            Set<LocalDate> egunak = hilabetea.atDay(1).datesUntil(hilabetea.atEndOfMonth().plusDays(1))
+                    .filter(d -> d.getDayOfWeek() != DayOfWeek.SATURDAY
+                            && d.getDayOfWeek() != DayOfWeek.SUNDAY)
+                    .collect(Collectors.toSet());
+            Set<LocalDate> irekita = saioaRepository
+                    .findByKoadernoaIdAndDataBetweenOrderByDataAscHasieraSlotAsc(
+                            koadernoa.getId(), hilabetea.atDay(1), hilabetea.atEndOfMonth()).stream()
+                    .map(s -> s.getData()).collect(Collectors.toSet());
+            return new AsistentziaModulua(aukera.id(), aukera.etiketa(), egunak, irekita);
+        }
 
         NavigableMap<LocalDate, Set<Astegunak>> astegunakDatarenArabera = new TreeMap<>();
         LocalDate ikasturteHasiera = egutegia == null ? hilabetea.atDay(1) : egutegia.getHasieraData();
@@ -216,10 +313,11 @@ public class EthaziDenboralizazioaService {
         boolean orokorra = jarduera.getMota() == KronogramaJardueraMota.KOMUNA;
         Moduloa moduloa = jarduera.getModuloa();
         String badgea = orokorra ? "Orokorra" : moduloEtiketa(moduloa);
+        boolean mugigarria = !orokorra;
         return new EgunekoJarduera(jarduera.getId(), jarduera.getErronka().getId(),
                 jarduera.getErronkaIzena(), jarduera.getIzenburua(),
                 jarduera.getDeskribapena(), badgea, orokorra, jarduera.getData(),
-                jarduera.getOrduak());
+                jarduera.getOrduak(), true, mugigarria, jarduera.getOharrak());
     }
 
     private String moduloEtiketa(Moduloa moduloa) {
@@ -228,9 +326,17 @@ public class EthaziDenboralizazioaService {
                 ? moduloa.getIzena() : moduloa.getKodea();
     }
 
+    private String hutsikNull(String value) {
+        return value == null || value.isBlank() ? null : value.strip();
+    }
+
     public record EgunekoJarduera(Long id, Long erronkaId, String erronka, String izenburua,
             String deskribapena, String badgea, boolean orokorra,
-            LocalDate data, BigDecimal orduak) {}
+            LocalDate data, BigDecimal orduak, boolean editagarria, boolean mugigarria,
+            String oharrak) {}
+    public record JardueraXehetasuna(Long id, String izenburua, String deskribapena,
+            String oharrak, BigDecimal orduak, LocalDate data, boolean orokorra,
+            boolean edukiEditagarria) {}
     public record AsistentziaAukera(Long moduloaId, String etiketa, boolean irekita) {}
     public record Eguna(LocalDate data, boolean hilabeteAktibokoa, String klasea,
             List<EgunekoJarduera> jarduerak, List<AsistentziaAukera> asistentziak) {}

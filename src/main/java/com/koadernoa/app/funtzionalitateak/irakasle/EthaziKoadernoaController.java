@@ -1,5 +1,6 @@
 package com.koadernoa.app.funtzionalitateak.irakasle;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
@@ -224,6 +225,64 @@ public class EthaziKoadernoaController {
                 + (hilabetea == null ? "" : "&itzuliEthaziHilabetea=" + hilabetea)
                 + "&itzuliEthaziModuloaId=" + moduloaId;
         return "redirect:/irakasle/asistentzia?data=" + data + itzulera;
+    }
+
+    @GetMapping("/denboralizazioa/jarduerak/{jardueraId}")
+    public ResponseEntity<?> denboralizazioJarduera(Authentication auth,
+            @SessionAttribute(name = "ethaziKoadernoAktiboa", required = false) EthaziKoadernoa sessionKoadernoa,
+            @PathVariable Long jardueraId) {
+        EthaziKoadernoa koadernoa = lortuBaimendutakoKoadernoaApi(sessionKoadernoa, auth);
+        if (koadernoa == null) return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("error", "Ez duzu Ethazi koaderno honetarako sarbiderik."));
+        try {
+            Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+            return ResponseEntity.ok(ethaziDenboralizazioaService
+                    .lortuJarduera(koadernoa, irakaslea, jardueraId));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
+        } catch (AccessDeniedException ex) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", ex.getMessage()));
+        }
+    }
+
+    @PostMapping("/denboralizazioa/jarduerak/{jardueraId}")
+    public ResponseEntity<?> denboralizazioJardueraGorde(Authentication auth,
+            @SessionAttribute(name = "ethaziKoadernoAktiboa", required = false) EthaziKoadernoa sessionKoadernoa,
+            @PathVariable Long jardueraId, @RequestParam String izenburua,
+            @RequestParam(required = false) String deskribapena,
+            @RequestParam(required = false) BigDecimal orduak,
+            @RequestParam(required = false) String oharrak) {
+        EthaziKoadernoa koadernoa = lortuBaimendutakoKoadernoaApi(sessionKoadernoa, auth);
+        if (koadernoa == null) return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("error", "Ez duzu Ethazi koaderno honetarako sarbiderik."));
+        try {
+            Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+            ethaziDenboralizazioaService.eguneratuJarduera(
+                    koadernoa, irakaslea, jardueraId, izenburua, deskribapena, orduak, oharrak);
+            return ResponseEntity.ok(Map.of("ok", true));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+        } catch (AccessDeniedException ex) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", ex.getMessage()));
+        }
+    }
+
+    @PostMapping("/denboralizazioa/jarduerak/{jardueraId}/mugitu")
+    public ResponseEntity<?> denboralizazioJardueraMugitu(Authentication auth,
+            @SessionAttribute(name = "ethaziKoadernoAktiboa", required = false) EthaziKoadernoa sessionKoadernoa,
+            @PathVariable Long jardueraId, @RequestParam LocalDate data) {
+        EthaziKoadernoa koadernoa = lortuBaimendutakoKoadernoaApi(sessionKoadernoa, auth);
+        if (koadernoa == null) return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("error", "Ez duzu Ethazi koaderno honetarako sarbiderik."));
+        try {
+            Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+            ethaziDenboralizazioaService.mugituJarduera(koadernoa, irakaslea, jardueraId, data);
+            return ResponseEntity.ok(Map.of("ok", true));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+        } catch (AccessDeniedException ex) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", ex.getMessage()));
+        }
     }
 
     @GetMapping("/jarraipena")
