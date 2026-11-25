@@ -68,12 +68,17 @@ public class JokabideDesegokiaController {
     public ResponseEntity<?> sortu(@SessionAttribute(value="koadernoAktiboa", required=false) Koadernoa koadernoa,
         @RequestParam Long ikasleaId, @RequestParam @DateTimeFormat(iso=DateTimeFormat.ISO.DATE) LocalDate data,
         @RequestParam Long portaeraArrazoiaId, @RequestParam Long neurriZuzentzaileaId,
-        @RequestParam String deskribapenZehatza,
-        @RequestParam(required = false) String aplikatutakoNeurria, Authentication auth) {
+        @RequestParam(required = false) String deskribapenZehatza,
+        @RequestParam(required = false) String deskribapenZehatzaEs,
+        @RequestParam(required = false) String aplikatutakoNeurria,
+        @RequestParam(required = false) String aplikatutakoNeurriaEs, Authentication auth) {
         JokabideDesegokiaPdfService.SortutakoPdfa pdf=null;
         try {
-            balidatuTestuLuzera(deskribapenZehatza, true);
+            balidatuTestuLuzera(deskribapenZehatza, false);
+            balidatuTestuLuzera(deskribapenZehatzaEs, false);
+            balidatuDeskribapenak(deskribapenZehatza, deskribapenZehatzaEs);
             balidatuTestuLuzera(aplikatutakoNeurria, false);
+            balidatuTestuLuzera(aplikatutakoNeurriaEs, false);
             var t=testuinguruService.egiaztatu(koadernoa, ikasleaId, auth);
             if (repository.findFirstByIkasleaIdAndKoadernoaIdAndDataOrderByCreatedAtDesc(
                     ikasleaId, koadernoa.getId(), data).isPresent()) {
@@ -82,7 +87,7 @@ public class JokabideDesegokiaController {
             var arrazoia=arrazoiRepository.findById(portaeraArrazoiaId).filter(a->a.isAktibo()).orElseThrow(()->new IllegalArgumentException("Portaera arrazoia ez da baliozkoa."));
             var neurria=neurriRepository.findById(neurriZuzentzaileaId).filter(n->n.isAktibo()).orElseThrow(()->new IllegalArgumentException("Neurri zuzentzailea ez da baliozkoa."));
             JokabideDesegokia j=new JokabideDesegokia(); j.setIkaslea(t.matrikula().getIkaslea()); j.setKoadernoa(t.matrikula().getKoadernoa()); j.setIrakaslea(t.irakaslea());
-            j.setModuloa(t.matrikula().getKoadernoa().getModuloa()); j.setData(data); j.setPortaeraArrazoia(arrazoia); j.setNeurriZuzentzailea(neurria); j.setDeskribapenZehatza(deskribapenZehatza.trim()); j.setAplikatutakoNeurria(garbituAukerakoa(aplikatutakoNeurria));
+            j.setModuloa(t.matrikula().getKoadernoa().getModuloa()); j.setData(data); j.setPortaeraArrazoia(arrazoia); j.setNeurriZuzentzailea(neurria); j.setDeskribapenZehatza(garbituAukerakoa(deskribapenZehatza)); j.setDeskribapenZehatzaEs(garbituAukerakoa(deskribapenZehatzaEs)); j.setAplikatutakoNeurria(garbituAukerakoa(aplikatutakoNeurria)); j.setAplikatutakoNeurriaEs(garbituAukerakoa(aplikatutakoNeurriaEs));
             pdf=pdfService.sortu(j); j.setPdfPath(pdf.path()); j.setPdfFilename(pdf.filename()); jokabideDesegokiaService.sortu(j);
             return ResponseEntity.ok(Map.of("ok",true,"id",j.getId(),"pdfUrl","/irakasle/jokabide-desegokia/"+j.getId()+"/pdf","mezua","Jokabide desegokiaren ohartarazpena sortu da."));
         } catch (SecurityException e) { if(pdf!=null)pdfService.ezabatuIsilean(pdf.path()); return errorea(HttpStatus.FORBIDDEN,e); }
@@ -100,20 +105,27 @@ public class JokabideDesegokiaController {
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data,
         @RequestParam Long portaeraArrazoiaId,
         @RequestParam Long neurriZuzentzaileaId,
-        @RequestParam String deskribapenZehatza,
+        @RequestParam(required = false) String deskribapenZehatza,
+        @RequestParam(required = false) String deskribapenZehatzaEs,
         @RequestParam(required = false) String aplikatutakoNeurria,
+        @RequestParam(required = false) String aplikatutakoNeurriaEs,
         Authentication auth) {
         JokabideDesegokiaPdfService.SortutakoPdfa pdfBerria = null;
         JokabideDesegokia j = null;
         PortaeraArrazoia aurrekoArrazoia = null;
         NeurriZuzentzailea aurrekoNeurria = null;
         String aurrekoDeskribapena = null;
+        String aurrekoDeskribapenaEs = null;
         String aurrekoAplikatutakoNeurria = null;
+        String aurrekoAplikatutakoNeurriaEs = null;
         String aurrekoPdfPath = null;
         String aurrekoPdfFilename = null;
         try {
-            balidatuTestuLuzera(deskribapenZehatza, true);
+            balidatuTestuLuzera(deskribapenZehatza, false);
+            balidatuTestuLuzera(deskribapenZehatzaEs, false);
+            balidatuDeskribapenak(deskribapenZehatza, deskribapenZehatzaEs);
             balidatuTestuLuzera(aplikatutakoNeurria, false);
+            balidatuTestuLuzera(aplikatutakoNeurriaEs, false);
             testuinguruService.egiaztatu(koadernoa, ikasleaId, auth);
             j = repository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Jokabide desegokia ez da aurkitu."));
@@ -134,14 +146,18 @@ public class JokabideDesegokiaController {
             aurrekoArrazoia = j.getPortaeraArrazoia();
             aurrekoNeurria = j.getNeurriZuzentzailea();
             aurrekoDeskribapena = j.getDeskribapenZehatza();
+            aurrekoDeskribapenaEs = j.getDeskribapenZehatzaEs();
             aurrekoAplikatutakoNeurria = j.getAplikatutakoNeurria();
+            aurrekoAplikatutakoNeurriaEs = j.getAplikatutakoNeurriaEs();
             aurrekoPdfPath = j.getPdfPath();
             aurrekoPdfFilename = j.getPdfFilename();
 
             j.setPortaeraArrazoia(arrazoia);
             j.setNeurriZuzentzailea(neurria);
-            j.setDeskribapenZehatza(deskribapenZehatza.trim());
+            j.setDeskribapenZehatza(garbituAukerakoa(deskribapenZehatza));
+            j.setDeskribapenZehatzaEs(garbituAukerakoa(deskribapenZehatzaEs));
             j.setAplikatutakoNeurria(garbituAukerakoa(aplikatutakoNeurria));
+            j.setAplikatutakoNeurriaEs(garbituAukerakoa(aplikatutakoNeurriaEs));
             pdfBerria = pdfService.sortu(j);
             j.setPdfPath(pdfBerria.path());
             j.setPdfFilename(pdfBerria.filename());
@@ -154,15 +170,15 @@ public class JokabideDesegokiaController {
                 "mezua", "Jokabide desegokiaren ohartarazpena eguneratu da."
             ));
         } catch (SecurityException e) {
-            leheneratu(j, aurrekoArrazoia, aurrekoNeurria, aurrekoDeskribapena, aurrekoAplikatutakoNeurria, aurrekoPdfPath, aurrekoPdfFilename);
+            leheneratu(j, aurrekoArrazoia, aurrekoNeurria, aurrekoDeskribapena, aurrekoDeskribapenaEs, aurrekoAplikatutakoNeurria, aurrekoAplikatutakoNeurriaEs, aurrekoPdfPath, aurrekoPdfFilename);
             if (pdfBerria != null) pdfService.ezabatuIsilean(pdfBerria.path());
             return errorea(HttpStatus.FORBIDDEN, e);
         } catch (IllegalArgumentException e) {
-            leheneratu(j, aurrekoArrazoia, aurrekoNeurria, aurrekoDeskribapena, aurrekoAplikatutakoNeurria, aurrekoPdfPath, aurrekoPdfFilename);
+            leheneratu(j, aurrekoArrazoia, aurrekoNeurria, aurrekoDeskribapena, aurrekoDeskribapenaEs, aurrekoAplikatutakoNeurria, aurrekoAplikatutakoNeurriaEs, aurrekoPdfPath, aurrekoPdfFilename);
             if (pdfBerria != null) pdfService.ezabatuIsilean(pdfBerria.path());
             return errorea(HttpStatus.BAD_REQUEST, e);
         } catch (Exception e) {
-            leheneratu(j, aurrekoArrazoia, aurrekoNeurria, aurrekoDeskribapena, aurrekoAplikatutakoNeurria, aurrekoPdfPath, aurrekoPdfFilename);
+            leheneratu(j, aurrekoArrazoia, aurrekoNeurria, aurrekoDeskribapena, aurrekoDeskribapenaEs, aurrekoAplikatutakoNeurria, aurrekoAplikatutakoNeurriaEs, aurrekoPdfPath, aurrekoPdfFilename);
             if (pdfBerria != null) pdfService.ezabatuIsilean(pdfBerria.path());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("ok", false, "errorea", "Ezin izan da ohartarazpena eta PDFa eguneratu."));
@@ -205,7 +221,9 @@ public class JokabideDesegokiaController {
         dto.put("portaeraArrazoiaId", j.getPortaeraArrazoia().getId());
         dto.put("neurriZuzentzaileaId", j.getNeurriZuzentzailea().getId());
         dto.put("deskribapenZehatza", j.getDeskribapenZehatza());
+        dto.put("deskribapenZehatzaEs", j.getDeskribapenZehatzaEs());
         dto.put("aplikatutakoNeurria", j.getAplikatutakoNeurria());
+        dto.put("aplikatutakoNeurriaEs", j.getAplikatutakoNeurriaEs());
         dto.put("ezabatuDaiteke", !j.isJasota());
         dto.put("pdfUrl", "/irakasle/jokabide-desegokia/" + j.getId() + "/pdf");
         return dto;
@@ -225,14 +243,18 @@ public class JokabideDesegokiaController {
         PortaeraArrazoia arrazoia,
         NeurriZuzentzailea neurria,
         String deskribapena,
+        String deskribapenaEs,
         String aplikatutakoNeurria,
+        String aplikatutakoNeurriaEs,
         String pdfPath,
         String pdfFilename) {
         if (j == null || arrazoia == null || neurria == null) return;
         j.setPortaeraArrazoia(arrazoia);
         j.setNeurriZuzentzailea(neurria);
         j.setDeskribapenZehatza(deskribapena);
+        j.setDeskribapenZehatzaEs(deskribapenaEs);
         j.setAplikatutakoNeurria(aplikatutakoNeurria);
+        j.setAplikatutakoNeurriaEs(aplikatutakoNeurriaEs);
         j.setPdfPath(pdfPath);
         j.setPdfFilename(pdfFilename);
     }
@@ -247,6 +269,12 @@ public class JokabideDesegokiaController {
         }
         if (testua != null && testua.trim().length() > 10000) {
             throw new IllegalArgumentException("Testua luzeegia da (gehienez 10.000 karaktere).");
+        }
+    }
+
+    private void balidatuDeskribapenak(String euskaraz, String gaztelaniaz) {
+        if ((euskaraz == null || euskaraz.isBlank()) && (gaztelaniaz == null || gaztelaniaz.isBlank())) {
+            throw new IllegalArgumentException("Gutxienez hizkuntza bateko deskribapen zehatza bete behar da.");
         }
     }
 

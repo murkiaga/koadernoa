@@ -142,7 +142,8 @@ class JokabideDesegokiakKudeatzaileControllerTest {
 
         String view = controller.sortu(9L, 12L, "Ikaslea", "Irakaslea",
                 LocalDate.of(2026, 11, 2), 15L, 16L,
-                "  Pasiloan gertatutakoa  ", "  Hausnarketa idatzia  ",
+                null, "  Lo ocurrido en el pasillo  ",
+                null, "  Reflexión escrita  ",
                 mock(Authentication.class), new ExtendedModelMap());
 
         assertThat(view).isEqualTo("redirect:/kudeatzaile/jokabide-desegokiak?sortuta=true");
@@ -153,8 +154,10 @@ class JokabideDesegokiakKudeatzaileControllerTest {
         assertThat(sortutakoa.getIkaslea()).isSameAs(ikaslea);
         assertThat(sortutakoa.getKoadernoa()).isSameAs(koadernoa);
         assertThat(sortutakoa.getModuloa()).isNull();
-        assertThat(sortutakoa.getDeskribapenZehatza()).isEqualTo("Pasiloan gertatutakoa");
-        assertThat(sortutakoa.getAplikatutakoNeurria()).isEqualTo("Hausnarketa idatzia");
+        assertThat(sortutakoa.getDeskribapenZehatza()).isNull();
+        assertThat(sortutakoa.getDeskribapenZehatzaEs()).isEqualTo("Lo ocurrido en el pasillo");
+        assertThat(sortutakoa.getAplikatutakoNeurria()).isNull();
+        assertThat(sortutakoa.getAplikatutakoNeurriaEs()).isEqualTo("Reflexión escrita");
         assertThat(sortutakoa.getPdfPath()).isEqualTo("/tmp/proba.pdf");
     }
 }

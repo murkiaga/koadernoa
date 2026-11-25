@@ -108,16 +108,21 @@ public class JokabideDesegokiakKudeatzaileController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate data,
             @RequestParam Long portaeraArrazoiaId,
             @RequestParam Long neurriZuzentzaileaId,
-            @RequestParam String deskribapenZehatza,
+            @RequestParam(required = false) String deskribapenZehatza,
+            @RequestParam(required = false) String deskribapenZehatzaEs,
             @RequestParam(required = false) String aplikatutakoNeurria,
+            @RequestParam(required = false) String aplikatutakoNeurriaEs,
             Authentication auth,
             Model model) throws IOException {
         JokabideDesegokiaPdfService.SortutakoPdfa pdfa = null;
         try {
             if (ikasleaId == null) throw new IllegalArgumentException("Aukeratu ikasle bat bilaketako emaitzetatik.");
             if (irakasleaId == null) throw new IllegalArgumentException("Aukeratu irakasle bat bilaketako emaitzetatik.");
-            String deskribapena = beharrezkoTestua(deskribapenZehatza, "Deskribapen zehatza beharrezkoa da.");
+            String deskribapena = aukerakoTestua(deskribapenZehatza);
+            String deskribapenaEs = aukerakoTestua(deskribapenZehatzaEs);
+            balidatuDeskribapenak(deskribapena, deskribapenaEs);
             String neurriaTestua = aukerakoTestua(aplikatutakoNeurria);
+            String neurriaTestuaEs = aukerakoTestua(aplikatutakoNeurriaEs);
             var matrikula = matrikulaRepository.findMatrikulatuakAktiboIkasturteanByIkaslea(ikasleaId).stream()
                     .findFirst()
                     .orElseThrow(() -> new IllegalArgumentException("Ikasleak ez du matrikula aktiborik ikasturte honetan."));
@@ -142,8 +147,10 @@ public class JokabideDesegokiakKudeatzaileController {
             jokabidea.setData(data);
             jokabidea.setPortaeraArrazoia(arrazoia);
             jokabidea.setDeskribapenZehatza(deskribapena);
+            jokabidea.setDeskribapenZehatzaEs(deskribapenaEs);
             jokabidea.setNeurriZuzentzailea(neurriZuzentzailea);
             jokabidea.setAplikatutakoNeurria(neurriaTestua);
+            jokabidea.setAplikatutakoNeurriaEs(neurriaTestuaEs);
             pdfa = pdfService.sortu(jokabidea);
             jokabidea.setPdfPath(pdfa.path());
             jokabidea.setPdfFilename(pdfa.filename());
@@ -165,7 +172,9 @@ public class JokabideDesegokiakKudeatzaileController {
             model.addAttribute("portaeraArrazoiaId", portaeraArrazoiaId);
             model.addAttribute("neurriZuzentzaileaId", neurriZuzentzaileaId);
             model.addAttribute("deskribapenZehatza", deskribapenZehatza);
+            model.addAttribute("deskribapenZehatzaEs", deskribapenZehatzaEs);
             model.addAttribute("aplikatutakoNeurria", aplikatutakoNeurria);
+            model.addAttribute("aplikatutakoNeurriaEs", aplikatutakoNeurriaEs);
             return "kudeatzaile/jokabide-desegokiak/berria";
         } catch (IOException e) {
             if (pdfa != null) pdfService.ezabatuIsilean(pdfa.path());
@@ -199,18 +208,17 @@ public class JokabideDesegokiakKudeatzaileController {
                 .toList();
     }
 
-    private String beharrezkoTestua(String testua, String errorea) {
-        if (testua == null || testua.isBlank()) throw new IllegalArgumentException(errorea);
-        String garbia = testua.trim();
-        if (garbia.length() > 10000) throw new IllegalArgumentException("Testua luzeegia da (gehienez 10.000 karaktere).");
-        return garbia;
-    }
-
     private String aukerakoTestua(String testua) {
         if (testua == null || testua.isBlank()) return null;
         String garbia = testua.trim();
         if (garbia.length() > 10000) throw new IllegalArgumentException("Testua luzeegia da (gehienez 10.000 karaktere).");
         return garbia;
+    }
+
+    private void balidatuDeskribapenak(String euskaraz, String gaztelaniaz) {
+        if (euskaraz == null && gaztelaniaz == null) {
+            throw new IllegalArgumentException("Gutxienez hizkuntza bateko deskribapen zehatza bete behar da.");
+        }
     }
 
     private LocalDate ikasturtekoIrailarenLehena(String ikasturteIzena) {

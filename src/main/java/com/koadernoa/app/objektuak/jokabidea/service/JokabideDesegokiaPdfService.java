@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class JokabideDesegokiaPdfService {
+    static final String ITZULPENA_FALTA = "[Gaztelaniazko itzulpena osatu gabe / Traducción al castellano pendiente]";
     private final TemplateEngine templateEngine;
     private final JokabideDesegokiaTxantiloiService txantiloiService;
     private final AplikazioAukeraService aplikazioAukeraService;
@@ -29,15 +30,25 @@ public class JokabideDesegokiaPdfService {
         Path target = dir.resolve(filename);
         Context c = new Context(new Locale("eu", "ES"));
         String herria = herriaTestua();
+        boolean euskarazBadago = j.getDeskribapenZehatza() != null && !j.getDeskribapenZehatza().isBlank();
+        boolean gaztelaniazBadago = j.getDeskribapenZehatzaEs() != null && !j.getDeskribapenZehatzaEs().isBlank();
+        c.setVariable("euskarazBadago", euskarazBadago);
+        c.setVariable("gaztelaniazBadago", gaztelaniazBadago);
         c.setVariable("ikaslea", ikasleIzena(j));
         c.setVariable("maila", maila(j));
         c.setVariable("portaeraArrazoia", j.getPortaeraArrazoia().getKodea() + " - " + j.getPortaeraArrazoia().getTestua());
+        c.setVariable("portaeraArrazoiaEs", testuElebiduna(j.getPortaeraArrazoia().getKodea(), j.getPortaeraArrazoia().getTestuaEs()));
         c.setVariable("deskribapenZehatza", j.getDeskribapenZehatza());
+        c.setVariable("deskribapenZehatzaEs", faltaBadaAdierazi(j.getDeskribapenZehatzaEs()));
         c.setVariable("neurriZuzentzailea", j.getNeurriZuzentzailea().getKodea() + " - " + j.getNeurriZuzentzailea().getTestua());
+        c.setVariable("neurriZuzentzaileaEs", testuElebiduna(j.getNeurriZuzentzailea().getKodea(), j.getNeurriZuzentzailea().getTestuaEs()));
         c.setVariable("aplikatutakoNeurria", j.getAplikatutakoNeurria() == null ? "" : j.getAplikatutakoNeurria());
+        c.setVariable("aplikatutakoNeurriaEs", j.getAplikatutakoNeurriaEs() == null ? "" : j.getAplikatutakoNeurriaEs());
         c.setVariable("herria", herria);
         c.setVariable("dataTestua", dataTestua(j));
+        c.setVariable("dataTestuaEs", dataTestuaEs(j));
         c.setVariable("herriaEtaData", herriaEtaData(j, herria));
+        c.setVariable("herriaEtaDataEs", herriaEtaDataEs(j, herria));
         c.setVariable("irakaslea", j.getIrakaslea().getIzena());
         String html = errendatuHtml(c);
         try (OutputStream os = Files.newOutputStream(target, StandardOpenOption.CREATE_NEW)) {
@@ -54,7 +65,7 @@ public class JokabideDesegokiaPdfService {
     }
 
     String ordezkatuPlaceholderak(String html, Context context) {
-        String emaitza = html;
+        String emaitza = prozesatuBaldintzak(html, context);
         for (String izena : context.getVariableNames()) {
             Object balioa = context.getVariable(izena);
             String balioEscaped = escapeHtml(balioa == null ? "" : balioa.toString());
@@ -80,7 +91,47 @@ public class JokabideDesegokiaPdfService {
         return "portaeraArrazoia".equals(izena)
                 || "neurriZuzentzailea".equals(izena)
                 || "deskribapenZehatza".equals(izena)
-                || "aplikatutakoNeurria".equals(izena);
+                || "aplikatutakoNeurria".equals(izena)
+                || "portaeraArrazoiaEs".equals(izena)
+                || "neurriZuzentzaileaEs".equals(izena)
+                || "deskribapenZehatzaEs".equals(izena)
+                || "aplikatutakoNeurriaEs".equals(izena);
+    }
+
+    private String prozesatuBaldintzak(String html, Context context) {
+        String emaitza = html;
+        for (String izena : context.getVariableNames()) {
+            Object balioa = context.getVariable(izena);
+            boolean hutsa = balioa == null || balioa.toString().isBlank() || Boolean.FALSE.equals(balioa);
+            String quotedName = java.util.regex.Pattern.quote(izena);
+            java.util.regex.Pattern elementua = java.util.regex.Pattern.compile(
+                    "<([A-Za-z][A-Za-z0-9]*)\\b([^>]*?)\\s+th:if=([\"'])[^\"']*\\$\\{[^}]*\\b" + quotedName
+                            + "\\b[^}]*\\}[^\"']*\\3([^>]*)>(.*?)</\\1>",
+                    java.util.regex.Pattern.DOTALL);
+            java.util.regex.Matcher matcher = elementua.matcher(emaitza);
+            StringBuffer sb = new StringBuffer();
+            while (matcher.find()) {
+                String ordezkoa = hutsa ? "" : "<" + matcher.group(1) + matcher.group(2) + matcher.group(4)
+                        + ">" + matcher.group(5) + "</" + matcher.group(1) + ">";
+                matcher.appendReplacement(sb, java.util.regex.Matcher.quoteReplacement(ordezkoa));
+            }
+            matcher.appendTail(sb);
+            emaitza = sb.toString();
+
+            java.util.regex.Pattern klaseBaldintza = java.util.regex.Pattern.compile(
+                    "th:class=([\"'])\\$\\{" + quotedName
+                            + "\\}\\s*\\?\\s*'([^']*)'\\s*:\\s*'([^']*)'\\1");
+            java.util.regex.Matcher klaseMatcher = klaseBaldintza.matcher(emaitza);
+            sb = new StringBuffer();
+            while (klaseMatcher.find()) {
+                String klasea = hutsa ? klaseMatcher.group(3) : klaseMatcher.group(2);
+                klaseMatcher.appendReplacement(sb,
+                        java.util.regex.Matcher.quoteReplacement("class=\"" + klasea + "\""));
+            }
+            klaseMatcher.appendTail(sb);
+            emaitza = sb.toString();
+        }
+        return emaitza;
     }
 
     private String escapeHtml(String value) {
@@ -109,6 +160,10 @@ public class JokabideDesegokiaPdfService {
         return herria + "(e)n, " + dataTestua(j);
     }
 
+    private String herriaEtaDataEs(JokabideDesegokia j, String herria) {
+        return "En " + herria + ", a " + dataTestuaEs(j);
+    }
+
     String herriaTestua() {
         String herria = aplikazioAukeraService.get(AplikazioAukeraService.IKASTETXEAREN_HERRIA);
         return herria == null || herria.isBlank() ? "………….…………." : herria.trim();
@@ -120,6 +175,21 @@ public class JokabideDesegokiaPdfService {
         var data = j.getData();
         return data.getYear() + "(e)ko " + hilabeteak[data.getMonthValue() - 1]
                 + "aren " + data.getDayOfMonth() + "(e)(a)n";
+    }
+
+    private String dataTestuaEs(JokabideDesegokia j) {
+        String[] hilabeteak = { "enero", "febrero", "marzo", "abril", "mayo", "junio",
+                "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre" };
+        var data = j.getData();
+        return data.getDayOfMonth() + " de " + hilabeteak[data.getMonthValue() - 1] + " de " + data.getYear();
+    }
+
+    private String testuElebiduna(String kodea, String testuaEs) {
+        return kodea + " - " + faltaBadaAdierazi(testuaEs);
+    }
+
+    private String faltaBadaAdierazi(String testua) {
+        return testua == null || testua.isBlank() ? ITZULPENA_FALTA : testua;
     }
     public record SortutakoPdfa(String path, String filename) {}
 }

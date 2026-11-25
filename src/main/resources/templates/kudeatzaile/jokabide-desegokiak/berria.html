@@ -12,6 +12,7 @@
     .jok-form select,.jok-form input,.jok-form textarea { width:100%; box-sizing:border-box; padding:9px 10px; border:1px solid #cbd5e1; border-radius:7px; background:#fff; font:inherit; }
     .jok-form textarea { resize:vertical; }
     .jok-form .aukerakoa { color:#64748b; font-size:.86rem; font-weight:400; }
+    .jok-form .hizkuntza-bikotea { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
     .jok-form-ekintzak { display:flex; justify-content:flex-end; gap:8px; }
     .autocomplete-wrap { position:relative; }
     .autocomplete-emaitzak { display:none; position:absolute; z-index:20; left:0; right:0; top:100%; margin-top:3px; max-height:280px; overflow:auto; background:#fff; border:1px solid #cbd5e1; border-radius:7px; box-shadow:0 10px 24px rgba(15,23,42,.12); }
@@ -19,6 +20,7 @@
     .autocomplete-aukera { width:100%; padding:9px 10px; border:0; border-bottom:1px solid #f1f5f9; background:#fff; text-align:left; cursor:pointer; }
     .autocomplete-aukera:hover,.autocomplete-aukera:focus { background:#eff6ff; outline:none; }
     .autocomplete-meta { display:block; margin-top:2px; color:#64748b; font-size:.84rem; }
+    @media (max-width: 700px) { .jok-form .hizkuntza-bikotea { grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
@@ -48,11 +50,17 @@
     <label>Portaera arrazoia
       <select name="portaeraArrazoiaId" required><option th:each="a : ${portaeraArrazoiak}" th:value="${a.id}" th:selected="${a.id == portaeraArrazoiaId or (portaeraArrazoiaId == null and a.id == portaeraArrazoiaDefektuzkoaId)}" th:text="${a.kodea + ' - ' + a.testua}"></option></select>
     </label>
-    <label>Deskribapen zehatza<textarea name="deskribapenZehatza" rows="7" maxlength="10000" required placeholder="Eguna, ordua, lekua eta gertatutakoa..." th:text="${deskribapenZehatza}"></textarea></label>
+    <div class="hizkuntza-bikotea">
+      <label>Deskribapen zehatza (EU) <span class="aukerakoa">Gutxienez hizkuntza bat</span><textarea name="deskribapenZehatza" rows="7" maxlength="10000" placeholder="Eguna, ordua, lekua eta gertatutakoa..." th:text="${deskribapenZehatza}"></textarea></label>
+      <label>Descripción detallada (ES) <span class="aukerakoa">Al menos un idioma</span><textarea name="deskribapenZehatzaEs" rows="7" maxlength="10000" placeholder="Día, hora, lugar y hechos..." th:text="${deskribapenZehatzaEs}"></textarea></label>
+    </div>
     <label>Neurri zuzentzailea
       <select name="neurriZuzentzaileaId" required><option th:each="n : ${neurriZuzentzaileak}" th:value="${n.id}" th:selected="${n.id == neurriZuzentzaileaId or (neurriZuzentzaileaId == null and n.id == neurriZuzentzaileaDefektuzkoaId)}" th:text="${n.kodea + ' - ' + n.testua}"></option></select>
     </label>
-    <label>Aplikatutako neurria <span class="aukerakoa">Aukerakoa</span><textarea name="aplikatutakoNeurria" rows="5" maxlength="10000" placeholder="Zehaztu ikasleari aplikatuko zaion neurria..." th:text="${aplikatutakoNeurria}"></textarea></label>
+    <div class="hizkuntza-bikotea">
+      <label>Aplikatutako neurria (EU) <span class="aukerakoa">Aukerakoa</span><textarea name="aplikatutakoNeurria" rows="5" maxlength="10000" placeholder="Zehaztu ikasleari aplikatuko zaion neurria..." th:text="${aplikatutakoNeurria}"></textarea></label>
+      <label>Medida aplicada (ES) <span class="aukerakoa">Opcional</span><textarea name="aplikatutakoNeurriaEs" rows="5" maxlength="10000" placeholder="Detalle la medida aplicada al alumno o alumna..." th:text="${aplikatutakoNeurriaEs}"></textarea></label>
+    </div>
     <div class="jok-form-ekintzak"><a class="btn btn-secondary" th:href="@{/kudeatzaile/jokabide-desegokiak}">Utzi</a><button class="btn btn-primary" type="submit">Sortu eta PDFa prestatu</button></div>
   </form>
 </main>
@@ -135,9 +143,11 @@
   document.querySelector('.jok-form').addEventListener('submit', event => {
     const ikasleaId = document.getElementById('ikasleaId');
     const irakasleaId = document.getElementById('irakasleaId');
-    if (!ikasleaId.value || !irakasleaId.value) {
+    const deskribapenaEu = document.querySelector('[name="deskribapenZehatza"]').value.trim();
+    const deskribapenaEs = document.querySelector('[name="deskribapenZehatzaEs"]').value.trim();
+    if (!ikasleaId.value || !irakasleaId.value || (!deskribapenaEu && !deskribapenaEs)) {
       event.preventDefault();
-      alert(!ikasleaId.value ? 'Aukeratu ikasle bat bilaketako emaitzetatik.' : 'Aukeratu irakasle bat bilaketako emaitzetatik.');
+      alert(!ikasleaId.value ? 'Aukeratu ikasle bat bilaketako emaitzetatik.' : !irakasleaId.value ? 'Aukeratu irakasle bat bilaketako emaitzetatik.' : 'Gutxienez hizkuntza bateko deskribapen zehatza bete behar da.');
     }
   });
 })();

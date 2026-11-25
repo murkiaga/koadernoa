@@ -116,6 +116,17 @@ class JokabideDesegokiaControllerTest {
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
     }
 
+    @Test
+    void sortzeanGutxienezHizkuntzaBatekoDeskribapenaEskatzenDu() {
+        var response = controller.sortu(null, 9L, java.time.LocalDate.of(2026, 11, 25),
+                1L, 2L, " ", null, null, null, auth);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertTrue(((Map<?, ?>) response.getBody()).get("errorea").toString().contains("Gutxienez"));
+        verify(testuinguruService, never()).egiaztatu(org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.anyLong(), org.mockito.ArgumentMatchers.any());
+    }
+
     private Koadernoa koadernoa(Long id) {
         Koadernoa koadernoa = new Koadernoa();
         koadernoa.setId(id);

@@ -61,9 +61,11 @@
       line-height: 1.2;
       text-align: justify;
     }
+    .orrialde-berria { page-break-before: always; }
   </style>
 </head>
 <body>
+  <div th:if="${euskarazBadago}" lang="eu">
   <h1>IDATZIZKO OHARTARAZPENA, JOKABIDE DESEGOKIAGATIK (57.2. art.)</h1>
 
   <p class="datu-lerroa">Ikaslea: <span class="datu-balioa" th:text="${ikaslea}"></span></p>
@@ -99,6 +101,46 @@
     <p>Aitaren, amaren edo legezko tutorearen (adinduna bada, interesatuaren) izenpea</p>
     <p>Jaso den eguna: …………………………………………………</p>
     <p class="oharra">Oharra: Jakinarazpen hau helaraziko zaie interesatuei (guraso, legezko tutore edo, adinduna bada, ikasleari) ikastetxe honetako Antolakuntza eta Jarduera Araudiak edo Barne Araudiak zehazten dituen bideei jarraituz.</p>
+  </div>
+  </div>
+
+  <div th:if="${gaztelaniazBadago}" th:class="${euskarazBadago} ? 'orrialde-berria' : ''" lang="es">
+    <h1>APERCIBIMIENTO ESCRITO POR CONDUCTA INADECUADA (art. 57.2)</h1>
+
+    <p class="datu-lerroa">Alumno/a: <span class="datu-balioa" th:text="${ikaslea}"></span></p>
+    <p class="datu-lerroa">Curso: <span class="datu-balioa maila-balioa" th:text="${maila}"></span></p>
+
+    <p>Estimadas familias:</p>
+    <p class="lege-testua">
+      <strong>De acuerdo con el Decreto 201/2008, de 2 de diciembre, sobre derechos y deberes de los alumnos y alumnas de los centros docentes no universitarios de la Comunidad Autónoma del País Vasco</strong>
+      (BOPV de 16 de diciembre de 2008), debo informarles de la conducta de su hijo/a. En concreto:
+    </p>
+
+    <p class="aukera" th:text="${portaeraArrazoiaEs}">30.d - Conducta inadecuada.</p>
+    <div class="deskribapena" th:text="${deskribapenZehatzaEs}"></div>
+    <p class="deskribapen-azalpena">Descripción detallada de los hechos, actos y conductas que se le atribuyen: día, hora y lugar. El escrito debe corresponderse en su fundamento con las conductas recogidas en el Decreto, en el Reglamento de Organización y Funcionamiento o en el Reglamento de Régimen Interior.</p>
+
+    <p>Por ello, se le ha aplicado la siguiente <strong>medida correctora</strong>:</p>
+    <p class="aukera" th:text="${neurriZuzentzaileaEs}">34.a - Medida correctora.</p>
+    <div class="deskribapena" th:if="${aplikatutakoNeurriaEs != null and !#strings.isEmpty(aplikatutakoNeurriaEs)}" th:text="${aplikatutakoNeurriaEs}"></div>
+
+    <p class="amaierako-testua">Solicito su colaboración para evitar que vuelva a producirse esta conducta, perjudicial para su hijo/a y para el buen funcionamiento del centro, y les recuerdo que la reiteración de este tipo de conductas puede considerarse una <strong>conducta contraria a la convivencia en el centro docente</strong>, de acuerdo con el artículo 31.1.m).</p>
+    <p>Atentamente,</p>
+
+    <p class="lekua-data"><span th:text="${herriaEtaDataEs}">En …………., a …. de ………….. de 2….</span></p>
+    <div class="sinadura-blokea">
+      <p>Profesor/a: <span th:text="${irakaslea}">………………………………..</span></p>
+      <div class="sinadura-tartea"></div>
+      <p>Fdo.: ……………………………….</p>
+    </div>
+
+    <div class="jasota">
+      <p class="jasota-izenburua">He recibido la notificación:</p>
+      <p>Persona receptora: ……………………………………………………………………………………</p>
+      <p>Firma del padre, madre o representante legal (o de la persona interesada si es mayor de edad)</p>
+      <p>Fecha de recepción: …………………………………………………</p>
+      <p class="oharra">Nota: esta notificación se entregará a las personas interesadas (padres, madres, representantes legales o, si es mayor de edad, al alumno o alumna) siguiendo los cauces establecidos en el Reglamento de Organización y Funcionamiento o en el Reglamento de Régimen Interior de este centro.</p>
+    </div>
   </div>
 </body>
 </html>

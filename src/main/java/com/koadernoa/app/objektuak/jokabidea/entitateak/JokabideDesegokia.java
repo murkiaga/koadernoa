@@ -34,10 +34,14 @@ public class JokabideDesegokia {
     private PortaeraArrazoia portaeraArrazoia;
     @ManyToOne(optional = false) @JoinColumn(name = "neurri_zuzentzailea_id", nullable = false)
     private NeurriZuzentzailea neurriZuzentzailea;
-    @Column(nullable = false, length = 10000)
+    @Column(length = 10000)
     private String deskribapenZehatza;
     @Column(columnDefinition = "TEXT")
+    private String deskribapenZehatzaEs;
+    @Column(columnDefinition = "TEXT")
     private String aplikatutakoNeurria;
+    @Column(columnDefinition = "TEXT")
+    private String aplikatutakoNeurriaEs;
     @Column(length = 2000)
     private String pdfPath;
     @Column(length = 255)

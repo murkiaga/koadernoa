@@ -118,7 +118,9 @@
       beteSelect('portaeraArrazoia', formData.portaeraArrazoiak, jokabidea?.portaeraArrazoiaId || formData.portaeraArrazoiaDefektuzkoaId);
       beteSelect('neurriZuzentzailea', formData.neurriZuzentzaileak, jokabidea?.neurriZuzentzaileaId || formData.neurriZuzentzaileaDefektuzkoaId);
       document.getElementById('deskribapenZehatza').value = jokabidea?.deskribapenZehatza || '';
+      document.getElementById('deskribapenZehatzaEs').value = jokabidea?.deskribapenZehatzaEs || '';
       document.getElementById('aplikatutakoNeurria').value = jokabidea?.aplikatutakoNeurria || '';
+      document.getElementById('aplikatutakoNeurriaEs').value = jokabidea?.aplikatutakoNeurriaEs || '';
       document.getElementById('jokabideModalIzenburua').textContent = jokabidea ? 'Jokabide desegokia editatu' : 'Jokabide desegokiagatiko idatzizko ohartarazpena';
       document.getElementById('jokabideGordeBtn').textContent = jokabidea ? 'Aldaketak gorde eta PDFa berritu' : 'Sortu eta PDFa prestatu';
       document.getElementById('jokabideEzabatuBtn').style.display = jokabidea?.ezabatuDaiteke ? 'inline-flex' : 'none';
@@ -144,13 +146,23 @@
   };
 
   window.gordeJokabidea = async function () {
+    const deskribapenaEu = document.getElementById('deskribapenZehatza').value.trim();
+    const deskribapenaEs = document.getElementById('deskribapenZehatzaEs').value.trim();
+    const neurriaEu = document.getElementById('aplikatutakoNeurria').value.trim();
+    const neurriaEs = document.getElementById('aplikatutakoNeurriaEs').value.trim();
+    if (!deskribapenaEu && !deskribapenaEs) {
+      erakutsiErrorea('jokErrorea', 'Gutxienez hizkuntza bateko deskribapen zehatza bete behar da.');
+      return;
+    }
     const parametroak = new URLSearchParams({
       ikasleaId: unekoa.ikasleaId,
       data: unekoa.data,
       portaeraArrazoiaId: document.getElementById('portaeraArrazoia').value,
       neurriZuzentzaileaId: document.getElementById('neurriZuzentzailea').value,
-      deskribapenZehatza: document.getElementById('deskribapenZehatza').value,
-      aplikatutakoNeurria: document.getElementById('aplikatutakoNeurria').value
+      deskribapenZehatza: deskribapenaEu,
+      deskribapenZehatzaEs: deskribapenaEs,
+      aplikatutakoNeurria: neurriaEu,
+      aplikatutakoNeurriaEs: neurriaEs
     });
     const editatzen = Boolean(unekoJokabidea?.id);
     const url = editatzen ? `/irakasle/jokabide-desegokia/${unekoJokabidea.id}` : '/irakasle/jokabide-desegokia';
@@ -159,7 +171,9 @@
         portaeraArrazoiaId: Number(parametroak.get('portaeraArrazoiaId')),
         neurriZuzentzaileaId: Number(parametroak.get('neurriZuzentzaileaId')),
         deskribapenZehatza: parametroak.get('deskribapenZehatza'),
-        aplikatutakoNeurria: parametroak.get('aplikatutakoNeurria') };
+        deskribapenZehatzaEs: parametroak.get('deskribapenZehatzaEs'),
+        aplikatutakoNeurria: parametroak.get('aplikatutakoNeurria'),
+        aplikatutakoNeurriaEs: parametroak.get('aplikatutakoNeurriaEs') };
       eguneratuPopupJokabidea(unekoJokabidea);
       markatuAktibo('jokabidea', json.pdfUrl);
       itxiDenak();

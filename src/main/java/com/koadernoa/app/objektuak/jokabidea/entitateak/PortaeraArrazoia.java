@@ -15,6 +15,8 @@ public class PortaeraArrazoia {
     private String kodea;
     @Column(nullable = false, length = 2000)
     private String testua;
+    @Column(length = 2000)
+    private String testuaEs;
     @Column(nullable = false)
     private boolean aktibo = true;
     @Column(nullable = false)

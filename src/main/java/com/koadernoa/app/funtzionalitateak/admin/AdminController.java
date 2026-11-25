@@ -250,17 +250,25 @@ public class AdminController {
     public String editatuJokabideDesegokiaTxostena(Model model) throws IOException {
         model.addAttribute("htmlEdukia", jokabideDesegokiaTxantiloiService.irakurriUnekoa());
         model.addAttribute("pertsonalizatua", jokabideDesegokiaTxantiloiService.pertsonalizatuaBadago());
-        model.addAttribute("placeholderrak", java.util.List.of(
-                "ikaslea",
-                "maila",
-                "portaeraArrazoia",
-                "deskribapenZehatza",
-                "neurriZuzentzailea",
-                "aplikatutakoNeurria",
-                "herria",
-                "dataTestua",
-                "herriaEtaData",
-                "irakaslea"));
+        model.addAttribute("placeholderrak", java.util.Map.ofEntries(
+                java.util.Map.entry("ikaslea", "Ikaslearen izen-abizenak / Nombre del alumno o alumna"),
+                java.util.Map.entry("maila", "Maila eta taldea / Curso y grupo"),
+                java.util.Map.entry("portaeraArrazoia", "Portaeraren kodea eta euskarazko testua"),
+                java.util.Map.entry("portaeraArrazoiaEs", "Código y texto de la conducta en castellano"),
+                java.util.Map.entry("deskribapenZehatza", "Gertatutakoaren deskribapena euskaraz"),
+                java.util.Map.entry("deskribapenZehatzaEs", "Descripción de los hechos en castellano"),
+                java.util.Map.entry("neurriZuzentzailea", "Neurriaren kodea eta euskarazko testua"),
+                java.util.Map.entry("neurriZuzentzaileaEs", "Código y texto de la medida en castellano"),
+                java.util.Map.entry("aplikatutakoNeurria", "Neurriaren xehetasunak euskaraz (aukerakoa)"),
+                java.util.Map.entry("aplikatutakoNeurriaEs", "Detalles de la medida en castellano (opcional)"),
+                java.util.Map.entry("herria", "Ikastetxearen herria / Localidad"),
+                java.util.Map.entry("dataTestua", "Data euskaraz"),
+                java.util.Map.entry("dataTestuaEs", "Fecha en castellano"),
+                java.util.Map.entry("herriaEtaData", "Herria eta data euskaraz"),
+                java.util.Map.entry("herriaEtaDataEs", "Localidad y fecha en castellano"),
+                java.util.Map.entry("euskarazBadago", "Euskarazko orrialdea erakutsi behar den"),
+                java.util.Map.entry("gaztelaniazBadago", "Si debe mostrarse la página en castellano"),
+                java.util.Map.entry("irakaslea", "Irakaslearen izena / Nombre del profesor o profesora")));
         return "admin/txostenak/jokabide-desegokia-editatu";
     }
 

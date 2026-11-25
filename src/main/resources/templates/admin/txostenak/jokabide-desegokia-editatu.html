@@ -51,13 +51,15 @@
       <div>
         <strong>Hutsune/placeholder erabilgarriak</strong>
         <div class="placeholder-list" aria-label="Placeholderrak txertatzeko botoiak">
-          <button type="button" class="placeholder-btn" th:each="p : ${placeholderrak}" th:data-placeholder="${p}" th:text="${'${' + p + '}'}">${ikaslea}</button>
+          <button type="button" class="placeholder-btn" th:each="p : ${placeholderrak}" th:data-placeholder="${p.key}" th:text="${'${' + p.key + '}'}" th:title="${p.value}">${ikaslea}</button>
         </div>
+        <dl class="help-list"><th:block th:each="p : ${placeholderrak}"><dt><code th:text="${'${' + p.key + '}'}"></code></dt><dd th:text="${p.value}"></dd></th:block></dl>
         <ul class="help-list">
           <li>Klik eginda kurtsorearen lekuan txertatuko da.</li>
           <li>Adibidez: <code>${ikaslea}</code>, <code>${maila}</code>, <code>${dataTestua}</code>, <code>${irakaslea}</code>.</li>
           <li>Herria eskuz finkatzeko, idatzi adibidez: <code>Zornotzan, ${dataTestua}</code>.</li>
           <li>HTML aurreratua erabil dezakezu, baina scriptak ez dira behar PDF txostenerako.</li>
+          <li th:if="${pertsonalizatua}">Txantiloi pertsonalizatua ez da automatikoki aldatu. Bertsio elebiduna nahi baduzu, egokitu hemen edo erabili berrezartzeko aukera.</li>
         </ul>
       </div>
 
@@ -97,12 +99,20 @@
     ikaslea: 'Ane Ikaslea Etxeberria',
     maila: '1. maila - A taldea',
     portaeraArrazoia: '30.d - Irakasleek edo agintari akademikoek agindutakoa ez betetzea.',
+    portaeraArrazoiaEs: '30.d - La simple desobediencia a los profesores, profesoras o autoridades académicas.',
     deskribapenZehatza: '2026-05-12an gelan gertatutakoaren deskribapen zehatza.',
+    deskribapenZehatzaEs: 'Descripción detallada de lo ocurrido en el aula el 12-05-2026.',
     neurriZuzentzailea: '34.a - Izandako jokabide desegokiari buruzko hausnarketa.',
+    neurriZuzentzaileaEs: '34.a - Reflexión sobre la conducta inadecuada concreta y sus consecuencias.',
     aplikatutakoNeurria: 'Ikasleak gertatutakoari buruzko idatzizko hausnarketa egin du.',
+    aplikatutakoNeurriaEs: 'El alumno o alumna ha realizado una reflexión escrita sobre lo ocurrido.',
     herria: 'Bilbo',
     dataTestua: '2026(e)ko maiatzaren 12(e)(a)n',
+    dataTestuaEs: '12 de mayo de 2026',
     herriaEtaData: 'Bilbo(e)n, 2026(e)ko maiatzaren 12(e)(a)n',
+    herriaEtaDataEs: 'En Bilbao, a 12 de mayo de 2026',
+    euskarazBadago: 'true',
+    gaztelaniazBadago: 'true',
     irakaslea: 'Irakasle Izena'
   };
 
