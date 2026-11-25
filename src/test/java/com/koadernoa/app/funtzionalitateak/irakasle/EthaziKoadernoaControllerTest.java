@@ -135,7 +135,7 @@ class EthaziKoadernoaControllerTest {
                 koadernoa, egutegia, irakaslea, 20L, 2026, 11)).thenReturn(ikuspegia);
         ExtendedModelMap model = new ExtendedModelMap();
 
-        String view = controller.denboralizazioa(auth, koadernoa, 20L, 2026, 11,
+        String view = controller.denboralizazioa(auth, koadernoa, 20L, 2026, 11, "egutegia",
                 new MockHttpSession(), model, new RedirectAttributesModelMap());
 
         assertThat(view).isEqualTo("irakasleak/ethazi/denboralizazioa");
@@ -143,7 +143,7 @@ class EthaziKoadernoaControllerTest {
     }
 
     @Test
-    void jarraipenIkuspegiaModuluFiltroarekinKargatzenDu() {
+    void faltenBistaDenboralizazioanKargatzenDu() {
         Maila maila = new Maila(); maila.setId(2L);
         Moduloa modulua = new Moduloa(); modulua.setMaila(maila); modulua.setAktibo(true);
         Egutegia egutegia = new Egutegia();
@@ -153,12 +153,19 @@ class EthaziKoadernoaControllerTest {
         when(egutegiak.findByIkasturtea_AktiboaTrueAndMaila_Id(2L)).thenReturn(Optional.of(egutegia));
         when(ethaziJarraipenaService.prestatu(koadernoa, egutegia, irakaslea, false, 20L))
                 .thenReturn(ikuspegia);
+        when(ethaziDenboralizazioaService.prestatu(
+                koadernoa, egutegia, irakaslea, 20L, 2026, 11)).thenReturn(
+                        new EthaziDenboralizazioaService.DenboralizazioaIkuspegia(
+                                "2026-2027", "azaroa 2026", 2026, 11, 20L, List.of(), List.of()));
         ExtendedModelMap model = new ExtendedModelMap();
 
-        String view = controller.jarraipena(auth, koadernoa, 20L, new MockHttpSession(), model,
+        String view = controller.denboralizazioa(auth, koadernoa, 20L, 2026, 11, "faltak",
+                new MockHttpSession(), model,
                 new RedirectAttributesModelMap());
 
-        assertThat(view).isEqualTo("irakasleak/ethazi/jarraipena");
+        assertThat(view).isEqualTo("irakasleak/ethazi/denboralizazioa");
+        assertThat(model.get("bista")).isEqualTo("faltak");
         assertThat(model.get("jarraipena")).isSameAs(ikuspegia);
     }
+
 }

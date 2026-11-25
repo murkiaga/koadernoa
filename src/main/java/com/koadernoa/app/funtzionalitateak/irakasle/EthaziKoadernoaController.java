@@ -162,6 +162,7 @@ public class EthaziKoadernoaController {
             @RequestParam(name = "moduloaId", required = false) Long moduloaId,
             @RequestParam(name = "urtea", required = false) Integer urtea,
             @RequestParam(name = "hilabetea", required = false) Integer hilabetea,
+            @RequestParam(name = "bista", required = false, defaultValue = "egutegia") String bista,
             HttpSession session, Model model, RedirectAttributes flash) {
         EthaziKoadernoa koadernoa = lortuBaimendutakoKoadernoa(sessionKoadernoa, auth, session, flash);
         if (koadernoa == null) return "redirect:/irakasle";
@@ -180,8 +181,14 @@ public class EthaziKoadernoaController {
         }
         Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
         model.addAttribute("ethaziKoadernoAktiboa", koadernoa);
+        boolean faltakBista = "faltak".equalsIgnoreCase(bista);
+        model.addAttribute("bista", faltakBista ? "faltak" : "egutegia");
         model.addAttribute("denboralizazioa", ethaziDenboralizazioaService.prestatu(
                 koadernoa, egutegia, irakaslea, moduloaId, ikuspegiUrtea, ikuspegiHilabetea));
+        if (faltakBista) {
+            model.addAttribute("jarraipena", ethaziJarraipenaService.prestatu(
+                    koadernoa, egutegia, irakaslea, adminEdoKudeatzaileaDa(auth), moduloaId));
+        }
         return "irakasleak/ethazi/denboralizazioa";
     }
 
@@ -303,12 +310,8 @@ public class EthaziKoadernoaController {
             HttpSession session, Model model, RedirectAttributes flash) {
         EthaziKoadernoa koadernoa = lortuBaimendutakoKoadernoa(sessionKoadernoa, auth, session, flash);
         if (koadernoa == null) return "redirect:/irakasle";
-        Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
-        model.addAttribute("ethaziKoadernoAktiboa", koadernoa);
-        model.addAttribute("jarraipena", ethaziJarraipenaService.prestatu(
-                koadernoa, lortuTaldearenEgutegia(koadernoa), irakaslea,
-                adminEdoKudeatzaileaDa(auth), moduloaId));
-        return "irakasleak/ethazi/jarraipena";
+        return "redirect:/irakasle/ethazi-koadernoa/denboralizazioa?bista=faltak"
+                + (moduloaId == null ? "" : "&moduloaId=" + moduloaId);
     }
 
     @GetMapping("/jarraipena/gelaxka")
@@ -337,19 +340,8 @@ public class EthaziKoadernoaController {
     public ResponseEntity<Map<String, String>> jarraipenGelaxkaGorde(Authentication auth,
             @SessionAttribute(name = "ethaziKoadernoAktiboa", required = false) EthaziKoadernoa sessionKoadernoa,
             @RequestBody EthaziJarraipenaService.GelaxkaGordeEskaera eskaera) {
-        EthaziKoadernoa koadernoa = lortuBaimendutakoKoadernoaApi(sessionKoadernoa, auth);
-        if (koadernoa == null) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("message", "Ez duzu Ethazi koaderno honetarako sarbiderik."));
-        }
-        try {
-            Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
-            ethaziJarraipenaService.gordeGelaxka(
-                    koadernoa, irakaslea, adminEdoKudeatzaileaDa(auth), eskaera);
-            return ResponseEntity.ok(Map.of("message", "Hutsegiteak eta oharrak gorde dira."));
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
-        }
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                "message", "Falten bista kontsultatzeko bakarrik da; asistentzia denboralizaziotik pasatu behar da."));
     }
 
     @PostMapping("/programazioa/erronkak/{erronkaId}/jarduerak/gorde")

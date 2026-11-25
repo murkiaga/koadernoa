@@ -35,6 +35,7 @@
     .activity-note{font-size:.72rem}.denb-dialog{width:min(560px,calc(100% - 2rem));border:0;border-radius:14px;padding:0;box-shadow:0 20px 60px rgba(15,23,42,.35)}.denb-dialog::backdrop{background:rgba(15,23,42,.45)}
     .denb-dialog header,.denb-dialog footer{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.8rem 1rem;border-bottom:1px solid #e2e8f0}.denb-dialog footer{justify-content:flex-end;border-top:1px solid #e2e8f0;border-bottom:0}.denb-dialog h2{margin:0;font-size:1.05rem}.denb-dialog-body{display:grid;gap:.65rem;padding:.9rem 1rem}.denb-field{display:grid;gap:.25rem;color:#475569;font-size:.76rem;font-weight:800}.denb-field input,.denb-field textarea{width:100%;padding:.5rem .6rem;border:1px solid #cbd5e1;border-radius:7px;font:inherit}.denb-field textarea{resize:vertical}.denb-field input:disabled,.denb-field textarea:disabled{background:#f1f5f9;color:#64748b}.denb-btn{padding:.45rem .7rem;border:1px solid #94a3b8;border-radius:7px;background:#fff;font:inherit;font-weight:800;cursor:pointer}.denb-btn.primary{background:#172033;color:#fff;border-color:#172033}
     .empty{padding:2rem;text-align:center;color:#64748b}.message{margin:0 0 .8rem;padding:.7rem .85rem;border-radius:8px;font-weight:700}.message.error{background:#fee2e2;color:#991b1b}.egutegi-errorea{padding:2rem;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:12px}
+    .view-tabs{display:flex;gap:.45rem;margin:.55rem 0}.view-tabs a{padding:.55rem .85rem;border:1px solid #cbd5e1;border-radius:9px;background:#fff;color:#334155;text-decoration:none;font-weight:850}.view-tabs a.active{background:#172033;border-color:#172033;color:#fff}
     @media(max-width:700px){.denb-header{align-items:stretch;flex-direction:column}.denb-filter{min-width:100%}.month-nav{grid-template-columns:auto 1fr auto}.month-nav a span{display:none}.calendar th{font-size:.62rem}.activity-meta span:nth-child(2){display:none}}
   </style>
 </head>
@@ -44,7 +45,13 @@
 <main class="denb-page">
   <p class="message error" th:if="${error}" th:text="${error}"></p>
   <div class="egutegi-errorea" th:if="${egutegiErrorea}" th:text="${egutegiErrorea}"></div>
-  <section class="denb-card" th:if="${denboralizazioa != null}">
+  <nav class="view-tabs" aria-label="Denboralizazioaren ikuspegia" th:if="${denboralizazioa != null}">
+    <a th:href="@{/irakasle/ethazi-koadernoa/denboralizazioa(bista='egutegia',urtea=${denboralizazioa.urtea},hilabetea=${denboralizazioa.hilabetea},moduloaId=${denboralizazioa.aukeratutakoModuloaId})}"
+       th:classappend="${bista == 'egutegia'} ? ' active'">🗓 Egutegi bista</a>
+    <a th:href="@{/irakasle/ethazi-koadernoa/denboralizazioa(bista='faltak',urtea=${denboralizazioa.urtea},hilabetea=${denboralizazioa.hilabetea},moduloaId=${denboralizazioa.aukeratutakoModuloaId})}"
+       th:classappend="${bista == 'faltak'} ? ' active'">📋 Falten bista</a>
+  </nav>
+  <section class="denb-card" th:if="${denboralizazioa != null and bista == 'egutegia'}">
     <header class="denb-header">
       <div>
         <h1>Denboralizazioa</h1>
@@ -108,7 +115,10 @@
     </div>
   </section>
 
-  <dialog id="jardueraDialog" class="denb-dialog">
+  <section class="denb-card" th:if="${jarraipena != null and bista == 'faltak'}"
+           th:insert="~{irakasleak/ethazi/falten-bista-fragment :: faltakBista}"></section>
+
+  <dialog id="jardueraDialog" class="denb-dialog" th:if="${bista == 'egutegia'}">
     <form id="jardueraForm">
       <header><h2>Jarduera editatu</h2><button type="button" class="denb-btn" onclick="itxiJarduera()">×</button></header>
       <div class="denb-dialog-body">
@@ -123,7 +133,7 @@
     </form>
   </dialog>
 </main>
-<script th:inline="javascript">
+<script th:if="${bista == 'egutegia'}" th:inline="javascript">
   function aldatuModuluIragazkia(moduloaId) {
     const url = new URL(window.location.href);
     if (moduloaId) url.searchParams.set('moduloaId', moduloaId);
