@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import com.koadernoa.app.ethazi.entitateak.EthaziKoadernoa;
 import com.koadernoa.app.ethazi.dto.KronogramaJardueraForm;
@@ -154,6 +155,47 @@ public class EthaziKoadernoaController {
                 ethaziKoadernoaService.programazioaIkuspegia(
                         koadernoa, lortuTaldearenEgutegia(koadernoa), irakaslea));
         return "irakasleak/ethazi/programazioa";
+    }
+
+    @GetMapping("/ebaluazioa")
+    public String ebaluazioa(Authentication auth,
+            @SessionAttribute(name = "ethaziKoadernoAktiboa", required = false) EthaziKoadernoa sessionKoadernoa,
+            @RequestParam(required = false) Long erronkaId,
+            @RequestParam(required = false) Long moduloaId,
+            @RequestParam(defaultValue = "TEKNIKOA") String gaitasunMota,
+            HttpSession session, Model model, RedirectAttributes flash) {
+        EthaziKoadernoa koadernoa = lortuBaimendutakoKoadernoa(sessionKoadernoa, auth, session, flash);
+        if (koadernoa == null) return "redirect:/irakasle";
+
+        Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+        var erronkak = ethaziKoadernoaService
+                .programazioaIkuspegia(koadernoa, lortuTaldearenEgutegia(koadernoa), irakaslea)
+                .erronkak().stream()
+                .filter(erronka -> !erronka.moduluAukerak().isEmpty())
+                .toList();
+        model.addAttribute("ethaziKoadernoAktiboa", koadernoa);
+        model.addAttribute("ethaziEbaluazioErronkak", erronkak);
+        if (erronkak.isEmpty()) {
+            return "irakasleak/ethazi/ebaluazioa";
+        }
+
+        var erronka = erronkaId == null ? erronkak.get(0) : erronkak.stream()
+                .filter(aukera -> aukera.id().equals(erronkaId))
+                .findFirst()
+                .orElseThrow(() -> new AccessDeniedException("Ez duzu erronka hau ebaluatzeko baimenik."));
+        final Long eskatutakoModuloaId = moduloaId;
+        Long hautatutakoModuloaId = eskatutakoModuloaId;
+        if (eskatutakoModuloaId == null || erronka.moduluAukerak().stream()
+                .noneMatch(modulua -> modulua.id().equals(eskatutakoModuloaId))) {
+            hautatutakoModuloaId = erronka.moduluAukerak().get(0).id();
+        }
+        String mota = "ZEHARKAKOA".equalsIgnoreCase(gaitasunMota) ? "ZEHARKAKOA" : "TEKNIKOA";
+        String url = UriComponentsBuilder.fromPath("/ethazi/erronkak/{id}/errubrikak")
+                .queryParam("moduloaId", hautatutakoModuloaId)
+                .queryParam("gaitasunMota", mota)
+                .queryParam("koadernoEbaluazioa", true)
+                .buildAndExpand(erronka.id()).toUriString();
+        return "redirect:" + url;
     }
 
     @GetMapping("/denboralizazioa")

@@ -3,6 +3,7 @@
 <title th:text="${title} + ' · ETHAZI'">ETHAZI</title>
 <link rel="stylesheet" th:href="@{/css/navbar.css}"><link rel="stylesheet" th:href="@{/css/kudeatzaile-common.css}">
 <link rel="stylesheet" th:href="@{/css/ethazi.css}">
+<link rel="stylesheet" th:if="${koadernoEbaluazioa == true}" th:href="@{/css/irakasle-navbar.css}">
 </head><body><div th:fragment="messages">
 <div th:if="${success}" class="alert alert-success" role="status" th:text="${success}"></div>
 <div th:if="${error}" class="alert alert-error" role="alert" th:text="${error}"></div>

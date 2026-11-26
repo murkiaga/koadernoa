@@ -198,6 +198,7 @@ public class ErronkaController {
     @GetMapping("/{id}/errubrikak")
     String errubrikak(@PathVariable Long id, @RequestParam(required = false) Long moduloaId,
             @RequestParam(defaultValue = "TEKNIKOA") GaitasunMota gaitasunMota,
+            @RequestParam(defaultValue = "false") boolean koadernoEbaluazioa,
             @RequestParam(required = false) Long adierazleaId,
             @RequestParam(required = false) Long ebidentziaId,
             @RequestParam(required = false) Long bestelakoProbaId,
@@ -217,7 +218,10 @@ public class ErronkaController {
         model.addAttribute("fokukoAdierazleaId", adierazleaId);
         model.addAttribute("fokukoEbidentziaId", ebidentziaId);
         model.addAttribute("fokukoBestelakoProbaId", bestelakoProbaId);
-        model.addAttribute("errubrikaEditatuDezake", service.errubrikaEditatuDezake(auth));
+        boolean errubrikaEditatuDezake = gaitasunMota == GaitasunMota.TEKNIKOA
+                ? service.erronkaKalifikatuDezake(auth, id, moduloaId)
+                : service.errubrikaEditatuDezake(auth);
+        model.addAttribute("errubrikaEditatuDezake", errubrikaEditatuDezake);
         if (moduloaId != null) {
             var ikasleTaldeak = service.errubrikaIkasleTaldeak(id);
             model.addAttribute("ikasleTaldeak", ikasleTaldeak);
@@ -234,7 +238,7 @@ public class ErronkaController {
                 model.addAttribute("taldeOrokorOharrak", service.taldeOrokorOharrak(id, moduloaId));
                 model.addAttribute("ikasleOrokorOharrak", service.ikasleOrokorOharrak(id, moduloaId));
                 model.addAttribute("bestelakoProbakForm", service.bestelakoProbakForm(id, moduloaId));
-                model.addAttribute("errubrikaIturriak", service.errubrikaEditatuDezake(auth)
+                model.addAttribute("errubrikaIturriak", errubrikaEditatuDezake
                     && errubrika.getMailak().isEmpty() && errubrika.getEbidentziak().isEmpty()
                         ? service.errubrikaIturriak(id, moduloaId) : java.util.List.of());
             }
@@ -259,40 +263,55 @@ public class ErronkaController {
     @PostMapping("/{id}/errubrikak/{moduloaId}/zeharkakoa/gorde")
     String gordeZeharkakoErrubrika(@PathVariable Long id, @PathVariable Long moduloaId,
             @ModelAttribute("zeharkakoForm") com.koadernoa.app.ethazi.dto.EthaziForms.ZeharkakoErrubrikaForm form,
-            RedirectAttributes flash) {
+            @RequestParam(defaultValue = "false") boolean koadernoEbaluazioa,
+            Authentication auth, RedirectAttributes flash) {
+        ziurtatuZeharkakoErrubrikaEditatuDezakeela(auth);
         try { service.gordeZeharkakoErrubrika(id, form); flash.addFlashAttribute("success", "Zeharkako errubrika gorde da."); }
         catch (IllegalArgumentException ex) { flash.addFlashAttribute("error", ex.getMessage()); }
-        return zeharkakoErrubrikara(id, moduloaId);
+        return zeharkakoErrubrikara(id, moduloaId, koadernoEbaluazioa);
     }
 
     @PostMapping("/{id}/errubrikak/{moduloaId}/zeharkakoa/mailak/berria")
-    String gehituZeharkakoMaila(@PathVariable Long id, @PathVariable Long moduloaId) {
-        service.gehituZeharkakoMaila(id); return zeharkakoErrubrikara(id, moduloaId);
+    String gehituZeharkakoMaila(@PathVariable Long id, @PathVariable Long moduloaId,
+            @RequestParam(defaultValue = "false") boolean koadernoEbaluazioa, Authentication auth) {
+        ziurtatuZeharkakoErrubrikaEditatuDezakeela(auth);
+        service.gehituZeharkakoMaila(id); return zeharkakoErrubrikara(id, moduloaId, koadernoEbaluazioa);
     }
 
     @PostMapping("/{id}/errubrikak/{moduloaId}/zeharkakoa/mailak/{mailaId}/ezabatu")
     String ezabatuZeharkakoMaila(@PathVariable Long id, @PathVariable Long moduloaId,
-            @PathVariable Long mailaId, RedirectAttributes flash) {
+            @PathVariable Long mailaId, @RequestParam(defaultValue = "false") boolean koadernoEbaluazioa,
+            Authentication auth, RedirectAttributes flash) {
+        ziurtatuZeharkakoErrubrikaEditatuDezakeela(auth);
         try { service.ezabatuZeharkakoMaila(id, mailaId); }
         catch (IllegalArgumentException ex) { flash.addFlashAttribute("error", ex.getMessage()); }
-        return zeharkakoErrubrikara(id, moduloaId);
+        return zeharkakoErrubrikara(id, moduloaId, koadernoEbaluazioa);
     }
 
     @PostMapping("/{id}/errubrikak/{moduloaId}/zeharkakoa/ebidentziak/berria")
     String gehituZeharkakoEbidentzia(@PathVariable Long id, @PathVariable Long moduloaId,
-            @RequestParam Long adierazleaId) {
-        service.gehituZeharkakoEbidentzia(id, adierazleaId); return zeharkakoErrubrikara(id, moduloaId);
+            @RequestParam Long adierazleaId,
+            @RequestParam(defaultValue = "false") boolean koadernoEbaluazioa, Authentication auth) {
+        ziurtatuZeharkakoErrubrikaEditatuDezakeela(auth);
+        service.gehituZeharkakoEbidentzia(id, adierazleaId);
+        return zeharkakoErrubrikara(id, moduloaId, koadernoEbaluazioa);
     }
 
     @PostMapping("/{id}/errubrikak/{moduloaId}/zeharkakoa/ebidentziak/{ebidentziaId}/ezabatu")
     String ezabatuZeharkakoEbidentzia(@PathVariable Long id, @PathVariable Long moduloaId,
-            @PathVariable Long ebidentziaId, RedirectAttributes flash) {
+            @PathVariable Long ebidentziaId, @RequestParam(defaultValue = "false") boolean koadernoEbaluazioa,
+            Authentication auth, RedirectAttributes flash) {
+        ziurtatuZeharkakoErrubrikaEditatuDezakeela(auth);
         try { service.ezabatuZeharkakoEbidentzia(id, ebidentziaId); }
         catch (IllegalArgumentException ex) { flash.addFlashAttribute("error", ex.getMessage()); }
-        return zeharkakoErrubrikara(id, moduloaId);
+        return zeharkakoErrubrikara(id, moduloaId, koadernoEbaluazioa);
     }
 
-    private String zeharkakoErrubrikara(Long id, Long moduloaId) {
+    private String zeharkakoErrubrikara(Long id, Long moduloaId, boolean koadernoEbaluazioa) {
+        if (koadernoEbaluazioa) {
+            return "redirect:/irakasle/ethazi-koadernoa/ebaluazioa?erronkaId=" + id
+                    + "&moduloaId=" + moduloaId + "&gaitasunMota=ZEHARKAKOA";
+        }
         return "redirect:/ethazi/erronkak/" + id + "/errubrikak?moduloaId=" + moduloaId + "&gaitasunMota=ZEHARKAKOA";
     }
 
@@ -300,10 +319,13 @@ public class ErronkaController {
     @ResponseBody
     ResponseEntity<java.util.Map<String, String>> gordeEbaluazioPisuak(@PathVariable Long id, @PathVariable Long moduloaId,
             @RequestParam java.math.BigDecimal errubrikaPisua,
-            @RequestParam java.math.BigDecimal bestelakoProbenPisua) {
+            @RequestParam java.math.BigDecimal bestelakoProbenPisua, Authentication auth) {
         try {
+            ziurtatuErrubrikaTeknikoaEditatuDezakeela(auth, id, moduloaId);
             service.gordeEbaluazioPisuak(id, moduloaId, errubrikaPisua, bestelakoProbenPisua);
             return ResponseEntity.ok(java.util.Map.of("message", "Pisuak gordeta"));
+        } catch (AccessDeniedException ex) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(java.util.Map.of("message", ex.getMessage()));
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest().body(java.util.Map.of("message", ex.getMessage()));
         }
@@ -313,26 +335,33 @@ public class ErronkaController {
     String gehituBestelakoProba(@PathVariable Long id, @PathVariable Long moduloaId,
             @RequestParam String izena,
             @RequestParam @DateTimeFormat(pattern = "yyyy/MM/dd") java.time.LocalDate data,
-            RedirectAttributes flash) {
+            @RequestParam(defaultValue = "false") boolean koadernoEbaluazioa,
+            Authentication auth, RedirectAttributes flash) {
+        ziurtatuErrubrikaTeknikoaEditatuDezakeela(auth, id, moduloaId);
         service.gehituBestelakoProba(id, moduloaId, izena, data);
         flash.addFlashAttribute("success", "Bestelako proba gehitu da.");
-        return errubrikara(id, moduloaId);
+        return errubrikara(id, moduloaId, koadernoEbaluazioa);
     }
 
     @PostMapping("/{id}/errubrikak/{moduloaId}/bestelako-probak/gorde")
     String gordeBestelakoProbak(@PathVariable Long id, @PathVariable Long moduloaId,
-            @ModelAttribute("bestelakoProbakForm") BestelakoProbakForm form, RedirectAttributes flash) {
+            @ModelAttribute("bestelakoProbakForm") BestelakoProbakForm form,
+            @RequestParam(defaultValue = "false") boolean koadernoEbaluazioa,
+            Authentication auth, RedirectAttributes flash) {
+        ziurtatuErrubrikaTeknikoaEditatuDezakeela(auth, id, moduloaId);
         try { service.gordeBestelakoProbak(id, moduloaId, form); flash.addFlashAttribute("success", "Bestelako probak gorde dira."); }
         catch (IllegalArgumentException ex) { flash.addFlashAttribute("error", ex.getMessage()); }
-        return errubrikara(id, moduloaId);
+        return errubrikara(id, moduloaId, koadernoEbaluazioa);
     }
 
     @PostMapping("/{id}/errubrikak/{moduloaId}/bestelako-probak/{probaId}/ezabatu")
     String ezabatuBestelakoProba(@PathVariable Long id, @PathVariable Long moduloaId,
-            @PathVariable Long probaId, RedirectAttributes flash) {
+            @PathVariable Long probaId, @RequestParam(defaultValue = "false") boolean koadernoEbaluazioa,
+            Authentication auth, RedirectAttributes flash) {
+        ziurtatuErrubrikaTeknikoaEditatuDezakeela(auth, id, moduloaId);
         try { service.ezabatuBestelakoProba(id, moduloaId, probaId); flash.addFlashAttribute("success", "Bestelako proba ezabatu da."); }
         catch (IllegalArgumentException ex) { flash.addFlashAttribute("error", ex.getMessage()); }
-        return errubrikara(id, moduloaId);
+        return errubrikara(id, moduloaId, koadernoEbaluazioa);
     }
 
     @PostMapping("/{id}/errubrikak/{moduloaId}/bestelako-probak/{probaId}/notak")
@@ -352,22 +381,28 @@ public class ErronkaController {
 
     @PostMapping("/{id}/errubrikak/{moduloaId}/gorde")
     String gordeErrubrika(@PathVariable Long id, @PathVariable Long moduloaId,
-            @ModelAttribute("form") ErronkaErrubrikaForm form, RedirectAttributes flash) {
+            @ModelAttribute("form") ErronkaErrubrikaForm form,
+            @RequestParam(defaultValue = "false") boolean koadernoEbaluazioa,
+            Authentication auth, RedirectAttributes flash) {
+        ziurtatuErrubrikaTeknikoaEditatuDezakeela(auth, id, moduloaId);
         try { service.gordeErrubrika(id, moduloaId, form); flash.addFlashAttribute("success", "Errubrika gorde da."); }
         catch (IllegalArgumentException ex) { flash.addFlashAttribute("error", ex.getMessage()); }
-        return errubrikara(id, moduloaId);
+        return errubrikara(id, moduloaId, koadernoEbaluazioa);
     }
 
     @PostMapping("/{id}/errubrikak/{moduloaId}/inportatu")
     String inportatuErrubrika(@PathVariable Long id, @PathVariable Long moduloaId,
-            @RequestParam Long iturriErrubrikaId, RedirectAttributes flash) {
+            @RequestParam Long iturriErrubrikaId,
+            @RequestParam(defaultValue = "false") boolean koadernoEbaluazioa,
+            Authentication auth, RedirectAttributes flash) {
+        ziurtatuErrubrikaTeknikoaEditatuDezakeela(auth, id, moduloaId);
         try {
             service.inportatuErrubrika(id, moduloaId, iturriErrubrikaId);
             flash.addFlashAttribute("success", "Errubrikaren kopia inportatu da.");
         } catch (IllegalArgumentException ex) {
             flash.addFlashAttribute("error", ex.getMessage());
         }
-        return errubrikara(id, moduloaId);
+        return errubrikara(id, moduloaId, koadernoEbaluazioa);
     }
 
     @PostMapping("/{id}/errubrikak/{moduloaId}/notak")
@@ -451,33 +486,61 @@ public class ErronkaController {
     }
 
     @PostMapping("/{id}/errubrikak/{moduloaId}/mailak/berria")
-    String gehituMaila(@PathVariable Long id, @PathVariable Long moduloaId, RedirectAttributes flash) {
+    String gehituMaila(@PathVariable Long id, @PathVariable Long moduloaId,
+            @RequestParam(defaultValue = "false") boolean koadernoEbaluazioa,
+            Authentication auth, RedirectAttributes flash) {
+        ziurtatuErrubrikaTeknikoaEditatuDezakeela(auth, id, moduloaId);
         service.gehituErrubrikaMaila(id, moduloaId); flash.addFlashAttribute("success", "Mailakatze berria sortu da.");
-        return errubrikara(id, moduloaId);
+        return errubrikara(id, moduloaId, koadernoEbaluazioa);
     }
 
     @PostMapping("/{id}/errubrikak/{moduloaId}/mailak/{mailaId}/ezabatu")
-    String ezabatuMaila(@PathVariable Long id, @PathVariable Long moduloaId, @PathVariable Long mailaId, RedirectAttributes flash) {
+    String ezabatuMaila(@PathVariable Long id, @PathVariable Long moduloaId, @PathVariable Long mailaId,
+            @RequestParam(defaultValue = "false") boolean koadernoEbaluazioa,
+            Authentication auth, RedirectAttributes flash) {
+        ziurtatuErrubrikaTeknikoaEditatuDezakeela(auth, id, moduloaId);
         try { service.ezabatuErrubrikaMaila(id, moduloaId, mailaId); flash.addFlashAttribute("success", "Mailakatzea ezabatu da."); }
         catch (IllegalArgumentException ex) { flash.addFlashAttribute("error", ex.getMessage()); }
-        return errubrikara(id, moduloaId);
+        return errubrikara(id, moduloaId, koadernoEbaluazioa);
     }
 
     @PostMapping("/{id}/errubrikak/{moduloaId}/ebidentziak/berria")
-    String gehituEbidentzia(@PathVariable Long id, @PathVariable Long moduloaId, RedirectAttributes flash) {
+    String gehituEbidentzia(@PathVariable Long id, @PathVariable Long moduloaId,
+            @RequestParam(defaultValue = "false") boolean koadernoEbaluazioa,
+            Authentication auth, RedirectAttributes flash) {
+        ziurtatuErrubrikaTeknikoaEditatuDezakeela(auth, id, moduloaId);
         service.gehituEbidentzia(id, moduloaId); flash.addFlashAttribute("success", "Ebidentzia berria sortu da.");
-        return errubrikara(id, moduloaId);
+        return errubrikara(id, moduloaId, koadernoEbaluazioa);
     }
 
     @PostMapping("/{id}/errubrikak/{moduloaId}/ebidentziak/{ebidentziaId}/ezabatu")
-    String ezabatuEbidentzia(@PathVariable Long id, @PathVariable Long moduloaId, @PathVariable Long ebidentziaId, RedirectAttributes flash) {
+    String ezabatuEbidentzia(@PathVariable Long id, @PathVariable Long moduloaId, @PathVariable Long ebidentziaId,
+            @RequestParam(defaultValue = "false") boolean koadernoEbaluazioa,
+            Authentication auth, RedirectAttributes flash) {
+        ziurtatuErrubrikaTeknikoaEditatuDezakeela(auth, id, moduloaId);
         try { service.ezabatuEbidentzia(id, moduloaId, ebidentziaId); flash.addFlashAttribute("success", "Ebidentzia ezabatu da."); }
         catch (IllegalArgumentException ex) { flash.addFlashAttribute("error", ex.getMessage()); }
-        return errubrikara(id, moduloaId);
+        return errubrikara(id, moduloaId, koadernoEbaluazioa);
     }
 
-    private String errubrikara(Long id, Long moduloaId) {
+    private String errubrikara(Long id, Long moduloaId, boolean koadernoEbaluazioa) {
+        if (koadernoEbaluazioa) {
+            return "redirect:/irakasle/ethazi-koadernoa/ebaluazioa?erronkaId=" + id
+                    + "&moduloaId=" + moduloaId + "&gaitasunMota=TEKNIKOA";
+        }
         return "redirect:/ethazi/erronkak/" + id + "/errubrikak?moduloaId=" + moduloaId;
+    }
+
+    private void ziurtatuErrubrikaTeknikoaEditatuDezakeela(Authentication auth, Long id, Long moduloaId) {
+        if (!service.errubrikaEditatuDezake(auth) && !service.erronkaKalifikatuDezake(auth, id, moduloaId)) {
+            throw new AccessDeniedException("Ez duzu modulu honetako errubrika editatzeko baimenik.");
+        }
+    }
+
+    private void ziurtatuZeharkakoErrubrikaEditatuDezakeela(Authentication auth) {
+        if (!service.errubrikaEditatuDezake(auth)) {
+            throw new AccessDeniedException("Zeharkako errubrika ezin duzu editatu.");
+        }
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

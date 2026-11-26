@@ -54,7 +54,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/ethazi/erronkak/*/kronograma").hasAnyRole("ADMIN", "KUDEATZAILEA", "IRAKASLEA")
                 .requestMatchers(HttpMethod.POST, "/ethazi/erronkak/*/kronograma/**").hasAnyRole("ADMIN", "KUDEATZAILEA", "IRAKASLEA")
                 .requestMatchers(HttpMethod.GET, "/ethazi/erronkak/*/errubrikak").hasAnyRole("ADMIN", "KUDEATZAILEA", "IRAKASLEA")
-                .requestMatchers(HttpMethod.POST, "/ethazi/erronkak/*/errubrikak/*/notak").hasAnyRole("ADMIN", "KUDEATZAILEA", "IRAKASLEA")
+                .requestMatchers(HttpMethod.POST, "/ethazi/erronkak/*/errubrikak/**").hasAnyRole("ADMIN", "KUDEATZAILEA", "IRAKASLEA")
                 .requestMatchers("/ethazi", "/ethazi/**").hasAnyRole("ADMIN", "KUDEATZAILEA")
                 .requestMatchers("/kudeatzaile/**").hasAnyRole("ADMIN", "KUDEATZAILEA")
                 .requestMatchers("/irakasle/ikasleak-kontsultatu", "/irakasle/ikasleak-kontsultatu/**")

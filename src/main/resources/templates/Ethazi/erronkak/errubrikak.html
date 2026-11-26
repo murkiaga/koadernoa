@@ -1,19 +1,24 @@
 <!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" lang="eu">
 <head th:replace="~{Ethazi/fragments/common :: head('Erronkaren errubrikak')}"></head><body class="ethazi-body">
-<div th:replace="~{kudeatzaile/fragments/navbar :: kudeatzaile-navbar}"></div>
-<nav th:replace="~{Ethazi/fragments/navbar :: navbar('erronkak')}"></nav>
+<th:block th:if="${koadernoEbaluazioa == true}">
+  <div th:replace="~{irakasleak/fragments/ethazi-navbar :: navbar(${ethaziKoadernoAktiboa}, ${irakasleKoadernoAktiboak}, ${irakasleEthaziKoadernoAktiboak})}"></div>
+</th:block>
+<th:block th:unless="${koadernoEbaluazioa == true}">
+  <div th:replace="~{kudeatzaile/fragments/navbar :: kudeatzaile-navbar}"></div>
+  <nav th:replace="~{Ethazi/fragments/navbar :: navbar('erronkak')}"></nav>
+</th:block>
 <main class="page ethazi-page ethazi-rubric-page"><div class="rubric-toolbar" th:replace="~{Ethazi/fragments/common :: messages}"></div>
-<header class="page-header rubric-toolbar"><div><h1>Errubrikak · <span th:text="${erronka.izena}"></span></h1><p class="muted">Modulu bakoitzak bere mailakatzea, balioak eta ebidentziak ditu.</p></div><a class="btn" th:href="@{/ethazi/erronkak(zikloaId=${erronka.zikloa.id},ikasturteaId=${erronka.ikasturtea != null ? erronka.ikasturtea.id : null})}">← Erronketara</a></header>
+<header class="page-header rubric-toolbar"><div><h1>Errubrikak · <span th:text="${erronka.izena}"></span></h1><p class="muted">Modulu bakoitzak bere mailakatzea, balioak eta ebidentziak ditu.</p></div><a class="btn" th:href="${koadernoEbaluazioa == true ? '/irakasle/ethazi-koadernoa/ebaluazioa' : '/ethazi/erronkak?zikloaId=' + erronka.zikloa.id + (erronka.ikasturtea != null ? '&ikasturteaId=' + erronka.ikasturtea.id : '')}">← Erronketara</a></header>
 <nav class="module-tabs rubric-toolbar" aria-label="Errubrikaren moduluak">
-  <a th:each="m : ${moduluak}" th:href="@{/ethazi/erronkak/{id}/errubrikak(id=${erronka.id},moduloaId=${m.id},gaitasunMota=${gaitasunMota})}"
+  <a th:each="m : ${moduluak}" th:href="@{/ethazi/erronkak/{id}/errubrikak(id=${erronka.id},moduloaId=${m.id},gaitasunMota=${gaitasunMota},koadernoEbaluazioa=${koadernoEbaluazioa})}"
      th:classappend="${m.id == moduloaId} ? 'active'"
      th:attr="aria-current=${m.id == moduloaId ? 'page' : null},title=${m.izena},aria-label=${m.kodea + ' · ' + m.izena}"
      th:text="${m.kodea}"></a>
 </nav>
 <p class="empty-state rubric-toolbar" th:if="${#lists.isEmpty(moduluak)}">Erronkak ez du parte hartzen duen modulurik.</p>
 <nav class="competency-type-tabs rubric-toolbar" aria-label="Gaitasun mota" th:if="${moduloaId != null}">
-  <a class="btn" th:classappend="${gaitasunMota.name() == 'TEKNIKOA'} ? 'active'" th:href="@{/ethazi/erronkak/{id}/errubrikak(id=${erronka.id},moduloaId=${moduloaId},gaitasunMota='TEKNIKOA')}">Teknikoak</a>
-  <a class="btn" th:classappend="${gaitasunMota.name() == 'ZEHARKAKOA'} ? 'active'" th:href="@{/ethazi/erronkak/{id}/errubrikak(id=${erronka.id},moduloaId=${moduloaId},gaitasunMota='ZEHARKAKOA')}">Zeharkakoak</a>
+  <a class="btn" th:classappend="${gaitasunMota.name() == 'TEKNIKOA'} ? 'active'" th:href="@{/ethazi/erronkak/{id}/errubrikak(id=${erronka.id},moduloaId=${moduloaId},gaitasunMota='TEKNIKOA',koadernoEbaluazioa=${koadernoEbaluazioa})}">Teknikoak</a>
+  <a class="btn" th:classappend="${gaitasunMota.name() == 'ZEHARKAKOA'} ? 'active'" th:href="@{/ethazi/erronkak/{id}/errubrikak(id=${erronka.id},moduloaId=${moduloaId},gaitasunMota='ZEHARKAKOA',koadernoEbaluazioa=${koadernoEbaluazioa})}">Zeharkakoak</a>
 </nav>
 <section class="rubric-section challenge-rubric transverse-rubric" data-editable="false" th:if="${moduloaId != null and gaitasunMota.name() == 'ZEHARKAKOA'}"
          th:attr="data-rubric-key=${'erronka-' + erronka.id + '-zeharkakoa'}">
@@ -25,10 +30,10 @@
       <label>Autoebaluazioa <input form="transverse-rubric-form" class="rubric-edit-only" name="autoebaluazioPisua" type="number" min="0" max="100" step="0.01" required th:value="${zeharkakoForm.autoebaluazioPisua}"><strong class="rubric-read-only" th:text="${zeharkakoErrubrikak.autoebaluazioPisua}"></strong>%</label>
     </div></div><div class="rubric-actions">
     <button th:if="${errubrikaEditatuDezake}" type="button" class="btn rubric-lock-toggle" aria-pressed="false">🔒 Blokeatuta · Desblokeatu</button>
-    <form class="rubric-edit-only" method="post" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/zeharkakoa/mailak/berria(id=${erronka.id},mid=${moduloaId})}"><button class="btn">+ Mailakatzea</button></form>
+    <form class="rubric-edit-only" method="post" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/zeharkakoa/mailak/berria(id=${erronka.id},mid=${moduloaId},koadernoEbaluazioa=${koadernoEbaluazioa})}"><button class="btn">+ Mailakatzea</button></form>
   </div></header>
   <p class="empty-state" th:if="${#lists.isEmpty(zeharkakoErrubrikak.adierazleak)}">Ez da zeharkako lorpen-adierazlerik hautatu erronka honetarako.</p>
-  <form th:if="${!#lists.isEmpty(zeharkakoErrubrikak.adierazleak)}" id="transverse-rubric-form" data-dirty-warning method="post" th:object="${zeharkakoForm}" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/zeharkakoa/gorde(id=${erronka.id},mid=${moduloaId})}">
+  <form th:if="${!#lists.isEmpty(zeharkakoErrubrikak.adierazleak)}" id="transverse-rubric-form" data-dirty-warning method="post" th:object="${zeharkakoForm}" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/zeharkakoa/gorde(id=${erronka.id},mid=${moduloaId},koadernoEbaluazioa=${koadernoEbaluazioa})}">
     <div class="rubric-minimum-editor transverse-minimum-editor rubric-toolbar"><label class="rubric-edit-only">Zeharkako errubrikaren gutxieneko nota <input type="number" min="0" max="10" step="0.01" th:field="*{gutxienekoNota}"></label><strong class="rubric-read-only" th:if="${zeharkakoForm.gutxienekoNota != null}" th:text="${'Gutxieneko nota: ' + #numbers.formatDecimal(zeharkakoForm.gutxienekoNota,1,2)}"></strong></div>
     <th:block th:unless="${zeharkakoErrubrikak.ebaluazioAnitza}"><input type="hidden" th:field="*{heteroebaluazioPisua}"><input type="hidden" th:field="*{koebaluazioPisua}"><input type="hidden" th:field="*{autoebaluazioPisua}"></th:block>
     <div class="rubric-scroll" tabindex="0" role="region" aria-label="Erronkaren zeharkako errubrika"><table class="rubric challenge-rubric-table transverse-rubric-table">
@@ -59,9 +64,9 @@
       <tr class="rubric-edit-only transverse-add-evidence-row"><td th:colspan="${#lists.size(zeharkakoErrubrikak.mailak) + #lists.size(ikasleak) + 2}"><button type="submit" class="btn" th:form="${'add-transverse-evidence-' + indicator.id}">+ Ebidentzia</button></td></tr>
       </tbody></table></div><div class="rubric-weight-total rubric-toolbar" role="status">Ebidentzien pisua guztira: <strong><span id="rubric-weight-total" class="rubric-weight-total-value" th:text="${#aggregates.sum(zeharkakoForm.ebidentziak.![pisua]) ?: 0}"></span>%</strong> <span>(%100 izan behar du)</span></div><div class="form-actions rubric-toolbar rubric-edit-only"><button class="btn btn-primary">Zeharkako errubrika gorde</button></div>
   </form>
-  <th:block th:each="level : ${zeharkakoErrubrikak.mailak}"><form th:id="${'delete-transverse-level-' + level.id}" method="post" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/zeharkakoa/mailak/{lid}/ezabatu(id=${erronka.id},mid=${moduloaId},lid=${level.id})}" data-confirm="Mailakatzea ezabatu?"></form></th:block>
-  <th:block th:each="indicator : ${zeharkakoErrubrikak.adierazleak}"><form th:id="${'add-transverse-evidence-' + indicator.id}" method="post" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/zeharkakoa/ebidentziak/berria(id=${erronka.id},mid=${moduloaId})}"><input type="hidden" name="adierazleaId" th:value="${indicator.id}"></form>
-    <th:block th:each="evidence : ${indicator.ebidentziak}"><form th:id="${'delete-transverse-evidence-' + evidence.id}" method="post" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/zeharkakoa/ebidentziak/{eid}/ezabatu(id=${erronka.id},mid=${moduloaId},eid=${evidence.id})}" data-confirm="Ebidentzia ezabatu?"></form></th:block></th:block>
+  <th:block th:each="level : ${zeharkakoErrubrikak.mailak}"><form th:id="${'delete-transverse-level-' + level.id}" method="post" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/zeharkakoa/mailak/{lid}/ezabatu(id=${erronka.id},mid=${moduloaId},lid=${level.id},koadernoEbaluazioa=${koadernoEbaluazioa})}" data-confirm="Mailakatzea ezabatu?"></form></th:block>
+  <th:block th:each="indicator : ${zeharkakoErrubrikak.adierazleak}"><form th:id="${'add-transverse-evidence-' + indicator.id}" method="post" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/zeharkakoa/ebidentziak/berria(id=${erronka.id},mid=${moduloaId},koadernoEbaluazioa=${koadernoEbaluazioa})}"><input type="hidden" name="adierazleaId" th:value="${indicator.id}"></form>
+    <th:block th:each="evidence : ${indicator.ebidentziak}"><form th:id="${'delete-transverse-evidence-' + evidence.id}" method="post" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/zeharkakoa/ebidentziak/{eid}/ezabatu(id=${erronka.id},mid=${moduloaId},eid=${evidence.id},koadernoEbaluazioa=${koadernoEbaluazioa})}" data-confirm="Ebidentzia ezabatu?"></form></th:block></th:block>
 </section>
 <section class="rubric-section challenge-rubric" data-editable="false" th:if="${moduloaId != null and gaitasunMota.name() == 'TEKNIKOA'}"
          th:attr="data-rubric-key=${'erronka-' + erronka.id + '-modulua-' + moduloaId}">
@@ -70,8 +75,8 @@
     <button th:if="${errubrikaEditatuDezake}" type="button" class="btn rubric-lock-toggle" aria-pressed="false">🔒 Blokeatuta · Desblokeatu</button>
     <button th:if="${errubrikaEditatuDezake and #lists.isEmpty(errubrika.mailak) and #lists.isEmpty(errubrika.ebidentziak)}"
       type="button" class="btn" id="rubric-import-toggle" aria-expanded="false" aria-controls="rubric-import-panel">Inportatu</button>
-    <form class="rubric-edit-only" method="post" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/mailak/berria(id=${erronka.id},mid=${moduloaId})}"><button class="btn">+ Mailakatzea</button></form>
-    <form class="rubric-edit-only" method="post" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/ebidentziak/berria(id=${erronka.id},mid=${moduloaId})}"><button class="btn">+ Ebidentzia</button></form>
+    <form class="rubric-edit-only" method="post" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/mailak/berria(id=${erronka.id},mid=${moduloaId},koadernoEbaluazioa=${koadernoEbaluazioa})}"><button class="btn">+ Mailakatzea</button></form>
+    <form class="rubric-edit-only" method="post" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/ebidentziak/berria(id=${erronka.id},mid=${moduloaId},koadernoEbaluazioa=${koadernoEbaluazioa})}"><button class="btn">+ Ebidentzia</button></form>
   </div></header>
   <section id="rubric-import-panel" class="rubric-import-panel rubric-toolbar" hidden
     th:if="${errubrikaEditatuDezake and #lists.isEmpty(errubrika.mailak) and #lists.isEmpty(errubrika.ebidentziak)}">
@@ -87,7 +92,7 @@
           <div class="indicator-badges evidence-indicators"><span class="indicator-badge" th:each="kodea : ${evidence.adierazleKodeak}" th:text="${kodea}"></span><span class="muted" th:if="${#lists.isEmpty(evidence.adierazleKodeak)}">—</span></div></th>
           <td th:each="description : ${evidence.mailaAzalpenak}"><p class="preserve" th:text="${description}"></p></td>
         </tr><tr th:if="${#lists.isEmpty(source.ebidentziak)}"><td th:colspan="${#lists.size(source.mailak) + 1}" class="empty-state">Iturriak ez du ebidentziarik.</td></tr></tbody></table>
-      </div><form method="post" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/inportatu(id=${erronka.id},mid=${moduloaId})}" data-confirm="Errubrika honen kopia inportatu?">
+      </div><form method="post" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/inportatu(id=${erronka.id},mid=${moduloaId},koadernoEbaluazioa=${koadernoEbaluazioa})}" data-confirm="Errubrika honen kopia inportatu?">
         <input type="hidden" name="iturriErrubrikaId" th:value="${source.id}"><button class="btn btn-primary">Errubrika hau inportatu</button>
       </form></div>
     </details>
@@ -100,7 +105,7 @@
       th:text="${(#strings.isEmpty(a.emaitzaKodea) ? '' : a.emaitzaKodea + ' · ') + a.kodea}"></span>
       <span class="muted" th:if="${#lists.isEmpty(adierazleak)}">Kinielan ez da lorpen-adierazlerik markatu erronka eta modulu honetarako.</span></div>
   </aside>
-  <form id="challenge-rubric-form" data-dirty-warning method="post" th:object="${form}" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/gorde(id=${erronka.id},mid=${moduloaId})}">
+  <form id="challenge-rubric-form" data-dirty-warning method="post" th:object="${form}" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/gorde(id=${erronka.id},mid=${moduloaId},koadernoEbaluazioa=${koadernoEbaluazioa})}">
   <div class="rubric-minimum-editor rubric-toolbar"><label class="rubric-edit-only">Errubrika teknikoaren gutxieneko nota <input type="number" min="0" max="10" step="0.01" th:field="*{gutxienekoNota}"></label><strong class="rubric-read-only" th:if="${form.gutxienekoNota != null}" th:text="${'Gutxieneko nota: ' + #numbers.formatDecimal(form.gutxienekoNota,1,2)}"></strong></div>
   <div class="evaluation-view-tabs rubric-toolbar rubric-grading-only">
     <div class="overall-weight-editor" th:if="${!#lists.isEmpty(bestelakoProbakForm.probak)}" th:attr="data-action=@{/ethazi/erronkak/{id}/errubrikak/{mid}/ebaluazio-pisuak(id=${erronka.id},mid=${moduloaId})}">
@@ -168,7 +173,7 @@
       <button type="button" class="btn btn-primary" id="other-test-modal-open">+ Bestelako proba</button>
     </header>
     <dialog id="other-test-modal" aria-labelledby="other-test-modal-title">
-      <form class="other-test-create-form" method="post" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/bestelako-probak/berria(id=${erronka.id},mid=${moduloaId})}">
+      <form class="other-test-create-form" method="post" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/bestelako-probak/berria(id=${erronka.id},mid=${moduloaId},koadernoEbaluazioa=${koadernoEbaluazioa})}">
         <header><h2 id="other-test-modal-title">Bestelako proba berria</h2><button type="button" class="btn" id="other-test-modal-close" aria-label="Itxi">×</button></header>
         <p class="muted">Sortu erronkan zehar modulu honetan egingo den proba ebaluagarria.</p>
         <label>Izena<input name="izena" required maxlength="200" autocomplete="off"></label>
@@ -177,7 +182,7 @@
       </form>
     </dialog>
     <p class="empty-state" th:if="${#lists.isEmpty(bestelakoProbakForm.probak)}">Ez dago bestelako probarik. Errubrika teknikoak ebaluazioaren %100 hartzen du.</p>
-    <form th:if="${!#lists.isEmpty(bestelakoProbakForm.probak)}" class="other-tests-form" method="post" th:object="${bestelakoProbakForm}" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/bestelako-probak/gorde(id=${erronka.id},mid=${moduloaId})}">
+    <form th:if="${!#lists.isEmpty(bestelakoProbakForm.probak)}" class="other-tests-form" method="post" th:object="${bestelakoProbakForm}" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/bestelako-probak/gorde(id=${erronka.id},mid=${moduloaId},koadernoEbaluazioa=${koadernoEbaluazioa})}">
       <details class="other-test-card" th:each="p, ps : *{probak}" th:id="${'bestelako-proba-' + p.id}" th:classappend="${p.id == fokukoBestelakoProbaId} ? ' kiniela-other-test-focus kiniela-focus-target'" th:open="${p.id == fokukoBestelakoProbaId}">
         <summary class="other-test-summary"><strong data-other-test-summary-name th:text="${p.izena}"></strong><span><span data-other-test-summary-date th:text="${#temporals.format(p.data, 'yyyy/MM/dd')}"></span><span aria-hidden="true"> · </span><span data-other-test-summary-weight th:text="${p.pisua + '%'}"></span></span></summary>
         <div class="other-test-card-body"><input type="hidden" th:field="*{probak[__${ps.index}__].id}">
@@ -193,7 +198,7 @@
       <div class="form-actions"><button class="btn btn-primary">Proben datuak gorde</button></div>
     </form>
   </section>
-  <th:block th:each="m : ${errubrika.mailak}"><form th:id="${'delete-level-' + m.id}" method="post" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/mailak/{lid}/ezabatu(id=${erronka.id},mid=${moduloaId},lid=${m.id})}" data-confirm="Mailakatzea ezabatu?"></form></th:block>
-  <th:block th:each="eb : ${errubrika.ebidentziak}"><form th:id="${'delete-evidence-' + eb.id}" method="post" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/ebidentziak/{eid}/ezabatu(id=${erronka.id},mid=${moduloaId},eid=${eb.id})}" data-confirm="Ebidentzia eta maila guztietako azalpenak ezabatu?"></form></th:block>
-  <th:block th:each="p : ${bestelakoProbakForm.probak}"><form th:if="${#lists.isEmpty(p.notak.?[nota != null])}" th:id="${'delete-other-test-' + p.id}" method="post" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/bestelako-probak/{pid}/ezabatu(id=${erronka.id},mid=${moduloaId},pid=${p.id})}" data-confirm="Bestelako proba ezabatu?"></form></th:block>
+  <th:block th:each="m : ${errubrika.mailak}"><form th:id="${'delete-level-' + m.id}" method="post" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/mailak/{lid}/ezabatu(id=${erronka.id},mid=${moduloaId},lid=${m.id},koadernoEbaluazioa=${koadernoEbaluazioa})}" data-confirm="Mailakatzea ezabatu?"></form></th:block>
+  <th:block th:each="eb : ${errubrika.ebidentziak}"><form th:id="${'delete-evidence-' + eb.id}" method="post" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/ebidentziak/{eid}/ezabatu(id=${erronka.id},mid=${moduloaId},eid=${eb.id},koadernoEbaluazioa=${koadernoEbaluazioa})}" data-confirm="Ebidentzia eta maila guztietako azalpenak ezabatu?"></form></th:block>
+  <th:block th:each="p : ${bestelakoProbakForm.probak}"><form th:if="${#lists.isEmpty(p.notak.?[nota != null])}" th:id="${'delete-other-test-' + p.id}" method="post" th:action="@{/ethazi/erronkak/{id}/errubrikak/{mid}/bestelako-probak/{pid}/ezabatu(id=${erronka.id},mid=${moduloaId},pid=${p.id},koadernoEbaluazioa=${koadernoEbaluazioa})}" data-confirm="Bestelako proba ezabatu?"></form></th:block>
 </section></main><script th:src="@{/js/ethazi.js}" defer></script></body></html>

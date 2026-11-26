@@ -124,7 +124,7 @@ class EthaziDenboralizazioaTemplateTest {
                             .param("urtea", "2026").param("hilabetea", "11")
                             .session(session).principal(auth))
                     .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-            assertThat(html).contains("Denboralizazioa", "Nire moduluak", "APIa diseinatu",
+            assertThat(html).contains("Denboralizazioa", "Ebaluazioa", "Nire moduluak", "APIa diseinatu",
                     "Aurkezpena", "Orokorra", "Web erronka", "1 h", "2 h", "👤✔",
                     "moduloaId=10", "draggable=\"true\"", "id=\"jardueraDialog\"", "📝",
                     "Egutegi bista", "Falten bista", "Hilabete bista", "Asteko bista",

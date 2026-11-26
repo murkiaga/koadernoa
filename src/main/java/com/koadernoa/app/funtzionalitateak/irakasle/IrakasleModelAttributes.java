@@ -115,6 +115,30 @@ public class IrakasleModelAttributes {
         return EthaziKoadernoaController.ETHAZI_MOTA.equals(koadernoMota) ? koadernoa : null;
     }
 
+    @ModelAttribute("ethaziEbaluazioErronkak")
+    @Transactional(readOnly = true)
+    public List<EthaziKoadernoaService.ErronkaTxartela> getEthaziEbaluazioErronkak(
+            Authentication auth,
+            @SessionAttribute(value = "ethaziKoadernoAktiboa", required = false) EthaziKoadernoa sessionKoadernoa,
+            @SessionAttribute(value = EthaziKoadernoaController.KOADERNO_MOTA, required = false) String koadernoMota) {
+        if (auth == null || sessionKoadernoa == null || sessionKoadernoa.getId() == null
+                || !EthaziKoadernoaController.ETHAZI_MOTA.equals(koadernoMota)) {
+            return List.of();
+        }
+        try {
+            EthaziKoadernoa koadernoa = ethaziKoadernoaService.findById(sessionKoadernoa.getId());
+            Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+            if (koadernoa == null || !ethaziKoadernoaService.irakasleakBadaukaSarbidea(irakaslea, koadernoa)) {
+                return List.of();
+            }
+            return ethaziKoadernoaService.programazioaIkuspegia(koadernoa, null, irakaslea).erronkak().stream()
+                    .filter(erronka -> !erronka.moduluAukerak().isEmpty())
+                    .toList();
+        } catch (RuntimeException ex) {
+            return List.of();
+        }
+    }
+
     @ModelAttribute("tutoretzaTaldea")
     @Transactional(readOnly = true)
     public Taldea getTutoretzaTaldea(Authentication auth) {

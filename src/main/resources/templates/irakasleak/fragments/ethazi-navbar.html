@@ -29,6 +29,17 @@
                th:classappend="${currentPath == '/irakasle/ethazi-koadernoa/programazioa'} ? 'active'">Programazioa</a></li>
         <li><a th:href="@{/irakasle/ethazi-koadernoa/denboralizazioa}"
                th:classappend="${#strings.startsWith(currentPath, '/irakasle/ethazi-koadernoa/denboralizazioa')} ? 'active'">Denboralizazioa</a></li>
+        <li class="t-dropdown">
+          <details>
+            <summary th:classappend="${koadernoEbaluazioa == true or #strings.startsWith(currentPath, '/irakasle/ethazi-koadernoa/ebaluazioa')} ? 'active'">Ebaluazioa</summary>
+            <div class="t-dropdown-menu">
+              <a th:each="erronka : ${ethaziEbaluazioErronkak}"
+                 th:href="@{/irakasle/ethazi-koadernoa/ebaluazioa(erronkaId=${erronka.id})}"
+                 th:text="${erronka.indizea + '. erronka · ' + erronka.izena}">Erronka</a>
+              <span th:if="${#lists.isEmpty(ethaziEbaluazioErronkak)}">Ez dago ebaluatzeko erronkarik</span>
+            </div>
+          </details>
+        </li>
         <li th:if="${#authorization.expression('hasAnyRole(''KUDEATZAILEA'',''ADMIN'')')}">
           <a th:href="@{/kudeatzaile}">Kudeaketa</a>
         </li>
@@ -56,6 +67,12 @@
                th:classappend="${currentPath == '/irakasle/ethazi-koadernoa/programazioa'} ? 'active'">Programazioa</a></li>
         <li><a th:href="@{/irakasle/ethazi-koadernoa/denboralizazioa}"
                th:classappend="${#strings.startsWith(currentPath, '/irakasle/ethazi-koadernoa/denboralizazioa')} ? 'active'">Denboralizazioa</a></li>
+        <li class="t-mobile-dropdown"><details><summary>Ebaluazioa</summary>
+          <div><a th:each="erronka : ${ethaziEbaluazioErronkak}"
+             th:href="@{/irakasle/ethazi-koadernoa/ebaluazioa(erronkaId=${erronka.id})}"
+             th:text="${erronka.indizea + '. erronka · ' + erronka.izena}">Erronka</a>
+            <span th:if="${#lists.isEmpty(ethaziEbaluazioErronkak)}">Ez dago ebaluatzeko erronkarik</span></div>
+        </details></li>
         <li th:if="${#authorization.expression('hasAnyRole(''KUDEATZAILEA'',''ADMIN'')')}"><a th:href="@{/kudeatzaile}">Kudeaketa</a></li>
         <li><form th:action="@{/logout}" method="post">
           <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>

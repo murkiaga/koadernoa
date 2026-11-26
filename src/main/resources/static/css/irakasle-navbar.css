@@ -111,6 +111,47 @@ body {
   background: #1abc9c;
 }
 
+.t-dropdown {
+  position: relative;
+}
+
+.t-dropdown summary {
+  cursor: pointer;
+  list-style: none;
+  white-space: nowrap;
+  color: #fff;
+  padding: .45rem .8rem;
+  border-radius: 6px;
+}
+
+.t-dropdown summary::-webkit-details-marker { display: none; }
+.t-dropdown summary::after { content: " ▾"; }
+.t-dropdown summary:hover { background: #34495e; }
+.t-dropdown summary.active { background: #1abc9c; }
+
+.t-dropdown-menu {
+  position: absolute;
+  z-index: 120;
+  top: calc(100% + .35rem);
+  right: 0;
+  min-width: 17rem;
+  padding: .35rem;
+  border: 1px solid #d1d5db;
+  border-radius: .55rem;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, .18);
+}
+
+.t-dropdown-menu a,
+.t-dropdown-menu span {
+  display: block;
+  color: #111827;
+  padding: .55rem .65rem;
+  white-space: normal;
+}
+
+.t-dropdown-menu a:hover { background: #ecfdf5; }
+
 .logout-btn {
   background: #e74c3c;
   color: #fff;
@@ -216,6 +257,20 @@ body {
   .t-list a.active {
     border-color: #1abc9c;
     background: #ecfdf5;
+  }
+
+  .t-mobile-dropdown details > summary {
+    cursor: pointer;
+    padding: .7rem .9rem;
+    border: 1px solid #e5e7eb;
+    border-radius: .5rem;
+    background: #fff;
+  }
+
+  .t-mobile-dropdown details > div {
+    display: grid;
+    gap: .3rem;
+    padding: .35rem 0 0 .8rem;
   }
 }
 /* com.koadernoa.app.common.advice.KoloreakAdvice */

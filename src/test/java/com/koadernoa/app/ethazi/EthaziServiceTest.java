@@ -1013,7 +1013,7 @@ class EthaziServiceTest {
             mvc().perform(get("/ethazi/erronkak/" + challengeId + "/errubrikak").principal(teacherAuth)
                     .param("moduloaId", m.getId().toString()))
                 .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("rubric-lock-toggle"))));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("rubric-lock-toggle")));
             mvc().perform(post("/ethazi/erronkak/" + challengeId + "/errubrikak/" + m.getId() + "/notak")
                     .principal(teacherAuth).param("ebidentziaId", evidenceId.toString())
                     .param("taldeaId", team1.toString()).param("mailaId", levelId.toString()))

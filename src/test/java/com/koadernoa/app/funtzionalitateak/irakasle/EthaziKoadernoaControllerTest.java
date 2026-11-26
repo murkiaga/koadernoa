@@ -124,6 +124,36 @@ class EthaziKoadernoaControllerTest {
     }
 
     @Test
+    void ebaluazioakIrakaslearenLehenErronkaEtaModuluraBideratzenDu() {
+        var modulua = new EthaziKoadernoaService.ModuluAukera(33L, "BUAA");
+        var erronka = new EthaziKoadernoaService.ErronkaTxartela(4L, 1, "Abiadura-kaxa", null,
+                null, null, List.of("BUAA"), List.of(), List.of(modulua), List.of(), List.of(), List.of());
+        var ikuspegia = new EthaziKoadernoaService.ProgramazioaIkuspegia(
+                "2026-2027", List.of(erronka), List.of(), List.of(modulua));
+        when(moduluak.findByTaldeaId(4L)).thenReturn(List.of());
+        when(koadernoaService.programazioaIkuspegia(koadernoa, null, irakaslea)).thenReturn(ikuspegia);
+
+        String view = controller.ebaluazioa(auth, koadernoa, null, null, "TEKNIKOA",
+                new MockHttpSession(), new ExtendedModelMap(), new RedirectAttributesModelMap());
+
+        assertThat(view).isEqualTo("redirect:/ethazi/erronkak/4/errubrikak"
+                + "?moduloaId=33&gaitasunMota=TEKNIKOA&koadernoEbaluazioa=true");
+    }
+
+    @Test
+    void ebaluazioakMezuBistaErakustenDuEbaluatzekoErronkarikEzBadago() {
+        var ikuspegia = new EthaziKoadernoaService.ProgramazioaIkuspegia(
+                "2026-2027", List.of(), List.of(), List.of());
+        when(moduluak.findByTaldeaId(4L)).thenReturn(List.of());
+        when(koadernoaService.programazioaIkuspegia(koadernoa, null, irakaslea)).thenReturn(ikuspegia);
+
+        String view = controller.ebaluazioa(auth, koadernoa, null, null, "TEKNIKOA",
+                new MockHttpSession(), new ExtendedModelMap(), new RedirectAttributesModelMap());
+
+        assertThat(view).isEqualTo("irakasleak/ethazi/ebaluazioa");
+    }
+
+    @Test
     void denboralizazioaModuluFiltroEtaHilabetearekinKargatzenDu() {
         Maila maila = new Maila(); maila.setId(2L);
         Moduloa modulua = new Moduloa(); modulua.setMaila(maila); modulua.setAktibo(true);

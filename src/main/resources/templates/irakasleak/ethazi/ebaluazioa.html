@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ebaluazioa</title>
+  <link rel="stylesheet" th:href="@{/css/irakasle-navbar.css}">
+  <link rel="stylesheet" th:href="@{/css/irakasle.css}">
+</head>
+<body>
+<div th:replace="~{irakasleak/fragments/ethazi-navbar :: navbar(${ethaziKoadernoAktiboa}, ${irakasleKoadernoAktiboak}, ${irakasleEthaziKoadernoAktiboak})}"></div>
+<main class="irakasle-container">
+  <section class="card">
+    <h1>Ebaluazioa</h1>
+    <p>Ez dago zure modulurik duen erronkarik koaderno aktiboan.</p>
+  </section>
+</main>
+</body>
+</html>
