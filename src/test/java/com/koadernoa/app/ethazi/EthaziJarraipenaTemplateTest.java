@@ -126,7 +126,8 @@ class EthaziJarraipenaTemplateTest {
                     "Asistentziako oharrak ikusi", "Faltak moduluka eta oharrak ikusi",
                     "Faltak moduluka", "2. ordua · Hutsa", "Oharrak",
                     "xehetasunak-30-20-" + data, "gaurko-zutabea", "data-gaur=\"true\"",
-                    "kokatuGaurkoZutabea");
+                    "data-data=\"" + data + "\"", "kokatuHasierakoZutabea",
+                    "ikusgaiak.find(e=>gaur&&e.dataset.data>gaur)");
             assertThat(html).contains("data-erronka-toggle=\"20\"", "aria-expanded=\"false\"",
                     "erronka-xehetasuna-ezkututa", ">+</span>", "class=\"talde-hasiera\"",
                     "id=\"jarraipenScrollKontrola\"", "id=\"jarraipenScrollBarra\"",
