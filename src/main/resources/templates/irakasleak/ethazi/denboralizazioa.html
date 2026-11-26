@@ -26,7 +26,7 @@
     .calendar td{height:90px;vertical-align:top;padding:.25rem;border-right:1px solid #dbe2ea;border-top:1px solid #dbe2ea;background:#fff;overflow:hidden;position:relative}
     .calendar.week-mode td{height:calc(100vh - 300px);min-height:520px}.calendar.week-mode .activities{max-height:calc(100vh - 370px)}
     .calendar td:last-child{border-right:0}.calendar td.outside{color:#94a3b8}.calendar td.lektibo1{background:var(--ebal1-color)}.calendar td.lektibo2{background:var(--ebal2-color)}.calendar td.lektibo3{background:var(--ebal3-color)}.calendar td.jaieguna{background:#fff}.calendar td.jaieguna .day-number{color:#b91c1c}.calendar td.ezlektiboa{background:#000;color:#fff}.calendar td.ordezkatua{background:#ff0}
-    .day-head{display:flex;justify-content:space-between;align-items:flex-start;gap:.25rem;margin-bottom:.2rem;min-height:20px}.day-number{font-weight:900;font-size:.78rem}
+    .day-head{display:flex;justify-content:space-between;align-items:flex-start;gap:.25rem;margin-bottom:.2rem;min-height:20px}.day-number{font-weight:900;font-size:.78rem}.gaur-zenbakia{display:inline-flex;align-items:center;justify-content:center;width:1.7rem;height:1.7rem;border-radius:999px;background:#1a73e8;color:#fff!important;font-weight:700}
     .attendance{display:flex;justify-content:flex-end;gap:.25rem;flex-wrap:wrap}
     .attendance a{display:inline-flex;align-items:center;gap:.12rem;padding:.1rem .25rem;border:1px solid #bfdbfe;border-radius:999px;background:#eff6ff;color:#1e40af;text-decoration:none;font-size:.63rem;font-weight:900}
     .attendance a.open{background:#dcfce7;border-color:#86efac;color:#166534}
@@ -95,7 +95,8 @@
             <td th:each="eguna : ${astea}" th:attr="data-date=${eguna.data}"
                 th:classappend="${(!eguna.hilabeteAktibokoa ? ' outside' : '') + (!#strings.isEmpty(eguna.klasea) ? ' ' + eguna.klasea : '')}">
               <div class="day-head">
-                <span class="day-number" th:text="${eguna.data.dayOfMonth}">1</span>
+                <span class="day-number" th:text="${eguna.data.dayOfMonth}"
+                      th:classappend="${eguna.data.equals(gaur)} ? 'gaur-zenbakia' : ''">1</span>
                 <div class="attendance" th:if="${(eguna.hilabeteAktibokoa or egutegiMota == 'astea') and (!#lists.isEmpty(eguna.asistentziak) or egutegiOharrak[eguna.data.toString()] != null)}">
                   <a th:each="asistentzia : ${eguna.asistentziak}"
                      th:href="@{/irakasle/ethazi-koadernoa/denboralizazioa/asistentzia(data=${eguna.data},moduloaId=${asistentzia.moduloaId},filtroModuloaId=${denboralizazioa.aukeratutakoModuloaId},urtea=${denboralizazioa.urtea},hilabetea=${denboralizazioa.hilabetea},egutegiMota=${egutegiMota},asteHasiera=${asteHasiera})}"

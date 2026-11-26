@@ -57,10 +57,12 @@ class EthaziDenboralizazioaTemplateTest {
         var eguna = new EthaziDenboralizazioaService.Eguna(data, true, "lektibo1",
                 List.of(jarduera, komuna),
                 List.of(new EthaziDenboralizazioaService.AsistentziaAukera(10L, "PROG", true)));
+        var gaurkoEguna = new EthaziDenboralizazioaService.Eguna(LocalDate.now(), true, "lektibo1",
+                List.of(), List.of());
         var ikuspegia = new EthaziDenboralizazioaService.DenboralizazioaIkuspegia(
                 "2026-2027", "azaroa 2026", 2026, 11, null,
                 List.of(new EthaziKoadernoaService.ModuluAukera(10L, "PROG")),
-                List.of(List.of(eguna, eguna, eguna, eguna, eguna)));
+                List.of(List.of(eguna, gaurkoEguna, eguna, eguna, eguna)));
 
         Taldea taldea = new Taldea(); taldea.setId(4L); taldea.setIzena("1DAM");
         EthaziKoadernoa koadernoa = new EthaziKoadernoa(); koadernoa.setId(6L); koadernoa.setTaldea(taldea);
@@ -109,7 +111,8 @@ class EthaziDenboralizazioaTemplateTest {
                     "Aurkezpena", "Orokorra", "Web erronka", "1 h", "2 h", "👤✔",
                     "moduloaId=10", "draggable=\"true\"", "id=\"jardueraDialog\"", "📝",
                     "Egutegi bista", "Falten bista", "Hilabete bista", "Asteko bista",
-                    "lektibo1", "egutegi-oharra", "Ebaluazio bilera");
+                    "lektibo1", "egutegi-oharra", "Ebaluazio bilera",
+                    "class=\"day-number gaur-zenbakia\"");
             assertThat(html).doesNotContain("filtroModuloaId=10");
 
             String astekoHtml = mvc.perform(get("/irakasle/ethazi-koadernoa/denboralizazioa")
