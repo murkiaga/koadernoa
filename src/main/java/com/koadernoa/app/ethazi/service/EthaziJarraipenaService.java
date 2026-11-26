@@ -202,6 +202,8 @@ public class EthaziJarraipenaService {
 
         Map<OharGakoa, List<OharXehetasuna>> asistentziaOharrak = kargatuAsistentziaOharrak(
                 taldeaId, ikasturtea.getId(), moduloaId, erronkaZutabeak);
+        Map<OharGakoa, List<FaltaXehetasuna>> asistentziaFaltak = kargatuAsistentziaFaltak(
+                taldeaId, ikasturtea.getId(), moduloaId, erronkaZutabeak);
 
         int muga = taldekoModuluak.stream().map(Moduloa::getMaila).filter(Objects::nonNull)
                 .map(m -> m.getFaltenMugaPortzentaia()).filter(Objects::nonNull).findFirst().orElse(20);
@@ -231,8 +233,10 @@ public class EthaziJarraipenaService {
                             .reduce(BigDecimal.ZERO, BigDecimal::add);
                     List<OharXehetasuna> oharrak = asistentziaOharrak.getOrDefault(
                             new OharGakoa(ikaslea.getId(), eguna.data()), List.of());
+                    List<FaltaXehetasuna> faltak = asistentziaFaltak.getOrDefault(
+                            new OharGakoa(ikaslea.getId(), eguna.data()), List.of());
                     egunGelaxkak.put(gelaxkaGakoa(erronka.id(), eguna.data()),
-                            new JarraipenGelaxka(orduak, oharrak));
+                            new JarraipenGelaxka(orduak, faltak, oharrak));
                 }
             }
             boolean taldeHasiera = !Objects.equals(aurrekoTaldea, ordenatua.taldea().ordena());
@@ -275,6 +279,38 @@ public class EthaziJarraipenaService {
     private OharXehetasuna oharXehetasuna(IkasleEgunOharra oharra) {
         Moduloa modulua = oharra.getKoadernoa().getModuloa();
         return new OharXehetasuna(modulua.getId(), etiketa(modulua), oharra.getTestua());
+    }
+
+    private Map<OharGakoa, List<FaltaXehetasuna>> kargatuAsistentziaFaltak(
+            Long taldeaId, Long ikasturteaId, Long moduloaId,
+            List<ErronkaZutabeMultzoa> erronkaZutabeak) {
+        LocalDate hasiera = erronkaZutabeak.stream().map(ErronkaZutabeMultzoa::hasieraData)
+                .filter(Objects::nonNull).min(LocalDate::compareTo).orElse(null);
+        LocalDate amaiera = erronkaZutabeak.stream().map(ErronkaZutabeMultzoa::bukaeraData)
+                .filter(Objects::nonNull).max(LocalDate::compareTo).orElse(null);
+        if (hasiera == null || amaiera == null) return Map.of();
+        return asistentziak.findEthaziFaltak(taldeaId, ikasturteaId, hasiera, amaiera,
+                        List.of(Asistentzia.AsistentziaEgoera.HUTS,
+                                Asistentzia.AsistentziaEgoera.JUSTIFIKATUA)).stream()
+                .filter(a -> a.getMatrikula() != null && a.getMatrikula().getIkaslea() != null
+                        && a.getSaioa() != null && a.getSaioa().getKoadernoa() != null
+                        && a.getSaioa().getKoadernoa().getModuloa() != null)
+                .filter(a -> a.getSaioa().getEgoera() != Saioa.SaioEgoera.EZEZTATUA)
+                .filter(a -> moduloaId == null || moduloaId.equals(
+                        a.getSaioa().getKoadernoa().getModuloa().getId()))
+                .collect(Collectors.groupingBy(a -> new OharGakoa(
+                                a.getMatrikula().getIkaslea().getId(), a.getSaioa().getData()),
+                        LinkedHashMap::new, Collectors.mapping(this::faltaXehetasuna,
+                                Collectors.toList())));
+    }
+
+    private FaltaXehetasuna faltaXehetasuna(Asistentzia asistentzia) {
+        Saioa saioa = asistentzia.getSaioa();
+        Moduloa modulua = saioa.getKoadernoa().getModuloa();
+        String egoera = asistentzia.getEgoera() == Asistentzia.AsistentziaEgoera.JUSTIFIKATUA
+                ? "Justifikatua" : "Hutsa";
+        return new FaltaXehetasuna(modulua.getId(), etiketa(modulua), saioa.getHasieraSlot(),
+                Math.max(1, saioa.getIraupenaSlot()), egoera);
     }
 
     @Transactional(readOnly = true)
@@ -554,8 +590,20 @@ public class EthaziJarraipenaService {
     public record ErronkaIkasleLaburpena(BigDecimal faltaOrduak, double portzentaia,
             boolean suspendituta, String egoeraEtiketa) {}
     public record OharXehetasuna(Long moduloaId, String modulua, String testua) {}
-    public record JarraipenGelaxka(BigDecimal faltaOrduak, List<OharXehetasuna> oharrak) {
+    public record FaltaXehetasuna(Long moduloaId, String modulua, int hasieraSlot,
+            int iraupenaSlot, String egoera) {
+        public String orduEtiketa() {
+            int amaieraSlot = hasieraSlot + iraupenaSlot - 1;
+            return hasieraSlot == amaieraSlot ? hasieraSlot + ". ordua"
+                    : hasieraSlot + ".–" + amaieraSlot + ". orduak";
+        }
+    }
+    public record JarraipenGelaxka(BigDecimal faltaOrduak, List<FaltaXehetasuna> faltak,
+            List<OharXehetasuna> oharrak) {
         public boolean oharra() { return oharrak != null && !oharrak.isEmpty(); }
+        public boolean xehetasuna() {
+            return (faltaOrduak != null && faltaOrduak.signum() > 0) || oharra();
+        }
     }
     public record IkasleLerroa(Long id, String izenOsoa, String taldea, boolean taldeHasiera,
             int taldekoLerroKopurua, Map<Long, ErronkaIkasleLaburpena> laburpenak,
@@ -563,7 +611,7 @@ public class EthaziJarraipenaService {
         public ErronkaIkasleLaburpena laburpena(Long erronkaId) { return laburpenak.get(erronkaId); }
         public JarraipenGelaxka gelaxka(Long erronkaId, LocalDate data) {
             return gelaxkak.getOrDefault(gelaxkaGakoa(erronkaId, data),
-                    new JarraipenGelaxka(BigDecimal.ZERO, List.of()));
+                    new JarraipenGelaxka(BigDecimal.ZERO, List.of(), List.of()));
         }
     }
     public record JarraipenaIkuspegia(String ikasturtea, List<ModuluAukera> moduluAukerak,

@@ -53,6 +53,26 @@ public interface AsistentziaRepository extends JpaRepository<Asistentzia, Long> 
 	                                        @Param("hasiera") LocalDate hasiera,
 	                                        @Param("bukaera") LocalDate bukaera,
 	                                        @Param("egoerak") List<AsistentziaEgoera> egoerak);
+
+	@Query("""
+	    select a
+	    from Asistentzia a
+	      join fetch a.saioa s
+	      join fetch s.koadernoa k
+	      join fetch k.moduloa mod
+	      join fetch a.matrikula matr
+	      join fetch matr.ikaslea i
+	    where mod.taldea.id = :taldeaId
+	      and k.egutegia.ikasturtea.id = :ikasturteaId
+	      and s.data between :hasiera and :bukaera
+	      and a.egoera in :egoerak
+	    order by s.data asc, s.hasieraSlot asc, mod.kodea asc
+	""")
+	List<Asistentzia> findEthaziFaltak(@Param("taldeaId") Long taldeaId,
+	                                  @Param("ikasturteaId") Long ikasturteaId,
+	                                  @Param("hasiera") LocalDate hasiera,
+	                                  @Param("bukaera") LocalDate bukaera,
+	                                  @Param("egoerak") List<AsistentziaEgoera> egoerak);
 	  
 	  // Estatistiketarako: saio multzo bateko HUTS egoerako asistentziak
 	  List<Asistentzia> findBySaioa_IdInAndEgoeraIn(

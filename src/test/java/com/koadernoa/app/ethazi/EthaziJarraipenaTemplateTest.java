@@ -57,6 +57,8 @@ class EthaziJarraipenaTemplateTest {
                 new BigDecimal("0.50"), 25d, true, "Modulua suspendituta");
         var gelaxka = new EthaziJarraipenaService.JarraipenGelaxka(
                 new BigDecimal("0.50"), List.of(
+                        new EthaziJarraipenaService.FaltaXehetasuna(
+                                10L, "PROG", 2, 1, "Hutsa")), List.of(
                         new EthaziJarraipenaService.OharXehetasuna(10L, "PROG", "Etxeko lana falta da"),
                         new EthaziJarraipenaService.OharXehetasuna(11L, "DATU", "Arreta handiagoa behar du")));
         var ikaslea = new EthaziJarraipenaService.IkasleLerroa(
@@ -117,7 +119,9 @@ class EthaziJarraipenaTemplateTest {
                     "Web aplikazioa", "Alberdi, Ane",
                     "1. taldea", "25.00%", "Modulua suspendituta", "2026/11/02", "📝",
                     "Etxeko lana falta da", "Arreta handiagoa behar du", "PROG", "DATU",
-                    "Asistentziako oharrak ikusi", "oharrak-30-20-2026-11-02");
+                    "Asistentziako oharrak ikusi", "Faltak moduluka eta oharrak ikusi",
+                    "Faltak moduluka", "2. ordua · Hutsa", "Oharrak",
+                    "xehetasunak-30-20-2026-11-02");
             assertThat(html).contains("data-erronka-toggle=\"20\"", "aria-expanded=\"false\"",
                     "erronka-xehetasuna-ezkututa", ">+</span>", "class=\"talde-hasiera\"",
                     "id=\"jarraipenScrollKontrola\"", "id=\"jarraipenScrollBarra\"");

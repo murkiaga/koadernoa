@@ -193,7 +193,7 @@ class EthaziDenboralizazioaServiceTest {
         when(kronogramaService.denboralizazioBanaketa(30L, auth)).thenReturn(
                 new KronogramaService.DenboralizazioBanaketa(erronka, List.of(
                         new KronogramaService.DenboralizazioEgunJarduera(
-                                jatorria, data, BigDecimal.valueOf(1.5)))));
+                                jatorria, data, BigDecimal.valueOf(2)))));
 
         int kopurua = service.bolkatu(koadernoa, egutegia, irakaslea, 30L, auth);
 
@@ -204,7 +204,7 @@ class EthaziDenboralizazioaServiceTest {
             return "APIa".equals(gordea.getIzenburua())
                     && "Erronka 1".equals(gordea.getErronkaIzena())
                     && data.equals(gordea.getData())
-                    && BigDecimal.valueOf(1.5).equals(gordea.getOrduak())
+                    && BigDecimal.valueOf(2).equals(gordea.getOrduak())
                     && gordea.getModuloa() == modulua;
         }));
     }
@@ -219,12 +219,12 @@ class EthaziDenboralizazioaServiceTest {
                 .thenReturn(java.util.Optional.of(jarduera));
 
         service.eguneratuJarduera(koadernoa, irakaslea, 101L, "API berria", "Xehetasuna",
-                BigDecimal.valueOf(2.5), "Eginda");
+                BigDecimal.valueOf(2), "Eginda");
         service.mugituJarduera(koadernoa, irakaslea, 101L, LocalDate.of(2026, 9, 16));
 
         assertThat(jarduera.getIzenburua()).isEqualTo("API berria");
         assertThat(jarduera.getOharrak()).isEqualTo("Eginda");
-        assertThat(jarduera.getOrduak()).isEqualByComparingTo("2.5");
+        assertThat(jarduera.getOrduak()).isEqualByComparingTo("2");
         assertThat(jarduera.getData()).isEqualTo(LocalDate.of(2026, 9, 16));
     }
 
@@ -244,6 +244,21 @@ class EthaziDenboralizazioaServiceTest {
         assertThatThrownBy(() -> service.mugituJarduera(
                 koadernoa, irakaslea, 103L, LocalDate.of(2026, 9, 16)))
                 .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void jardueraEditatzeanOrduDezimalakBaztertzenDira() {
+        Erronka erronka = new Erronka(); erronka.setId(30L); erronka.setIzena("Erronka 1");
+        Moduloa modulua = new Moduloa(); modulua.setId(10L); modulua.setKodea("PROG");
+        EthaziDenboralizazioJarduera jarduera = gordea(101L, "APIa",
+                KronogramaJardueraMota.MODULUA, modulua, erronka, LocalDate.of(2026, 9, 15));
+        when(denboralizazioJarduerak.findByIdAndEthaziKoadernoaId(101L, 6L))
+                .thenReturn(java.util.Optional.of(jarduera));
+
+        assertThatThrownBy(() -> service.eguneratuJarduera(koadernoa, irakaslea, 101L,
+                "APIa", "Xehetasuna", BigDecimal.valueOf(1.5), ""))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("zenbaki osoa");
     }
 
     private EthaziKoadernoaService.ProgramazioaIkuspegia programazioa() {

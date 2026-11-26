@@ -123,6 +123,16 @@ class KronogramaServiceTest {
     }
 
     @Test
+    void jarduerarenIraupenakZenbakiOsoaIzanBeharDu() {
+        var form = form(KronogramaJardueraMota.MODULUA, 10L);
+        form.setIraupenOrduak(new BigDecimal("1.5"));
+
+        assertThatThrownBy(() -> service.gorde(7L, form, auth("manager", "ROLE_ADMIN")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("zenbaki osoa");
+    }
+
+    @Test
     void ikuspegiakErronkaHorretakoJarduerakBakarrikEskatzenDituEtaAsteakSortzenDitu() {
         ordutegiaLehenetsia();
         when(jarduerak.findByErronkaIdOrderByHasieraDataAscBukaeraDataAscIdAsc(7L)).thenReturn(List.of());
@@ -562,7 +572,7 @@ class KronogramaServiceTest {
         var form = new KronogramaJardueraForm();
         form.setIzenburua("Jarduera"); form.setMota(mota); form.setModuloaId(moduloaId);
         form.setHasieraData(LocalDate.of(2026, 10, 7));
-        form.setIraupenOrduak(new BigDecimal("2.5"));
+        form.setIraupenOrduak(new BigDecimal("2"));
         return form;
     }
 

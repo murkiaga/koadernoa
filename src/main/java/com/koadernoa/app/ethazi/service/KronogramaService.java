@@ -143,7 +143,7 @@ public class KronogramaService {
             }
         }
 
-        BigDecimal iraupena = form.getIraupenOrduak().setScale(2, RoundingMode.HALF_UP);
+        BigDecimal iraupena = form.getIraupenOrduak().setScale(0, RoundingMode.UNNECESSARY);
         ErronkaJardueraMultzoa multzoa = form.getMultzoaId() == null ? null
                 : erronkakoMultzoa(erronkaId, form.getMultzoaId());
         jarduera.setIzenburua(form.getIzenburua().strip());
@@ -466,12 +466,12 @@ public class KronogramaService {
                     && !form.getHasieraData().isAfter(erronka.getBukaeraData()),
                 "Jardueraren hasiera erronkaren daten barruan egon behar da.");
         }
-        require(form.getIraupenOrduak() != null && form.getIraupenOrduak().compareTo(BigDecimal.ZERO) > 0,
-            "Iraupena zero baino handiagoa izan behar da.");
-        require(form.getIraupenOrduak().compareTo(new BigDecimal("999.99")) <= 0,
+        require(form.getIraupenOrduak() != null && form.getIraupenOrduak().compareTo(BigDecimal.ONE) >= 0,
+            "Iraupena gutxienez ordubetekoa izan behar da.");
+        require(form.getIraupenOrduak().compareTo(new BigDecimal("999")) <= 0,
             "Iraupena handiegia da.");
-        require(form.getIraupenOrduak().stripTrailingZeros().scale() <= 2,
-            "Iraupenak gehienez bi hamartar izan ditzake.");
+        require(form.getIraupenOrduak().stripTrailingZeros().scale() <= 0,
+            "Iraupenak zenbaki osoa izan behar du.");
     }
 
     private void egiaztatuEditatzekoBaimena(Authentication auth, Erronka erronka,

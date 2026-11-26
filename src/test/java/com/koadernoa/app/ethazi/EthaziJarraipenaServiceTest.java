@@ -231,6 +231,35 @@ class EthaziJarraipenaServiceTest {
     }
 
     @Test
+    void faltenXehetasunakAsistentziakoModuluaEtaKlaseOrduaErakustenDitu() {
+        LocalDate data = LocalDate.of(2026, 11, 2);
+        Koadernoa progKoadernoa = new Koadernoa(); progKoadernoa.setId(70L);
+        progKoadernoa.setModuloa(prog); progKoadernoa.setEgutegia(egutegia);
+        Saioa saioa = new Saioa(); saioa.setId(80L); saioa.setKoadernoa(progKoadernoa);
+        saioa.setData(data); saioa.setHasieraSlot(2); saioa.setIraupenaSlot(1);
+        Matrikula matrikula = new Matrikula(); matrikula.setId(90L);
+        matrikula.setKoadernoa(progKoadernoa); matrikula.setIkaslea(ane);
+        Asistentzia falta = new Asistentzia(); falta.setSaioa(saioa); falta.setMatrikula(matrikula);
+        falta.setEgoera(Asistentzia.AsistentziaEgoera.HUTS);
+        when(gelaxkak.findByEthaziKoadernoaIdAndErronkaIdIn(6L, List.of(20L)))
+                .thenReturn(List.of(gelaxka(ane, prog, BigDecimal.ONE)));
+        when(asistentziak.findEthaziFaltak(4L, 3L, data, LocalDate.of(2026, 11, 3),
+                List.of(Asistentzia.AsistentziaEgoera.HUTS,
+                        Asistentzia.AsistentziaEgoera.JUSTIFIKATUA)))
+                .thenReturn(List.of(falta));
+
+        var gelaxka = service.prestatu(koadernoa, egutegia, irakaslea, false, null)
+                .ikasleak().stream().filter(i -> i.id().equals(30L)).findFirst().orElseThrow()
+                .gelaxka(20L, data);
+
+        assertThat(gelaxka.faltak()).singleElement().satisfies(xehetasuna -> {
+            assertThat(xehetasuna.modulua()).isEqualTo("PROG");
+            assertThat(xehetasuna.orduEtiketa()).isEqualTo("2. ordua");
+            assertThat(xehetasuna.egoera()).isEqualTo("Hutsa");
+        });
+    }
+
+    @Test
     void ezinDaEgunekoModuluOrduakGainditzenDituenFaltarikGorde() {
         when(ikasleak.findById(30L)).thenReturn(Optional.of(ane));
         when(erronkak.findWithModuluakById(20L)).thenReturn(Optional.of(erronka));

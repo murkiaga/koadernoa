@@ -117,8 +117,9 @@ public class EthaziDenboralizazioaService {
             if (izenburuaGarbia.isEmpty() || izenburuaGarbia.length() > 200) {
                 throw new IllegalArgumentException("Izenburuak 1 eta 200 karaktere artean izan behar ditu.");
             }
-            if (orduak == null || orduak.compareTo(BigDecimal.ZERO) <= 0) {
-                throw new IllegalArgumentException("Ordu kopuruak zero baino handiagoa izan behar du.");
+            if (orduak == null || orduak.compareTo(BigDecimal.ONE) < 0
+                    || orduak.stripTrailingZeros().scale() > 0) {
+                throw new IllegalArgumentException("Ordu kopuruak 1 edo handiagoa den zenbaki osoa izan behar du.");
             }
             jarduera.setIzenburua(izenburuaGarbia);
             jarduera.setDeskribapena(hutsikNull(deskribapena));
