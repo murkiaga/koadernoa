@@ -191,6 +191,7 @@ public class EthaziKoadernoaController {
             session.setAttribute("ethaziDenboralizazioaEgutegiMota", egutegiMota);
         }
         model.addAttribute("ethaziKoadernoAktiboa", koadernoa);
+        model.addAttribute("gaur", gaur);
         boolean faltakBista = "faltak".equalsIgnoreCase(bista);
         model.addAttribute("bista", faltakBista ? "faltak" : "egutegia");
         var denboralizazioa = ethaziDenboralizazioaService.prestatu(

@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -49,7 +50,7 @@ import jakarta.servlet.http.HttpServletRequest;
 class EthaziJarraipenaTemplateTest {
     @Test
     void jarraipenTaulaErronkaEgunTaldeEtaEgoerarekinErrendatzenDa() throws Exception {
-        LocalDate data = LocalDate.of(2026, 11, 2);
+        LocalDate data = LocalDate.now();
         var erronka = new EthaziJarraipenaService.ErronkaZutabeMultzoa(
                 20L, 1, "Web aplikazioa", data, data, true, List.of(
                         new EthaziJarraipenaService.EgunZutabea(data, 2)), 2);
@@ -63,7 +64,7 @@ class EthaziJarraipenaTemplateTest {
                         new EthaziJarraipenaService.OharXehetasuna(11L, "DATU", "Arreta handiagoa behar du")));
         var ikaslea = new EthaziJarraipenaService.IkasleLerroa(
                 30L, "Alberdi, Ane", "1. taldea", true, 1,
-                Map.of(20L, laburpena), Map.of("20|2026-11-02", gelaxka));
+                Map.of(20L, laburpena), Map.of("20|" + data, gelaxka));
         var ikuspegia = new EthaziJarraipenaService.JarraipenaIkuspegia(
                 "2026-2027", List.of(new EthaziJarraipenaService.ModuluAukera(10L, "PROG")),
                 10L, "PROG", 20, List.of(erronka), List.of(ikaslea));
@@ -90,9 +91,11 @@ class EthaziJarraipenaTemplateTest {
         when(moduluak.findByTaldeaId(4L)).thenReturn(List.of(modulua));
         when(egutegiak.findByIkasturtea_AktiboaTrueAndMaila_Id(2L)).thenReturn(Optional.of(egutegia));
         when(jarraipenaService.prestatu(koadernoa, egutegia, irakaslea, false, 10L)).thenReturn(ikuspegia);
-        when(denboralizazioaService.prestatu(koadernoa, egutegia, irakaslea, 10L, 2026, 11))
+        when(denboralizazioaService.prestatu(koadernoa, egutegia, irakaslea, 10L,
+                data.getYear(), data.getMonthValue()))
                 .thenReturn(new EthaziDenboralizazioaService.DenboralizazioaIkuspegia(
-                        "2026-2027", "azaroa 2026", 2026, 11, 10L, List.of(), List.of()));
+                        "2026-2027", "uneko hilabetea", data.getYear(), data.getMonthValue(),
+                        10L, List.of(), List.of()));
         var controller = new EthaziKoadernoaController(koadernoService, irakasleaService, ikasleak,
                 moduluak, egutegiak, egutegiaService, kronogramaService, jarraipenaService,
                 denboralizazioaService);
@@ -111,17 +114,19 @@ class EthaziJarraipenaTemplateTest {
         SecurityContextHolder.getContext().setAuthentication(auth);
         try {
             String html = mvc.perform(get("/irakasle/ethazi-koadernoa/denboralizazioa")
-                            .param("bista", "faltak").param("urtea", "2026")
-                            .param("hilabetea", "11").param("moduloaId", "10")
+                            .param("bista", "faltak").param("urtea", String.valueOf(data.getYear()))
+                            .param("hilabetea", String.valueOf(data.getMonthValue())).param("moduloaId", "10")
                             .session(session).principal(auth))
                     .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+            String dataTestua = data.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
             assertThat(html).contains("Egutegi bista", "Falten bista", "Kontsulta soilik",
                     "Web aplikazioa", "Alberdi, Ane",
-                    "1. taldea", "25.00%", "Modulua suspendituta", "2026/11/02", "📝",
+                    "1. taldea", "25.00%", "Modulua suspendituta", dataTestua, "📝",
                     "Etxeko lana falta da", "Arreta handiagoa behar du", "PROG", "DATU",
                     "Asistentziako oharrak ikusi", "Faltak moduluka eta oharrak ikusi",
                     "Faltak moduluka", "2. ordua · Hutsa", "Oharrak",
-                    "xehetasunak-30-20-2026-11-02");
+                    "xehetasunak-30-20-" + data, "gaurko-zutabea", "data-gaur=\"true\"",
+                    "kokatuGaurkoZutabea");
             assertThat(html).contains("data-erronka-toggle=\"20\"", "aria-expanded=\"false\"",
                     "erronka-xehetasuna-ezkututa", ">+</span>", "class=\"talde-hasiera\"",
                     "id=\"jarraipenScrollKontrola\"", "id=\"jarraipenScrollBarra\"",
