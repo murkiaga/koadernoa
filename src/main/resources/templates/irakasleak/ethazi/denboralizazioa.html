@@ -26,8 +26,9 @@
     .calendar td{height:90px;vertical-align:top;padding:.25rem;border-right:1px solid #dbe2ea;border-top:1px solid #dbe2ea;background:#fff;overflow:hidden;position:relative}
     .calendar.week-mode td{height:calc(100vh - 300px);min-height:520px}.calendar.week-mode .activities{max-height:calc(100vh - 370px)}
     .calendar td:last-child{border-right:0}.calendar td.outside{color:#94a3b8}.calendar td.lektibo1{background:var(--ebal1-color)}.calendar td.lektibo2{background:var(--ebal2-color)}.calendar td.lektibo3{background:var(--ebal3-color)}.calendar td.jaieguna{background:#fff}.calendar td.jaieguna .day-number{color:#b91c1c}.calendar td.ezlektiboa{background:#000;color:#fff}.calendar td.ordezkatua{background:#ff0}
-    .day-head{display:flex;justify-content:space-between;align-items:flex-start;gap:.25rem;margin-bottom:.2rem;min-height:20px}.day-number{font-weight:900;font-size:.78rem}.gaur-zenbakia{display:inline-flex;align-items:center;justify-content:center;width:1.7rem;height:1.7rem;border-radius:999px;background:#1a73e8;color:#fff!important;font-weight:700}
-    .attendance{display:flex;justify-content:flex-end;gap:.25rem;flex-wrap:wrap}
+    .day-head{position:relative;isolation:isolate;display:flex;justify-content:space-between;align-items:flex-start;gap:.25rem;margin-bottom:.2rem;min-height:20px}.day-number{position:relative;z-index:3;font-weight:900;font-size:.78rem}.gaur-zenbakia{display:inline-flex;align-items:center;justify-content:center;width:1.7rem;height:1.7rem;border-radius:999px;background:#1a73e8;color:#fff!important;font-weight:700}
+    .challenge-bands{position:absolute;z-index:1;inset:0 -.25rem;display:grid;grid-template-rows:repeat(var(--erronka-banda-kopurua),minmax(0,1fr));pointer-events:none;overflow:hidden}.challenge-band{display:flex;align-items:center;min-width:0;overflow:hidden;color:#24305e;font-size:.64rem;font-weight:850;line-height:1;pointer-events:auto}.challenge-band.start{border-radius:.38rem 0 0 .38rem}.challenge-band.end{border-radius:0 .38rem .38rem 0}.challenge-band.start.end{border-radius:.38rem}.challenge-label{display:block;min-width:0;margin-left:2rem;margin-right:3.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.challenge-bands.overlap .challenge-band{font-size:.55rem}.challenge-bands.overlap .challenge-label{margin-left:1.85rem}
+    .attendance{position:relative;z-index:3;display:flex;justify-content:flex-end;gap:.25rem;flex-wrap:wrap}
     .attendance a{display:inline-flex;align-items:center;gap:.12rem;padding:.1rem .25rem;border:1px solid #bfdbfe;border-radius:999px;background:#eff6ff;color:#1e40af;text-decoration:none;font-size:.63rem;font-weight:900}
     .attendance a.open{background:#dcfce7;border-color:#86efac;color:#166534}
     .activities{display:grid;gap:.18rem;max-height:66px;overflow-y:auto;scrollbar-width:thin}.activity{padding:.2rem .3rem;border:1px solid #bfdbfe;border-left:4px solid #3b82f6;border-radius:5px;background:#eff6ff;color:#172033;font-size:.66rem;line-height:1.15;cursor:pointer;overflow:hidden}
@@ -95,6 +96,18 @@
             <td th:each="eguna : ${astea}" th:attr="data-date=${eguna.data}"
                 th:classappend="${(!eguna.hilabeteAktibokoa ? ' outside' : '') + (!#strings.isEmpty(eguna.klasea) ? ' ' + eguna.klasea : '')}">
               <div class="day-head">
+                <div class="challenge-bands" th:if="${!#lists.isEmpty(eguna.erronkaBarrak)}"
+                     th:classappend="${#lists.size(eguna.erronkaBarrak) > 1} ? ' overlap' : ''"
+                     th:style="${'--erronka-banda-kopurua:' + #lists.size(eguna.erronkaBarrak)}">
+                  <div class="challenge-band" th:each="barra : ${eguna.erronkaBarrak}"
+                       th:classappend="${(barra.hasiera ? ' start' : '') + (barra.amaiera ? ' end' : '')}"
+                       th:style="${'background:' + barra.kolorea}"
+                       th:title="${barra.tooltipa}"
+                       th:attr="aria-label=${barra.tooltipa}">
+                    <span class="challenge-label" th:if="${barra.etiketaErakutsi}"
+                          th:text="${barra.indizea + '. erronka · ' + barra.izena}">1. erronka · Izena</span>
+                  </div>
+                </div>
                 <span class="day-number" th:text="${eguna.data.dayOfMonth}"
                       th:classappend="${eguna.data.equals(gaur)} ? 'gaur-zenbakia' : ''">1</span>
                 <div class="attendance" th:if="${(eguna.hilabeteAktibokoa or egutegiMota == 'astea') and (!#lists.isEmpty(eguna.asistentziak) or egutegiOharrak[eguna.data.toString()] != null)}">

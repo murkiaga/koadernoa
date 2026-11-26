@@ -45,6 +45,10 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class EthaziDenboralizazioaService {
     private static final Locale EU_LOCALE = Locale.forLanguageTag("eu-ES");
+    private static final String[] ERRONKA_KOLOREAK = {
+            "#c7d2fe", "#bbf7d0", "#fed7aa", "#fbcfe8",
+            "#bae6fd", "#ddd6fe", "#fde68a", "#a7f3d0"
+    };
 
     private final EthaziKoadernoaService ethaziKoadernoaService;
     private final ModuloaRepository moduloaRepository;
@@ -210,8 +214,13 @@ public class EthaziDenboralizazioaService {
                 ethaziKoadernoa, moduluAukerak, moduloaId, egutegia, hilabeteaData);
         Map<String, String> egunKlaseak = egutegia == null ? Map.of()
                 : egutegiaService.kalkulatuKlaseak(egutegia);
+        EthaziKoadernoaService.ProgramazioaIkuspegia programazioa =
+                ethaziKoadernoaService.programazioaIkuspegia(ethaziKoadernoa, egutegia, irakaslea);
+        Map<LocalDate, List<ErronkaBarra>> erronkaBarrak = prestatuErronkaBarrak(
+                programazioa == null ? List.of() : programazioa.erronkak(),
+                sareHasiera, sareBukaera);
         List<List<Eguna>> asteak = prestatuAsteak(hilabeteaData, jarduerakEgunka,
-                asistentziaModuluak, egunKlaseak);
+                asistentziaModuluak, egunKlaseak, erronkaBarrak);
 
         String hilabeteEtiketa = hilabeteaData.atDay(1)
                 .format(DateTimeFormatter.ofPattern("LLLL yyyy", EU_LOCALE));
@@ -321,7 +330,8 @@ public class EthaziDenboralizazioaService {
 
     private List<List<Eguna>> prestatuAsteak(YearMonth hilabetea,
             Map<LocalDate, List<EgunekoJarduera>> jarduerakEgunka,
-            List<AsistentziaModulua> asistentziaModuluak, Map<String, String> egunKlaseak) {
+            List<AsistentziaModulua> asistentziaModuluak, Map<String, String> egunKlaseak,
+            Map<LocalDate, List<ErronkaBarra>> erronkaBarrak) {
         LocalDate hasiera = hilabetea.atDay(1).with(DayOfWeek.MONDAY);
         LocalDate bukaera = hilabetea.atEndOfMonth().with(DayOfWeek.FRIDAY);
         List<List<Eguna>> asteak = new ArrayList<>();
@@ -336,11 +346,69 @@ public class EthaziDenboralizazioaService {
                         .toList();
                 astea.add(new Eguna(data, data.getMonthValue() == hilabetea.getMonthValue(),
                         egunKlaseak.getOrDefault(data.toString(), ""),
-                        jarduerakEgunka.getOrDefault(data, List.of()), asistentziak));
+                        jarduerakEgunka.getOrDefault(data, List.of()), asistentziak,
+                        erronkaBarrak.getOrDefault(data, List.of())));
             }
             asteak.add(astea);
         }
         return asteak;
+    }
+
+    private Map<LocalDate, List<ErronkaBarra>> prestatuErronkaBarrak(
+            List<EthaziKoadernoaService.ErronkaTxartela> erronkak,
+            LocalDate sareHasiera, LocalDate sareBukaera) {
+        Map<LocalDate, List<ErronkaBarra>> emaitza = new LinkedHashMap<>();
+        erronkak.stream()
+                .filter(e -> e.hasieraData() != null && e.bukaeraData() != null
+                        && !e.bukaeraData().isBefore(e.hasieraData())
+                        && !e.bukaeraData().isBefore(sareHasiera)
+                        && !e.hasieraData().isAfter(sareBukaera))
+                .sorted(Comparator.comparing(EthaziKoadernoaService.ErronkaTxartela::hasieraData)
+                        .thenComparing(EthaziKoadernoaService.ErronkaTxartela::id))
+                .forEach(erronka -> {
+                    LocalDate hasiera = erronka.hasieraData().isBefore(sareHasiera)
+                            ? sareHasiera : erronka.hasieraData();
+                    LocalDate bukaera = erronka.bukaeraData().isAfter(sareBukaera)
+                            ? sareBukaera : erronka.bukaeraData();
+                    String kolorea = erronkaKolorea(erronka.id());
+                    String tooltipa = erronka.indizea() + ". erronka · " + erronka.izena()
+                            + "\nHasiera: " + erronka.hasieraData()
+                            + "\nAmaiera: " + erronka.bukaeraData();
+                    for (LocalDate data = hasiera; !data.isAfter(bukaera); data = data.plusDays(1)) {
+                        if (data.getDayOfWeek() == DayOfWeek.SATURDAY
+                                || data.getDayOfWeek() == DayOfWeek.SUNDAY) continue;
+                        LocalDate astekoLehenIkusgaia = astekoLehenIkusgaia(
+                                erronka.hasieraData(), erronka.bukaeraData(), data, sareHasiera);
+                        ErronkaBarra barra = new ErronkaBarra(erronka.id(), erronka.indizea(),
+                                erronka.izena(), erronka.hasieraData(), erronka.bukaeraData(),
+                                kolorea, data.equals(erronka.hasieraData()),
+                                data.equals(erronka.bukaeraData()), data.equals(astekoLehenIkusgaia),
+                                tooltipa);
+                        emaitza.computeIfAbsent(data, __ -> new ArrayList<>()).add(barra);
+                    }
+                });
+        emaitza.values().forEach(barrak -> barrak.sort(
+                Comparator.comparingInt(ErronkaBarra::indizea).thenComparing(ErronkaBarra::id)));
+        return emaitza;
+    }
+
+    private LocalDate astekoLehenIkusgaia(LocalDate erronkaHasiera, LocalDate erronkaBukaera,
+            LocalDate asteBarrukoData, LocalDate sareHasiera) {
+        LocalDate astelehena = asteBarrukoData.with(DayOfWeek.MONDAY);
+        LocalDate ostirala = astelehena.with(DayOfWeek.FRIDAY);
+        LocalDate hautagaia = erronkaHasiera.isAfter(astelehena) ? erronkaHasiera : astelehena;
+        if (hautagaia.isBefore(sareHasiera)) hautagaia = sareHasiera;
+        while (hautagaia.getDayOfWeek() == DayOfWeek.SATURDAY
+                || hautagaia.getDayOfWeek() == DayOfWeek.SUNDAY) {
+            hautagaia = hautagaia.plusDays(1);
+        }
+        return hautagaia.isAfter(ostirala) || hautagaia.isAfter(erronkaBukaera)
+                ? null : hautagaia;
+    }
+
+    private String erronkaKolorea(Long erronkaId) {
+        int hash = erronkaId == null ? 0 : Long.hashCode(erronkaId);
+        return ERRONKA_KOLOREAK[Math.floorMod(hash, ERRONKA_KOLOREAK.length)];
     }
 
     private record AsistentziaModulua(Long moduloaId, String etiketa,
@@ -376,7 +444,11 @@ public class EthaziDenboralizazioaService {
             boolean edukiEditagarria) {}
     public record AsistentziaAukera(Long moduloaId, String etiketa, boolean irekita) {}
     public record Eguna(LocalDate data, boolean hilabeteAktibokoa, String klasea,
-            List<EgunekoJarduera> jarduerak, List<AsistentziaAukera> asistentziak) {}
+            List<EgunekoJarduera> jarduerak, List<AsistentziaAukera> asistentziak,
+            List<ErronkaBarra> erronkaBarrak) {}
+    public record ErronkaBarra(Long id, int indizea, String izena,
+            LocalDate hasieraData, LocalDate bukaeraData, String kolorea,
+            boolean hasiera, boolean amaiera, boolean etiketaErakutsi, String tooltipa) {}
     public record DenboralizazioaIkuspegia(String ikasturtea, String hilabeteEtiketa,
             int urtea, int hilabetea, Long aukeratutakoModuloaId,
             List<EthaziKoadernoaService.ModuluAukera> moduluAukerak,

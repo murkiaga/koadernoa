@@ -161,6 +161,49 @@ class EthaziDenboralizazioaServiceTest {
     }
 
     @Test
+    void erronkaBarrakAstezZatituDatakKoloreakEtaGainjartzeakMantentzenDitu() {
+        when(koadernoak.findByModuloaIdInAktiboIkasturtea(10L)).thenReturn(List.of());
+        when(koadernoak.findByModuloaIdInAktiboIkasturtea(20L)).thenReturn(List.of());
+        when(denboralizazioJarduerak.findByEthaziKoadernoaIdAndDataBetweenOrderByDataAscIdAsc(
+                6L, LocalDate.of(2026, 8, 31), LocalDate.of(2026, 10, 2)))
+                .thenReturn(List.of());
+        when(egutegiaService.kalkulatuKlaseak(egutegia))
+                .thenReturn(Map.of("2026-09-07", "jaieguna"));
+        var erronkak = List.of(
+                erronka(31L, 1, "Abiadura-kaxa", "2026-09-02", "2026-09-15"),
+                erronka(32L, 2, "Egun bakarrekoa", "2026-09-15", "2026-09-15"),
+                erronka(33L, 3, "Hurrengo hilabetera", "2026-09-18", "2026-10-05"),
+                erronka(34L, 4, "Aurreko hilabetetik", "2026-08-28", "2026-09-01"));
+        when(koadernoaService.programazioaIkuspegia(koadernoa, egutegia, irakaslea))
+                .thenReturn(new EthaziKoadernoaService.ProgramazioaIkuspegia(
+                        "2026-2027", erronkak, List.of(), List.of()));
+
+        var ikuspegia = service.prestatu(koadernoa, egutegia, irakaslea, null, 2026, 9);
+        var iragazitakoa = service.prestatu(koadernoa, egutegia, irakaslea, 10L, 2026, 9);
+
+        var irailak2 = eguna(ikuspegia, "2026-09-02");
+        var irailak7 = eguna(ikuspegia, "2026-09-07");
+        var irailak15 = eguna(ikuspegia, "2026-09-15");
+        assertThat(irailak2.erronkaBarrak().get(0).hasiera()).isTrue();
+        assertThat(irailak2.erronkaBarrak().get(0).etiketaErakutsi()).isTrue();
+        assertThat(irailak7.erronkaBarrak().get(0).etiketaErakutsi()).isTrue();
+        assertThat(irailak7.klasea()).isEqualTo("jaieguna");
+        assertThat(irailak7.erronkaBarrak().get(0).kolorea())
+                .isEqualTo(irailak2.erronkaBarrak().get(0).kolorea());
+        assertThat(irailak15.erronkaBarrak()).hasSize(2);
+        assertThat(irailak15.erronkaBarrak()).extracting(
+                EthaziDenboralizazioaService.ErronkaBarra::id).containsExactly(31L, 32L);
+        assertThat(irailak15.erronkaBarrak().get(0).amaiera()).isTrue();
+        assertThat(irailak15.erronkaBarrak().get(1).hasiera()).isTrue();
+        assertThat(irailak15.erronkaBarrak().get(1).amaiera()).isTrue();
+        assertThat(eguna(ikuspegia, "2026-09-16").erronkaBarrak()).isEmpty();
+        assertThat(eguna(ikuspegia, "2026-08-31").erronkaBarrak().get(0).hasiera()).isFalse();
+        assertThat(eguna(ikuspegia, "2026-10-02").erronkaBarrak().get(0).amaiera()).isFalse();
+        assertThat(eguna(iragazitakoa, "2026-09-07").erronkaBarrak())
+                .extracting(EthaziDenboralizazioaService.ErronkaBarra::id).containsExactly(31L);
+    }
+
+    @Test
     void ethaziOrdutegikoSlotetarakoSaioakSortzenDitu() {
         Koadernoa asistentziaKoadernoa = new Koadernoa(); asistentziaKoadernoa.setId(70L);
         Moduloa prog = new Moduloa(); prog.setId(10L);
@@ -274,6 +317,20 @@ class EthaziDenboralizazioaServiceTest {
                 List.of(jardueraA, jardueraB, orokorra), List.of());
         return new EthaziKoadernoaService.ProgramazioaIkuspegia(
                 "2026-2027", List.of(erronka), List.of(), List.of(a, b));
+    }
+
+    private EthaziKoadernoaService.ErronkaTxartela erronka(Long id, int indizea, String izena,
+            String hasiera, String bukaera) {
+        return new EthaziKoadernoaService.ErronkaTxartela(id, indizea, izena, "",
+                LocalDate.parse(hasiera), LocalDate.parse(bukaera), List.of(), List.of(),
+                List.of(), List.of(), List.of(), List.of());
+    }
+
+    private EthaziDenboralizazioaService.Eguna eguna(
+            EthaziDenboralizazioaService.DenboralizazioaIkuspegia ikuspegia, String data) {
+        LocalDate eguna = LocalDate.parse(data);
+        return ikuspegia.asteak().stream().flatMap(List::stream)
+                .filter(e -> e.data().equals(eguna)).findFirst().orElseThrow();
     }
 
     private EthaziKoadernoaService.KronogramaJardueraTxartela jarduera(Long id, String izena,
