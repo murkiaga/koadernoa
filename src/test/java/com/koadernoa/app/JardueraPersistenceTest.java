@@ -14,7 +14,10 @@ import org.springframework.test.context.support.DependencyInjectionTestExecution
 import org.springframework.test.context.transaction.TransactionalTestExecutionListener;
 
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Jarduera;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.JardueraPlanifikatua;
 import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.Programazioa;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.UnitateDidaktikoa;
 
 @DataJpaTest(properties = {
         "spring.jpa.hibernate.ddl-auto=create-drop",
@@ -47,6 +50,21 @@ class JardueraPersistenceTest {
         entityManager.clear();
 
         Jarduera gordeta = entityManager.find(Jarduera.class, id);
+        assertThat(gordeta.isKalifikagarria()).isFalse();
+    }
+
+    @Test
+    void jardueraPlanifikatuBerriaEzKalifikagarriGordetzenDu() {
+        Koadernoa koadernoa = entityManager.persist(new Koadernoa());
+        Programazioa programazioa = entityManager.persist(new Programazioa(koadernoa, "Programazioa"));
+        UnitateDidaktikoa ud = entityManager.persist(
+                new UnitateDidaktikoa(programazioa, "UD1", "Lehen unitatea", 10, 0));
+
+        JardueraPlanifikatua jarduera = new JardueraPlanifikatua(ud, "Lehen jarduera", 1);
+        Long id = entityManager.persistAndFlush(jarduera).getId();
+        entityManager.clear();
+
+        JardueraPlanifikatua gordeta = entityManager.find(JardueraPlanifikatua.class, id);
         assertThat(gordeta.isKalifikagarria()).isFalse();
     }
 }

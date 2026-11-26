@@ -4,10 +4,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -18,6 +20,7 @@ import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.csrf.DefaultCsrfToken;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.thymeleaf.extras.springsecurity6.dialect.SpringSecurityDialect;
@@ -27,6 +30,7 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 
 import com.koadernoa.app.ethazi.entitateak.EthaziKoadernoa;
 import com.koadernoa.app.ethazi.service.EthaziJarraipenaService;
+import com.koadernoa.app.ethazi.service.EthaziDenboralizazioaService;
 import com.koadernoa.app.ethazi.service.EthaziKoadernoaService;
 import com.koadernoa.app.ethazi.service.KronogramaService;
 import com.koadernoa.app.funtzionalitateak.irakasle.EthaziKoadernoaController;
@@ -46,17 +50,21 @@ import jakarta.servlet.http.HttpServletRequest;
 class EthaziJarraipenaTemplateTest {
     @Test
     void jarraipenTaulaErronkaEgunTaldeEtaEgoerarekinErrendatzenDa() throws Exception {
-        LocalDate data = LocalDate.of(2026, 11, 2);
+        LocalDate data = LocalDate.now();
         var erronka = new EthaziJarraipenaService.ErronkaZutabeMultzoa(
                 20L, 1, "Web aplikazioa", data, data, true, List.of(
                         new EthaziJarraipenaService.EgunZutabea(data, 2)), 2);
         var laburpena = new EthaziJarraipenaService.ErronkaIkasleLaburpena(
                 new BigDecimal("0.50"), 25d, true, "Modulua suspendituta");
         var gelaxka = new EthaziJarraipenaService.JarraipenGelaxka(
-                new BigDecimal("0.50"), true);
+                new BigDecimal("0.50"), List.of(
+                        new EthaziJarraipenaService.FaltaXehetasuna(
+                                10L, "PROG", 2, 1, "Hutsa")), List.of(
+                        new EthaziJarraipenaService.OharXehetasuna(10L, "PROG", "Etxeko lana falta da"),
+                        new EthaziJarraipenaService.OharXehetasuna(11L, "DATU", "Arreta handiagoa behar du")));
         var ikaslea = new EthaziJarraipenaService.IkasleLerroa(
                 30L, "Alberdi, Ane", "1. taldea", true, 1,
-                Map.of(20L, laburpena), Map.of("20|2026-11-02", gelaxka));
+                Map.of(20L, laburpena), Map.of("20|" + data, gelaxka));
         var ikuspegia = new EthaziJarraipenaService.JarraipenaIkuspegia(
                 "2026-2027", List.of(new EthaziJarraipenaService.ModuluAukera(10L, "PROG")),
                 10L, "PROG", 20, List.of(erronka), List.of(ikaslea));
@@ -75,6 +83,7 @@ class EthaziJarraipenaTemplateTest {
         EgutegiaService egutegiaService = mock(EgutegiaService.class);
         KronogramaService kronogramaService = mock(KronogramaService.class);
         EthaziJarraipenaService jarraipenaService = mock(EthaziJarraipenaService.class);
+        EthaziDenboralizazioaService denboralizazioaService = mock(EthaziDenboralizazioaService.class);
         when(koadernoService.findById(6L)).thenReturn(koadernoa);
         when(irakasleaService.getLogeatutaDagoenIrakaslea(org.mockito.ArgumentMatchers.any()))
                 .thenReturn(irakaslea);
@@ -82,8 +91,14 @@ class EthaziJarraipenaTemplateTest {
         when(moduluak.findByTaldeaId(4L)).thenReturn(List.of(modulua));
         when(egutegiak.findByIkasturtea_AktiboaTrueAndMaila_Id(2L)).thenReturn(Optional.of(egutegia));
         when(jarraipenaService.prestatu(koadernoa, egutegia, irakaslea, false, 10L)).thenReturn(ikuspegia);
+        when(denboralizazioaService.prestatu(koadernoa, egutegia, irakaslea, 10L,
+                data.getYear(), data.getMonthValue()))
+                .thenReturn(new EthaziDenboralizazioaService.DenboralizazioaIkuspegia(
+                        "2026-2027", "uneko hilabetea", data.getYear(), data.getMonthValue(),
+                        10L, List.of(), List.of()));
         var controller = new EthaziKoadernoaController(koadernoService, irakasleaService, ikasleak,
-                moduluak, egutegiak, egutegiaService, kronogramaService, jarraipenaService);
+                moduluak, egutegiak, egutegiaService, kronogramaService, jarraipenaService,
+                denboralizazioaService);
 
         var resolver = new ClassLoaderTemplateResolver();
         resolver.setPrefix("templates/"); resolver.setSuffix(".html"); resolver.setTemplateMode("HTML");
@@ -98,14 +113,30 @@ class EthaziJarraipenaTemplateTest {
         session.setAttribute("ethaziKoadernoAktiboa", koadernoa);
         SecurityContextHolder.getContext().setAuthentication(auth);
         try {
-            String html = mvc.perform(get("/irakasle/ethazi-koadernoa/jarraipena")
-                            .param("moduloaId", "10").session(session).principal(auth))
+            String html = mvc.perform(get("/irakasle/ethazi-koadernoa/denboralizazioa")
+                            .param("bista", "faltak").param("urtea", String.valueOf(data.getYear()))
+                            .param("hilabetea", String.valueOf(data.getMonthValue())).param("moduloaId", "10")
+                            .session(session).principal(auth))
                     .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
-            assertThat(html).contains("Jarraipena", "Web aplikazioa", "Alberdi, Ane",
-                    "1. taldea", "25.00%", "Modulua suspendituta", "2026/11/02", "📝");
+            String dataTestua = data.format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
+            assertThat(html).contains("Egutegi bista", "Falten bista", "Kontsulta soilik",
+                    "Web aplikazioa", "Alberdi, Ane",
+                    "1. taldea", "25.00%", "Modulua suspendituta", dataTestua, "📝",
+                    "Etxeko lana falta da", "Arreta handiagoa behar du", "PROG", "DATU",
+                    "Asistentziako oharrak ikusi", "Faltak moduluka eta oharrak ikusi",
+                    "Faltak moduluka", "2. ordua · Hutsa", "Oharrak",
+                    "xehetasunak-30-20-" + data, "gaurko-zutabea", "data-gaur=\"true\"",
+                    "data-data=\"" + data + "\"", "kokatuHasierakoZutabea",
+                    "ikusgaiak.find(e=>gaur&&e.dataset.data>gaur)");
             assertThat(html).contains("data-erronka-toggle=\"20\"", "aria-expanded=\"false\"",
                     "erronka-xehetasuna-ezkututa", ">+</span>", "class=\"talde-hasiera\"",
-                    "id=\"jarraipenScrollKontrola\"", "id=\"jarraipenScrollBarra\"");
+                    "id=\"jarraipenScrollKontrola\"", "id=\"jarraipenScrollBarra\"",
+                    ".jarraipen-scroll-kontrola{position:fixed");
+            assertThat(html).doesNotContain("jarraipenDialog", "irekiJarraipenGelaxka", ">Gorde<");
+            mvc.perform(post("/irakasle/ethazi-koadernoa/jarraipena/gelaxka")
+                            .contentType(MediaType.APPLICATION_JSON).content("{}")
+                            .session(session).principal(auth))
+                    .andExpect(status().isForbidden());
         } finally {
             SecurityContextHolder.clearContext();
         }

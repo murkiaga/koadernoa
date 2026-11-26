@@ -81,6 +81,27 @@ public class KronogramaService {
             koordinatzailea, editaDaitezkeenModuloak, egunKopurua);
     }
 
+    /** Kronogramak erabiltzen duen eguneko ordu-banaketa bera ematen du denboralizaziora bolkatzeko. */
+    public DenboralizazioBanaketa denboralizazioBanaketa(Long erronkaId, Authentication auth) {
+        Erronka erronka = erronka(erronkaId);
+        List<Moduloa> moduluak = ordenatutakoModuluak(erronka);
+        Set<Long> editaDaitezkeenModuloak = editaDaitezkeenModuloak(auth, erronka, moduluak);
+        if (!koordinatzaileaDa(auth) && editaDaitezkeenModuloak.isEmpty()) {
+            throw new AccessDeniedException("Ez duzu erronka hau denboralizatzeko baimenik.");
+        }
+        List<ErronkaKronogramaJarduera> erronkakoJarduerak =
+                jarduerak.findByErronkaIdOrderByHasieraDataAscBukaeraDataAscIdAsc(erronkaId);
+        KronogramaOrdutegiTestuingurua testuingurua = prestatuOrdutegiTestuingurua(erronka, moduluak);
+        Map<ErronkaKronogramaJarduera, Map<LocalDate, BigDecimal>> banaketak =
+                banatuJardueraGuztiak(erronkakoJarduerak, testuingurua, erronka, false);
+        List<DenboralizazioEgunJarduera> egunekoak = new ArrayList<>();
+        banaketak.forEach((jarduera, egunak) -> egunak.forEach((data, orduak) ->
+                egunekoak.add(new DenboralizazioEgunJarduera(jarduera, data, orduak))));
+        egunekoak.sort(Comparator.comparing(DenboralizazioEgunJarduera::data)
+                .thenComparing(e -> e.jarduera().getId()));
+        return new DenboralizazioBanaketa(erronka, egunekoak);
+    }
+
     @Transactional
     public Long gorde(Long erronkaId, KronogramaJardueraForm form, Authentication auth) {
         return gorde(erronkaId, form, auth, false);
@@ -122,7 +143,7 @@ public class KronogramaService {
             }
         }
 
-        BigDecimal iraupena = form.getIraupenOrduak().setScale(2, RoundingMode.HALF_UP);
+        BigDecimal iraupena = form.getIraupenOrduak().setScale(0, RoundingMode.UNNECESSARY);
         ErronkaJardueraMultzoa multzoa = form.getMultzoaId() == null ? null
                 : erronkakoMultzoa(erronkaId, form.getMultzoaId());
         jarduera.setIzenburua(form.getIzenburua().strip());
@@ -445,12 +466,12 @@ public class KronogramaService {
                     && !form.getHasieraData().isAfter(erronka.getBukaeraData()),
                 "Jardueraren hasiera erronkaren daten barruan egon behar da.");
         }
-        require(form.getIraupenOrduak() != null && form.getIraupenOrduak().compareTo(BigDecimal.ZERO) > 0,
-            "Iraupena zero baino handiagoa izan behar da.");
-        require(form.getIraupenOrduak().compareTo(new BigDecimal("999.99")) <= 0,
+        require(form.getIraupenOrduak() != null && form.getIraupenOrduak().compareTo(BigDecimal.ONE) >= 0,
+            "Iraupena gutxienez ordubetekoa izan behar da.");
+        require(form.getIraupenOrduak().compareTo(new BigDecimal("999")) <= 0,
             "Iraupena handiegia da.");
-        require(form.getIraupenOrduak().stripTrailingZeros().scale() <= 2,
-            "Iraupenak gehienez bi hamartar izan ditzake.");
+        require(form.getIraupenOrduak().stripTrailingZeros().scale() <= 0,
+            "Iraupenak zenbaki osoa izan behar du.");
     }
 
     private void egiaztatuEditatzekoBaimena(Authentication auth, Erronka erronka,
@@ -870,6 +891,12 @@ public class KronogramaService {
 
     public record KronogramaBlokea(ErronkaKronogramaJarduera jarduera, int start, int span,
             int lane, boolean editagarria, BigDecimal orduak) {}
+
+    public record DenboralizazioBanaketa(Erronka erronka,
+            List<DenboralizazioEgunJarduera> jarduerak) {}
+
+    public record DenboralizazioEgunJarduera(ErronkaKronogramaJarduera jarduera,
+            LocalDate data, BigDecimal orduak) {}
 
     private record KronogramaOrdutegiTestuingurua(Map<Long, ModuloOrduLaburpena> laburpenak,
             Map<Long, Map<LocalDate, Integer>> egunekoOrduak) {}

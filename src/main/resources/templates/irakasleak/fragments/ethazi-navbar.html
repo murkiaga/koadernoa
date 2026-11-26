@@ -27,8 +27,8 @@
                th:classappend="${currentPath == '/irakasle/ethazi-koadernoa/ikasleak'} ? 'active'">Ikasleak</a></li>
         <li><a th:href="@{/irakasle/ethazi-koadernoa/programazioa}"
                th:classappend="${currentPath == '/irakasle/ethazi-koadernoa/programazioa'} ? 'active'">Programazioa</a></li>
-        <li><a th:href="@{/irakasle/ethazi-koadernoa/jarraipena}"
-               th:classappend="${#strings.startsWith(currentPath, '/irakasle/ethazi-koadernoa/jarraipena')} ? 'active'">Jarraipena</a></li>
+        <li><a th:href="@{/irakasle/ethazi-koadernoa/denboralizazioa}"
+               th:classappend="${#strings.startsWith(currentPath, '/irakasle/ethazi-koadernoa/denboralizazioa')} ? 'active'">Denboralizazioa</a></li>
         <li th:if="${#authorization.expression('hasAnyRole(''KUDEATZAILEA'',''ADMIN'')')}">
           <a th:href="@{/kudeatzaile}">Kudeaketa</a>
         </li>
@@ -54,8 +54,8 @@
                th:classappend="${currentPath == '/irakasle/ethazi-koadernoa/ikasleak'} ? 'active'">Ikasleak</a></li>
         <li><a th:href="@{/irakasle/ethazi-koadernoa/programazioa}"
                th:classappend="${currentPath == '/irakasle/ethazi-koadernoa/programazioa'} ? 'active'">Programazioa</a></li>
-        <li><a th:href="@{/irakasle/ethazi-koadernoa/jarraipena}"
-               th:classappend="${#strings.startsWith(currentPath, '/irakasle/ethazi-koadernoa/jarraipena')} ? 'active'">Jarraipena</a></li>
+        <li><a th:href="@{/irakasle/ethazi-koadernoa/denboralizazioa}"
+               th:classappend="${#strings.startsWith(currentPath, '/irakasle/ethazi-koadernoa/denboralizazioa')} ? 'active'">Denboralizazioa</a></li>
         <li th:if="${#authorization.expression('hasAnyRole(''KUDEATZAILEA'',''ADMIN'')')}"><a th:href="@{/kudeatzaile}">Kudeaketa</a></li>
         <li><form th:action="@{/logout}" method="post">
           <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>

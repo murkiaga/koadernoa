@@ -34,6 +34,8 @@ import com.koadernoa.app.objektuak.koadernoak.service.KoadernoaService;
 import com.koadernoa.app.objektuak.jokabidea.service.IkasleEgunJardueraService;
 import com.koadernoa.app.objektuak.modulua.entitateak.Matrikula;
 import com.koadernoa.app.objektuak.modulua.repository.MatrikulaRepository;
+import com.koadernoa.app.ethazi.entitateak.EthaziKoadernoa;
+import com.koadernoa.app.ethazi.service.EthaziJarraipenaService;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -51,6 +53,7 @@ public class AsistentziaController {
 	  private final KoadernoaService koadernoaService;
 	  private final AuditService auditService;
 	  private final IkasleEgunJardueraService ikasleEgunJardueraService;
+	  private final EthaziJarraipenaService ethaziJarraipenaService;
 
 	  /** GET: Eguneko taula (Saioa-ren lazy-create. Behar denean sortu) */
 	  @GetMapping({"","/"})
@@ -58,6 +61,12 @@ public class AsistentziaController {
 	  public String egunekoAsistentzia(
 	      @SessionAttribute("koadernoAktiboa") Koadernoa koadernoa,
 	      @RequestParam("data") String dataIso,
+	      @RequestParam(name = "itzuliEthazi", required = false, defaultValue = "false") boolean itzuliEthazi,
+	      @RequestParam(name = "itzuliEthaziUrtea", required = false) Integer itzuliEthaziUrtea,
+	      @RequestParam(name = "itzuliEthaziHilabetea", required = false) Integer itzuliEthaziHilabetea,
+	      @RequestParam(name = "itzuliEthaziModuloaId", required = false) Long itzuliEthaziModuloaId,
+	      @RequestParam(name = "itzuliEthaziEgutegiMota", required = false) String itzuliEthaziEgutegiMota,
+	      @RequestParam(name = "itzuliEthaziAsteHasiera", required = false) LocalDate itzuliEthaziAsteHasiera,
 	      Authentication auth,
 	      Model model) {
 
@@ -72,8 +81,11 @@ public class AsistentziaController {
 
 	    LocalDate data = LocalDate.parse(dataIso);
 
-	    // Egun horretarako saioak bermatu (slot bakoitzeko bana)
-	    asistentziaService.ensureSaioakForDate(kargatutakoKoadernoa, data);
+	    // ETHAZI ikuspegitik datozen saioak taldearen ETHAZI ordutegitik sortuta datoz.
+	    // Bestela, koaderno arruntaren ordutegia erabiltzen jarraitu.
+	    if (!itzuliEthazi) {
+	      asistentziaService.ensureSaioakForDate(kargatutakoKoadernoa, data);
+	    }
 
 	    // ondoren, kargatu saioak + matrikulak eta renderizatu
 	    List<Saioa> saioak = saioaRepository.findByKoadernoaIdAndData(kargatutakoKoadernoa.getId(), data)
@@ -85,6 +97,12 @@ public class AsistentziaController {
 	    model.addAttribute("saioak", saioak);
 	    model.addAttribute("matrikulak", matrikulak);
 	    model.addAttribute("egoeraMap", asistentziaService.mapEgoerak(saioak, matrikulak));
+	    model.addAttribute("itzuliEthazi", itzuliEthazi);
+	    model.addAttribute("itzuliEthaziUrtea", itzuliEthaziUrtea);
+	    model.addAttribute("itzuliEthaziHilabetea", itzuliEthaziHilabetea);
+	    model.addAttribute("itzuliEthaziModuloaId", itzuliEthaziModuloaId);
+	    model.addAttribute("itzuliEthaziEgutegiMota", itzuliEthaziEgutegiMota);
+	    model.addAttribute("itzuliEthaziAsteHasiera", itzuliEthaziAsteHasiera);
     model.addAttribute("oharGakoak", ikasleEgunJardueraService.oharGakoak(kargatutakoKoadernoa.getId(), data, data));
     model.addAttribute("egunekoJokabideak", ikasleEgunJardueraService.egunekoJokabideak(kargatutakoKoadernoa.getId(), data));
 	    PrincipalInfo p = resolvePrincipalInfo(auth);
@@ -180,20 +198,29 @@ public class AsistentziaController {
 	  @Transactional
 	  public Map<String, Object> markatuAjax(
 	      @SessionAttribute("koadernoAktiboa") Koadernoa koadernoa,
+	      @SessionAttribute(name = "ethaziKoadernoAktiboa", required = false) EthaziKoadernoa ethaziKoadernoa,
 	      @RequestParam Long saioaId,
 	      @RequestParam Long matrikulaId,
+	      @RequestParam(name = "ethazi", required = false, defaultValue = "false") boolean ethazi,
 	      @RequestParam(required=false) String egoera // null/"" => ETORRI
 	  ) {
 	    // koherentzia minimoa: saioa eta matrikula koaderno berekoak direla (gomendatua)
 	    Saioa s = saioaRepository.findById(saioaId).orElseThrow();
 	    if (!s.getKoadernoa().getId().equals(koadernoa.getId()))
 	      throw new IllegalArgumentException("Saioa ez dator bat koadernoarekin");
+	    Matrikula matrikula = matrikulaRepository.findById(matrikulaId).orElseThrow();
+	    if (!matrikula.getKoadernoa().getId().equals(koadernoa.getId()))
+	      throw new IllegalArgumentException("Matrikula ez dator bat koadernoarekin");
 
 	    if (egoera == null || egoera.isBlank() || "ETORRI".equals(egoera)) {
 	      asistentziaRepository.deleteBySaioaIdAndMatrikulaId(saioaId, matrikulaId);
 	    } else {
 	      Asistentzia.AsistentziaEgoera e = Asistentzia.AsistentziaEgoera.valueOf(egoera);
 	      asistentziaService.markatu(saioaId, matrikulaId, e, null, null);
+	    }
+	    if (ethazi && ethaziKoadernoa != null) {
+	      ethaziJarraipenaService.sinkronizatuAsistentzia(
+	          ethaziKoadernoa, s.getKoadernoa(), s, matrikula);
 	    }
 	    return Map.of("ok", true);
 	  }

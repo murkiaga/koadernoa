@@ -499,11 +499,13 @@
         <input type="hidden" id="udEbalId">
         <div class="field">
           <label>Kodea</label>
-          <input type="text" id="udKodea" required>
+          <input type="text" id="udKodea" required maxlength="20"
+                 title="Gehienez 20 karaktere">
         </div>
         <div class="field">
           <label>Izenburua</label>
-          <input type="text" id="udIzenburua" required>
+          <input type="text" id="udIzenburua" required maxlength="255"
+                 title="Gehienez 255 karaktere">
         </div>
         <div class="field">
           <label>Orduak (h)</label>
@@ -536,7 +538,8 @@
         <input type="hidden" id="jpUdId">
         <div class="field">
           <label>Izenburua</label>
-          <input type="text" id="jpIzenburua" required>
+          <input type="text" id="jpIzenburua" required maxlength="255"
+                 title="Gehienez 255 karaktere">
         </div>
         <div class="field">
           <label>Orduak (h)</label>

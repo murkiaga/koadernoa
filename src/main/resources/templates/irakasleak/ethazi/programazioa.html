@@ -26,17 +26,21 @@
     .programazioa-body { padding:.9rem 1rem 1.2rem; }
     .erronka-wrap { position:relative; padding-left:88px; }
     .erronka-list { display:grid; gap:.65rem; list-style:none; padding:0; margin:0; }
-    .erronka-item { border:1px solid var(--b); border-radius:12px; overflow:hidden; }
+    .erronka-item { position:relative; border:1px solid var(--b); border-radius:12px; overflow:hidden; }
     .erronka-item.err-1 { background:var(--err1-bg); }
     .erronka-item.err-2 { background:var(--err2-bg); }
     .erronka-item.err-3 { background:var(--err3-bg); }
     .erronka-item.err-4 { background:var(--err4-bg); }
-    .erronka-header { width:100%; display:grid; grid-template-columns:24px 1fr; align-items:center; gap:.55rem; padding:.85rem 1rem; border:0; background:transparent; color:inherit; text-align:left; cursor:pointer; font:inherit; }
+    .erronka-header { width:100%; display:grid; grid-template-columns:24px 1fr; align-items:center; gap:.55rem; padding:.85rem 5.4rem .85rem 1rem; border:0; background:transparent; color:inherit; text-align:left; cursor:pointer; font:inherit; }
     .erronka-header:hover { background:rgba(255,255,255,.2); }
     .caret { font-size:1.25rem; font-weight:800; transition:transform .18s ease; }
     .erronka-item.open .caret { transform:rotate(90deg); }
     .erronka-title { font-weight:800; font-size:1rem; }
     .erronka-meta { color:rgba(15,23,42,.72); font-size:.85rem; margin-top:.2rem; }
+    .erronka-bolkatu-form { position:absolute; top:.54rem; right:.7rem; z-index:3; margin:0; }
+    .erronka-bolkatu-btn { width:58px; height:34px; padding:.25rem .4rem; border:1px solid rgba(15,23,42,.18); border-radius:7px; background:rgba(255,255,255,.82); display:inline-flex; align-items:center; justify-content:center; cursor:pointer; }
+    .erronka-bolkatu-btn:hover { background:#fff; box-shadow:0 1px 4px rgba(15,23,42,.18); }
+    .erronka-bolkatu-btn img { width:40px; height:20px; display:block; }
     .erronka-content { display:none; padding:.25rem 1rem 1rem 2.95rem; }
     .erronka-item.open .erronka-content { display:block; }
     .erronka-deskribapena { white-space:pre-line; color:#334155; margin:0 0 .8rem; }
@@ -46,6 +50,7 @@
     .kronograma-goiburua { display:flex; align-items:center; justify-content:space-between; gap:.7rem; margin-bottom:.7rem; }
     .kronograma-izenburua { display:flex; align-items:baseline; gap:.55rem; flex-wrap:wrap; }
     .kronograma-ekintzak { display:flex; align-items:center; gap:.45rem; flex-wrap:wrap; }
+    .kronograma-ekintzak form { margin:0; }
     .kronograma-goiburua h3 { margin:0; font-size:.9rem; }
     .kronograma-orduak { color:#475569; font-size:.75rem; font-weight:800; }
     .jarduera-berria { padding:.42rem .7rem; border:0; border-radius:8px; background:#172033; color:#fff; font:inherit; font-size:.76rem; font-weight:800; cursor:pointer; }
@@ -162,6 +167,16 @@
           <li class="erronka-item" th:each="erronka : ${programazioaIkuspegia.erronkak}"
               th:classappend="${'err-' + (((erronka.indizea - 1) % 4) + 1)}"
               th:attr="data-index=${erronka.indizea},data-erronka-id=${erronka.id}">
+            <form class="erronka-bolkatu-form" method="post"
+                  th:action="@{/irakasle/ethazi-koadernoa/programazioa/erronkak/{id}/denboralizaziora-bolkatu(id=${erronka.id})}"
+                  onsubmit="event.stopPropagation(); return confirm('Erronka honen aurreko denboralizazioa ordezkatu eta berriro bolkatu?');">
+              <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+              <button type="submit" class="erronka-bolkatu-btn"
+                      title="Erronka hau denboralizaziora bolkatu"
+                      aria-label="Erronka hau denboralizaziora bolkatu">
+                <img th:src="@{/img/eb-bolkatu.png}" alt="">
+              </button>
+            </form>
             <button class="erronka-header" type="button" aria-expanded="false" onclick="toggleErronka(this)">
               <span class="caret">›</span>
               <span>
@@ -191,9 +206,9 @@
                       · 30 h erabilgarri / 12 h programatuta
                     </span>
                   </div>
-                  <div class="kronograma-ekintzak" th:if="${!#lists.isEmpty(erronka.moduluAukerak)}">
-                    <button type="button" class="dialog-btn" onclick="irekiMultzoModala(this, true)">＋ Multzo berria</button>
-                    <button type="button" class="jarduera-berria" onclick="irekiJardueraModala(this, true)">＋ Jarduera berria</button>
+                  <div class="kronograma-ekintzak">
+                    <button th:if="${!#lists.isEmpty(erronka.moduluAukerak)}" type="button" class="dialog-btn" onclick="irekiMultzoModala(this, true)">＋ Multzo berria</button>
+                    <button th:if="${!#lists.isEmpty(erronka.moduluAukerak)}" type="button" class="jarduera-berria" onclick="irekiJardueraModala(this, true)">＋ Jarduera berria</button>
                   </div>
                 </div>
                 <div class="programazio-blokeak" data-jarduera-zerrenda
@@ -280,7 +295,7 @@
                                 th:text="${modulua.etiketa}">MOD</option>
                       </select>
                     </label>
-                    <label class="field">Iraupena (orduak)<input type="number" name="iraupenOrduak" required min="0.01" max="999.99" step="0.01"></label>
+                    <label class="field">Iraupena (orduak)<input type="number" name="iraupenOrduak" required min="1" max="999" step="1"></label>
                   </div>
                   <footer><button type="button" class="dialog-btn" data-dialog-close>Utzi</button><button type="submit" class="dialog-btn primary">Gorde</button></footer>
                 </form>

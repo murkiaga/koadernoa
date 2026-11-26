@@ -1,5 +1,6 @@
 package com.koadernoa.app.funtzionalitateak.irakasle;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,6 +26,7 @@ import com.koadernoa.app.ethazi.dto.KronogramaJardueraForm;
 import com.koadernoa.app.ethazi.dto.JardueraMultzoForm;
 import com.koadernoa.app.ethazi.entitateak.kronograma.KronogramaJardueraMota;
 import com.koadernoa.app.ethazi.service.EthaziKoadernoaService;
+import com.koadernoa.app.ethazi.service.EthaziDenboralizazioaService;
 import com.koadernoa.app.ethazi.service.EthaziJarraipenaService;
 import com.koadernoa.app.ethazi.service.KronogramaService;
 import com.koadernoa.app.objektuak.egutegia.entitateak.EgunBerezi;
@@ -34,6 +36,7 @@ import com.koadernoa.app.objektuak.egutegia.service.EgutegiaService;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.modulua.repository.IkasleaRepository;
 import com.koadernoa.app.objektuak.modulua.repository.ModuloaRepository;
 
@@ -56,6 +59,7 @@ public class EthaziKoadernoaController {
     private final EgutegiaService egutegiaService;
     private final KronogramaService kronogramaService;
     private final EthaziJarraipenaService ethaziJarraipenaService;
+    private final EthaziDenboralizazioaService ethaziDenboralizazioaService;
 
     @GetMapping("/{id}/hautatu")
     public String hautatu(@PathVariable Long id, Authentication auth, HttpSession session,
@@ -152,6 +156,197 @@ public class EthaziKoadernoaController {
         return "irakasleak/ethazi/programazioa";
     }
 
+    @GetMapping("/denboralizazioa")
+    public String denboralizazioa(Authentication auth,
+            @SessionAttribute(name = "ethaziKoadernoAktiboa", required = false) EthaziKoadernoa sessionKoadernoa,
+            @RequestParam(name = "moduloaId", required = false) Long moduloaId,
+            @RequestParam(name = "urtea", required = false) Integer urtea,
+            @RequestParam(name = "hilabetea", required = false) Integer hilabetea,
+            @RequestParam(name = "bista", required = false, defaultValue = "egutegia") String bista,
+            @RequestParam(name = "egutegiMota", required = false) String egutegiMota,
+            @RequestParam(name = "asteHasiera", required = false) LocalDate asteHasiera,
+            HttpSession session, Model model, RedirectAttributes flash) {
+        EthaziKoadernoa koadernoa = lortuBaimendutakoKoadernoa(sessionKoadernoa, auth, session, flash);
+        if (koadernoa == null) return "redirect:/irakasle";
+        Egutegia egutegia = lortuTaldearenEgutegia(koadernoa);
+        if (egutegia == null) {
+            model.addAttribute("egutegiErrorea", "Taldearen mailak ez du ikasturte aktiborako egutegirik.");
+            model.addAttribute("ethaziKoadernoAktiboa", koadernoa);
+            return "irakasleak/ethazi/denboralizazioa";
+        }
+        LocalDate gaur = LocalDate.now();
+        int ikuspegiUrtea = urtea == null ? gaur.getYear() : urtea;
+        int ikuspegiHilabetea = hilabetea == null ? gaur.getMonthValue() : hilabetea;
+        if (ikuspegiHilabetea < 1 || ikuspegiHilabetea > 12) {
+            ikuspegiUrtea += ikuspegiHilabetea < 1 ? -1 : 1;
+            ikuspegiHilabetea = ikuspegiHilabetea < 1 ? 12 : 1;
+        }
+        Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+        if (egutegiMota == null || egutegiMota.isBlank()) {
+            Object gordetakoMota = session.getAttribute("ethaziDenboralizazioaEgutegiMota");
+            egutegiMota = gordetakoMota instanceof String mota && !mota.isBlank()
+                    ? mota : "hilabetea";
+        } else {
+            egutegiMota = "astea".equalsIgnoreCase(egutegiMota) ? "astea" : "hilabetea";
+            session.setAttribute("ethaziDenboralizazioaEgutegiMota", egutegiMota);
+        }
+        model.addAttribute("ethaziKoadernoAktiboa", koadernoa);
+        model.addAttribute("gaur", gaur);
+        boolean faltakBista = "faltak".equalsIgnoreCase(bista);
+        model.addAttribute("bista", faltakBista ? "faltak" : "egutegia");
+        var denboralizazioa = ethaziDenboralizazioaService.prestatu(
+                koadernoa, egutegia, irakaslea, moduloaId, ikuspegiUrtea, ikuspegiHilabetea);
+        LocalDate asteHasieraEraginkorra = asteHasiera == null ? null
+                : asteHasiera.with(java.time.DayOfWeek.MONDAY);
+        if ("astea".equals(egutegiMota) && asteHasieraEraginkorra == null) {
+            asteHasieraEraginkorra = denboralizazioa.asteak().stream()
+                    .filter(astea -> astea.stream().anyMatch(eguna -> eguna.data().equals(gaur)))
+                    .findFirst().or(() -> denboralizazioa.asteak().stream()
+                            .filter(astea -> astea.stream().anyMatch(
+                                    EthaziDenboralizazioaService.Eguna::hilabeteAktibokoa)).findFirst())
+                    .flatMap(astea -> astea.stream().findFirst()).map(
+                            EthaziDenboralizazioaService.Eguna::data).orElse(null);
+        }
+        LocalDate aukeratutakoAsteHasiera = asteHasieraEraginkorra;
+        var astekoEgunak = "astea".equals(egutegiMota) && aukeratutakoAsteHasiera != null
+                ? denboralizazioa.asteak().stream()
+                        .filter(astea -> !astea.isEmpty()
+                                && astea.get(0).data().equals(aukeratutakoAsteHasiera))
+                        .findFirst().orElse(java.util.List.of())
+                : java.util.List.<EthaziDenboralizazioaService.Eguna>of();
+        model.addAttribute("denboralizazioa", denboralizazioa);
+        model.addAttribute("egutegiMota", egutegiMota);
+        model.addAttribute("asteHasiera", asteHasieraEraginkorra);
+        model.addAttribute("astekoEgunak", astekoEgunak);
+        model.addAttribute("ikusgaiAsteak", "astea".equals(egutegiMota)
+                ? java.util.List.of(astekoEgunak) : denboralizazioa.asteak());
+        model.addAttribute("egutegiOharrak", oharMap(egutegia));
+        if (faltakBista) {
+            model.addAttribute("jarraipena", ethaziJarraipenaService.prestatu(
+                    koadernoa, egutegia, irakaslea, adminEdoKudeatzaileaDa(auth), moduloaId));
+        }
+        return "irakasleak/ethazi/denboralizazioa";
+    }
+
+    @PostMapping("/programazioa/erronkak/{erronkaId}/denboralizaziora-bolkatu")
+    public String denboralizazioraBolkatu(@PathVariable Long erronkaId, Authentication auth,
+            @SessionAttribute(name = "ethaziKoadernoAktiboa", required = false) EthaziKoadernoa sessionKoadernoa,
+            HttpSession session, RedirectAttributes flash) {
+        EthaziKoadernoa koadernoa = lortuBaimendutakoKoadernoa(sessionKoadernoa, auth, session, flash);
+        if (koadernoa == null) return "redirect:/irakasle";
+        try {
+            Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+            int egunekoJardueraKopurua = ethaziDenboralizazioaService.bolkatu(
+                    koadernoa, lortuTaldearenEgutegia(koadernoa), irakaslea, erronkaId, auth);
+            flash.addFlashAttribute("success", "Erronka denboralizaziora bolkatu da ("
+                    + egunekoJardueraKopurua + " eguneko jarduera). Aurreko bolkadura ordezkatu da.");
+        } catch (IllegalArgumentException | AccessDeniedException ex) {
+            flash.addFlashAttribute("error", ex.getMessage());
+        }
+        return "redirect:/irakasle/ethazi-koadernoa/programazioa";
+    }
+
+    @GetMapping("/denboralizazioa/asistentzia")
+    public String denboralizazioAsistentzia(Authentication auth,
+            @SessionAttribute(name = "ethaziKoadernoAktiboa", required = false) EthaziKoadernoa sessionKoadernoa,
+            @RequestParam Long moduloaId, @RequestParam LocalDate data,
+            @RequestParam(required = false) Integer urtea,
+            @RequestParam(required = false) Integer hilabetea,
+            @RequestParam(required = false) Long filtroModuloaId,
+            @RequestParam(required = false) String egutegiMota,
+            @RequestParam(required = false) LocalDate asteHasiera,
+            HttpSession session, RedirectAttributes flash) {
+        EthaziKoadernoa koadernoa = lortuBaimendutakoKoadernoa(sessionKoadernoa, auth, session, flash);
+        if (koadernoa == null) return "redirect:/irakasle";
+        Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+        Koadernoa asistentziaKoadernoa = ethaziDenboralizazioaService
+                .lortuAsistentziaKoadernoa(koadernoa, irakaslea, moduloaId);
+        if (asistentziaKoadernoa == null) {
+            flash.addFlashAttribute("error", "Aukeratutako moduluak ez du asistentzia-koaderno erabilgarririk.");
+            return "redirect:/irakasle/ethazi-koadernoa/denboralizazioa?urtea="
+                    + (urtea == null ? data.getYear() : urtea) + "&hilabetea="
+                    + (hilabetea == null ? data.getMonthValue() : hilabetea)
+                    + (filtroModuloaId == null ? "" : "&moduloaId=" + filtroModuloaId);
+        }
+        try {
+            ethaziDenboralizazioaService.sortuEthaziAsistentziaSaioak(
+                    koadernoa, lortuTaldearenEgutegia(koadernoa),
+                    asistentziaKoadernoa, moduloaId, data);
+        } catch (IllegalArgumentException ex) {
+            flash.addFlashAttribute("error", ex.getMessage());
+            return "redirect:/irakasle/ethazi-koadernoa/denboralizazioa?urtea="
+                    + (urtea == null ? data.getYear() : urtea) + "&hilabetea="
+                    + (hilabetea == null ? data.getMonthValue() : hilabetea)
+                    + (filtroModuloaId == null ? "" : "&moduloaId=" + filtroModuloaId);
+        }
+        session.setAttribute("koadernoAktiboa", asistentziaKoadernoa);
+        String itzulera = "&itzuliEthazi=true"
+                + (urtea == null ? "" : "&itzuliEthaziUrtea=" + urtea)
+                + (hilabetea == null ? "" : "&itzuliEthaziHilabetea=" + hilabetea)
+                + (filtroModuloaId == null ? "" : "&itzuliEthaziModuloaId=" + filtroModuloaId)
+                + (egutegiMota == null ? "" : "&itzuliEthaziEgutegiMota=" + egutegiMota)
+                + (asteHasiera == null ? "" : "&itzuliEthaziAsteHasiera=" + asteHasiera);
+        return "redirect:/irakasle/asistentzia?data=" + data + itzulera;
+    }
+
+    @GetMapping("/denboralizazioa/jarduerak/{jardueraId}")
+    public ResponseEntity<?> denboralizazioJarduera(Authentication auth,
+            @SessionAttribute(name = "ethaziKoadernoAktiboa", required = false) EthaziKoadernoa sessionKoadernoa,
+            @PathVariable Long jardueraId) {
+        EthaziKoadernoa koadernoa = lortuBaimendutakoKoadernoaApi(sessionKoadernoa, auth);
+        if (koadernoa == null) return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("error", "Ez duzu Ethazi koaderno honetarako sarbiderik."));
+        try {
+            Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+            return ResponseEntity.ok(ethaziDenboralizazioaService
+                    .lortuJarduera(koadernoa, irakaslea, jardueraId));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", ex.getMessage()));
+        } catch (AccessDeniedException ex) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", ex.getMessage()));
+        }
+    }
+
+    @PostMapping("/denboralizazioa/jarduerak/{jardueraId}")
+    public ResponseEntity<?> denboralizazioJardueraGorde(Authentication auth,
+            @SessionAttribute(name = "ethaziKoadernoAktiboa", required = false) EthaziKoadernoa sessionKoadernoa,
+            @PathVariable Long jardueraId, @RequestParam String izenburua,
+            @RequestParam(required = false) String deskribapena,
+            @RequestParam(required = false) BigDecimal orduak,
+            @RequestParam(required = false) String oharrak) {
+        EthaziKoadernoa koadernoa = lortuBaimendutakoKoadernoaApi(sessionKoadernoa, auth);
+        if (koadernoa == null) return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("error", "Ez duzu Ethazi koaderno honetarako sarbiderik."));
+        try {
+            Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+            ethaziDenboralizazioaService.eguneratuJarduera(
+                    koadernoa, irakaslea, jardueraId, izenburua, deskribapena, orduak, oharrak);
+            return ResponseEntity.ok(Map.of("ok", true));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+        } catch (AccessDeniedException ex) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", ex.getMessage()));
+        }
+    }
+
+    @PostMapping("/denboralizazioa/jarduerak/{jardueraId}/mugitu")
+    public ResponseEntity<?> denboralizazioJardueraMugitu(Authentication auth,
+            @SessionAttribute(name = "ethaziKoadernoAktiboa", required = false) EthaziKoadernoa sessionKoadernoa,
+            @PathVariable Long jardueraId, @RequestParam LocalDate data) {
+        EthaziKoadernoa koadernoa = lortuBaimendutakoKoadernoaApi(sessionKoadernoa, auth);
+        if (koadernoa == null) return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("error", "Ez duzu Ethazi koaderno honetarako sarbiderik."));
+        try {
+            Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+            ethaziDenboralizazioaService.mugituJarduera(koadernoa, irakaslea, jardueraId, data);
+            return ResponseEntity.ok(Map.of("ok", true));
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(Map.of("error", ex.getMessage()));
+        } catch (AccessDeniedException ex) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", ex.getMessage()));
+        }
+    }
+
     @GetMapping("/jarraipena")
     public String jarraipena(Authentication auth,
             @SessionAttribute(name = "ethaziKoadernoAktiboa", required = false) EthaziKoadernoa sessionKoadernoa,
@@ -159,12 +354,8 @@ public class EthaziKoadernoaController {
             HttpSession session, Model model, RedirectAttributes flash) {
         EthaziKoadernoa koadernoa = lortuBaimendutakoKoadernoa(sessionKoadernoa, auth, session, flash);
         if (koadernoa == null) return "redirect:/irakasle";
-        Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
-        model.addAttribute("ethaziKoadernoAktiboa", koadernoa);
-        model.addAttribute("jarraipena", ethaziJarraipenaService.prestatu(
-                koadernoa, lortuTaldearenEgutegia(koadernoa), irakaslea,
-                adminEdoKudeatzaileaDa(auth), moduloaId));
-        return "irakasleak/ethazi/jarraipena";
+        return "redirect:/irakasle/ethazi-koadernoa/denboralizazioa?bista=faltak"
+                + (moduloaId == null ? "" : "&moduloaId=" + moduloaId);
     }
 
     @GetMapping("/jarraipena/gelaxka")
@@ -193,19 +384,8 @@ public class EthaziKoadernoaController {
     public ResponseEntity<Map<String, String>> jarraipenGelaxkaGorde(Authentication auth,
             @SessionAttribute(name = "ethaziKoadernoAktiboa", required = false) EthaziKoadernoa sessionKoadernoa,
             @RequestBody EthaziJarraipenaService.GelaxkaGordeEskaera eskaera) {
-        EthaziKoadernoa koadernoa = lortuBaimendutakoKoadernoaApi(sessionKoadernoa, auth);
-        if (koadernoa == null) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("message", "Ez duzu Ethazi koaderno honetarako sarbiderik."));
-        }
-        try {
-            Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
-            ethaziJarraipenaService.gordeGelaxka(
-                    koadernoa, irakaslea, adminEdoKudeatzaileaDa(auth), eskaera);
-            return ResponseEntity.ok(Map.of("message", "Hutsegiteak eta oharrak gorde dira."));
-        } catch (IllegalArgumentException ex) {
-            return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
-        }
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                "message", "Falten bista kontsultatzeko bakarrik da; asistentzia denboralizaziotik pasatu behar da."));
     }
 
     @PostMapping("/programazioa/erronkak/{erronkaId}/jarduerak/gorde")

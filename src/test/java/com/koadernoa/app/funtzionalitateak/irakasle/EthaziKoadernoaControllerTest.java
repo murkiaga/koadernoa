@@ -20,6 +20,7 @@ import org.springframework.mock.web.MockHttpSession;
 
 import com.koadernoa.app.ethazi.entitateak.EthaziKoadernoa;
 import com.koadernoa.app.ethazi.service.EthaziKoadernoaService;
+import com.koadernoa.app.ethazi.service.EthaziDenboralizazioaService;
 import com.koadernoa.app.ethazi.service.EthaziJarraipenaService;
 import com.koadernoa.app.ethazi.service.KronogramaService;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
@@ -29,6 +30,7 @@ import com.koadernoa.app.objektuak.egutegia.repository.EgutegiaRepository;
 import com.koadernoa.app.objektuak.egutegia.service.EgutegiaService;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.modulua.entitateak.Ikaslea;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 import com.koadernoa.app.objektuak.modulua.repository.IkasleaRepository;
@@ -45,6 +47,7 @@ class EthaziKoadernoaControllerTest {
     @Mock EgutegiaService egutegiaService;
     @Mock KronogramaService kronogramaService;
     @Mock EthaziJarraipenaService ethaziJarraipenaService;
+    @Mock EthaziDenboralizazioaService ethaziDenboralizazioaService;
     @Mock Authentication auth;
 
     private EthaziKoadernoaController controller;
@@ -54,7 +57,8 @@ class EthaziKoadernoaControllerTest {
     @BeforeEach
     void prestatu() {
         controller = new EthaziKoadernoaController(koadernoaService, irakasleaService, ikasleak,
-                moduluak, egutegiak, egutegiaService, kronogramaService, ethaziJarraipenaService);
+                moduluak, egutegiak, egutegiaService, kronogramaService, ethaziJarraipenaService,
+                ethaziDenboralizazioaService);
         Taldea taldea = new Taldea(); taldea.setId(4L); taldea.setIzena("1MS2D");
         koadernoa = new EthaziKoadernoa(); koadernoa.setId(6L); koadernoa.setTaldea(taldea);
         irakaslea = new Irakaslea(); irakaslea.setId(8L);
@@ -120,7 +124,27 @@ class EthaziKoadernoaControllerTest {
     }
 
     @Test
-    void jarraipenIkuspegiaModuluFiltroarekinKargatzenDu() {
+    void denboralizazioaModuluFiltroEtaHilabetearekinKargatzenDu() {
+        Maila maila = new Maila(); maila.setId(2L);
+        Moduloa modulua = new Moduloa(); modulua.setMaila(maila); modulua.setAktibo(true);
+        Egutegia egutegia = new Egutegia();
+        var ikuspegia = new EthaziDenboralizazioaService.DenboralizazioaIkuspegia(
+                "2026-2027", "azaroa 2026", 2026, 11, 20L, List.of(), List.of());
+        when(moduluak.findByTaldeaId(4L)).thenReturn(List.of(modulua));
+        when(egutegiak.findByIkasturtea_AktiboaTrueAndMaila_Id(2L)).thenReturn(Optional.of(egutegia));
+        when(ethaziDenboralizazioaService.prestatu(
+                koadernoa, egutegia, irakaslea, 20L, 2026, 11)).thenReturn(ikuspegia);
+        ExtendedModelMap model = new ExtendedModelMap();
+
+        String view = controller.denboralizazioa(auth, koadernoa, 20L, 2026, 11, "egutegia", null, null,
+                new MockHttpSession(), model, new RedirectAttributesModelMap());
+
+        assertThat(view).isEqualTo("irakasleak/ethazi/denboralizazioa");
+        assertThat(model.get("denboralizazioa")).isSameAs(ikuspegia);
+    }
+
+    @Test
+    void faltenBistaDenboralizazioanKargatzenDu() {
         Maila maila = new Maila(); maila.setId(2L);
         Moduloa modulua = new Moduloa(); modulua.setMaila(maila); modulua.setAktibo(true);
         Egutegia egutegia = new Egutegia();
@@ -130,12 +154,42 @@ class EthaziKoadernoaControllerTest {
         when(egutegiak.findByIkasturtea_AktiboaTrueAndMaila_Id(2L)).thenReturn(Optional.of(egutegia));
         when(ethaziJarraipenaService.prestatu(koadernoa, egutegia, irakaslea, false, 20L))
                 .thenReturn(ikuspegia);
+        when(ethaziDenboralizazioaService.prestatu(
+                koadernoa, egutegia, irakaslea, 20L, 2026, 11)).thenReturn(
+                        new EthaziDenboralizazioaService.DenboralizazioaIkuspegia(
+                                "2026-2027", "azaroa 2026", 2026, 11, 20L, List.of(), List.of()));
         ExtendedModelMap model = new ExtendedModelMap();
 
-        String view = controller.jarraipena(auth, koadernoa, 20L, new MockHttpSession(), model,
+        String view = controller.denboralizazioa(auth, koadernoa, 20L, 2026, 11, "faltak", null, null,
+                new MockHttpSession(), model,
                 new RedirectAttributesModelMap());
 
-        assertThat(view).isEqualTo("irakasleak/ethazi/jarraipena");
+        assertThat(view).isEqualTo("irakasleak/ethazi/denboralizazioa");
+        assertThat(model.get("bista")).isEqualTo("faltak");
         assertThat(model.get("jarraipena")).isSameAs(ikuspegia);
     }
+
+    @Test
+    void asistentziatikItzultzeanNireModuluakFiltroaMantentzenDu() {
+        LocalDate data = LocalDate.of(2026, 11, 4);
+        Maila maila = new Maila(); maila.setId(2L);
+        Moduloa modulua = new Moduloa(); modulua.setId(20L); modulua.setMaila(maila); modulua.setAktibo(true);
+        Egutegia egutegia = new Egutegia();
+        Koadernoa asistentziaKoadernoa = new Koadernoa(); asistentziaKoadernoa.setId(30L);
+        when(moduluak.findByTaldeaId(4L)).thenReturn(List.of(modulua));
+        when(egutegiak.findByIkasturtea_AktiboaTrueAndMaila_Id(2L)).thenReturn(Optional.of(egutegia));
+        when(ethaziDenboralizazioaService.lortuAsistentziaKoadernoa(
+                koadernoa, irakaslea, 20L)).thenReturn(asistentziaKoadernoa);
+        MockHttpSession session = new MockHttpSession();
+
+        String redirect = controller.denboralizazioAsistentzia(auth, koadernoa, 20L, data,
+                2026, 11, null, "astea", LocalDate.of(2026, 11, 2), session,
+                new RedirectAttributesModelMap());
+
+        assertThat(redirect).isEqualTo("redirect:/irakasle/asistentzia?data=2026-11-04"
+                + "&itzuliEthazi=true&itzuliEthaziUrtea=2026&itzuliEthaziHilabetea=11"
+                + "&itzuliEthaziEgutegiMota=astea&itzuliEthaziAsteHasiera=2026-11-02");
+        assertThat(session.getAttribute("koadernoAktiboa")).isSameAs(asistentziaKoadernoa);
+    }
+
 }
