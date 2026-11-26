@@ -118,7 +118,8 @@ class EthaziDenboralizazioaTemplateTest {
                             .session(session).principal(auth))
                     .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
             assertThat(astekoHtml).contains("week-mode", "Asteko bista",
-                    "asteHasiera=2026-11-02", "asteHasiera=2026-10-26", "asteHasiera=2026-11-09");
+                    "asteHasiera=2026-11-02", "asteHasiera=2026-10-26", "asteHasiera=2026-11-09",
+                    "<div class=\"activity-description\">Xehetasuna</div>");
         } finally {
             SecurityContextHolder.clearContext();
         }

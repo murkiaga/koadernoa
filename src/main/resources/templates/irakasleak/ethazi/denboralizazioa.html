@@ -32,7 +32,7 @@
     .attendance a.open{background:#dcfce7;border-color:#86efac;color:#166534}
     .activities{display:grid;gap:.18rem;max-height:66px;overflow-y:auto;scrollbar-width:thin}.activity{padding:.2rem .3rem;border:1px solid #bfdbfe;border-left:4px solid #3b82f6;border-radius:5px;background:#eff6ff;color:#172033;font-size:.66rem;line-height:1.15;cursor:pointer;overflow:hidden}
     .activity[draggable="true"]{cursor:grab}.activity.dragging{opacity:.4}.calendar td.drop-target{outline:2px dashed #2563eb;outline-offset:-3px}
-    .activity.common{border-left-color:#7c3aed;background:#f5f3ff}.activity-title{font-weight:850}.activity-meta{display:flex;gap:.35rem;align-items:center;margin-top:.18rem;color:#64748b;font-size:.65rem;flex-wrap:wrap}.activity-badge{font-weight:900;color:#1d4ed8}.activity.common .activity-badge{color:#6d28d9}
+    .activity.common{border-left-color:#7c3aed;background:#f5f3ff}.activity-title{font-weight:850}.activity-description{margin-top:.3rem;color:#334155;font-size:.7rem;line-height:1.3;white-space:pre-line;overflow-wrap:anywhere}.activity-meta{display:flex;gap:.35rem;align-items:center;margin-top:.18rem;color:#64748b;font-size:.65rem;flex-wrap:wrap}.activity-badge{font-weight:900;color:#1d4ed8}.activity.common .activity-badge{color:#6d28d9}
     .activity-note{font-size:.72rem}.denb-dialog{width:min(560px,calc(100% - 2rem));border:0;border-radius:14px;padding:0;box-shadow:0 20px 60px rgba(15,23,42,.35)}.denb-dialog::backdrop{background:rgba(15,23,42,.45)}
     .denb-dialog header,.denb-dialog footer{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.8rem 1rem;border-bottom:1px solid #e2e8f0}.denb-dialog footer{justify-content:flex-end;border-top:1px solid #e2e8f0;border-bottom:0}.denb-dialog h2{margin:0;font-size:1.05rem}.denb-dialog-body{display:grid;gap:.65rem;padding:.9rem 1rem}.denb-field{display:grid;gap:.25rem;color:#475569;font-size:.76rem;font-weight:800}.denb-field input,.denb-field textarea{width:100%;padding:.5rem .6rem;border:1px solid #cbd5e1;border-radius:7px;font:inherit}.denb-field textarea{resize:vertical}.denb-field input:disabled,.denb-field textarea:disabled{background:#f1f5f9;color:#64748b}.denb-btn{padding:.45rem .7rem;border:1px solid #94a3b8;border-radius:7px;background:#fff;font:inherit;font-weight:800;cursor:pointer}.denb-btn.primary{background:#172033;color:#fff;border-color:#172033}
     .empty{padding:2rem;text-align:center;color:#64748b}.message{margin:0 0 .8rem;padding:.7rem .85rem;border-radius:8px;font-weight:700}.message.error{background:#fee2e2;color:#991b1b}.egutegi-errorea{padding:2rem;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:12px}
@@ -115,6 +115,9 @@
                          th:title="${jarduera.deskribapena}"
                          onclick="irekiJarduera(this)">
                   <div class="activity-title" th:text="${jarduera.izenburua}">Jarduera</div>
+                  <div class="activity-description"
+                       th:if="${egutegiMota == 'astea' and !#strings.isEmpty(jarduera.deskribapena)}"
+                       th:text="${jarduera.deskribapena}">Deskribapena</div>
                   <div class="activity-meta">
                     <span class="activity-badge" th:text="${jarduera.badgea}">MOD</span>
                     <span th:text="${jarduera.erronka}">Erronka</span>
