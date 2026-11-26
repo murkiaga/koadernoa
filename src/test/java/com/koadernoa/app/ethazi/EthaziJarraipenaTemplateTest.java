@@ -124,7 +124,8 @@ class EthaziJarraipenaTemplateTest {
                     "xehetasunak-30-20-2026-11-02");
             assertThat(html).contains("data-erronka-toggle=\"20\"", "aria-expanded=\"false\"",
                     "erronka-xehetasuna-ezkututa", ">+</span>", "class=\"talde-hasiera\"",
-                    "id=\"jarraipenScrollKontrola\"", "id=\"jarraipenScrollBarra\"");
+                    "id=\"jarraipenScrollKontrola\"", "id=\"jarraipenScrollBarra\"",
+                    ".jarraipen-scroll-kontrola{position:fixed");
             assertThat(html).doesNotContain("jarraipenDialog", "irekiJarraipenGelaxka", ">Gorde<");
             mvc.perform(post("/irakasle/ethazi-koadernoa/jarraipena/gelaxka")
                             .contentType(MediaType.APPLICATION_JSON).content("{}")
