@@ -58,16 +58,28 @@ class EthaziDenboralizazioaTemplateTest {
                 30L, 1, "Abiadura-kaxa", data, data.plusDays(18), "#c7d2fe",
                 true, false, true,
                 "1. erronka · Abiadura-kaxa\nHasiera: 2026-11-02\nAmaiera: 2026-11-20");
+        var jarraipenBarra = new EthaziDenboralizazioaService.ErronkaBarra(
+                30L, 1, "Abiadura-kaxa", data, data.plusDays(18), "#c7d2fe",
+                false, false, true,
+                "1. erronka · Abiadura-kaxa\nHasiera: 2026-11-02\nAmaiera: 2026-11-20");
+        var amaieraBarra = new EthaziDenboralizazioaService.ErronkaBarra(
+                30L, 1, "Abiadura-kaxa", data, data.plusDays(18), "#c7d2fe",
+                false, true, false,
+                "1. erronka · Abiadura-kaxa\nHasiera: 2026-11-02\nAmaiera: 2026-11-20");
         var eguna = new EthaziDenboralizazioaService.Eguna(data, true, "lektibo1",
                 List.of(jarduera, komuna),
                 List.of(new EthaziDenboralizazioaService.AsistentziaAukera(10L, "PROG", true)),
                 List.of(erronkaBarra));
+        var jarraipenEguna = new EthaziDenboralizazioaService.Eguna(data.plusDays(7), true,
+                "lektibo1", List.of(), List.of(), List.of(jarraipenBarra));
+        var amaieraEguna = new EthaziDenboralizazioaService.Eguna(data.plusDays(18), true,
+                "lektibo1", List.of(), List.of(), List.of(amaieraBarra));
         var gaurkoEguna = new EthaziDenboralizazioaService.Eguna(LocalDate.now(), true, "lektibo1",
                 List.of(), List.of(), List.of());
         var ikuspegia = new EthaziDenboralizazioaService.DenboralizazioaIkuspegia(
                 "2026-2027", "azaroa 2026", 2026, 11, null,
                 List.of(new EthaziKoadernoaService.ModuluAukera(10L, "PROG")),
-                List.of(List.of(eguna, gaurkoEguna, eguna, eguna, eguna)));
+                List.of(List.of(eguna, jarraipenEguna, amaieraEguna, gaurkoEguna, eguna)));
 
         Taldea taldea = new Taldea(); taldea.setId(4L); taldea.setIzena("1DAM");
         EthaziKoadernoa koadernoa = new EthaziKoadernoa(); koadernoa.setId(6L); koadernoa.setTaldea(taldea);
@@ -119,7 +131,9 @@ class EthaziDenboralizazioaTemplateTest {
                     "lektibo1", "egutegi-oharra", "Ebaluazio bilera",
                     "class=\"day-number gaur-zenbakia\"", "challenge-bands",
                     "challenge-band  start", "1. erronka · Abiadura-kaxa",
-                    "Hasiera: 2026-11-02", "Amaiera: 2026-11-20", "background:#c7d2fe");
+                    "Hasiera: 2026-11-02", "Amaiera: 2026-11-20", "background:#c7d2fe",
+                    "challenge-label-marker\">●", "challenge-label-marker\">↳",
+                    "challenge-label-marker\">■", "Abiadura-kaxa · amaiera");
             assertThat(html).doesNotContain("filtroModuloaId=10");
 
             String astekoHtml = mvc.perform(get("/irakasle/ethazi-koadernoa/denboralizazioa")

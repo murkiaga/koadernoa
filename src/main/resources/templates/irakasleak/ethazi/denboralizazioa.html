@@ -27,7 +27,7 @@
     .calendar.week-mode td{height:calc(100vh - 300px);min-height:520px}.calendar.week-mode .activities{max-height:calc(100vh - 370px)}
     .calendar td:last-child{border-right:0}.calendar td.outside{color:#94a3b8}.calendar td.lektibo1{background:var(--ebal1-color)}.calendar td.lektibo2{background:var(--ebal2-color)}.calendar td.lektibo3{background:var(--ebal3-color)}.calendar td.jaieguna{background:#fff}.calendar td.jaieguna .day-number{color:#b91c1c}.calendar td.ezlektiboa{background:#000;color:#fff}.calendar td.ordezkatua{background:#ff0}
     .day-head{position:relative;isolation:isolate;display:flex;justify-content:space-between;align-items:flex-start;gap:.25rem;margin-bottom:.2rem;min-height:20px}.day-number{position:relative;z-index:3;font-weight:900;font-size:.78rem}.gaur-zenbakia{display:inline-flex;align-items:center;justify-content:center;width:1.7rem;height:1.7rem;border-radius:999px;background:#1a73e8;color:#fff!important;font-weight:700}
-    .challenge-bands{position:absolute;z-index:1;inset:0 -.25rem;display:grid;grid-template-rows:repeat(var(--erronka-banda-kopurua),minmax(0,1fr));pointer-events:none;overflow:hidden}.challenge-band{display:flex;align-items:center;min-width:0;overflow:hidden;color:#24305e;font-size:.64rem;font-weight:850;line-height:1;pointer-events:auto}.challenge-band.start{border-radius:.38rem 0 0 .38rem}.challenge-band.end{border-radius:0 .38rem .38rem 0}.challenge-band.start.end{border-radius:.38rem}.challenge-label{display:block;min-width:0;margin-left:2rem;margin-right:3.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.challenge-bands.overlap .challenge-band{font-size:.55rem}.challenge-bands.overlap .challenge-label{margin-left:1.85rem}
+    .challenge-bands{position:absolute;z-index:1;inset:0 -.25rem;display:grid;grid-template-rows:repeat(var(--erronka-banda-kopurua),minmax(0,1fr));pointer-events:none;overflow:hidden}.challenge-band{display:flex;align-items:center;min-width:0;overflow:hidden;color:#24305e;font-size:.64rem;font-weight:850;line-height:1;pointer-events:auto}.challenge-band.start{border-radius:.38rem 0 0 .38rem}.challenge-band.end{border-radius:0 .38rem .38rem 0}.challenge-band.start.end{border-radius:.38rem}.challenge-label{display:flex;align-items:center;min-width:0;margin-left:2rem;margin-right:3.8rem;white-space:nowrap}.challenge-label-marker,.challenge-end-marker{flex:0 0 auto;font-weight:950}.challenge-label-marker{margin-right:.22rem}.challenge-end-marker{margin-left:.22rem}.challenge-label-text{min-width:0;overflow:hidden;text-overflow:ellipsis}.challenge-bands.overlap .challenge-band{font-size:.55rem}.challenge-bands.overlap .challenge-label{margin-left:1.85rem}
     .attendance{position:relative;z-index:3;display:flex;justify-content:flex-end;gap:.25rem;flex-wrap:wrap}
     .attendance a{display:inline-flex;align-items:center;gap:.12rem;padding:.1rem .25rem;border:1px solid #bfdbfe;border-radius:999px;background:#eff6ff;color:#1e40af;text-decoration:none;font-size:.63rem;font-weight:900}
     .attendance a.open{background:#dcfce7;border-color:#86efac;color:#166534}
@@ -104,8 +104,14 @@
                        th:style="${'background:' + barra.kolorea}"
                        th:title="${barra.tooltipa}"
                        th:attr="aria-label=${barra.tooltipa}">
-                    <span class="challenge-label" th:if="${barra.etiketaErakutsi}"
-                          th:text="${barra.indizea + '. erronka · ' + barra.izena}">1. erronka · Izena</span>
+                    <span class="challenge-label"
+                          th:if="${barra.etiketaErakutsi or barra.amaiera}">
+                      <span class="challenge-label-marker"
+                            th:text="${barra.hasiera ? '●' : (barra.amaiera ? '■' : '↳')}">●</span>
+                      <span class="challenge-label-text"
+                            th:text="${(barra.hasiera ? barra.indizea + '. erronka · ' : '') + barra.izena + (barra.amaiera ? ' · amaiera' : '')}">1. erronka · Izena</span>
+                      <span class="challenge-end-marker" th:if="${barra.hasiera and barra.amaiera}">■</span>
+                    </span>
                   </div>
                 </div>
                 <span class="day-number" th:text="${eguna.data.dayOfMonth}"
