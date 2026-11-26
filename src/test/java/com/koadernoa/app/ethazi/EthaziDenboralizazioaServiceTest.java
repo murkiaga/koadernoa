@@ -99,7 +99,7 @@ class EthaziDenboralizazioaServiceTest {
         when(koadernoak.findByModuloaIdInAktiboIkasturtea(10L)).thenReturn(List.of());
         when(koadernoak.findByModuloaIdInAktiboIkasturtea(20L)).thenReturn(List.of());
         when(denboralizazioJarduerak.findByEthaziKoadernoaIdAndDataBetweenOrderByDataAscIdAsc(
-                6L, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30)))
+                6L, LocalDate.of(2026, 8, 31), LocalDate.of(2026, 10, 2)))
                 .thenReturn(gordetakoJarduerak());
 
         var ikuspegia = service.prestatu(koadernoa, egutegia, irakaslea, null, 2026, 9);
@@ -115,7 +115,7 @@ class EthaziDenboralizazioaServiceTest {
     void moduluZehatzeanModuluHorretakoJarduerakEtaOrokorrakBakarrikErakustenDitu() {
         when(koadernoak.findByModuloaIdInAktiboIkasturtea(10L)).thenReturn(List.of());
         when(denboralizazioJarduerak.findByEthaziKoadernoaIdAndDataBetweenOrderByDataAscIdAsc(
-                6L, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30)))
+                6L, LocalDate.of(2026, 8, 31), LocalDate.of(2026, 10, 2)))
                 .thenReturn(gordetakoJarduerak());
 
         var ikuspegia = service.prestatu(koadernoa, egutegia, irakaslea, 10L, 2026, 9);
@@ -142,10 +142,10 @@ class EthaziDenboralizazioaServiceTest {
         when(koadernoak.findByModuloaIdInAktiboIkasturtea(10L))
                 .thenReturn(List.of(asistentziaKoadernoa));
         when(saioak.findByKoadernoaIdAndDataBetweenOrderByDataAscHasieraSlotAsc(
-                70L, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30)))
+                70L, LocalDate.of(2026, 8, 31), LocalDate.of(2026, 10, 2)))
                 .thenReturn(List.of());
         when(denboralizazioJarduerak.findByEthaziKoadernoaIdAndDataBetweenOrderByDataAscIdAsc(
-                6L, LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30)))
+                6L, LocalDate.of(2026, 8, 31), LocalDate.of(2026, 10, 2)))
                 .thenReturn(List.of());
 
         var ikuspegia = service.prestatu(koadernoa, egutegia, irakaslea, 10L, 2026, 9);

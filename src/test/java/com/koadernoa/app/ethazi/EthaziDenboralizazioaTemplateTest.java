@@ -30,6 +30,7 @@ import com.koadernoa.app.ethazi.service.EthaziJarraipenaService;
 import com.koadernoa.app.ethazi.service.EthaziKoadernoaService;
 import com.koadernoa.app.ethazi.service.KronogramaService;
 import com.koadernoa.app.funtzionalitateak.irakasle.EthaziKoadernoaController;
+import com.koadernoa.app.objektuak.egutegia.entitateak.EgunBerezi;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Egutegia;
 import com.koadernoa.app.objektuak.egutegia.entitateak.Maila;
 import com.koadernoa.app.objektuak.egutegia.repository.EgutegiaRepository;
@@ -66,6 +67,9 @@ class EthaziDenboralizazioaTemplateTest {
         Maila maila = new Maila(); maila.setId(2L);
         Moduloa modulua = new Moduloa(); modulua.setId(10L); modulua.setMaila(maila); modulua.setAktibo(true);
         Egutegia egutegia = new Egutegia(); egutegia.setId(8L);
+        EgunBerezi egunBerezi = new EgunBerezi();
+        egunBerezi.setData(data); egunBerezi.setDeskribapena("Ebaluazio bilera");
+        egutegia.setEgunBereziak(List.of(egunBerezi));
         Irakaslea irakaslea = new Irakaslea(); irakaslea.setId(40L);
 
         EthaziKoadernoaService koadernoService = mock(EthaziKoadernoaService.class);
@@ -103,7 +107,18 @@ class EthaziDenboralizazioaTemplateTest {
                     .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
             assertThat(html).contains("Denboralizazioa", "Nire moduluak", "APIa diseinatu",
                     "Aurkezpena", "Orokorra", "Web erronka", "1 h", "2 h", "👤✔",
-                    "moduloaId=10", "draggable=\"true\"", "id=\"jardueraDialog\"", "📝");
+                    "moduloaId=10", "draggable=\"true\"", "id=\"jardueraDialog\"", "📝",
+                    "Egutegi bista", "Falten bista", "Hilabete bista", "Asteko bista",
+                    "lektibo1", "egutegi-oharra", "Ebaluazio bilera");
+            assertThat(html).doesNotContain("filtroModuloaId=10");
+
+            String astekoHtml = mvc.perform(get("/irakasle/ethazi-koadernoa/denboralizazioa")
+                            .param("urtea", "2026").param("hilabetea", "11")
+                            .param("egutegiMota", "astea").param("asteHasiera", "2026-11-02")
+                            .session(session).principal(auth))
+                    .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+            assertThat(astekoHtml).contains("week-mode", "Asteko bista",
+                    "asteHasiera=2026-11-02", "asteHasiera=2026-10-26", "asteHasiera=2026-11-09");
         } finally {
             SecurityContextHolder.clearContext();
         }

@@ -163,6 +163,8 @@ public class EthaziKoadernoaController {
             @RequestParam(name = "urtea", required = false) Integer urtea,
             @RequestParam(name = "hilabetea", required = false) Integer hilabetea,
             @RequestParam(name = "bista", required = false, defaultValue = "egutegia") String bista,
+            @RequestParam(name = "egutegiMota", required = false) String egutegiMota,
+            @RequestParam(name = "asteHasiera", required = false) LocalDate asteHasiera,
             HttpSession session, Model model, RedirectAttributes flash) {
         EthaziKoadernoa koadernoa = lortuBaimendutakoKoadernoa(sessionKoadernoa, auth, session, flash);
         if (koadernoa == null) return "redirect:/irakasle";
@@ -180,11 +182,44 @@ public class EthaziKoadernoaController {
             ikuspegiHilabetea = ikuspegiHilabetea < 1 ? 12 : 1;
         }
         Irakaslea irakaslea = irakasleaService.getLogeatutaDagoenIrakaslea(auth);
+        if (egutegiMota == null || egutegiMota.isBlank()) {
+            Object gordetakoMota = session.getAttribute("ethaziDenboralizazioaEgutegiMota");
+            egutegiMota = gordetakoMota instanceof String mota && !mota.isBlank()
+                    ? mota : "hilabetea";
+        } else {
+            egutegiMota = "astea".equalsIgnoreCase(egutegiMota) ? "astea" : "hilabetea";
+            session.setAttribute("ethaziDenboralizazioaEgutegiMota", egutegiMota);
+        }
         model.addAttribute("ethaziKoadernoAktiboa", koadernoa);
         boolean faltakBista = "faltak".equalsIgnoreCase(bista);
         model.addAttribute("bista", faltakBista ? "faltak" : "egutegia");
-        model.addAttribute("denboralizazioa", ethaziDenboralizazioaService.prestatu(
-                koadernoa, egutegia, irakaslea, moduloaId, ikuspegiUrtea, ikuspegiHilabetea));
+        var denboralizazioa = ethaziDenboralizazioaService.prestatu(
+                koadernoa, egutegia, irakaslea, moduloaId, ikuspegiUrtea, ikuspegiHilabetea);
+        LocalDate asteHasieraEraginkorra = asteHasiera == null ? null
+                : asteHasiera.with(java.time.DayOfWeek.MONDAY);
+        if ("astea".equals(egutegiMota) && asteHasieraEraginkorra == null) {
+            asteHasieraEraginkorra = denboralizazioa.asteak().stream()
+                    .filter(astea -> astea.stream().anyMatch(eguna -> eguna.data().equals(gaur)))
+                    .findFirst().or(() -> denboralizazioa.asteak().stream()
+                            .filter(astea -> astea.stream().anyMatch(
+                                    EthaziDenboralizazioaService.Eguna::hilabeteAktibokoa)).findFirst())
+                    .flatMap(astea -> astea.stream().findFirst()).map(
+                            EthaziDenboralizazioaService.Eguna::data).orElse(null);
+        }
+        LocalDate aukeratutakoAsteHasiera = asteHasieraEraginkorra;
+        var astekoEgunak = "astea".equals(egutegiMota) && aukeratutakoAsteHasiera != null
+                ? denboralizazioa.asteak().stream()
+                        .filter(astea -> !astea.isEmpty()
+                                && astea.get(0).data().equals(aukeratutakoAsteHasiera))
+                        .findFirst().orElse(java.util.List.of())
+                : java.util.List.<EthaziDenboralizazioaService.Eguna>of();
+        model.addAttribute("denboralizazioa", denboralizazioa);
+        model.addAttribute("egutegiMota", egutegiMota);
+        model.addAttribute("asteHasiera", asteHasieraEraginkorra);
+        model.addAttribute("astekoEgunak", astekoEgunak);
+        model.addAttribute("ikusgaiAsteak", "astea".equals(egutegiMota)
+                ? java.util.List.of(astekoEgunak) : denboralizazioa.asteak());
+        model.addAttribute("egutegiOharrak", oharMap(egutegia));
         if (faltakBista) {
             model.addAttribute("jarraipena", ethaziJarraipenaService.prestatu(
                     koadernoa, egutegia, irakaslea, adminEdoKudeatzaileaDa(auth), moduloaId));
@@ -216,6 +251,9 @@ public class EthaziKoadernoaController {
             @RequestParam Long moduloaId, @RequestParam LocalDate data,
             @RequestParam(required = false) Integer urtea,
             @RequestParam(required = false) Integer hilabetea,
+            @RequestParam(required = false) Long filtroModuloaId,
+            @RequestParam(required = false) String egutegiMota,
+            @RequestParam(required = false) LocalDate asteHasiera,
             HttpSession session, RedirectAttributes flash) {
         EthaziKoadernoa koadernoa = lortuBaimendutakoKoadernoa(sessionKoadernoa, auth, session, flash);
         if (koadernoa == null) return "redirect:/irakasle";
@@ -224,7 +262,10 @@ public class EthaziKoadernoaController {
                 .lortuAsistentziaKoadernoa(koadernoa, irakaslea, moduloaId);
         if (asistentziaKoadernoa == null) {
             flash.addFlashAttribute("error", "Aukeratutako moduluak ez du asistentzia-koaderno erabilgarririk.");
-            return "redirect:/irakasle/ethazi-koadernoa/denboralizazioa?moduloaId=" + moduloaId;
+            return "redirect:/irakasle/ethazi-koadernoa/denboralizazioa?urtea="
+                    + (urtea == null ? data.getYear() : urtea) + "&hilabetea="
+                    + (hilabetea == null ? data.getMonthValue() : hilabetea)
+                    + (filtroModuloaId == null ? "" : "&moduloaId=" + filtroModuloaId);
         }
         try {
             ethaziDenboralizazioaService.sortuEthaziAsistentziaSaioak(
@@ -235,13 +276,15 @@ public class EthaziKoadernoaController {
             return "redirect:/irakasle/ethazi-koadernoa/denboralizazioa?urtea="
                     + (urtea == null ? data.getYear() : urtea) + "&hilabetea="
                     + (hilabetea == null ? data.getMonthValue() : hilabetea)
-                    + "&moduloaId=" + moduloaId;
+                    + (filtroModuloaId == null ? "" : "&moduloaId=" + filtroModuloaId);
         }
         session.setAttribute("koadernoAktiboa", asistentziaKoadernoa);
         String itzulera = "&itzuliEthazi=true"
                 + (urtea == null ? "" : "&itzuliEthaziUrtea=" + urtea)
                 + (hilabetea == null ? "" : "&itzuliEthaziHilabetea=" + hilabetea)
-                + "&itzuliEthaziModuloaId=" + moduloaId;
+                + (filtroModuloaId == null ? "" : "&itzuliEthaziModuloaId=" + filtroModuloaId)
+                + (egutegiMota == null ? "" : "&itzuliEthaziEgutegiMota=" + egutegiMota)
+                + (asteHasiera == null ? "" : "&itzuliEthaziAsteHasiera=" + asteHasiera);
         return "redirect:/irakasle/asistentzia?data=" + data + itzulera;
     }
 

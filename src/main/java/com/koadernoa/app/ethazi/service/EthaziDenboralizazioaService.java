@@ -187,9 +187,12 @@ public class EthaziDenboralizazioaService {
         Long moduloaId = irakaslearenModuloIds.contains(aukeratutakoModuloaId)
                 ? aukeratutakoModuloaId : null;
 
+        LocalDate sareHasiera = hilabeteaData.atDay(1).with(DayOfWeek.MONDAY);
+        LocalDate sareBukaera = hilabeteaData.atEndOfMonth().with(DayOfWeek.FRIDAY);
+
         List<EthaziDenboralizazioJarduera> gordetakoak = denboralizazioJarduerak
                 .findByEthaziKoadernoaIdAndDataBetweenOrderByDataAscIdAsc(
-                        ethaziKoadernoa.getId(), hilabeteaData.atDay(1), hilabeteaData.atEndOfMonth());
+                        ethaziKoadernoa.getId(), sareHasiera, sareBukaera);
         Map<LocalDate, List<EgunekoJarduera>> jarduerakEgunka = new LinkedHashMap<>();
         gordetakoak.stream()
                 .filter(j -> j.getMota() == KronogramaJardueraMota.KOMUNA
@@ -270,13 +273,15 @@ public class EthaziDenboralizazioaService {
         Koadernoa koadernoa = koadernoaRepository.findByModuloaIdInAktiboIkasturtea(aukera.id())
                 .stream().findFirst().orElse(null);
         if (koadernoa == null) return new AsistentziaModulua(aukera.id(), aukera.etiketa(), Set.of(), Set.of());
-        Set<LocalDate> egunak = hilabetea.atDay(1).datesUntil(hilabetea.atEndOfMonth().plusDays(1))
+        LocalDate sareHasiera = hilabetea.atDay(1).with(DayOfWeek.MONDAY);
+        LocalDate sareBukaera = hilabetea.atEndOfMonth().with(DayOfWeek.FRIDAY);
+        Set<LocalDate> egunak = sareHasiera.datesUntil(sareBukaera.plusDays(1))
                 .filter(data -> !ethaziOrdutegiSlotak(
                         egutegia, aukera.id(), data, bertsioak).isEmpty())
                 .collect(Collectors.toSet());
         Set<LocalDate> irekita = saioaRepository
                 .findByKoadernoaIdAndDataBetweenOrderByDataAscHasieraSlotAsc(
-                        koadernoa.getId(), hilabetea.atDay(1), hilabetea.atEndOfMonth()).stream()
+                        koadernoa.getId(), sareHasiera, sareBukaera).stream()
                 .map(s -> s.getData()).collect(Collectors.toSet());
         return new AsistentziaModulua(aukera.id(), aukera.etiketa(), egunak, irekita);
     }

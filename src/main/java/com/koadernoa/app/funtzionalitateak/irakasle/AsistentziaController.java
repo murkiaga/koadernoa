@@ -65,6 +65,8 @@ public class AsistentziaController {
 	      @RequestParam(name = "itzuliEthaziUrtea", required = false) Integer itzuliEthaziUrtea,
 	      @RequestParam(name = "itzuliEthaziHilabetea", required = false) Integer itzuliEthaziHilabetea,
 	      @RequestParam(name = "itzuliEthaziModuloaId", required = false) Long itzuliEthaziModuloaId,
+	      @RequestParam(name = "itzuliEthaziEgutegiMota", required = false) String itzuliEthaziEgutegiMota,
+	      @RequestParam(name = "itzuliEthaziAsteHasiera", required = false) LocalDate itzuliEthaziAsteHasiera,
 	      Authentication auth,
 	      Model model) {
 
@@ -99,6 +101,8 @@ public class AsistentziaController {
 	    model.addAttribute("itzuliEthaziUrtea", itzuliEthaziUrtea);
 	    model.addAttribute("itzuliEthaziHilabetea", itzuliEthaziHilabetea);
 	    model.addAttribute("itzuliEthaziModuloaId", itzuliEthaziModuloaId);
+	    model.addAttribute("itzuliEthaziEgutegiMota", itzuliEthaziEgutegiMota);
+	    model.addAttribute("itzuliEthaziAsteHasiera", itzuliEthaziAsteHasiera);
     model.addAttribute("oharGakoak", ikasleEgunJardueraService.oharGakoak(kargatutakoKoadernoa.getId(), data, data));
     model.addAttribute("egunekoJokabideak", ikasleEgunJardueraService.egunekoJokabideak(kargatutakoKoadernoa.getId(), data));
 	    PrincipalInfo p = resolvePrincipalInfo(auth);

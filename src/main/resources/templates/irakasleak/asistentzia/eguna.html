@@ -165,6 +165,8 @@
   const itzuliEthaziUrtea = /*[[${itzuliEthaziUrtea}]]*/ null;
   const itzuliEthaziHilabetea = /*[[${itzuliEthaziHilabetea}]]*/ null;
   const itzuliEthaziModuloaId = /*[[${itzuliEthaziModuloaId}]]*/ null;
+  const itzuliEthaziEgutegiMota = /*[[${itzuliEthaziEgutegiMota}]]*/ null;
+  const itzuliEthaziAsteHasiera = /*[[${itzuliEthaziAsteHasiera}]]*/ null;
   // Itxi laguntzaileak
   window.itxiAsistentzia = function(){
     if (itzuliEthazi) {
@@ -172,6 +174,8 @@
       if (itzuliEthaziUrtea != null) url.searchParams.set('urtea', itzuliEthaziUrtea);
       if (itzuliEthaziHilabetea != null) url.searchParams.set('hilabetea', itzuliEthaziHilabetea);
       if (itzuliEthaziModuloaId != null) url.searchParams.set('moduloaId', itzuliEthaziModuloaId);
+      if (itzuliEthaziEgutegiMota) url.searchParams.set('egutegiMota', itzuliEthaziEgutegiMota);
+      if (itzuliEthaziAsteHasiera) url.searchParams.set('asteHasiera', itzuliEthaziAsteHasiera);
       window.location.href = url.toString();
       return;
     }

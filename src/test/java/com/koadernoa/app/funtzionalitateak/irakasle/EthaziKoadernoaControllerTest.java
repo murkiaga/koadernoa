@@ -30,6 +30,7 @@ import com.koadernoa.app.objektuak.egutegia.repository.EgutegiaRepository;
 import com.koadernoa.app.objektuak.egutegia.service.EgutegiaService;
 import com.koadernoa.app.objektuak.irakasleak.entitateak.Irakaslea;
 import com.koadernoa.app.objektuak.irakasleak.service.IrakasleaService;
+import com.koadernoa.app.objektuak.koadernoak.entitateak.Koadernoa;
 import com.koadernoa.app.objektuak.modulua.entitateak.Ikaslea;
 import com.koadernoa.app.objektuak.modulua.entitateak.Moduloa;
 import com.koadernoa.app.objektuak.modulua.repository.IkasleaRepository;
@@ -135,7 +136,7 @@ class EthaziKoadernoaControllerTest {
                 koadernoa, egutegia, irakaslea, 20L, 2026, 11)).thenReturn(ikuspegia);
         ExtendedModelMap model = new ExtendedModelMap();
 
-        String view = controller.denboralizazioa(auth, koadernoa, 20L, 2026, 11, "egutegia",
+        String view = controller.denboralizazioa(auth, koadernoa, 20L, 2026, 11, "egutegia", null, null,
                 new MockHttpSession(), model, new RedirectAttributesModelMap());
 
         assertThat(view).isEqualTo("irakasleak/ethazi/denboralizazioa");
@@ -159,13 +160,36 @@ class EthaziKoadernoaControllerTest {
                                 "2026-2027", "azaroa 2026", 2026, 11, 20L, List.of(), List.of()));
         ExtendedModelMap model = new ExtendedModelMap();
 
-        String view = controller.denboralizazioa(auth, koadernoa, 20L, 2026, 11, "faltak",
+        String view = controller.denboralizazioa(auth, koadernoa, 20L, 2026, 11, "faltak", null, null,
                 new MockHttpSession(), model,
                 new RedirectAttributesModelMap());
 
         assertThat(view).isEqualTo("irakasleak/ethazi/denboralizazioa");
         assertThat(model.get("bista")).isEqualTo("faltak");
         assertThat(model.get("jarraipena")).isSameAs(ikuspegia);
+    }
+
+    @Test
+    void asistentziatikItzultzeanNireModuluakFiltroaMantentzenDu() {
+        LocalDate data = LocalDate.of(2026, 11, 4);
+        Maila maila = new Maila(); maila.setId(2L);
+        Moduloa modulua = new Moduloa(); modulua.setId(20L); modulua.setMaila(maila); modulua.setAktibo(true);
+        Egutegia egutegia = new Egutegia();
+        Koadernoa asistentziaKoadernoa = new Koadernoa(); asistentziaKoadernoa.setId(30L);
+        when(moduluak.findByTaldeaId(4L)).thenReturn(List.of(modulua));
+        when(egutegiak.findByIkasturtea_AktiboaTrueAndMaila_Id(2L)).thenReturn(Optional.of(egutegia));
+        when(ethaziDenboralizazioaService.lortuAsistentziaKoadernoa(
+                koadernoa, irakaslea, 20L)).thenReturn(asistentziaKoadernoa);
+        MockHttpSession session = new MockHttpSession();
+
+        String redirect = controller.denboralizazioAsistentzia(auth, koadernoa, 20L, data,
+                2026, 11, null, "astea", LocalDate.of(2026, 11, 2), session,
+                new RedirectAttributesModelMap());
+
+        assertThat(redirect).isEqualTo("redirect:/irakasle/asistentzia?data=2026-11-04"
+                + "&itzuliEthazi=true&itzuliEthaziUrtea=2026&itzuliEthaziHilabetea=11"
+                + "&itzuliEthaziEgutegiMota=astea&itzuliEthaziAsteHasiera=2026-11-02");
+        assertThat(session.getAttribute("koadernoAktiboa")).isSameAs(asistentziaKoadernoa);
     }
 
 }
