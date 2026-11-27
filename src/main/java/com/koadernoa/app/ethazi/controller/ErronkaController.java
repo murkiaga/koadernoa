@@ -203,6 +203,16 @@ public class ErronkaController {
             @RequestParam(required = false) Long ebidentziaId,
             @RequestParam(required = false) Long bestelakoProbaId,
             Authentication auth, Model model) {
+        if (koadernoEbaluazioa) {
+            StringBuilder url = new StringBuilder("redirect:/irakasle/ethazi-koadernoa/ebaluazioa/")
+                    .append(id).append("/errubrikak?gaitasunMota=").append(gaitasunMota)
+                    .append("&koadernoEbaluazioa=true");
+            if (moduloaId != null) url.append("&moduloaId=").append(moduloaId);
+            if (adierazleaId != null) url.append("&adierazleaId=").append(adierazleaId);
+            if (ebidentziaId != null) url.append("&ebidentziaId=").append(ebidentziaId);
+            if (bestelakoProbaId != null) url.append("&bestelakoProbaId=").append(bestelakoProbaId);
+            return url.toString();
+        }
         var erronka = service.erronka(id);
         var moduluak = erronka.getModuluak().stream()
             .filter(m -> service.erronkaKalifikatuDezake(auth, id, m.getId()))
@@ -309,8 +319,9 @@ public class ErronkaController {
 
     private String zeharkakoErrubrikara(Long id, Long moduloaId, boolean koadernoEbaluazioa) {
         if (koadernoEbaluazioa) {
-            return "redirect:/irakasle/ethazi-koadernoa/ebaluazioa?erronkaId=" + id
-                    + "&moduloaId=" + moduloaId + "&gaitasunMota=ZEHARKAKOA";
+            return "redirect:/irakasle/ethazi-koadernoa/ebaluazioa/" + id
+                    + "/errubrikak?moduloaId=" + moduloaId
+                    + "&gaitasunMota=ZEHARKAKOA&koadernoEbaluazioa=true";
         }
         return "redirect:/ethazi/erronkak/" + id + "/errubrikak?moduloaId=" + moduloaId + "&gaitasunMota=ZEHARKAKOA";
     }
@@ -525,8 +536,9 @@ public class ErronkaController {
 
     private String errubrikara(Long id, Long moduloaId, boolean koadernoEbaluazioa) {
         if (koadernoEbaluazioa) {
-            return "redirect:/irakasle/ethazi-koadernoa/ebaluazioa?erronkaId=" + id
-                    + "&moduloaId=" + moduloaId + "&gaitasunMota=TEKNIKOA";
+            return "redirect:/irakasle/ethazi-koadernoa/ebaluazioa/" + id
+                    + "/errubrikak?moduloaId=" + moduloaId
+                    + "&gaitasunMota=TEKNIKOA&koadernoEbaluazioa=true";
         }
         return "redirect:/ethazi/erronkak/" + id + "/errubrikak?moduloaId=" + moduloaId;
     }

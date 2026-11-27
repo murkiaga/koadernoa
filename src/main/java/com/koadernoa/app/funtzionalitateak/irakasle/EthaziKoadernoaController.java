@@ -190,7 +190,8 @@ public class EthaziKoadernoaController {
             hautatutakoModuloaId = erronka.moduluAukerak().get(0).id();
         }
         String mota = "ZEHARKAKOA".equalsIgnoreCase(gaitasunMota) ? "ZEHARKAKOA" : "TEKNIKOA";
-        String url = UriComponentsBuilder.fromPath("/ethazi/erronkak/{id}/errubrikak")
+        String url = UriComponentsBuilder.fromPath(
+                    "/irakasle/ethazi-koadernoa/ebaluazioa/{id}/errubrikak")
                 .queryParam("moduloaId", hautatutakoModuloaId)
                 .queryParam("gaitasunMota", mota)
                 .queryParam("koadernoEbaluazioa", true)

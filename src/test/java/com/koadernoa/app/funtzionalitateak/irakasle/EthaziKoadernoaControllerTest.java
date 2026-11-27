@@ -136,7 +136,7 @@ class EthaziKoadernoaControllerTest {
         String view = controller.ebaluazioa(auth, koadernoa, null, null, "TEKNIKOA",
                 new MockHttpSession(), new ExtendedModelMap(), new RedirectAttributesModelMap());
 
-        assertThat(view).isEqualTo("redirect:/ethazi/erronkak/4/errubrikak"
+        assertThat(view).isEqualTo("redirect:/irakasle/ethazi-koadernoa/ebaluazioa/4/errubrikak"
                 + "?moduloaId=33&gaitasunMota=TEKNIKOA&koadernoEbaluazioa=true");
     }
 

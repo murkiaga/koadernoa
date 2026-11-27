@@ -1,24 +1,25 @@
 <!DOCTYPE html><html xmlns:th="http://www.thymeleaf.org" lang="eu">
 <head th:replace="~{Ethazi/fragments/common :: head('Erronkaren errubrikak')}"></head><body class="ethazi-body">
-<th:block th:if="${koadernoEbaluazioa == true}">
-  <div th:replace="~{irakasleak/fragments/ethazi-navbar :: navbar(${ethaziKoadernoAktiboa}, ${irakasleKoadernoAktiboak}, ${irakasleEthaziKoadernoAktiboak})}"></div>
-</th:block>
-<th:block th:unless="${koadernoEbaluazioa == true}">
-  <div th:replace="~{kudeatzaile/fragments/navbar :: kudeatzaile-navbar}"></div>
-  <nav th:replace="~{Ethazi/fragments/navbar :: navbar('erronkak')}"></nav>
-</th:block>
-<main class="page ethazi-page ethazi-rubric-page"><div class="rubric-toolbar" th:replace="~{Ethazi/fragments/common :: messages}"></div>
-<header class="page-header rubric-toolbar"><div><h1>Errubrikak · <span th:text="${erronka.izena}"></span></h1><p class="muted">Modulu bakoitzak bere mailakatzea, balioak eta ebidentziak ditu.</p></div><a class="btn" th:href="${koadernoEbaluazioa == true ? '/irakasle/ethazi-koadernoa/ebaluazioa' : '/ethazi/erronkak?zikloaId=' + erronka.zikloa.id + (erronka.ikasturtea != null ? '&ikasturteaId=' + erronka.ikasturtea.id : '')}">← Erronketara</a></header>
+<div th:replace="~{kudeatzaile/fragments/navbar :: kudeatzaile-navbar}"></div>
+<nav th:replace="~{Ethazi/fragments/navbar :: navbar('erronkak')}"></nav>
+<main class="page ethazi-page ethazi-rubric-page" th:fragment="errubrikaEdukia"><div class="rubric-toolbar" th:replace="~{Ethazi/fragments/common :: messages}"></div>
+<header class="page-header rubric-toolbar"><div><h1>Errubrikak · <span th:text="${erronka.izena}"></span></h1><p class="muted">Modulu bakoitzak bere mailakatzea, balioak eta ebidentziak ditu.</p></div><a class="btn" th:href="${irakasleEbaluazioa == true ? '/irakasle/ethazi-koadernoa/ebaluazioa' : '/ethazi/erronkak?zikloaId=' + erronka.zikloa.id + (erronka.ikasturtea != null ? '&ikasturteaId=' + erronka.ikasturtea.id : '')}">← Erronketara</a></header>
 <nav class="module-tabs rubric-toolbar" aria-label="Errubrikaren moduluak">
-  <a th:each="m : ${moduluak}" th:href="@{/ethazi/erronkak/{id}/errubrikak(id=${erronka.id},moduloaId=${m.id},gaitasunMota=${gaitasunMota},koadernoEbaluazioa=${koadernoEbaluazioa})}"
+  <a th:if="${irakasleEbaluazioa != true}" th:each="m : ${moduluak}" th:href="@{/ethazi/erronkak/{id}/errubrikak(id=${erronka.id},moduloaId=${m.id},gaitasunMota=${gaitasunMota})}"
+     th:classappend="${m.id == moduloaId} ? 'active'"
+     th:attr="aria-current=${m.id == moduloaId ? 'page' : null},title=${m.izena},aria-label=${m.kodea + ' · ' + m.izena}"
+     th:text="${m.kodea}"></a>
+  <a th:if="${irakasleEbaluazioa == true}" th:each="m : ${moduluak}" th:href="@{/irakasle/ethazi-koadernoa/ebaluazioa/{id}/errubrikak(id=${erronka.id},moduloaId=${m.id},gaitasunMota=${gaitasunMota},koadernoEbaluazioa=true)}"
      th:classappend="${m.id == moduloaId} ? 'active'"
      th:attr="aria-current=${m.id == moduloaId ? 'page' : null},title=${m.izena},aria-label=${m.kodea + ' · ' + m.izena}"
      th:text="${m.kodea}"></a>
 </nav>
 <p class="empty-state rubric-toolbar" th:if="${#lists.isEmpty(moduluak)}">Erronkak ez du parte hartzen duen modulurik.</p>
 <nav class="competency-type-tabs rubric-toolbar" aria-label="Gaitasun mota" th:if="${moduloaId != null}">
-  <a class="btn" th:classappend="${gaitasunMota.name() == 'TEKNIKOA'} ? 'active'" th:href="@{/ethazi/erronkak/{id}/errubrikak(id=${erronka.id},moduloaId=${moduloaId},gaitasunMota='TEKNIKOA',koadernoEbaluazioa=${koadernoEbaluazioa})}">Teknikoak</a>
-  <a class="btn" th:classappend="${gaitasunMota.name() == 'ZEHARKAKOA'} ? 'active'" th:href="@{/ethazi/erronkak/{id}/errubrikak(id=${erronka.id},moduloaId=${moduloaId},gaitasunMota='ZEHARKAKOA',koadernoEbaluazioa=${koadernoEbaluazioa})}">Zeharkakoak</a>
+  <a th:if="${irakasleEbaluazioa != true}" class="btn" th:classappend="${gaitasunMota.name() == 'TEKNIKOA'} ? 'active'" th:href="@{/ethazi/erronkak/{id}/errubrikak(id=${erronka.id},moduloaId=${moduloaId},gaitasunMota='TEKNIKOA')}">Teknikoak</a>
+  <a th:if="${irakasleEbaluazioa != true}" class="btn" th:classappend="${gaitasunMota.name() == 'ZEHARKAKOA'} ? 'active'" th:href="@{/ethazi/erronkak/{id}/errubrikak(id=${erronka.id},moduloaId=${moduloaId},gaitasunMota='ZEHARKAKOA')}">Zeharkakoak</a>
+  <a th:if="${irakasleEbaluazioa == true}" class="btn" th:classappend="${gaitasunMota.name() == 'TEKNIKOA'} ? 'active'" th:href="@{/irakasle/ethazi-koadernoa/ebaluazioa/{id}/errubrikak(id=${erronka.id},moduloaId=${moduloaId},gaitasunMota='TEKNIKOA',koadernoEbaluazioa=true)}">Teknikoak</a>
+  <a th:if="${irakasleEbaluazioa == true}" class="btn" th:classappend="${gaitasunMota.name() == 'ZEHARKAKOA'} ? 'active'" th:href="@{/irakasle/ethazi-koadernoa/ebaluazioa/{id}/errubrikak(id=${erronka.id},moduloaId=${moduloaId},gaitasunMota='ZEHARKAKOA',koadernoEbaluazioa=true)}">Zeharkakoak</a>
 </nav>
 <section class="rubric-section challenge-rubric transverse-rubric" data-editable="false" th:if="${moduloaId != null and gaitasunMota.name() == 'ZEHARKAKOA'}"
          th:attr="data-rubric-key=${'erronka-' + erronka.id + '-zeharkakoa'}">

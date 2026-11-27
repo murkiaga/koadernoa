@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="eu">
+<head th:replace="~{Ethazi/fragments/common :: head('Erronkaren ebaluazioa')}"></head>
+<body class="ethazi-body">
+<div th:replace="~{irakasleak/fragments/ethazi-navbar :: navbar(${ethaziKoadernoAktiboa}, ${irakasleKoadernoAktiboak}, ${irakasleEthaziKoadernoAktiboak})}"></div>
+<main th:replace="~{Ethazi/erronkak/errubrikak :: errubrikaEdukia}"></main>
+<script th:src="@{/js/ethazi.js}" defer></script>
+</body>
+</html>

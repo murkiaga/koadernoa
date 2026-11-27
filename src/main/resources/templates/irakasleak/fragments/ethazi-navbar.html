@@ -34,7 +34,7 @@
             <summary th:classappend="${koadernoEbaluazioa == true or #strings.startsWith(currentPath, '/irakasle/ethazi-koadernoa/ebaluazioa')} ? 'active'">Ebaluazioa</summary>
             <div class="t-dropdown-menu">
               <a th:each="erronka : ${ethaziEbaluazioErronkak}"
-                 th:href="@{/irakasle/ethazi-koadernoa/ebaluazioa(erronkaId=${erronka.id})}"
+                 th:href="@{/irakasle/ethazi-koadernoa/ebaluazioa/{id}/errubrikak(id=${erronka.id},moduloaId=${erronka.moduluAukerak[0].id},gaitasunMota='TEKNIKOA',koadernoEbaluazioa=true)}"
                  th:text="${erronka.indizea + '. erronka · ' + erronka.izena}">Erronka</a>
               <span th:if="${#lists.isEmpty(ethaziEbaluazioErronkak)}">Ez dago ebaluatzeko erronkarik</span>
             </div>
@@ -69,7 +69,7 @@
                th:classappend="${#strings.startsWith(currentPath, '/irakasle/ethazi-koadernoa/denboralizazioa')} ? 'active'">Denboralizazioa</a></li>
         <li class="t-mobile-dropdown"><details><summary>Ebaluazioa</summary>
           <div><a th:each="erronka : ${ethaziEbaluazioErronkak}"
-             th:href="@{/irakasle/ethazi-koadernoa/ebaluazioa(erronkaId=${erronka.id})}"
+             th:href="@{/irakasle/ethazi-koadernoa/ebaluazioa/{id}/errubrikak(id=${erronka.id},moduloaId=${erronka.moduluAukerak[0].id},gaitasunMota='TEKNIKOA',koadernoEbaluazioa=true)}"
              th:text="${erronka.indizea + '. erronka · ' + erronka.izena}">Erronka</a>
             <span th:if="${#lists.isEmpty(ethaziEbaluazioErronkak)}">Ez dago ebaluatzeko erronkarik</span></div>
         </details></li>
