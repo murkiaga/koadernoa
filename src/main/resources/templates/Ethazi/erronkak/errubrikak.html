@@ -117,10 +117,14 @@
   </div>
   <div class="rubric-weight-total rubric-toolbar" role="status">Ebidentzien pisua guztira: <strong><span id="rubric-weight-total"
     th:text="${#aggregates.sum(form.ebidentziak.![pisua]) ?: 0}">0</span>%</strong> <span id="rubric-weight-warning">(%100 izan behar du)</span></div>
-  <div class="rubric-scroll" role="region" aria-label="Moduluaren ebaluazio-errubrika" tabindex="0"><table class="rubric challenge-rubric-table">
+  <div class="rubric-scroll" role="region" aria-label="Moduluaren ebaluazio-errubrika" tabindex="0"><table class="rubric challenge-rubric-table"
+      th:attr="data-collapsible-levels=${irakasleEbaluazioa == true ? 'true' : null}">
     <thead><tr class="student-team-header-row"><th class="evidence-column" rowspan="2">Ebidentzia</th>
-      <th class="level-column" rowspan="2" th:each="m, ms : *{mailak}" th:classappend="${ms.last} ? ' frozen-edge'" th:style="${'left:' + (280 + ms.index * 260) + 'px'}"><input type="hidden" th:field="*{mailak[__${ms.index}__].id}">
-        <div class="rubric-read-only"><strong th:text="${m.izena}"></strong><span class="level-value" th:text="${#numbers.formatDecimal(m.balioa,1,2) + ' puntu'}"></span></div>
+      <th class="level-column" rowspan="2" th:each="m, ms : *{mailak}" th:classappend="${ms.last} ? ' frozen-edge'" th:style="${'left:' + (280 + ms.index * 260) + 'px'}" th:attr="data-level-column-index=${ms.index}"><input type="hidden" th:field="*{mailak[__${ms.index}__].id}">
+        <div class="level-column-heading"><div class="rubric-read-only"><strong th:text="${m.izena}"></strong><span class="level-value" th:text="${#numbers.formatDecimal(m.balioa,1,2) + ' puntu'}"></span></div>
+          <strong class="collapsed-level-name" th:text="${m.izena}"></strong>
+          <button th:if="${irakasleEbaluazioa == true}" type="button" class="level-column-toggle" data-level-column-toggle th:attr="data-level-column-index=${ms.index},aria-label=${m.izena + ' mailakatzea uzkurtu'}" aria-expanded="true" title="Mailakatzea uzkurtu">−</button>
+        </div>
         <div class="rubric-edit-only level-fields"><label>Izena<input required maxlength="100" th:field="*{mailak[__${ms.index}__].izena}"></label><label>Balioa<input required type="number" min="0" max="10" step="0.01" th:field="*{mailak[__${ms.index}__].balioa}"></label>
           <button type="submit" class="btn btn-danger" th:form="${'delete-level-' + m.id}">Ezabatu</button></div>
       </th>
@@ -148,7 +152,7 @@
           <input type="checkbox" th:field="*{ebidentziak[__${es.index}__].adierazleaIds}" th:value="${a.id}"><span th:text="${(#strings.isEmpty(a.emaitzaKodea) ? '' : a.emaitzaKodea + ' · ') + a.kodea}"></span><span class="badge-remove" aria-hidden="true">×</span><span class="badge-add" aria-hidden="true">+</span>
         </label><span class="muted" th:if="${#lists.isEmpty(adierazleak)}">Ez dago hautatzeko adierazlerik.</span></div>
       <button type="submit" class="btn btn-danger rubric-edit-only" th:form="${'delete-evidence-' + eb.id}">Ebidentzia ezabatu</button></th>
-      <td class="level-column" th:each="cell, cs : ${eb.mailak}" th:classappend="${cs.last} ? ' frozen-edge'" th:style="${'left:' + (280 + cs.index * 260) + 'px'}"><input type="hidden" th:field="*{ebidentziak[__${es.index}__].mailak[__${cs.index}__].mailaId}">
+      <td class="level-column" th:each="cell, cs : ${eb.mailak}" th:classappend="${cs.last} ? ' frozen-edge'" th:style="${'left:' + (280 + cs.index * 260) + 'px'}" th:attr="data-level-column-index=${cs.index}"><input type="hidden" th:field="*{ebidentziak[__${es.index}__].mailak[__${cs.index}__].mailaId}">
         <p class="preserve rubric-read-only" th:text="${cell.deskribapena}"></p><textarea class="rubric-edit-only" rows="7" th:field="*{ebidentziak[__${es.index}__].mailak[__${cs.index}__].deskribapena}" placeholder="Maila hau lortzeko zer egin behar den…"></textarea></td>
       <td class="team-grade-column student-grade-column rubric-grading-only" th:each="sn, ss : ${eb.ikasleNotak}" th:classappend="${ikasleak[ss.index].taldekoAzkena} ? ' student-group-end'">
         <select class="team-grade-input" data-rubric-grade data-participant-kind="student" th:attr="data-action=@{/ethazi/erronkak/{id}/errubrikak/{mid}/ikasle-notak(id=${erronka.id},mid=${moduloaId})},data-evidence-id=${eb.id},data-participant-id=${sn.ikasleaId}">
@@ -165,7 +169,7 @@
       </td>
     </tr><tr th:if="*{#lists.isEmpty(ebidentziak)}"><td th:colspan="${#lists.size(form.mailak) + #lists.size(ikasleak) + 1}" class="empty-state">Oraindik ez dago ebidentziarik.</td></tr>
     <tr class="rubric-total-row rubric-grading-only"><th class="evidence-column">GUZTIRA</th>
-      <td class="level-column rubric-total-spacer" th:each="m, ms : *{mailak}" th:classappend="${ms.last} ? ' frozen-edge'" th:style="${'left:' + (280 + ms.index * 260) + 'px'}" aria-hidden="true"></td>
+      <td class="level-column rubric-total-spacer" th:each="m, ms : *{mailak}" th:classappend="${ms.last} ? ' frozen-edge'" th:style="${'left:' + (280 + ms.index * 260) + 'px'}" th:attr="data-level-column-index=${ms.index}" aria-hidden="true"></td>
       <td class="team-grade-column student-grade-column" th:each="i : ${ikasleak}" th:classappend="${i.taldekoAzkena} ? ' student-group-end'"><output data-grade-total data-participant-kind="student" th:attr="data-participant-id=${i.id}">0,00</output></td>
     </tr></tbody>
   </table></div><div class="form-actions rubric-toolbar rubric-edit-only"><button class="btn btn-primary">Errubrika gorde</button></div></form>

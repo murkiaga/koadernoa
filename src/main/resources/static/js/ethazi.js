@@ -28,6 +28,35 @@ window.addEventListener('beforeunload', event => {
   }
 });
 
+document.querySelectorAll('[data-collapsible-levels="true"]').forEach(table => {
+  const expandedWidth = 260;
+  const collapsedWidth = 94;
+  const evidenceWidth = 280;
+  const buttons = Array.from(table.querySelectorAll('[data-level-column-toggle]'));
+
+  const updateLevelColumns = () => {
+    let left = evidenceWidth;
+    buttons.forEach(button => {
+      const index = button.dataset.levelColumnIndex;
+      const collapsed = button.getAttribute('aria-expanded') === 'false';
+      table.querySelectorAll(`[data-level-column-index="${index}"]`).forEach(cell => {
+        cell.classList.toggle('is-collapsed', collapsed);
+        cell.style.left = `${left}px`;
+      });
+      button.textContent = collapsed ? '+' : '−';
+      button.title = collapsed ? 'Mailakatzea zabaldu' : 'Mailakatzea uzkurtu';
+      button.setAttribute('aria-label', `${button.closest('th')?.querySelector('.collapsed-level-name')?.textContent || 'Mailakatzea'} ${collapsed ? 'zabaldu' : 'uzkurtu'}`);
+      left += collapsed ? collapsedWidth : expandedWidth;
+    });
+  };
+
+  buttons.forEach(button => button.addEventListener('click', () => {
+    button.setAttribute('aria-expanded', String(button.getAttribute('aria-expanded') !== 'true'));
+    updateLevelColumns();
+  }));
+  updateLevelColumns();
+});
+
 const teamGradeNumber = value => Number.parseFloat(String(value ?? '0').replace(',', '.')) || 0;
 const teamGradeFormatter = new Intl.NumberFormat('eu-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
